@@ -6,16 +6,16 @@
   <title>OnchainBR · BTC Valuation Index</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
   <style>
     :root {
-      --bg-primary: #0a0b0d;
-      --bg-secondary: #12141a;
-      --bg-card: #161920;
-      --bg-card-hover: #1a1d26;
-      --text-primary: #e8e6e3;
-      --text-secondary: #8b8d93;
-      --text-muted: #5a5c63;
-      --border: #252830;
+      --bg-primary: #0a0a0b;
+      --bg-secondary: #111113;
+      --bg-card: #161619;
+      --border: #252528;
+      --text-primary: #e8e8ed;
+      --text-secondary: #a0a0ab;
+      --text-muted: #606068;
       --accent-green: #00d97e;
       --accent-lime: #84cc16;
       --accent-yellow: #eab308;
@@ -23,6 +23,9 @@
       --accent-red: #ef4444;
       --accent-blue: #3b82f6;
       --accent-purple: #a855f7;
+      --accent-pink: #ec4899;
+      --accent-cyan: #06b6d4;
+      --accent-teal: #14b8a6;
     }
     
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -32,142 +35,53 @@
       background: var(--bg-primary);
       color: var(--text-primary);
       min-height: 100vh;
-      background-image: 
-        radial-gradient(ellipse at 20% 20%, rgba(0, 217, 126, 0.03) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 80%, rgba(168, 85, 247, 0.03) 0%, transparent 50%),
-        linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 50px 50px, 50px 50px;
     }
     
-    .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 16px 24px; }
     
     .header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+      padding: 8px 0 20px;
     }
     
-    .brand-name {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--accent-orange);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
+    .brand-name { font-size: 11px; font-weight: 600; color: var(--accent-orange); letter-spacing: 2px; }
+    .brand-title { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; margin-top: 2px; }
+    .brand-sub { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
     
-    .brand-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
+    .header-right { text-align: right; font-size: 10px; }
+    .status-ok { color: var(--accent-green); font-weight: 500; }
+    .status-date { color: var(--text-muted); margin-top: 2px; }
     
-    .brand-subtitle {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-    
-    .header-right { text-align: right; }
-    
-    .live-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      margin-bottom: 4px;
-    }
-    
-    .live-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-    
-    .live-dot.ok { background: var(--accent-green); }
-    .live-dot.partial { background: var(--accent-yellow); }
-    .live-dot.error { background: var(--accent-red); }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-    
-    .timestamp { font-size: 11px; color: var(--text-muted); }
-    
-    .main-grid {
+    .top-stats {
       display: grid;
-      grid-template-columns: 1fr 340px;
-      gap: 20px;
-    }
-    
-    .hero-section {
-      display: grid;
-      grid-template-columns: 200px 1fr 200px;
-      gap: 20px;
+      grid-template-columns: 1fr 1.5fr 1fr;
+      gap: 16px;
       margin-bottom: 20px;
     }
     
-    .zscore-display, .gauge-container, .price-display {
+    .zscore-card, .gauge-card, .price-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 10px;
       padding: 20px;
       text-align: center;
     }
     
-    .zscore-label, .price-label {
-      font-size: 10px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 8px;
-    }
+    .zscore-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+    .zscore-value { font-family: 'Space Grotesk', sans-serif; font-size: 48px; font-weight: 700; }
+    .zscore-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-top: 10px; }
+    .zscore-sub { font-size: 9px; color: var(--text-muted); margin-top: 8px; }
     
-    .zscore-value {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 48px;
-      font-weight: 700;
-      line-height: 1;
-      margin-bottom: 8px;
-    }
+    .gauge-card { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .gauge-container { position: relative; width: 200px; height: 110px; }
+    .gauge-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 8px; }
     
-    .zscore-zone {
-      font-size: 12px;
-      font-weight: 600;
-      padding: 4px 12px;
-      border-radius: 4px;
-      display: inline-block;
-    }
-    
-    .zscore-sublabel { font-size: 10px; color: var(--text-muted); margin-top: 8px; }
-    
-    .gauge-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .gauge-wrapper { position: relative; width: 200px; height: 120px; }
-    .gauge-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; }
-    
-    .price-value {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 32px;
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 4px;
-    }
-    
-    .price-change { font-size: 14px; font-weight: 500; }
-    .price-date { font-size: 10px; color: var(--text-muted); margin-top: 8px; }
+    .price-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+    .price-value { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; }
+    .price-change { font-size: 14px; font-weight: 600; margin-top: 8px; }
+    .price-date { font-size: 9px; color: var(--text-muted); margin-top: 6px; }
     
     .stats-row {
       display: grid;
@@ -184,1083 +98,712 @@
       text-align: center;
     }
     
-    .stat-label {
-      font-size: 10px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 6px;
-    }
+    .stat-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+    .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
+    .stat-sub { font-size: 8px; color: var(--text-muted); margin-top: 4px; }
     
-    .stat-value { font-size: 16px; font-weight: 600; color: var(--text-primary); }
-    .stat-sub { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+    .main-grid { display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
     
     .chart-section {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-    
-    .chart-title {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    
-    .chart-badge {
-      font-size: 10px;
-      color: var(--accent-blue);
-      background: rgba(59, 130, 246, 0.1);
-      padding: 4px 10px;
-      border-radius: 4px;
-      border: 1px solid rgba(59, 130, 246, 0.2);
-    }
-    
-    .chart-container { height: 280px; position: relative; }
-    .chart-container-sm { height: 180px; position: relative; }
-    
-    .sidebar { display: flex; flex-direction: column; gap: 16px; }
-    
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-    
-    .metric-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px;
-      transition: all 0.2s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .metric-card:hover { background: var(--bg-card-hover); border-color: var(--text-muted); }
-    
-    .metric-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-    }
-    
-    .metric-card.zone-acc::before { background: var(--accent-green); }
-    .metric-card.zone-und::before { background: var(--accent-lime); }
-    .metric-card.zone-fair::before { background: var(--accent-yellow); }
-    .metric-card.zone-over::before { background: var(--accent-orange); }
-    .metric-card.zone-dist::before { background: var(--accent-red); }
-    
-    .metric-name {
-      font-size: 10px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
-    }
-    
-    .metric-value {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-    
-    .metric-zone { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; }
-    .metric-raw { font-size: 9px; color: var(--text-muted); margin-top: 4px; }
-    .metric-sparkline { height: 30px; margin-top: 8px; }
-    
-    .conviction-section, .api-status, .methodology-section {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 8px;
       padding: 16px;
-    }
-    
-    .conviction-title, .api-title, .methodology-title {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
       margin-bottom: 14px;
     }
     
-    .conviction-scale { display: flex; flex-direction: column; gap: 6px; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .chart-title { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .chart-badges { display: flex; gap: 6px; }
+    .badge { font-size: 8px; padding: 3px 8px; border-radius: 3px; font-weight: 600; }
+    .badge-blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+    .badge-green { background: rgba(0, 217, 126, 0.15); color: var(--accent-green); }
     
-    .conviction-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 10px;
-      border-radius: 6px;
-      font-size: 11px;
-      opacity: 0.5;
-      transition: all 0.2s ease;
+    .chart-container { height: 280px; }
+    .chart-container-sm { height: 140px; }
+    
+    /* Sidebar com scroll se necessário */
+    .sidebar { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 12px;
+      max-height: calc(100vh - 300px);
+      overflow-y: auto;
     }
     
-    .conviction-item.active { opacity: 1; background: rgba(255,255,255,0.03); }
-    .conviction-dot { width: 8px; height: 8px; border-radius: 50%; }
-    .conviction-label { flex: 1; font-weight: 500; }
-    .conviction-range { color: var(--text-muted); font-size: 10px; }
-    
-    .api-list { display: flex; flex-direction: column; gap: 6px; }
-    
-    .api-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 10px;
-      padding: 6px 0;
-      border-bottom: 1px solid var(--border);
+    .sidebar-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
     }
     
-    .api-item:last-child { border-bottom: none; }
-    .api-endpoint { color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
-    .api-status-dot { width: 6px; height: 6px; border-radius: 50%; }
-    .api-status-dot.ok { background: var(--accent-green); }
-    .api-status-dot.loading { background: var(--accent-yellow); animation: pulse 1s infinite; }
-    .api-status-dot.error { background: var(--accent-red); }
+    .sidebar-title { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; }
     
-    .methodology-text { font-size: 11px; color: var(--text-secondary); line-height: 1.6; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
     
-    .methodology-formula {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
-      color: var(--accent-purple);
-      background: rgba(168, 85, 247, 0.1);
-      padding: 8px 12px;
-      border-radius: 6px;
-      margin: 10px 0;
-      text-align: center;
+    .metric-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 10px;
     }
     
-    .footer {
-      margin-top: 24px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 10px;
-      color: var(--text-muted);
+    .metric-name { font-size: 7px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.3px; }
+    .metric-value { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; line-height: 1.1; }
+    .metric-zone { font-size: 8px; font-weight: 600; margin-top: 2px; }
+    .metric-raw { font-size: 7px; color: var(--text-muted); margin-top: 3px; }
+    .metric-sparkline { height: 20px; margin-top: 5px; }
+    
+    /* Conviction Scale horizontal */
+    .conviction-bar {
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, 
+        var(--accent-green) 0%, var(--accent-green) 20%, 
+        var(--accent-lime) 20%, var(--accent-lime) 40%, 
+        var(--accent-yellow) 40%, var(--accent-yellow) 60%, 
+        var(--accent-orange) 60%, var(--accent-orange) 80%, 
+        var(--accent-red) 80%, var(--accent-red) 100%
+      );
+      position: relative;
+      margin: 12px 0 6px;
     }
     
-    .footer-link { color: var(--accent-blue); text-decoration: none; }
+    .conviction-marker {
+      position: absolute;
+      top: -4px;
+      width: 3px;
+      height: 16px;
+      background: #fff;
+      border-radius: 2px;
+      transform: translateX(-50%);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+    
+    .conviction-labels { display: flex; justify-content: space-between; font-size: 7px; color: var(--text-muted); margin-bottom: 10px; }
+    
+    .conviction-items { display: flex; flex-direction: column; gap: 3px; }
+    .conviction-item { display: flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 8px; opacity: 0.4; }
+    .conviction-item.active { opacity: 1; }
+    .conviction-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .conviction-label { flex: 1; }
+    .conviction-range { color: var(--text-muted); font-size: 7px; }
     
     .loading-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: var(--bg-primary);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 1000;
-      transition: opacity 0.5s ease;
+      transition: opacity 0.4s;
     }
-    
     .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-    
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent-orange);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent-orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading-text { margin-top: 16px; font-size: 12px; color: var(--text-secondary); }
+    .loading-progress { margin-top: 8px; font-size: 10px; color: var(--text-muted); }
     
-    .error-banner {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: 8px;
-      padding: 12px 16px;
-      margin-bottom: 20px;
-      display: none;
-      align-items: center;
-      gap: 12px;
-    }
-    
-    .error-banner.visible { display: flex; }
-    .error-icon { color: var(--accent-red); font-size: 16px; }
-    .error-text { font-size: 12px; color: var(--accent-red); }
-
-    .info-banner {
-      background: rgba(59, 130, 246, 0.1);
-      border: 1px solid rgba(59, 130, 246, 0.3);
-      border-radius: 8px;
-      padding: 12px 16px;
-      margin-bottom: 20px;
-      display: none;
-      align-items: center;
-      gap: 12px;
-    }
-    .info-banner.visible { display: flex; }
-    .info-icon { color: var(--accent-blue); font-size: 16px; }
-    .info-text { font-size: 11px; color: var(--accent-blue); }
+    .footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 9px; color: var(--text-muted); }
+    .footer a { color: var(--accent-blue); text-decoration: none; }
     
     @media (max-width: 1200px) {
       .main-grid { grid-template-columns: 1fr; }
-      .sidebar { display: grid; grid-template-columns: repeat(2, 1fr); }
-      .metrics-grid { grid-template-columns: repeat(4, 1fr); }
+      .top-stats { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: repeat(3, 1fr); }
+      .sidebar { max-height: none; }
     }
     
-    @media (max-width: 768px) {
-      .hero-section { grid-template-columns: 1fr; }
+    @media (max-width: 600px) {
       .stats-row { grid-template-columns: repeat(2, 1fr); }
-      .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-      .sidebar { grid-template-columns: 1fr; }
+      .metrics-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-spinner"></div>
-    <div class="loading-text" id="loadingText">Conectando à API BGeometrics...</div>
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Inicializando...</div>
+    <div class="loading-progress" id="loadingProgress">0 / 10 endpoints</div>
   </div>
 
   <div class="container">
     <header class="header">
       <div>
-        <div class="brand-name">@OnchainBR</div>
+        <div class="brand-name">@ONCHAINBR</div>
         <div class="brand-title">BTC Valuation Index</div>
-        <div class="brand-subtitle">Composite Z-Score · Rolling 365d · 8 Metrics · BGeometrics API</div>
+        <div class="brand-sub">Composite Z-Score · Rolling 365d · 9 Metrics · BGeometrics API</div>
       </div>
       <div class="header-right">
-        <div class="live-indicator">
-          <span class="live-dot" id="liveDot"></span>
-          <span id="liveStatus">CONECTANDO...</span>
-        </div>
-        <div class="timestamp" id="timestamp">--</div>
-        <div class="timestamp">LAST DATA: <span id="lastData">--</span></div>
+        <div class="status-ok" id="statusEndpoints">● 0/10 ENDPOINTS</div>
+        <div class="status-date" id="statusDate">--</div>
+        <div class="status-date" id="statusLastData">LAST DATA: --</div>
       </div>
     </header>
     
-    <div class="info-banner" id="infoBanner">
-      <span class="info-icon">ℹ</span>
-      <span class="info-text" id="infoText"></span>
+    <div class="top-stats">
+      <div class="zscore-card">
+        <div class="zscore-label">Z-Score Composite</div>
+        <div class="zscore-value" id="mainZScore">--</div>
+        <div class="zscore-badge" id="mainZoneBadge">--</div>
+        <div class="zscore-sub">rolling 365d window</div>
+      </div>
+      
+      <div class="gauge-card">
+        <div class="gauge-container">
+          <canvas id="gaugeCanvas"></canvas>
+        </div>
+        <div class="gauge-label">Conviction Signal</div>
+      </div>
+      
+      <div class="price-card">
+        <div class="price-label">BTC / USD</div>
+        <div class="price-value" id="btcPrice">--</div>
+        <div class="price-change" id="priceChange">--</div>
+        <div class="price-date" id="priceDate">--</div>
+      </div>
     </div>
     
-    <div class="error-banner" id="errorBanner">
-      <span class="error-icon">⚠</span>
-      <span class="error-text" id="errorText">Erro ao carregar dados</span>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Signal Zone</div>
+        <div class="stat-value" id="statSignalZone">--</div>
+        <div class="stat-sub" id="statZoneThreshold">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Metrics OK</div>
+        <div class="stat-value" id="statMetricsOk">--</div>
+        <div class="stat-sub">of 9 total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Price Δ Week</div>
+        <div class="stat-value" id="statPriceDeltaWeek">--</div>
+        <div class="stat-sub">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Weakest Metric</div>
+        <div class="stat-value" id="statWeakestMetric">--</div>
+        <div class="stat-sub" id="statWeakestZ">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Data Range</div>
+        <div class="stat-value" id="statDataRange">--</div>
+        <div class="stat-sub" id="statDataDates">--</div>
+      </div>
     </div>
     
     <div class="main-grid">
       <div class="main-content">
-        <div class="hero-section">
-          <div class="zscore-display">
-            <div class="zscore-label">Z-Score Composite</div>
-            <div class="zscore-value" id="zscoreValue">--</div>
-            <div class="zscore-zone" id="zscoreZone">CARREGANDO</div>
-            <div class="zscore-sublabel">rolling 365d window</div>
-          </div>
-          
-          <div class="gauge-container">
-            <div class="gauge-wrapper">
-              <canvas id="gaugeCanvas" width="200" height="120"></canvas>
-            </div>
-            <div class="gauge-label">Conviction Signal</div>
-          </div>
-          
-          <div class="price-display">
-            <div class="price-label">BTC / USD</div>
-            <div class="price-value" id="btcPrice">$--</div>
-            <div class="price-change" id="priceChange">--</div>
-            <div class="price-date" id="priceDate">--</div>
-          </div>
-        </div>
-        
-        <div class="stats-row">
-          <div class="stat-card">
-            <div class="stat-label">Signal Zone</div>
-            <div class="stat-value" id="signalZone">--</div>
-            <div class="stat-sub" id="signalThreshold">--</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Metrics OK</div>
-            <div class="stat-value" id="metricsOk">--</div>
-            <div class="stat-sub">of 8 total</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Price Δ Week</div>
-            <div class="stat-value" id="priceDeltaWeek">--</div>
-            <div class="stat-sub" id="priceDeltaRange">--</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Weakest Metric</div>
-            <div class="stat-value" id="weakestMetric">--</div>
-            <div class="stat-sub" id="weakestValue">--</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Data Range</div>
-            <div class="stat-value">365 days</div>
-            <div class="stat-sub" id="dataRangeDates">--</div>
-          </div>
-        </div>
-        
         <div class="chart-section">
           <div class="chart-header">
             <div class="chart-title">BTC/USD — Daily Close · Colored by Z-Composite Zone</div>
-            <div class="chart-badge">365 DAYS · LOG SCALE</div>
+            <div class="chart-badges"><span class="badge badge-blue">365 DAYS · LOG SCALE</span></div>
           </div>
-          <div class="chart-container">
-            <canvas id="priceChart"></canvas>
-          </div>
+          <div class="chart-container"><canvas id="priceChart"></canvas></div>
         </div>
         
         <div class="chart-section">
           <div class="chart-header">
             <div class="chart-title">Z-Composite Oscillator</div>
-            <div class="chart-badge">ROLLING 365D</div>
+            <div class="chart-badges"><span class="badge badge-green">ROLLING 365D</span></div>
           </div>
-          <div class="chart-container-sm">
-            <canvas id="oscillatorChart"></canvas>
+          <div class="chart-container-sm"><canvas id="oscillatorChart"></canvas></div>
+        </div>
+        
+        <div class="chart-section">
+          <div class="chart-header">
+            <div class="chart-title">Individual Z-Scores — All Metrics Overlay</div>
+            <div class="chart-badges"><span class="badge badge-blue">8 METRICS</span></div>
           </div>
+          <div class="chart-container-sm"><canvas id="overlayChart"></canvas></div>
         </div>
       </div>
       
       <div class="sidebar">
-        <div class="metrics-grid" id="metricsGrid"></div>
-        
-        <div class="conviction-section">
-          <div class="conviction-title">Conviction Scale</div>
-          <div class="conviction-scale" id="convictionScale">
-            <div class="conviction-item" data-zone="acc">
-              <span class="conviction-dot" style="background: var(--accent-green)"></span>
-              <span class="conviction-label">ACCUMULATE</span>
-              <span class="conviction-range">Z ≤ -1.5</span>
-            </div>
-            <div class="conviction-item" data-zone="und">
-              <span class="conviction-dot" style="background: var(--accent-lime)"></span>
-              <span class="conviction-label">UNDERVALUED</span>
-              <span class="conviction-range">-1.5 → -0.5</span>
-            </div>
-            <div class="conviction-item" data-zone="fair">
-              <span class="conviction-dot" style="background: var(--accent-yellow)"></span>
-              <span class="conviction-label">FAIR VALUE</span>
-              <span class="conviction-range">-0.5 → +0.5</span>
-            </div>
-            <div class="conviction-item" data-zone="over">
-              <span class="conviction-dot" style="background: var(--accent-orange)"></span>
-              <span class="conviction-label">OVERVALUED</span>
-              <span class="conviction-range">+0.5 → +1.5</span>
-            </div>
-            <div class="conviction-item" data-zone="dist">
-              <span class="conviction-dot" style="background: var(--accent-red)"></span>
-              <span class="conviction-label">DISTRIBUTE</span>
-              <span class="conviction-range">Z ≥ +1.5</span>
-            </div>
-          </div>
+        <div class="sidebar-section">
+          <div class="sidebar-title">Metric Breakdown</div>
+          <div class="metrics-grid" id="metricsGrid"></div>
         </div>
         
-        <div class="api-status">
-          <div class="api-title">API Endpoints Status</div>
-          <div class="api-list" id="apiStatusList"></div>
-        </div>
-        
-        <div class="methodology-section">
-          <div class="methodology-title">Methodology</div>
-          <div class="methodology-text">
-            Each metric is normalized using a rolling 365-day Z-Score:
-          </div>
-          <div class="methodology-formula">Z = (value - μ₃₆₅) / σ₃₆₅</div>
-          <div class="methodology-text">
-            Composite = equal-weight mean of all metric Z-Scores. Below -1.5σ = accumulation; above +1.5σ = distribution.
+        <div class="sidebar-section">
+          <div class="sidebar-title">Conviction Scale</div>
+          <div class="conviction-bar"><div class="conviction-marker" id="convictionMarker"></div></div>
+          <div class="conviction-labels"><span>-3</span><span>-1.5</span><span>0</span><span>+1.5</span><span>+3</span></div>
+          <div class="conviction-items">
+            <div class="conviction-item" data-zone="acc"><span class="conviction-dot" style="background: var(--accent-green)"></span><span class="conviction-label">ACCUMULATE</span><span class="conviction-range">Z ≤ -1.5</span></div>
+            <div class="conviction-item" data-zone="und"><span class="conviction-dot" style="background: var(--accent-lime)"></span><span class="conviction-label">UNDERVALUED</span><span class="conviction-range">-1.5 → -0.5</span></div>
+            <div class="conviction-item" data-zone="fair"><span class="conviction-dot" style="background: var(--accent-yellow)"></span><span class="conviction-label">FAIR VALUE</span><span class="conviction-range">-0.5 → +0.5</span></div>
+            <div class="conviction-item" data-zone="over"><span class="conviction-dot" style="background: var(--accent-orange)"></span><span class="conviction-label">ELEVATED</span><span class="conviction-range">+0.5 → +1.5</span></div>
+            <div class="conviction-item" data-zone="dist"><span class="conviction-dot" style="background: var(--accent-red)"></span><span class="conviction-label">OVERHEATED</span><span class="conviction-range">Z ≥ +1.5</span></div>
           </div>
         </div>
       </div>
     </div>
     
     <footer class="footer">
-      <div>
-        <span>Source: BGeometrics API</span> · 
-        <span>Rolling 365d Z-Score</span> · 
-        <span>Auto-refresh 5min</span>
-      </div>
-      <a href="https://robertocangussu.github.io/btc-dashboard/" class="footer-link">github.io/btc-dashboard</a>
+      <div>@ONCHAINBR · Z-Score Model · Rolling 365d · 9 Metrics</div>
+      <div><a href="https://bitcoin-data.com" target="_blank">BGeometrics API</a></div>
     </footer>
   </div>
 
   <script>
-    // ============================================
-    // CONFIGURATION - FOR GITHUB PAGES HOSTING
-    // ============================================
-    const CONFIG = {
-      API_TOKEN: 'SahfZ2aHol',
-      API_BASE: 'https://bitcoin-data.com',
-      REFRESH_INTERVAL: 5 * 60 * 1000
+    const CONFIG = { 
+      API_TOKEN: 'SahfZ2aHol', 
+      API_BASE: 'https://bitcoin-data.com', 
+      ROLLING_WINDOW: 365, 
+      MIN_DATA_POINTS: 30, 
+      REFRESH_INTERVAL: 5 * 60 * 1000 
     };
 
-    // CORRECT ENDPOINTS FROM OPENAPI SPEC
+    // 9 METRICS - 8 originais + RSI (RSI não aparece no gráfico overlay)
     const METRICS = {
-      mvrv: {
-        name: 'MVRV Z-Score',
-        shortName: 'MVRV',
-        endpoint: '/v1/mvrv-zscore',
-        field: 'mvrvZscore',
-        isPreZScore: true,
-        color: '#a855f7'
-      },
-      nupl: {
-        name: 'NUPL',
-        shortName: 'NUPL',
-        endpoint: '/v1/nupl',
-        field: 'nupl',
-        mean: 0.35, std: 0.28,
-        color: '#3b82f6'
-      },
-      sopr: {
-        name: 'SOPR',
-        shortName: 'SOPR',
-        endpoint: '/v1/sopr',
-        field: 'sopr',
-        mean: 1.005, std: 0.015,
-        color: '#22c55e'
-      },
-      mayer: {
-        name: 'Mayer Multiple',
-        shortName: 'Mayer',
-        endpoint: '/v1/mayer-multiple',
-        field: 'mayerMultiple',
-        mean: 1.10, std: 0.40,
-        color: '#f97316'
-      },
-      ssr: {
-        name: 'SSR',
-        shortName: 'SSR',
-        endpoint: '/v1/ssr',
-        field: 'ssrStablecoin',
-        mean: 10, std: 5,
-        color: '#06b6d4'
-      },
-      supplyProfit: {
-        name: 'Supply in Profit',
-        shortName: 'Profit%',
-        endpoint: '/v1/supply-profit',
-        field: 'supplyProfit',
-        mean: 72, std: 18,
-        color: '#eab308'
-      },
-      fearGreed: {
-        name: 'Fear & Greed',
-        shortName: 'F&G',
-        endpoint: '/v1/fear-greed',
-        field: 'fearGreed',
-        mean: 50, std: 22,
-        color: '#ef4444'
-      },
-      puell: {
-        name: 'Puell Multiple',
-        shortName: 'Puell',
-        endpoint: '/v1/puell-multiple',
-        field: 'puellMultiple',
-        mean: 1.0, std: 0.8,
-        color: '#ec4899'
-      }
+      mvrv:         { name: 'MVRV Ratio',       endpoint: '/v1/mvrv-zscore',          field: 'mvrvZscore',    isPreZScore: true,  color: '#ef4444', showInOverlay: true },
+      nupl:         { name: 'NUPL',             endpoint: '/v1/nupl',                 field: 'nupl',          isPreZScore: false, color: '#f97316', showInOverlay: true },
+      sopr:         { name: 'SOPR',             endpoint: '/v1/sopr',                 field: 'sopr',          isPreZScore: false, color: '#84cc16', showInOverlay: true },
+      mayer:        { name: 'Mayer Multiple',   endpoint: '/v1/mayer-multiple',       field: 'mayerMultiple', isPreZScore: false, color: '#eab308', showInOverlay: true },
+      ssr:          { name: 'Stablecoin Ratio', endpoint: '/v1/ssr',                  field: 'ssrStablecoin', isPreZScore: false, color: '#06b6d4', showInOverlay: true },
+      supplyProfit: { name: 'Supply Profit',    endpoint: '/v1/supply-profit',        field: 'supplyProfit',  isPreZScore: false, color: '#8b5cf6', showInOverlay: true },
+      fearGreed:    { name: 'Fear & Greed',     endpoint: '/v1/fear-greed',           field: 'fearGreed',     isPreZScore: false, color: '#ec4899', showInOverlay: true },
+      puell:        { name: 'Puell Multiple',   endpoint: '/v1/puell-multiple',       field: 'puellMultiple', isPreZScore: false, color: '#3b82f6', showInOverlay: true },
+      rsi:          { name: 'RSI Weekly',       endpoint: '/v1/technical-indicators', field: 'rsi',           isPreZScore: false, color: '#14b8a6', showInOverlay: false }
     };
 
     const ZONES = {
-      acc:  { min: -Infinity, max: -1.5, name: 'ACCUMULATE',  color: '#00d97e' },
-      und:  { min: -1.5, max: -0.5,      name: 'UNDERVALUED', color: '#84cc16' },
-      fair: { min: -0.5, max: 0.5,       name: 'FAIR VALUE',  color: '#eab308' },
-      over: { min: 0.5,  max: 1.5,       name: 'OVERVALUED',  color: '#f97316' },
-      dist: { min: 1.5,  max: Infinity,  name: 'DISTRIBUTE',  color: '#ef4444' }
+      acc:  { min: -Infinity, max: -1.5, name: 'ACCUMULATE', short: 'ACC', color: '#00d97e' },
+      und:  { min: -1.5, max: -0.5, name: 'UNDERVALUED', short: 'UND', color: '#84cc16' },
+      fair: { min: -0.5, max: 0.5, name: 'FAIR VALUE', short: 'FAIR', color: '#eab308' },
+      over: { min: 0.5, max: 1.5, name: 'ELEVATED', short: 'ELEV', color: '#f97316' },
+      dist: { min: 1.5, max: Infinity, name: 'OVERHEATED', short: 'HOT', color: '#ef4444' }
     };
 
-    // State
-    let state = {
-      prices: [],
-      metrics: {},
-      rawValues: {},
-      zScores: {},
-      composite: null,
-      apiStatus: {}
-    };
+    let state = { prices: [], metricHistory: {}, zScoreHistory: {}, zScores: {}, rawValues: {}, composite: null, compositeHistory: [], apiStatus: {}, endpointsLoaded: 0 };
 
-    // ============================================
-    // API Functions - Direct calls (no proxy)
-    // ============================================
     async function fetchEndpoint(endpoint, label) {
       const url = `${CONFIG.API_BASE}${endpoint}?token=${CONFIG.API_TOKEN}`;
-      console.log(`[${label}] Fetching: ${url}`);
-      
       try {
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: { 
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        console.log(`✓ [${label}] Success:`, Array.isArray(data) ? `${data.length} items` : typeof data);
+        state.endpointsLoaded++;
+        document.getElementById('loadingText').textContent = `Carregando ${label}...`;
+        document.getElementById('loadingProgress').textContent = `${state.endpointsLoaded} / 10 endpoints`;
         return { success: true, data };
-        
       } catch (error) {
-        console.error(`✗ [${label}] Error:`, error.message);
+        state.endpointsLoaded++;
         return { success: false, error: error.message };
       }
     }
 
     async function fetchAllData() {
-      document.getElementById('loadingText').textContent = 'Buscando preço BTC...';
+      state.endpointsLoaded = 0;
       
-      // Check if running locally (file://)
-      if (window.location.protocol === 'file:') {
-        showInfo('Este dashboard precisa ser hospedado em um servidor (ex: GitHub Pages) para acessar a API.');
-      }
-      
-      // Fetch BTC price
       const priceResult = await fetchEndpoint('/v1/btc-price', 'BTC Price');
-      state.apiStatus['/v1/btc-price'] = priceResult.success;
+      state.apiStatus['price'] = priceResult.success;
+      if (priceResult.success) state.prices = normalizeData(priceResult.data, 'btcPrice');
       
-      if (priceResult.success && priceResult.data) {
-        state.prices = normalizeData(priceResult.data, 'btcPrice');
-      }
-      
-      // Fetch all metrics
       for (const [key, metric] of Object.entries(METRICS)) {
-        document.getElementById('loadingText').textContent = `Buscando ${metric.shortName}...`;
-        
-        const result = await fetchEndpoint(metric.endpoint, metric.shortName);
-        state.apiStatus[metric.endpoint] = result.success;
-        
-        if (result.success && result.data) {
-          state.metrics[key] = normalizeData(result.data, metric.field);
-          
-          if (state.metrics[key].length > 0) {
-            const lastItem = state.metrics[key][state.metrics[key].length - 1];
-            state.rawValues[key] = lastItem?.value;
-          }
-        }
+        const result = await fetchEndpoint(metric.endpoint, metric.name);
+        state.apiStatus[key] = result.success;
+        if (result.success) state.metricHistory[key] = normalizeData(result.data, metric.field);
       }
       
       calculateAllZScores();
+      calculateCompositeHistory();
       updateUI();
     }
 
     function normalizeData(data, fieldHint) {
-      if (!data) return [];
-      
-      // Single object
-      if (!Array.isArray(data) && typeof data === 'object') {
-        for (const [k, v] of Object.entries(data)) {
-          if (typeof v === 'number' || (typeof v === 'string' && !isNaN(parseFloat(v)))) {
-            return [{ date: new Date().toISOString(), value: parseFloat(v) }];
+      if (!data || !Array.isArray(data)) return [];
+      return data.map(item => {
+        const date = item.d || item.date || item.t;
+        let value = item[fieldHint];
+        if (typeof value === 'string') value = parseFloat(value);
+        if (value === undefined || value === null) {
+          for (const [k, v] of Object.entries(item)) {
+            if (k !== 'd' && k !== 'unixTs') { const num = parseFloat(v); if (!isNaN(num)) { value = num; break; } }
           }
         }
-        return [];
-      }
-      
-      // Array
-      if (Array.isArray(data)) {
-        return data.map(item => {
-          if (typeof item === 'number') {
-            return { date: new Date().toISOString(), value: item };
-          }
-          
-          // Date field - BGeometrics uses 'd'
-          const date = item.d || item.date || item.t;
-          
-          // Value field - try hint first, then common names
-          let value = item[fieldHint];
-          
-          if (value === undefined) {
-            const fields = [
-              'btcPrice', 'mvrvZscore', 'nupl', 'sopr', 'mayerMultiple',
-              'ssrStablecoin', 'supplyProfit', 'fearGreed', 'puellMultiple',
-              'value', 'price', 'close'
-            ];
-            for (const f of fields) {
-              if (item[f] !== undefined) {
-                value = item[f];
-                break;
-              }
-            }
-          }
-          
-          // Fallback: first numeric value
-          if (value === undefined) {
-            for (const [k, v] of Object.entries(item)) {
-              if (k !== 'd' && k !== 'unixTs') {
-                const num = parseFloat(v);
-                if (!isNaN(num)) {
-                  value = num;
-                  break;
-                }
-              }
-            }
-          }
-          
-          const numValue = parseFloat(value);
-          return { date, value: isNaN(numValue) ? null : numValue };
-        }).filter(item => item.value !== null);
-      }
-      
-      return [];
+        const numValue = parseFloat(value);
+        return { date, value: isNaN(numValue) ? null : numValue };
+      }).filter(item => item.value !== null && item.date).sort((a, b) => new Date(a.date) - new Date(b.date));
     }
 
-    function showInfo(message) {
-      const banner = document.getElementById('infoBanner');
-      document.getElementById('infoText').textContent = message;
-      banner.classList.add('visible');
-    }
-
-    // ============================================
-    // Z-Score Calculations
-    // ============================================
-    function calculateRollingZScore(values, windowSize = 365) {
-      if (!values || values.length < 30) return null;
-      
-      const slice = values.slice(-Math.min(windowSize, values.length));
-      const nums = slice.map(v => v.value).filter(v => typeof v === 'number' && !isNaN(v));
-      
-      if (nums.length < 30) return null;
-      
+    function calculateRollingZScore(values, index) {
+      const start = Math.max(0, index - CONFIG.ROLLING_WINDOW + 1);
+      const window = values.slice(start, index + 1);
+      if (window.length < CONFIG.MIN_DATA_POINTS) return null;
+      const nums = window.filter(v => typeof v === 'number' && !isNaN(v) && isFinite(v));
+      if (nums.length < CONFIG.MIN_DATA_POINTS) return null;
       const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
       const variance = nums.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / nums.length;
       const std = Math.sqrt(variance);
-      
-      if (std === 0) return 0;
-      return (nums[nums.length - 1] - mean) / std;
-    }
-
-    function calculateFallbackZScore(value, mean, std) {
-      if (typeof value !== 'number' || isNaN(value)) return null;
-      if (!std || std === 0) return 0;
-      return (value - mean) / std;
+      if (std === 0 || !isFinite(std)) return 0;
+      return Math.max(-5, Math.min(5, (values[index] - mean) / std));
     }
 
     function calculateAllZScores() {
-      state.zScores = {};
+      state.zScores = {}; state.zScoreHistory = {}; state.rawValues = {};
       
       for (const [key, metric] of Object.entries(METRICS)) {
-        const data = state.metrics[key];
-        
-        if (!data || data.length === 0) {
-          state.zScores[key] = null;
-          continue;
-        }
+        const history = state.metricHistory[key] || [];
+        if (history.length === 0) continue;
+        state.rawValues[key] = history[history.length - 1]?.value;
         
         if (metric.isPreZScore) {
-          const latest = data[data.length - 1];
-          state.zScores[key] = typeof latest?.value === 'number' && !isNaN(latest.value) ? latest.value : null;
+          state.zScores[key] = history[history.length - 1]?.value;
+          state.zScoreHistory[key] = history.map(d => ({ date: d.date, value: d.value }));
         } else {
-          const rolling = calculateRollingZScore(data);
-          if (rolling !== null) {
-            state.zScores[key] = rolling;
-          } else {
-            const latest = data[data.length - 1]?.value;
-            state.zScores[key] = calculateFallbackZScore(latest, metric.mean, metric.std);
+          const values = history.map(d => d.value);
+          const zHistory = [];
+          for (let i = 0; i < history.length; i++) {
+            const z = calculateRollingZScore(values, i);
+            if (z !== null) zHistory.push({ date: history[i].date, value: z });
           }
+          state.zScoreHistory[key] = zHistory;
+          state.zScores[key] = zHistory.length > 0 ? zHistory[zHistory.length - 1].value : null;
         }
       }
       
-      const validScores = Object.values(state.zScores)
-        .filter(z => z !== null && typeof z === 'number' && !isNaN(z));
+      let count = 0, sum = 0;
+      for (const z of Object.values(state.zScores)) {
+        if (z !== null && !isNaN(z) && isFinite(z)) { sum += z; count++; }
+      }
+      state.composite = count > 0 ? sum / count : 0;
+    }
+
+    function calculateCompositeHistory() {
+      const allDates = new Set();
+      for (const history of Object.values(state.zScoreHistory)) {
+        if (history) history.forEach(d => allDates.add(d.date));
+      }
+      const sortedDates = Array.from(allDates).sort((a, b) => new Date(a) - new Date(b));
       
-      state.composite = validScores.length > 0 
-        ? validScores.reduce((a, b) => a + b, 0) / validScores.length 
-        : 0;
+      state.compositeHistory = [];
+      for (const date of sortedDates) {
+        let count = 0, sum = 0;
+        for (const history of Object.values(state.zScoreHistory)) {
+          if (history) {
+            const item = history.find(d => d.date === date);
+            if (item && typeof item.value === 'number' && !isNaN(item.value)) { sum += item.value; count++; }
+          }
+        }
+        if (count >= 3) state.compositeHistory.push({ date, value: sum / count });
+      }
     }
 
     function getZone(z) {
-      if (z === null || typeof z !== 'number' || isNaN(z)) {
-        return { key: 'fair', ...ZONES.fair };
-      }
-      for (const [key, zone] of Object.entries(ZONES)) {
-        if (z > zone.min && z <= zone.max) return { key, ...zone };
-      }
-      return { key: 'fair', ...ZONES.fair };
+      if (z === null || isNaN(z)) return { key: 'fair', ...ZONES.fair };
+      if (z <= -1.5) return { key: 'acc', ...ZONES.acc };
+      if (z <= -0.5) return { key: 'und', ...ZONES.und };
+      if (z <= 0.5) return { key: 'fair', ...ZONES.fair };
+      if (z <= 1.5) return { key: 'over', ...ZONES.over };
+      return { key: 'dist', ...ZONES.dist };
     }
+    
+    function getZoneColor(z) { return getZone(z).color; }
 
-    // ============================================
-    // UI Updates
-    // ============================================
     function updateUI() {
       document.getElementById('loadingOverlay').classList.add('hidden');
       
       const now = new Date();
-      document.getElementById('timestamp').textContent = now.toLocaleString('en-GB', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
-      }).toUpperCase();
+      document.getElementById('statusDate').textContent = now.toLocaleString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).toUpperCase();
       
       const successCount = Object.values(state.apiStatus).filter(Boolean).length;
       const totalCount = Object.keys(state.apiStatus).length;
+      document.getElementById('statusEndpoints').textContent = `● ${successCount}/${totalCount} ENDPOINTS`;
+      document.getElementById('statusEndpoints').style.color = successCount === totalCount ? '#00d97e' : '#f97316';
       
-      const statusEl = document.getElementById('liveStatus');
-      const dotEl = document.getElementById('liveDot');
-      
-      statusEl.textContent = `${successCount}/${totalCount} ENDPOINTS`;
-      
-      if (successCount === totalCount && successCount > 0) {
-        dotEl.className = 'live-dot ok';
-        statusEl.style.color = '#00d97e';
-      } else if (successCount > 0) {
-        dotEl.className = 'live-dot partial';
-        statusEl.style.color = '#eab308';
-      } else {
-        dotEl.className = 'live-dot error';
-        statusEl.style.color = '#ef4444';
+      if (state.prices.length > 0) {
+        const lastDate = state.prices[state.prices.length - 1].date;
+        document.getElementById('statusLastData').textContent = `LAST DATA: ${formatDate(lastDate)}`;
       }
       
-      document.getElementById('metricsOk').textContent = `${successCount}`;
-      
       const zone = getZone(state.composite);
-      document.getElementById('zscoreValue').textContent = (state.composite ?? 0).toFixed(2);
-      document.getElementById('zscoreValue').style.color = zone.color;
-      document.getElementById('zscoreZone').textContent = zone.name;
-      document.getElementById('zscoreZone').style.background = zone.color;
-      document.getElementById('zscoreZone').style.color = '#000';
       
-      document.getElementById('signalZone').textContent = zone.name;
-      document.getElementById('signalZone').style.color = zone.color;
-      document.getElementById('signalThreshold').textContent = 
-        `${zone.min === -Infinity ? '-∞' : zone.min.toFixed(1)} → ${zone.max === Infinity ? '+∞' : zone.max.toFixed(1)}`;
+      document.getElementById('mainZScore').textContent = state.composite?.toFixed(2) || '--';
+      document.getElementById('mainZScore').style.color = zone.color;
+      
+      const badge = document.getElementById('mainZoneBadge');
+      badge.textContent = zone.name;
+      badge.style.background = zone.color + '25';
+      badge.style.color = zone.color;
+      
+      if (state.prices.length > 0) {
+        const latest = state.prices[state.prices.length - 1];
+        document.getElementById('btcPrice').textContent = `$${Math.round(latest.value).toLocaleString()}`;
+        document.getElementById('priceDate').textContent = new Date(latest.date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+        
+        if (state.prices.length > 7) {
+          const weekAgo = state.prices[state.prices.length - 8];
+          const change = ((latest.value - weekAgo.value) / weekAgo.value * 100);
+          document.getElementById('priceChange').textContent = `${change >= 0 ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%`;
+          document.getElementById('priceChange').style.color = change >= 0 ? '#00d97e' : '#ef4444';
+          document.getElementById('statPriceDeltaWeek').textContent = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
+          document.getElementById('statPriceDeltaWeek').style.color = change >= 0 ? '#00d97e' : '#ef4444';
+        }
+      }
+      
+      document.getElementById('statSignalZone').textContent = zone.name;
+      document.getElementById('statSignalZone').style.color = zone.color;
+      document.getElementById('statZoneThreshold').textContent = `${zone.min === -Infinity ? '< -1.5' : zone.min.toFixed(1)} → ${zone.max === Infinity ? '> +1.5' : zone.max.toFixed(1)}`;
+      
+      document.getElementById('statMetricsOk').textContent = Object.values(state.zScores).filter(z => z !== null).length;
+      
+      let weakest = { key: null, z: Infinity };
+      for (const [key, z] of Object.entries(state.zScores)) {
+        if (z !== null && !isNaN(z) && z < weakest.z) weakest = { key, z };
+      }
+      if (weakest.key) {
+        document.getElementById('statWeakestMetric').textContent = METRICS[weakest.key]?.name.split(' ')[0] || '--';
+        document.getElementById('statWeakestMetric').style.color = getZone(weakest.z).color;
+        document.getElementById('statWeakestZ').textContent = `Z = ${weakest.z.toFixed(2)}`;
+      }
+      
+      if (state.compositeHistory.length > 0) {
+        const first = new Date(state.compositeHistory[0].date);
+        const last = new Date(state.compositeHistory[state.compositeHistory.length - 1].date);
+        const days = Math.round((last - first) / (24 * 60 * 60 * 1000));
+        document.getElementById('statDataRange').textContent = `${days} days`;
+        document.getElementById('statDataDates').textContent = `${formatDateShort(first)} → ${formatDateShort(last)}`;
+      }
+      
+      const markerPos = ((state.composite || 0) + 3) / 6 * 100;
+      document.getElementById('convictionMarker').style.left = `${Math.max(0, Math.min(100, markerPos))}%`;
       
       document.querySelectorAll('.conviction-item').forEach(item => {
         item.classList.toggle('active', item.dataset.zone === zone.key);
       });
       
-      drawGauge(state.composite);
-      
-      if (state.prices.length > 0) {
-        const latest = state.prices[state.prices.length - 1];
-        const price = latest?.value;
-        
-        if (typeof price === 'number' && !isNaN(price)) {
-          document.getElementById('btcPrice').textContent = `$${Math.round(price).toLocaleString()}`;
-          
-          if (latest.date) {
-            const d = new Date(latest.date);
-            if (!isNaN(d.getTime())) {
-              const dateStr = d.toLocaleDateString('en-GB', { 
-                day: '2-digit', month: 'short', year: 'numeric' 
-              }).toUpperCase();
-              document.getElementById('priceDate').textContent = dateStr;
-              document.getElementById('lastData').textContent = dateStr;
-            }
-          }
-          
-          if (state.prices.length > 7) {
-            const weekAgo = state.prices[state.prices.length - 8]?.value;
-            if (typeof weekAgo === 'number' && !isNaN(weekAgo)) {
-              const change = ((price - weekAgo) / weekAgo * 100);
-              const changeEl = document.getElementById('priceChange');
-              changeEl.textContent = `${change >= 0 ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%`;
-              changeEl.style.color = change >= 0 ? '#00d97e' : '#ef4444';
-              
-              document.getElementById('priceDeltaWeek').textContent = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
-              document.getElementById('priceDeltaWeek').style.color = change >= 0 ? '#00d97e' : '#ef4444';
-            }
-          }
-        }
-      }
-      
-      const validEntries = Object.entries(state.zScores)
-        .filter(([_, z]) => z !== null && typeof z === 'number' && !isNaN(z));
-      
-      if (validEntries.length > 0) {
-        const sorted = [...validEntries].sort((a, b) => a[1] - b[1]);
-        const [weakestKey, weakestZ] = sorted[0];
-        const weakestZone = getZone(weakestZ);
-        
-        document.getElementById('weakestMetric').textContent = METRICS[weakestKey]?.shortName || weakestKey;
-        document.getElementById('weakestMetric').style.color = weakestZone.color;
-        document.getElementById('weakestValue').textContent = `Z = ${weakestZ.toFixed(2)}`;
-      }
-      
-      if (state.prices.length > 1) {
-        const first = state.prices[0];
-        const last = state.prices[state.prices.length - 1];
-        if (first?.date && last?.date) {
-          const d1 = new Date(first.date);
-          const d2 = new Date(last.date);
-          if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
-            document.getElementById('dataRangeDates').textContent = 
-              `${d1.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })} → ${d2.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })}`;
-          }
-        }
-      }
-      
-      renderApiStatus();
+      renderGauge();
       renderMetricCards();
-      renderCharts();
+      renderPriceChart();
+      renderOscillatorChart();
+      renderOverlayChart();
     }
 
-    function renderApiStatus() {
-      const container = document.getElementById('apiStatusList');
-      const endpoints = ['/v1/btc-price', ...Object.values(METRICS).map(m => m.endpoint)];
+    function formatDate(d) { return new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase(); }
+    function formatDateShort(d) { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }); }
+
+    function renderGauge() {
+      const canvas = document.getElementById('gaugeCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = 200, height = 110;
+      canvas.width = width * 2; canvas.height = height * 2;
+      canvas.style.width = width + 'px'; canvas.style.height = height + 'px';
+      ctx.scale(2, 2);
       
-      container.innerHTML = endpoints.map(ep => {
-        const status = state.apiStatus[ep];
-        const cls = status === undefined ? 'loading' : (status ? 'ok' : 'error');
-        return `
-          <div class="api-item">
-            <span class="api-endpoint">${ep}</span>
-            <span class="api-status-dot ${cls}"></span>
-          </div>
-        `;
-      }).join('');
+      const centerX = width / 2, centerY = height - 10, radius = 80;
+      const startAngle = Math.PI;
+      
+      const zones = [
+        { start: 0, end: 0.25, color: '#00d97e' },
+        { start: 0.25, end: 0.417, color: '#84cc16' },
+        { start: 0.417, end: 0.583, color: '#eab308' },
+        { start: 0.583, end: 0.75, color: '#f97316' },
+        { start: 0.75, end: 1, color: '#ef4444' }
+      ];
+      
+      ctx.lineWidth = 18; ctx.lineCap = 'butt';
+      zones.forEach(zone => {
+        ctx.beginPath();
+        ctx.strokeStyle = zone.color;
+        ctx.arc(centerX, centerY, radius, startAngle + (zone.start * Math.PI), startAngle + (zone.end * Math.PI));
+        ctx.stroke();
+      });
+      
+      const z = Math.max(-3, Math.min(3, state.composite || 0));
+      const normalizedZ = (z + 3) / 6;
+      const needleAngle = startAngle + (normalizedZ * Math.PI);
+      const needleLength = radius - 20;
+      
+      ctx.beginPath();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX + needleLength * Math.cos(needleAngle), centerY + needleLength * Math.sin(needleAngle));
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.fillStyle = '#ffffff';
+      ctx.arc(centerX, centerY, 6, 0, 2 * Math.PI);
+      ctx.fill();
     }
 
     function renderMetricCards() {
       const container = document.getElementById('metricsGrid');
-      
       container.innerHTML = Object.entries(METRICS).map(([key, metric]) => {
         const z = state.zScores[key];
         const raw = state.rawValues[key];
         const zone = getZone(z);
-        const hasData = z !== null && typeof z === 'number' && !isNaN(z);
-        
         let rawDisplay = '--';
-        if (typeof raw === 'number' && !isNaN(raw)) {
-          rawDisplay = raw < 1 ? raw.toFixed(4) : raw < 100 ? raw.toFixed(2) : raw.toFixed(0);
+        if (typeof raw === 'number') {
+          if (Math.abs(raw) < 0.01) rawDisplay = raw.toFixed(4);
+          else if (Math.abs(raw) < 1) rawDisplay = raw.toFixed(3);
+          else if (Math.abs(raw) < 100) rawDisplay = raw.toFixed(2);
+          else rawDisplay = Math.round(raw).toLocaleString();
         }
-        
-        return `
-          <div class="metric-card zone-${zone.key}">
-            <div class="metric-name">${metric.shortName}</div>
-            <div class="metric-value" style="color: ${zone.color}">${hasData ? z.toFixed(2) : '--'}</div>
-            <div class="metric-zone" style="color: ${zone.color}">${hasData ? zone.name.substring(0, 4) : 'N/A'}</div>
-            <div class="metric-raw">raw: ${rawDisplay}</div>
-            <div class="metric-sparkline"><canvas id="spark-${key}" width="100" height="30"></canvas></div>
-          </div>
-        `;
+        return `<div class="metric-card"><div class="metric-name">${metric.name}</div><div class="metric-value" style="color: ${zone.color}">${z !== null ? z.toFixed(2) : '--'}</div><div class="metric-zone" style="color: ${zone.color}">${zone.short}</div><div class="metric-raw">raw: ${rawDisplay}</div><canvas class="metric-sparkline" id="spark_${key}" width="100" height="20"></canvas></div>`;
       }).join('');
       
-      Object.keys(METRICS).forEach(drawSparkline);
-    }
-
-    // ============================================
-    // Charts
-    // ============================================
-    function drawGauge(value) {
-      const canvas = document.getElementById('gaugeCanvas');
-      if (!canvas) return;
-      
-      const ctx = canvas.getContext('2d');
-      const centerX = 100, centerY = 110, radius = 80;
-      
-      ctx.clearRect(0, 0, 200, 120);
-      
-      const segments = [
-        { start: Math.PI, end: Math.PI * 1.2, color: '#00d97e' },
-        { start: Math.PI * 1.2, end: Math.PI * 1.4, color: '#84cc16' },
-        { start: Math.PI * 1.4, end: Math.PI * 1.6, color: '#eab308' },
-        { start: Math.PI * 1.6, end: Math.PI * 1.8, color: '#f97316' },
-        { start: Math.PI * 1.8, end: Math.PI * 2, color: '#ef4444' }
-      ];
-      
-      segments.forEach(seg => {
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, seg.start, seg.end);
-        ctx.strokeStyle = seg.color;
-        ctx.lineWidth = 12;
-        ctx.lineCap = 'round';
-        ctx.stroke();
+      requestAnimationFrame(() => {
+        for (const [key, metric] of Object.entries(METRICS)) renderSparkline(key, metric.color);
       });
-      
-      const safeValue = typeof value === 'number' && !isNaN(value) ? value : 0;
-      const clamped = Math.max(-3, Math.min(3, safeValue));
-      const angle = Math.PI + ((clamped + 3) / 6) * Math.PI;
-      
-      ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
-      ctx.lineTo(centerX + Math.cos(angle) * 65, centerY + Math.sin(angle) * 65);
-      ctx.strokeStyle = '#f97316';
-      ctx.lineWidth = 3;
-      ctx.lineCap = 'round';
-      ctx.stroke();
-      
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
-      ctx.fillStyle = '#f97316';
-      ctx.fill();
     }
 
-    function drawSparkline(key) {
-      const canvas = document.getElementById(`spark-${key}`);
+    function renderSparkline(key, color) {
+      const canvas = document.getElementById(`spark_${key}`);
       if (!canvas) return;
-      
+      const history = state.zScoreHistory[key] || [];
+      if (history.length < 2) return;
       const ctx = canvas.getContext('2d');
-      const data = state.metrics[key];
-      
-      ctx.clearRect(0, 0, 100, 30);
-      
-      if (!data || data.length < 2) {
-        ctx.fillStyle = '#5a5c63';
-        ctx.font = '9px JetBrains Mono';
-        ctx.fillText('no data', 25, 18);
-        return;
-      }
-      
-      const values = data.slice(-30).map(d => d.value).filter(v => typeof v === 'number' && !isNaN(v));
+      const values = history.slice(-60).map(d => d.value);
       if (values.length < 2) return;
-      
-      const min = Math.min(...values);
-      const max = Math.max(...values);
-      const range = max - min || 1;
-      
-      ctx.beginPath();
-      ctx.strokeStyle = METRICS[key].color;
-      ctx.lineWidth = 1.5;
-      
+      const min = Math.min(...values), max = Math.max(...values), range = max - min || 1;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.5;
       values.forEach((v, i) => {
-        const x = 2 + (i / (values.length - 1)) * 96;
-        const y = 28 - ((v - min) / range) * 24;
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        const x = (i / (values.length - 1)) * canvas.width;
+        const y = canvas.height - ((v - min) / range) * canvas.height;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       });
-      
       ctx.stroke();
     }
 
-    let priceChart, oscillatorChart;
+    let priceChart, oscillatorChart, overlayChart;
 
-    function renderCharts() {
-      const priceCtx = document.getElementById('priceChart')?.getContext('2d');
+    function renderPriceChart() {
+      const ctx = document.getElementById('priceChart')?.getContext('2d');
+      if (!ctx || state.prices.length === 0) return;
       
-      if (priceCtx && state.prices.length > 0) {
-        const validPrices = state.prices.filter(p => 
-          typeof p.value === 'number' && !isNaN(p.value) && p.date
-        );
-        
-        if (validPrices.length > 0) {
-          const labels = validPrices.map(p => {
-            const d = new Date(p.date);
-            return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-          });
-          const values = validPrices.map(p => p.value);
-          
-          const zone = getZone(state.composite);
-          
-          if (priceChart) priceChart.destroy();
-          priceChart = new Chart(priceCtx, {
-            type: 'line',
-            data: {
-              labels,
-              datasets: [{
-                data: values,
-                borderColor: zone.color,
-                backgroundColor: zone.color + '33',
-                fill: true,
-                tension: 0.1,
-                pointRadius: 0,
-                borderWidth: 2
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: {
-                x: { 
-                  grid: { color: '#252830' }, 
-                  ticks: { color: '#5a5c63', maxTicksLimit: 12, font: { size: 10 } } 
-                },
-                y: { 
-                  type: 'logarithmic',
-                  grid: { color: '#252830' }, 
-                  ticks: { 
-                    color: '#5a5c63', 
-                    font: { size: 10 }, 
-                    callback: v => '$' + v.toLocaleString() 
-                  }
-                }
-              }
-            }
-          });
-        }
-      }
+      const priceData = state.prices.slice(-365);
+      const compositeMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
+      const labels = priceData.map(p => p.date);
+      const priceValues = priceData.map(p => p.value);
+      const zValues = priceData.map(p => compositeMap.get(p.date) || null);
       
-      const oscCtx = document.getElementById('oscillatorChart')?.getContext('2d');
-      if (oscCtx) {
-        const days = 90;
-        const baseZ = state.composite || 0;
-        
-        const synthData = [];
-        for (let i = 0; i < days; i++) {
-          const progress = i / days;
-          const noise = (Math.random() - 0.5) * 0.3;
-          const trend = baseZ + (progress - 0.5) * 0.4;
-          synthData.push(trend + noise);
-        }
-        
-        const labels = Array(days).fill('').map((_, i) => {
-          const d = new Date();
-          d.setDate(d.getDate() - (days - i));
-          return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-        });
-        
-        if (oscillatorChart) oscillatorChart.destroy();
-        oscillatorChart = new Chart(oscCtx, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [{
-              data: synthData,
-              borderColor: '#a855f7',
-              backgroundColor: 'rgba(168, 85, 247, 0.1)',
-              fill: true,
-              tension: 0.3,
-              pointRadius: 0,
-              borderWidth: 2
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { grid: { color: '#252830' }, ticks: { color: '#5a5c63', maxTicksLimit: 8, font: { size: 10 } } },
-              y: { grid: { color: '#252830' }, ticks: { color: '#5a5c63', font: { size: 10 } }, min: -3, max: 3 }
-            }
+      if (priceChart) priceChart.destroy();
+      
+      priceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'BTC Price', data: priceValues, borderColor: 'rgba(255,255,255,0.6)', borderWidth: 1.5, borderDash: [4, 2], pointRadius: 0, tension: 0.1, yAxisID: 'y', fill: false },
+            { label: 'Z-Composite', data: zValues, borderWidth: 2.5, pointRadius: 0, tension: 0.2, yAxisID: 'y1', fill: false, segment: { borderColor: ctx => getZoneColor(ctx.p1.parsed.y) } }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: 'rgba(37,37,40,0.8)' }, ticks: { color: '#606068', maxTicksLimit: 12, font: { size: 9 }, callback: (val, idx) => idx % Math.ceil(labels.length / 12) === 0 ? formatDateShort(labels[idx]) : '' } },
+            y: { type: 'logarithmic', position: 'left', grid: { color: 'rgba(37,37,40,0.8)' }, ticks: { color: '#606068', font: { size: 9 }, callback: v => v >= 1000 ? `$${(v/1000).toFixed(0)}k` : `$${v}` } },
+            y1: { position: 'right', min: -4, max: 4, grid: { display: false }, ticks: { color: '#606068', font: { size: 9 }, stepSize: 1 } }
           }
-        });
-      }
+        }
+      });
     }
 
-    // ============================================
-    // Initialize
-    // ============================================
-    async function init() {
-      renderApiStatus();
+    function renderOscillatorChart() {
+      const ctx = document.getElementById('oscillatorChart')?.getContext('2d');
+      if (!ctx || state.compositeHistory.length === 0) return;
       
-      try {
-        await fetchAllData();
-      } catch (error) {
-        console.error('Init error:', error);
-        document.getElementById('errorBanner').classList.add('visible');
-        document.getElementById('errorText').textContent = `Erro: ${error.message}`;
-        document.getElementById('loadingOverlay').classList.add('hidden');
+      const data = state.compositeHistory.slice(-365);
+      const labels = data.map(d => d.date);
+      const values = data.map(d => d.value);
+      
+      if (oscillatorChart) oscillatorChart.destroy();
+      
+      oscillatorChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ data: values, borderWidth: 2, pointRadius: 0, tension: 0.2, fill: false, segment: { borderColor: ctx => getZoneColor(ctx.p1.parsed.y) } }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            annotation: { annotations: {
+              zero: { type: 'line', yMin: 0, yMax: 0, borderColor: '#35353a', borderWidth: 1 },
+              buy: { type: 'line', yMin: -1.5, yMax: -1.5, borderColor: '#00d97e', borderWidth: 1.5, borderDash: [5, 3] },
+              sell: { type: 'line', yMin: 1.5, yMax: 1.5, borderColor: '#ef4444', borderWidth: 1.5, borderDash: [5, 3] }
+            }}
+          },
+          scales: {
+            x: { grid: { color: 'rgba(37,37,40,0.8)' }, ticks: { color: '#606068', maxTicksLimit: 10, font: { size: 8 }, callback: (val, idx) => idx % Math.ceil(labels.length / 10) === 0 ? formatDateShort(labels[idx]) : '' } },
+            y: { min: -4, max: 4, grid: { color: 'rgba(37,37,40,0.8)' }, ticks: { color: '#606068', font: { size: 8 } } }
+          }
+        }
+      });
+    }
+
+    function renderOverlayChart() {
+      const ctx = document.getElementById('overlayChart')?.getContext('2d');
+      if (!ctx) return;
+      
+      // Só métricas com showInOverlay = true (exclui RSI)
+      const overlayMetrics = Object.entries(METRICS).filter(([k, m]) => m.showInOverlay);
+      
+      let allDates = new Set();
+      for (const [key] of overlayMetrics) {
+        const history = state.zScoreHistory[key];
+        if (history) history.slice(-365).forEach(d => allDates.add(d.date));
       }
+      const dates = Array.from(allDates).sort((a, b) => new Date(a) - new Date(b)).slice(-365);
+      if (dates.length === 0) return;
       
+      const datasets = overlayMetrics.map(([key, metric]) => {
+        const history = state.zScoreHistory[key] || [];
+        const historyMap = new Map(history.map(d => [d.date, d.value]));
+        return { 
+          label: metric.name.split(' ')[0], 
+          data: dates.map(d => historyMap.get(d) ?? null), 
+          borderColor: metric.color, 
+          borderWidth: 1, 
+          pointRadius: 0, 
+          tension: 0.3, 
+          spanGaps: true, 
+          fill: false 
+        };
+      });
+      
+      if (overlayChart) overlayChart.destroy();
+      
+      overlayChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: dates, datasets },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: { 
+            legend: { 
+              display: true, 
+              position: 'top', 
+              labels: { 
+                color: '#a0a0ab', 
+                font: { size: 8 }, 
+                boxWidth: 12, 
+                boxHeight: 2,
+                padding: 10, 
+                usePointStyle: false
+              } 
+            } 
+          },
+          scales: {
+            x: { grid: { color: 'rgba(37,37,40,0.5)' }, ticks: { color: '#606068', maxTicksLimit: 10, font: { size: 8 }, callback: (val, idx) => idx % Math.ceil(dates.length / 10) === 0 ? formatDateShort(dates[idx]) : '' } },
+            y: { min: -4, max: 4, grid: { color: 'rgba(37,37,40,0.5)' }, ticks: { color: '#606068', font: { size: 8 } } }
+          }
+        }
+      });
+    }
+
+    async function init() {
+      try { await fetchAllData(); } catch (error) { console.error('Init error:', error); document.getElementById('loadingOverlay').classList.add('hidden'); }
       setInterval(fetchAllData, CONFIG.REFRESH_INTERVAL);
     }
 
