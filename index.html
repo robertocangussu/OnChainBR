@@ -74,6 +74,23 @@
     .loading-progress { margin-top: 8px; font-size: 10px; color: var(--text-muted); }
     .footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 9px; color: var(--text-muted); }
     .footer a { color: var(--accent-blue); text-decoration: none; margin: 0 4px; }
+    
+    /* Heatmap Styles */
+    .heatmap-container { width: 100%; overflow-x: auto; }
+    .heatmap-table { width: 100%; border-collapse: collapse; font-size: 8px; }
+    .heatmap-table th { padding: 6px 4px; text-align: left; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; position: sticky; left: 0; background: var(--bg-card); z-index: 1; }
+    .heatmap-table td { padding: 0; height: 24px; min-width: 3px; }
+    .heatmap-cell { width: 100%; height: 100%; transition: opacity 0.15s; }
+    .heatmap-cell:hover { opacity: 0.7; }
+    .heatmap-row { display: flex; align-items: center; }
+    .heatmap-label { width: 90px; flex-shrink: 0; padding: 4px 8px 4px 0; font-size: 9px; color: var(--text-secondary); text-align: right; }
+    .heatmap-cells { display: flex; flex: 1; height: 22px; border-radius: 3px; overflow: hidden; }
+    .heatmap-legend { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+    .heatmap-legend-item { display: flex; align-items: center; gap: 4px; font-size: 8px; color: var(--text-muted); }
+    .heatmap-legend-color { width: 12px; height: 12px; border-radius: 2px; }
+    .heatmap-dates { display: flex; justify-content: space-between; padding: 4px 0 0 98px; font-size: 8px; color: var(--text-muted); }
+    .heatmap-tooltip { position: absolute; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; font-size: 9px; pointer-events: none; z-index: 100; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    
     @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } .top-stats { grid-template-columns: 1fr; } .stats-row { grid-template-columns: repeat(3, 1fr); } .sidebar { max-height: none; } }
     @media (max-width: 600px) { .stats-row { grid-template-columns: repeat(2, 1fr); } .metrics-grid { grid-template-columns: 1fr; } }
   </style>
@@ -137,8 +154,8 @@
           <div class="chart-container-sm"><canvas id="oscillatorChart"></canvas></div>
         </div>
         <div class="chart-section">
-          <div class="chart-header"><div class="chart-title">Individual Z-Scores — All Metrics Overlay</div><div class="chart-badges"><span class="badge badge-blue">8 METRICS</span></div></div>
-          <div class="chart-container-sm"><canvas id="overlayChart"></canvas></div>
+          <div class="chart-header"><div class="chart-title">Z-Scores Heatmap — Temporal Evolution by Metric</div><div class="chart-badges"><span class="badge badge-blue">9 METRICS · 365 DAYS</span></div></div>
+          <div class="heatmap-container" id="heatmapContainer"></div>
         </div>
       </div>
       
@@ -614,7 +631,7 @@
       renderMetricCards();
       renderPriceChart();
       renderOscillatorChart();
-      renderOverlayChart();
+      renderHeatmap();
     }
 
     // ========== GAUGE ==========
@@ -733,7 +750,7 @@
     }
 
     // ========== CHARTS ==========
-    let priceChart, oscillatorChart, overlayChart;
+    let priceChart, oscillatorChart;
 
     function renderPriceChart() {
       const ctx = document.getElementById('priceChart')?.getContext('2d');
@@ -858,52 +875,81 @@
       });
     }
 
-    function renderOverlayChart() {
-      const ctx = document.getElementById('overlayChart')?.getContext('2d');
-      if (!ctx) return;
+    function renderHeatmap() {
+      const container = document.getElementById('heatmapContainer');
+      if (!container) return;
       
-      // Only show metrics marked for overlay (excludes RSI)
-      const overlayMetrics = Object.entries(METRICS).filter(([k, m]) => m.showInOverlay);
-      
-      const datasets = overlayMetrics.map(([key, metric]) => {
+      // Get all metrics and their Z-score histories
+      const metricsData = Object.entries(METRICS).map(([key, metric]) => {
         const history = state.zScoreHistory[key] || [];
         const data365 = history.slice(-365);
         return {
-          label: metric.name,
-          data: data365.map(d => ({ x: d.date, y: d.value })),
-          borderColor: metric.color,
-          borderWidth: 1.5,
-          pointRadius: 0,
-          tension: 0.1
+          key,
+          name: metric.name,
+          api: metric.api,
+          data: data365
         };
-      }).filter(ds => ds.data.length > 0);
+      }).filter(m => m.data.length > 0);
       
-      if (overlayChart) overlayChart.destroy();
+      if (metricsData.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;">Loading heatmap data...</div>';
+        return;
+      }
       
-      overlayChart = new Chart(ctx, {
-        type: 'line',
-        data: { datasets },
-        options: {
-          responsive: true, 
-          maintainAspectRatio: false,
-          plugins: { 
-            legend: { 
-              display: true, 
-              position: 'top', 
-              labels: { 
-                boxWidth: 8, 
-                font: { size: 8 }, 
-                color: '#a0a0ab', 
-                padding: 6 
-              } 
-            } 
-          },
-          scales: {
-            x: { type: 'category', display: true, grid: { display: false }, ticks: { display: false } },
-            y: { display: true, min: -3, max: 3, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#606068', font: { size: 9 }, stepSize: 1.5 } }
-          }
-        }
+      // Find common date range (last 365 days with data)
+      const allDates = new Set();
+      metricsData.forEach(m => m.data.forEach(d => allDates.add(d.date)));
+      const sortedDates = Array.from(allDates).sort((a, b) => new Date(a) - new Date(b)).slice(-365);
+      
+      // Sample dates for display (show ~52 weeks = every 7th point)
+      const sampleInterval = Math.max(1, Math.floor(sortedDates.length / 52));
+      
+      // Build HTML
+      let html = '<div style="position:relative;">';
+      
+      // Metric rows
+      metricsData.forEach(metric => {
+        const apiIcon = metric.api === 'bitview' ? '⚡' : '';
+        html += `<div class="heatmap-row">`;
+        html += `<div class="heatmap-label">${apiIcon}${metric.name}</div>`;
+        html += `<div class="heatmap-cells">`;
+        
+        // Create a map for quick lookup
+        const dataMap = new Map(metric.data.map(d => [d.date, d.value]));
+        
+        sortedDates.forEach((date, i) => {
+          const z = dataMap.get(date);
+          const color = z !== undefined ? getZoneColor(z) : 'transparent';
+          const opacity = z !== undefined ? '1' : '0.1';
+          const zDisplay = z !== undefined ? z.toFixed(2) : 'N/A';
+          html += `<div class="heatmap-cell" style="background:${color};opacity:${opacity};" data-date="${date}" data-metric="${metric.name}" data-z="${zDisplay}" title="${formatDateShort(date)}: Z=${zDisplay}"></div>`;
+        });
+        
+        html += `</div></div>`;
       });
+      
+      // Date labels
+      html += `<div class="heatmap-dates">`;
+      const firstDate = sortedDates[0];
+      const midDate = sortedDates[Math.floor(sortedDates.length / 2)];
+      const lastDate = sortedDates[sortedDates.length - 1];
+      html += `<span>${formatDateShort(firstDate)}</span>`;
+      html += `<span>${formatDateShort(midDate)}</span>`;
+      html += `<span>${formatDateShort(lastDate)}</span>`;
+      html += `</div>`;
+      
+      // Legend
+      html += `<div class="heatmap-legend">`;
+      html += `<div class="heatmap-legend-item"><div class="heatmap-legend-color" style="background:#00d97e"></div><span>ACC (≤-1.5)</span></div>`;
+      html += `<div class="heatmap-legend-item"><div class="heatmap-legend-color" style="background:#84cc16"></div><span>UND</span></div>`;
+      html += `<div class="heatmap-legend-item"><div class="heatmap-legend-color" style="background:#eab308"></div><span>FAIR</span></div>`;
+      html += `<div class="heatmap-legend-item"><div class="heatmap-legend-color" style="background:#f97316"></div><span>ELEV</span></div>`;
+      html += `<div class="heatmap-legend-item"><div class="heatmap-legend-color" style="background:#ef4444"></div><span>HOT (≥+1.5)</span></div>`;
+      html += `</div>`;
+      
+      html += '</div>';
+      
+      container.innerHTML = html;
     }
 
     // ========== INIT ==========
