@@ -45,7 +45,7 @@
     .badge { font-size: 8px; padding: 3px 8px; border-radius: 3px; font-weight: 600; }
     .badge-blue { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
     .badge-green { background: rgba(0, 217, 126, 0.15); color: var(--accent-green); }
-    .chart-container { height: 280px; }
+    .chart-container { height: 350px; }
     .chart-container-sm { height: 140px; }
     .sidebar { display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 300px); overflow-y: auto; }
     .sidebar-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
@@ -146,7 +146,7 @@
     <div class="main-grid">
       <div class="main-content">
         <div class="chart-section">
-          <div class="chart-header"><div class="chart-title">BTC/USD — Daily Close · Colored by Z-Composite Zone</div><div class="chart-badges"><span class="badge badge-blue">365 DAYS · LOG SCALE</span></div></div>
+          <div class="chart-header"><div class="chart-title">BTC/USD — Full History · Colored by Z-Composite Zone</div><div class="chart-badges"><span class="badge badge-blue">ALL DATA · LOG SCALE</span></div></div>
           <div class="chart-container"><canvas id="priceChart"></canvas></div>
         </div>
         <div class="chart-section">
@@ -756,12 +756,23 @@
       const ctx = document.getElementById('priceChart')?.getContext('2d');
       if (!ctx || state.prices.length === 0) return;
       
-      const priceData = state.prices.slice(-365);
+      // Use ALL available data (not just 365 days)
+      const priceData = state.prices;
       const compositeMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
       
-      const labels = priceData.map(p => p.date);
-      const priceValues = priceData.map(p => p.value);
-      const zValues = priceData.map(p => compositeMap.get(p.date) || null);
+      // Sample data for performance if too many points (keep ~1000 points max)
+      const maxPoints = 1500;
+      const step = priceData.length > maxPoints ? Math.ceil(priceData.length / maxPoints) : 1;
+      const sampledData = step > 1 ? priceData.filter((_, i) => i % step === 0 || i === priceData.length - 1) : priceData;
+      
+      const labels = sampledData.map(p => p.date);
+      const priceValues = sampledData.map(p => p.value);
+      const zValues = sampledData.map(p => compositeMap.get(p.date) || null);
+      
+      // Calculate years of data
+      const firstDate = new Date(sampledData[0]?.date);
+      const lastDate = new Date(sampledData[sampledData.length - 1]?.date);
+      const yearsOfData = ((lastDate - firstDate) / (365.25 * 24 * 60 * 60 * 1000)).toFixed(1);
       
       if (priceChart) priceChart.destroy();
       
@@ -807,12 +818,16 @@
             }
           },
           scales: {
-            x: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#606068', maxTicksLimit: 8, font: { size: 9 } } },
-            y: { type: 'logarithmic', display: true, position: 'left', grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#606068', font: { size: 9 }, callback: v => '$' + (v/1000).toFixed(0) + 'k' } },
+            x: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#606068', maxTicksLimit: 10, font: { size: 9 } } },
+            y: { type: 'logarithmic', display: true, position: 'left', grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#606068', font: { size: 9 }, callback: v => v >= 1000 ? '$' + (v/1000).toFixed(0) + 'k' : '$' + v } },
             y1: { display: true, position: 'right', min: -3, max: 3, grid: { display: false }, ticks: { color: '#606068', font: { size: 9 } } }
           }
         }
       });
+      
+      // Update badge to show actual years
+      const badge = document.querySelector('.chart-section .badge-blue');
+      if (badge) badge.textContent = `${yearsOfData} YEARS · LOG SCALE`;
     }
 
     function renderOscillatorChart() {
