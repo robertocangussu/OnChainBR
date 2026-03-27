@@ -8,25 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
   <style>
-    :root {
-      --bg-primary: #0a0a0b;
-      --bg-secondary: #111113;
-      --bg-card: #161619;
-      --border: #252528;
-      --text-primary: #e8e8ed;
-      --text-secondary: #a0a0ab;
-      --text-muted: #606068;
-      --accent-green: #00d97e;
-      --accent-lime: #84cc16;
-      --accent-yellow: #eab308;
-      --accent-orange: #f97316;
-      --accent-red: #ef4444;
-      --accent-blue: #3b82f6;
-      --accent-purple: #a855f7;
-      --accent-pink: #ec4899;
-      --accent-cyan: #06b6d4;
-      --accent-teal: #14b8a6;
-    }
+    :root { --bg-primary: #0a0a0b; --bg-secondary: #111113; --bg-card: #161619; --border: #252528; --text-primary: #e8e8ed; --text-secondary: #a0a0ab; --text-muted: #606068; --accent-green: #00d97e; --accent-lime: #84cc16; --accent-yellow: #eab308; --accent-orange: #f97316; --accent-red: #ef4444; --accent-blue: #3b82f6; --accent-purple: #a855f7; --accent-pink: #ec4899; --accent-cyan: #06b6d4; --accent-teal: #14b8a6; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'JetBrains Mono', monospace; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
     .container { max-width: 1400px; margin: 0 auto; padding: 16px 24px; }
@@ -90,8 +72,6 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading-text { margin-top: 16px; font-size: 12px; color: var(--text-secondary); }
     .loading-progress { margin-top: 8px; font-size: 10px; color: var(--text-muted); }
-    .error-banner { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--accent-red); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 11px; color: var(--accent-red); display: none; }
-    .error-banner.visible { display: block; }
     .footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 9px; color: var(--text-muted); }
     .footer a { color: var(--accent-blue); text-decoration: none; margin: 0 4px; }
     @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } .top-stats { grid-template-columns: 1fr; } .stats-row { grid-template-columns: repeat(3, 1fr); } .sidebar { max-height: none; } }
@@ -106,8 +86,6 @@
   </div>
 
   <div class="container">
-    <div class="error-banner" id="errorBanner"></div>
-    
     <header class="header">
       <div>
         <div class="brand-name">@ONCHAINBR</div>
@@ -188,19 +166,24 @@
   </div>
 
   <script>
+    // ========== STATE ==========
+    const state = { prices: [], metricHistory: {}, zScoreHistory: {}, zScores: {}, rawValues: {}, composite: null, compositeHistory: [], apiStatus: {}, endpointsLoaded: 0, totalEndpoints: 10, errors: [] };
+    
+    // ========== CONFIG ==========
     const CONFIG = { 
       BGEOMETRICS_TOKEN: 'SahfZ2aHol', 
       BGEOMETRICS_BASE: 'https://bitcoin-data.com', 
       BITVIEW_BASE: 'https://bitview.space/api',
-      CORS_PROXIES: ['', 'https://api.allorigins.win/raw?url=', 'https://corsproxy.io/?'],
       ROLLING_WINDOW: 365, 
-      MIN_DATA_POINTS: 30, 
-      REFRESH_INTERVAL: 5 * 60 * 1000 
+      MIN_DATA_POINTS: 30
     };
 
+    // ========== METRICS CONFIG ==========
+    // Bitview API: MVRV + RSI (calculate Z locally)
+    // BGeometrics: All other metrics
     const METRICS = {
-      mvrv: { name: 'MVRV Ratio', api: 'bitview', endpoint: '/series/mvrv/day', field: null, color: '#ef4444', showInOverlay: true },
-      rsi: { name: 'RSI Weekly', api: 'bitview', endpoint: '/series/rsi-1w/week1', field: null, color: '#14b8a6', showInOverlay: false },
+      mvrv: { name: 'MVRV Ratio', api: 'bitview', endpoint: '/series/mvrv/day', color: '#ef4444', showInOverlay: true },
+      rsi: { name: 'RSI Weekly', api: 'bitview', endpoint: '/series/rsi-1w/week1', color: '#14b8a6', showInOverlay: false },
       nupl: { name: 'NUPL', api: 'bgeometrics', endpoint: '/v1/nupl', field: 'nupl', color: '#f97316', showInOverlay: true },
       sopr: { name: 'SOPR', api: 'bgeometrics', endpoint: '/v1/sopr', field: 'sopr', color: '#84cc16', showInOverlay: true },
       mayer: { name: 'Mayer Multiple', api: 'bgeometrics', endpoint: '/v1/mayer-multiple', field: 'mayerMultiple', color: '#eab308', showInOverlay: true },
@@ -210,6 +193,7 @@
       puell: { name: 'Puell Multiple', api: 'bgeometrics', endpoint: '/v1/puell-multiple', field: 'puellMultiple', color: '#3b82f6', showInOverlay: true }
     };
 
+    // ========== ZONES ==========
     const ZONES = {
       acc: { min: -Infinity, max: -1.5, name: 'ACCUMULATE', short: 'ACC', color: '#00d97e' },
       und: { min: -1.5, max: -0.5, name: 'UNDERVALUED', short: 'UND', color: '#84cc16' },
@@ -218,44 +202,34 @@
       dist: { min: 1.5, max: Infinity, name: 'OVERHEATED', short: 'HOT', color: '#ef4444' }
     };
 
-    let state = { prices: [], metricHistory: {}, zScoreHistory: {}, zScores: {}, rawValues: {}, composite: null, compositeHistory: [], apiStatus: {}, endpointsLoaded: 0, totalEndpoints: 10, errors: [] };
-
-    // Safe number formatting
+    // ========== UTILITY FUNCTIONS ==========
     function safeFixed(num, digits = 2) {
       if (num === null || num === undefined || isNaN(num)) return '--';
       return Number(num).toFixed(digits);
     }
-
-    async function fetchWithCorsProxy(url, label) {
-      for (const proxy of CONFIG.CORS_PROXIES) {
-        try {
-          const fullUrl = proxy ? proxy + encodeURIComponent(url) : url;
-          const response = await fetch(fullUrl, { headers: { 'Accept': 'application/json' }, mode: 'cors' });
-          if (!response.ok) continue;
-          const data = await response.json();
-          console.log(`✓ ${label} via ${proxy || 'direct'}`);
-          return { success: true, data };
-        } catch (e) { console.warn(`✗ ${label} via ${proxy || 'direct'}:`, e.message); }
-      }
-      return { success: false, error: 'All proxies failed' };
-    }
-
-    async function fetchBGeometrics(endpoint, label) {
-      const url = `${CONFIG.BGEOMETRICS_BASE}${endpoint}?token=${CONFIG.BGEOMETRICS_TOKEN}`;
-      const result = await fetchWithCorsProxy(url, label);
-      updateLoadingProgress(label);
-      if (!result.success) state.errors.push(`${label}`);
-      return result;
+    
+    function formatDate(d) { 
+      try { return new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase(); } 
+      catch { return '--'; } 
     }
     
-    async function fetchBitview(endpoint, label) {
-      const url = `${CONFIG.BITVIEW_BASE}${endpoint}`;
-      const result = await fetchWithCorsProxy(url, label);
-      updateLoadingProgress(label);
-      if (!result.success) state.errors.push(`${label}`);
-      return result;
+    function formatDateShort(d) { 
+      try { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }); } 
+      catch { return '--'; } 
     }
     
+    function getZone(z) {
+      if (z === null || z === undefined || isNaN(z)) return { key: 'fair', ...ZONES.fair };
+      if (z <= -1.5) return { key: 'acc', ...ZONES.acc };
+      if (z <= -0.5) return { key: 'und', ...ZONES.und };
+      if (z <= 0.5) return { key: 'fair', ...ZONES.fair };
+      if (z <= 1.5) return { key: 'over', ...ZONES.over };
+      return { key: 'dist', ...ZONES.dist };
+    }
+    
+    function getZoneColor(z) { return getZone(z).color; }
+
+    // ========== LOADING PROGRESS ==========
     function updateLoadingProgress(label) {
       state.endpointsLoaded++;
       const el = document.getElementById('loadingText');
@@ -264,31 +238,42 @@
       if (prog) prog.textContent = `${state.endpointsLoaded} / ${state.totalEndpoints} endpoints`;
     }
 
-    async function fetchAllData() {
-      state.endpointsLoaded = 0;
-      state.errors = [];
-      
-      const priceResult = await fetchBGeometrics('/v1/btc-price', 'BTC Price');
-      state.apiStatus['price'] = priceResult.success;
-      if (priceResult.success) state.prices = normalizeBGeometricsData(priceResult.data, 'btcPrice');
-      
-      for (const [key, metric] of Object.entries(METRICS)) {
-        let result;
-        if (metric.api === 'bitview') {
-          result = await fetchBitview(metric.endpoint, metric.name);
-          if (result.success) state.metricHistory[key] = normalizeBitviewData(result.data);
-        } else {
-          result = await fetchBGeometrics(metric.endpoint, metric.name);
-          if (result.success) state.metricHistory[key] = normalizeBGeometricsData(result.data, metric.field);
-        }
-        state.apiStatus[key] = result.success;
+    // ========== API FUNCTIONS ==========
+    async function fetchBGeometrics(endpoint, label) {
+      const url = `${CONFIG.BGEOMETRICS_BASE}${endpoint}?token=${CONFIG.BGEOMETRICS_TOKEN}`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        console.log(`✓ ${label} via BGeometrics`);
+        updateLoadingProgress(label);
+        return { success: true, data };
+      } catch (e) {
+        console.error(`✗ ${label}:`, e.message);
+        updateLoadingProgress(label);
+        state.errors.push(label);
+        return { success: false, error: e.message };
       }
-      
-      calculateAllZScores();
-      calculateCompositeHistory();
-      updateUI();
+    }
+    
+    async function fetchBitview(endpoint, label) {
+      const url = `${CONFIG.BITVIEW_BASE}${endpoint}`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        console.log(`✓ ${label} via Bitview`, data);
+        updateLoadingProgress(label);
+        return { success: true, data };
+      } catch (e) {
+        console.error(`✗ ${label}:`, e.message);
+        updateLoadingProgress(label);
+        state.errors.push(label);
+        return { success: false, error: e.message };
+      }
     }
 
+    // ========== DATA NORMALIZATION ==========
     function normalizeBGeometricsData(data, fieldHint) {
       if (!data || !Array.isArray(data)) return [];
       return data.map(item => {
@@ -297,7 +282,10 @@
         if (typeof value === 'string') value = parseFloat(value);
         if (value === undefined || value === null) {
           for (const [k, v] of Object.entries(item)) {
-            if (k !== 'd' && k !== 'unixTs') { const num = parseFloat(v); if (!isNaN(num)) { value = num; break; } }
+            if (k !== 'd' && k !== 'unixTs') { 
+              const num = parseFloat(v); 
+              if (!isNaN(num)) { value = num; break; } 
+            }
           }
         }
         const numValue = parseFloat(value);
@@ -305,64 +293,177 @@
       }).filter(item => item.value !== null && item.date).sort((a, b) => new Date(a.date) - new Date(b.date));
     }
     
-    function normalizeBitviewData(response) {
-      let data = response;
-      if (response && response.data && Array.isArray(response.data)) data = response.data;
-      if (!data || !Array.isArray(data)) return [];
+    // BITVIEW API REAL FORMAT (discovered from console):
+    // {
+    //   "version": 143,
+    //   "index": "day1",  // day1 = days since Bitcoin genesis (2009-01-03)
+    //   "type": "StoredF32", 
+    //   "total": 6295,
+    //   "start": 0,
+    //   "end": 6295,
+    //   "stamp": "2026-03-27T...",
+    //   "data": [null, null, 1, null, null, null, null, null, 1, 1, 1, ...] // just values!
+    // }
+    // For week1 index: days since genesis / 7
+    
+    // Bitcoin genesis date: January 3, 2009
+    const BITCOIN_GENESIS = new Date('2009-01-03');
+    
+    function normalizeBitviewData(response, indexType) {
+      console.log('Bitview raw response:', response);
       
-      return data.map(item => {
-        if (Array.isArray(item)) {
-          const [dateOrTs, value] = item;
-          let date = typeof dateOrTs === 'number' ? new Date(dateOrTs * 1000).toISOString().split('T')[0] : dateOrTs;
-          const numValue = parseFloat(value);
-          return { date, value: isNaN(numValue) ? null : numValue };
+      if (!response || !response.data || !Array.isArray(response.data)) {
+        console.warn('Bitview: No valid data array found');
+        return [];
+      }
+      
+      const dataArray = response.data;
+      const index = response.index || indexType || 'day1';
+      
+      console.log(`Found data in response.data, length: ${dataArray.length}, index type: ${index}`);
+      
+      const result = [];
+      
+      for (let i = 0; i < dataArray.length; i++) {
+        const value = dataArray[i];
+        
+        // Skip null values
+        if (value === null || value === undefined || isNaN(value)) {
+          continue;
         }
-        if (item && typeof item === 'object') {
-          const date = item.date || item.d || item.t;
-          const value = item.value || item.v;
-          const numValue = parseFloat(value);
-          return { date, value: isNaN(numValue) ? null : numValue };
+        
+        // Calculate date based on index type
+        let date;
+        if (index === 'day1' || index === 'day') {
+          // day1: index 0 = 2009-01-03, index 1 = 2009-01-04, etc.
+          const dateObj = new Date(BITCOIN_GENESIS);
+          dateObj.setDate(dateObj.getDate() + i);
+          date = dateObj.toISOString().split('T')[0];
+        } else if (index === 'week1' || index === 'week') {
+          // week1: index 0 = week starting 2009-01-03
+          const dateObj = new Date(BITCOIN_GENESIS);
+          dateObj.setDate(dateObj.getDate() + (i * 7));
+          date = dateObj.toISOString().split('T')[0];
+        } else {
+          // Unknown index, use as day offset
+          const dateObj = new Date(BITCOIN_GENESIS);
+          dateObj.setDate(dateObj.getDate() + i);
+          date = dateObj.toISOString().split('T')[0];
         }
-        return null;
-      }).filter(item => item && item.value !== null && item.date).sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        const numValue = parseFloat(value);
+        if (!isNaN(numValue) && isFinite(numValue)) {
+          result.push({ date, value: numValue });
+        }
+      }
+      
+      console.log(`Bitview: parsed ${result.length} valid items from ${dataArray.length} raw items`);
+      if (result.length > 0) {
+        console.log('First item:', result[0], 'Last item:', result[result.length - 1]);
+      }
+      
+      return result.sort((a, b) => new Date(a.date) - new Date(b.date));
     }
 
+    // ========== FETCH ALL DATA ==========
+    async function fetchAllData() {
+      state.endpointsLoaded = 0;
+      state.errors = [];
+      
+      // Fetch BTC Price
+      const priceResult = await fetchBGeometrics('/v1/btc-price', 'BTC Price');
+      state.apiStatus['price'] = priceResult.success;
+      if (priceResult.success) {
+        state.prices = normalizeBGeometricsData(priceResult.data, 'btcPrice');
+      }
+      
+      // Fetch all metrics
+      for (const [key, metric] of Object.entries(METRICS)) {
+        let result;
+        
+        if (metric.api === 'bitview') {
+          result = await fetchBitview(metric.endpoint, metric.name);
+          if (result.success) {
+            // Pass the index type from the response for correct date calculation
+            const indexType = result.data?.index || (metric.endpoint.includes('week') ? 'week1' : 'day1');
+            const parsed = normalizeBitviewData(result.data, indexType);
+            state.metricHistory[key] = parsed;
+            console.log(`${key}: ${parsed.length} data points`);
+          }
+        } else {
+          result = await fetchBGeometrics(metric.endpoint, metric.name);
+          if (result.success) {
+            state.metricHistory[key] = normalizeBGeometricsData(result.data, metric.field);
+          }
+        }
+        
+        state.apiStatus[key] = result.success;
+      }
+      
+      calculateAllZScores();
+      calculateCompositeHistory();
+      updateUI();
+    }
+
+    // ========== Z-SCORE CALCULATION ==========
     function calculateRollingZScore(values, index) {
       const start = Math.max(0, index - CONFIG.ROLLING_WINDOW + 1);
       const window = values.slice(start, index + 1);
       if (window.length < CONFIG.MIN_DATA_POINTS) return null;
+      
       const nums = window.filter(v => typeof v === 'number' && !isNaN(v) && isFinite(v));
       if (nums.length < CONFIG.MIN_DATA_POINTS) return null;
+      
       const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
       const variance = nums.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / nums.length;
       const std = Math.sqrt(variance);
+      
       if (std === 0 || !isFinite(std)) return 0;
       return Math.max(-5, Math.min(5, (values[index] - mean) / std));
     }
 
     function calculateAllZScores() {
-      state.zScores = {}; state.zScoreHistory = {}; state.rawValues = {};
+      state.zScores = {}; 
+      state.zScoreHistory = {}; 
+      state.rawValues = {};
       
       for (const [key, metric] of Object.entries(METRICS)) {
         const history = state.metricHistory[key] || [];
-        if (history.length === 0) { state.zScores[key] = null; continue; }
+        
+        if (history.length === 0) { 
+          state.zScores[key] = null; 
+          console.warn(`${key}: no history data`);
+          continue; 
+        }
         
         state.rawValues[key] = history[history.length - 1]?.value;
+        
         const values = history.map(d => d.value);
         const zHistory = [];
+        
         for (let i = 0; i < history.length; i++) {
           const z = calculateRollingZScore(values, i);
-          if (z !== null) zHistory.push({ date: history[i].date, value: z });
+          if (z !== null) {
+            zHistory.push({ date: history[i].date, value: z });
+          }
         }
+        
         state.zScoreHistory[key] = zHistory;
         state.zScores[key] = zHistory.length > 0 ? zHistory[zHistory.length - 1].value : null;
+        
+        console.log(`${key}: history=${history.length}, zHistory=${zHistory.length}, Z=${safeFixed(state.zScores[key], 4)}, raw=${safeFixed(state.rawValues[key], 4)}`);
       }
       
+      // Calculate composite (equal-weight average of all valid Z-scores)
       let count = 0, sum = 0;
       for (const z of Object.values(state.zScores)) {
-        if (z !== null && !isNaN(z) && isFinite(z)) { sum += z; count++; }
+        if (z !== null && !isNaN(z) && isFinite(z)) { 
+          sum += z; 
+          count++; 
+        }
       }
       state.composite = count > 0 ? sum / count : null;
+      console.log(`COMPOSITE: ${safeFixed(state.composite, 4)} (from ${count} metrics)`);
     }
 
     function calculateCompositeHistory() {
@@ -378,35 +479,23 @@
         for (const history of Object.values(state.zScoreHistory)) {
           if (history) {
             const item = history.find(d => d.date === date);
-            if (item && typeof item.value === 'number' && !isNaN(item.value)) { sum += item.value; count++; }
+            if (item && typeof item.value === 'number' && !isNaN(item.value)) { 
+              sum += item.value; 
+              count++; 
+            }
           }
         }
-        if (count >= 3) state.compositeHistory.push({ date, value: sum / count });
+        if (count >= 3) {
+          state.compositeHistory.push({ date, value: sum / count });
+        }
       }
     }
 
-    function getZone(z) {
-      if (z === null || z === undefined || isNaN(z)) return { key: 'fair', ...ZONES.fair };
-      if (z <= -1.5) return { key: 'acc', ...ZONES.acc };
-      if (z <= -0.5) return { key: 'und', ...ZONES.und };
-      if (z <= 0.5) return { key: 'fair', ...ZONES.fair };
-      if (z <= 1.5) return { key: 'over', ...ZONES.over };
-      return { key: 'dist', ...ZONES.dist };
-    }
-    
-    function getZoneColor(z) { return getZone(z).color; }
-    function formatDate(d) { try { return new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase(); } catch { return '--'; } }
-    function formatDateShort(d) { try { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }); } catch { return '--'; } }
-
+    // ========== UI UPDATE ==========
     function updateUI() {
       document.getElementById('loadingOverlay')?.classList.add('hidden');
       
-      const errorBanner = document.getElementById('errorBanner');
-      if (state.errors.length > 0) {
-        errorBanner.innerHTML = `⚠️ APIs com falha: ${state.errors.join(', ')}`;
-        errorBanner.classList.add('visible');
-      } else { errorBanner?.classList.remove('visible'); }
-      
+      // Update header status
       const now = new Date();
       const statusDate = document.getElementById('statusDate');
       if (statusDate) statusDate.textContent = now.toLocaleString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).toUpperCase();
@@ -425,14 +514,24 @@
         if (lastDataEl) lastDataEl.textContent = `LAST DATA: ${formatDate(lastDate)}`;
       }
       
+      // Get zone
       const zone = getZone(state.composite);
       
+      // Update main Z-Score display
       const mainZ = document.getElementById('mainZScore');
-      if (mainZ) { mainZ.textContent = safeFixed(state.composite); mainZ.style.color = zone.color; }
+      if (mainZ) { 
+        mainZ.textContent = safeFixed(state.composite); 
+        mainZ.style.color = zone.color; 
+      }
       
       const badge = document.getElementById('mainZoneBadge');
-      if (badge) { badge.textContent = zone.name; badge.style.background = zone.color + '25'; badge.style.color = zone.color; }
+      if (badge) { 
+        badge.textContent = zone.name; 
+        badge.style.background = zone.color + '25'; 
+        badge.style.color = zone.color; 
+      }
       
+      // Update price card
       if (state.prices.length > 0) {
         const latest = state.prices[state.prices.length - 1];
         const priceEl = document.getElementById('btcPrice');
@@ -444,48 +543,73 @@
         if (state.prices.length > 7) {
           const weekAgo = state.prices[state.prices.length - 8];
           const change = ((latest.value - weekAgo.value) / weekAgo.value * 100);
+          
           const changeEl = document.getElementById('priceChange');
-          if (changeEl) { changeEl.textContent = `${change >= 0 ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%`; changeEl.style.color = change >= 0 ? '#00d97e' : '#ef4444'; }
+          if (changeEl) { 
+            changeEl.textContent = `${change >= 0 ? '▲' : '▼'} ${Math.abs(change).toFixed(1)}%`; 
+            changeEl.style.color = change >= 0 ? '#00d97e' : '#ef4444'; 
+          }
+          
           const weekEl = document.getElementById('statPriceDeltaWeek');
-          if (weekEl) { weekEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`; weekEl.style.color = change >= 0 ? '#00d97e' : '#ef4444'; }
+          if (weekEl) { 
+            weekEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`; 
+            weekEl.style.color = change >= 0 ? '#00d97e' : '#ef4444'; 
+          }
         }
       }
       
+      // Update stats row
       const signalEl = document.getElementById('statSignalZone');
-      if (signalEl) { signalEl.textContent = zone.name; signalEl.style.color = zone.color; }
+      if (signalEl) { 
+        signalEl.textContent = zone.name; 
+        signalEl.style.color = zone.color; 
+      }
+      
       const threshEl = document.getElementById('statZoneThreshold');
       if (threshEl) threshEl.textContent = `${zone.min === -Infinity ? '< -1.5' : zone.min.toFixed(1)} → ${zone.max === Infinity ? '> +1.5' : zone.max.toFixed(1)}`;
       
       const metricsOk = document.getElementById('statMetricsOk');
       if (metricsOk) metricsOk.textContent = Object.values(state.zScores).filter(z => z !== null).length;
       
+      // Find weakest metric
       let weakest = { key: null, z: Infinity };
       for (const [key, z] of Object.entries(state.zScores)) {
         if (z !== null && !isNaN(z) && z < weakest.z) weakest = { key, z };
       }
       if (weakest.key) {
         const weakEl = document.getElementById('statWeakestMetric');
-        if (weakEl) { weakEl.textContent = METRICS[weakest.key]?.name.split(' ')[0] || '--'; weakEl.style.color = getZone(weakest.z).color; }
+        if (weakEl) { 
+          weakEl.textContent = METRICS[weakest.key]?.name.split(' ')[0] || '--'; 
+          weakEl.style.color = getZone(weakest.z).color; 
+        }
         const weakZEl = document.getElementById('statWeakestZ');
         if (weakZEl) weakZEl.textContent = `Z = ${safeFixed(weakest.z)}`;
       }
       
+      // Data range
       if (state.compositeHistory.length > 0) {
         const first = new Date(state.compositeHistory[0].date);
         const last = new Date(state.compositeHistory[state.compositeHistory.length - 1].date);
         const days = Math.round((last - first) / (24 * 60 * 60 * 1000));
+        
         const rangeEl = document.getElementById('statDataRange');
         if (rangeEl) rangeEl.textContent = `${days} days`;
+        
         const datesEl = document.getElementById('statDataDates');
         if (datesEl) datesEl.textContent = `${formatDateShort(first)} → ${formatDateShort(last)}`;
       }
       
+      // Conviction marker
       const markerPos = ((state.composite || 0) + 3) / 6 * 100;
       const marker = document.getElementById('convictionMarker');
       if (marker) marker.style.left = `${Math.max(0, Math.min(100, markerPos))}%`;
       
-      document.querySelectorAll('.conviction-item').forEach(item => { item.classList.toggle('active', item.dataset.zone === zone.key); });
+      // Highlight active zone
+      document.querySelectorAll('.conviction-item').forEach(item => { 
+        item.classList.toggle('active', item.dataset.zone === zone.key); 
+      });
       
+      // Render charts and cards
       renderGauge();
       renderMetricCards();
       renderPriceChart();
@@ -493,31 +617,59 @@
       renderOverlayChart();
     }
 
+    // ========== GAUGE ==========
     function renderGauge() {
       const canvas = document.getElementById('gaugeCanvas');
       if (!canvas) return;
+      
       const ctx = canvas.getContext('2d');
       const width = 200, height = 110;
-      canvas.width = width * 2; canvas.height = height * 2;
-      canvas.style.width = width + 'px'; canvas.style.height = height + 'px';
+      canvas.width = width * 2; 
+      canvas.height = height * 2;
+      canvas.style.width = width + 'px'; 
+      canvas.style.height = height + 'px';
       ctx.scale(2, 2);
       
       const centerX = width / 2, centerY = height - 10, radius = 80, startAngle = Math.PI;
-      const zones = [{ start: 0, end: 0.25, color: '#00d97e' }, { start: 0.25, end: 0.417, color: '#84cc16' }, { start: 0.417, end: 0.583, color: '#eab308' }, { start: 0.583, end: 0.75, color: '#f97316' }, { start: 0.75, end: 1, color: '#ef4444' }];
       
-      ctx.lineWidth = 18; ctx.lineCap = 'butt';
-      zones.forEach(zone => { ctx.beginPath(); ctx.strokeStyle = zone.color; ctx.arc(centerX, centerY, radius, startAngle + (zone.start * Math.PI), startAngle + (zone.end * Math.PI)); ctx.stroke(); });
+      const zones = [
+        { start: 0, end: 0.25, color: '#00d97e' },
+        { start: 0.25, end: 0.417, color: '#84cc16' },
+        { start: 0.417, end: 0.583, color: '#eab308' },
+        { start: 0.583, end: 0.75, color: '#f97316' },
+        { start: 0.75, end: 1, color: '#ef4444' }
+      ];
+      
+      ctx.lineWidth = 18; 
+      ctx.lineCap = 'butt';
+      
+      zones.forEach(zone => { 
+        ctx.beginPath(); 
+        ctx.strokeStyle = zone.color; 
+        ctx.arc(centerX, centerY, radius, startAngle + (zone.start * Math.PI), startAngle + (zone.end * Math.PI)); 
+        ctx.stroke(); 
+      });
       
       const z = Math.max(-3, Math.min(3, state.composite || 0));
       const normalizedZ = (z + 3) / 6;
       const needleAngle = startAngle + (normalizedZ * Math.PI);
       const needleLength = radius - 20;
       
-      ctx.beginPath(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-      ctx.moveTo(centerX, centerY); ctx.lineTo(centerX + needleLength * Math.cos(needleAngle), centerY + needleLength * Math.sin(needleAngle)); ctx.stroke();
-      ctx.beginPath(); ctx.fillStyle = '#ffffff'; ctx.arc(centerX, centerY, 6, 0, 2 * Math.PI); ctx.fill();
+      ctx.beginPath(); 
+      ctx.strokeStyle = '#ffffff'; 
+      ctx.lineWidth = 3; 
+      ctx.lineCap = 'round';
+      ctx.moveTo(centerX, centerY); 
+      ctx.lineTo(centerX + needleLength * Math.cos(needleAngle), centerY + needleLength * Math.sin(needleAngle)); 
+      ctx.stroke();
+      
+      ctx.beginPath(); 
+      ctx.fillStyle = '#ffffff'; 
+      ctx.arc(centerX, centerY, 6, 0, 2 * Math.PI); 
+      ctx.fill();
     }
 
+    // ========== METRIC CARDS ==========
     function renderMetricCards() {
       const container = document.getElementById('metricsGrid');
       if (!container) return;
@@ -527,6 +679,7 @@
         const raw = state.rawValues[key];
         const zone = getZone(z);
         const apiLabel = metric.api === 'bitview' ? '⚡' : '';
+        
         let rawDisplay = '--';
         if (typeof raw === 'number' && !isNaN(raw)) {
           if (Math.abs(raw) < 0.01) rawDisplay = raw.toFixed(4);
@@ -534,6 +687,7 @@
           else if (Math.abs(raw) < 100) rawDisplay = raw.toFixed(2);
           else rawDisplay = Math.round(raw).toLocaleString();
         }
+        
         return `<div class="metric-card">
           <div class="metric-name">${apiLabel}${metric.name}</div>
           <div class="metric-value" style="color: ${zone.color}">${safeFixed(z)}</div>
@@ -543,24 +697,42 @@
         </div>`;
       }).join('');
       
-      requestAnimationFrame(() => { for (const [key, metric] of Object.entries(METRICS)) renderSparkline(key, metric.color); });
+      requestAnimationFrame(() => { 
+        for (const [key, metric] of Object.entries(METRICS)) {
+          renderSparkline(key, metric.color); 
+        }
+      });
     }
 
     function renderSparkline(key, color) {
       const canvas = document.getElementById(`spark_${key}`);
       if (!canvas) return;
+      
       const history = state.zScoreHistory[key] || [];
       if (history.length < 2) return;
+      
       const ctx = canvas.getContext('2d');
       const values = history.slice(-60).map(d => d.value);
       if (values.length < 2) return;
+      
       const min = Math.min(...values), max = Math.max(...values), range = max - min || 1;
+      
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.5;
-      values.forEach((v, i) => { const x = (i / (values.length - 1)) * canvas.width; const y = canvas.height - ((v - min) / range) * canvas.height; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+      ctx.beginPath(); 
+      ctx.strokeStyle = color; 
+      ctx.lineWidth = 1.5;
+      
+      values.forEach((v, i) => { 
+        const x = (i / (values.length - 1)) * canvas.width; 
+        const y = canvas.height - ((v - min) / range) * canvas.height; 
+        if (i === 0) ctx.moveTo(x, y); 
+        else ctx.lineTo(x, y); 
+      });
+      
       ctx.stroke();
     }
 
+    // ========== CHARTS ==========
     let priceChart, oscillatorChart, overlayChart;
 
     function renderPriceChart() {
@@ -569,6 +741,7 @@
       
       const priceData = state.prices.slice(-365);
       const compositeMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
+      
       const labels = priceData.map(p => p.date);
       const priceValues = priceData.map(p => p.value);
       const zValues = priceData.map(p => compositeMap.get(p.date) || null);
@@ -577,14 +750,51 @@
       
       priceChart = new Chart(ctx, {
         type: 'line',
-        data: { labels, datasets: [
-          { label: 'BTC Price', data: priceValues, borderColor: 'rgba(255,255,255,0.6)', borderWidth: 1.5, borderDash: [4, 2], pointRadius: 0, tension: 0.1, yAxisID: 'y', fill: false },
-          { label: 'Z-Composite', data: zValues, borderWidth: 2.5, pointRadius: 0, tension: 0.2, yAxisID: 'y1', fill: false, segment: { borderColor: ctx => { try { return getZoneColor(ctx.p1?.parsed?.y); } catch { return '#eab308'; } } } }
-        ]},
-        options: { responsive: true, maintainAspectRatio: false, interaction: { intersect: false, mode: 'index' }, plugins: { legend: { display: false } },
-          scales: { x: { grid: { color: 'rgba(37,37,40,0.8)' }, ticks: { color: '#606068', maxTicksLimit: 12, font: { size: 9 }, callback: (val, idx) => idx % Math.ceil(labels.length / 12) === 0 ? formatDateShort(labels[idx]) : '' } },
-            y: { type: 'logarithmic', position: 'left', grid: { color: 'rgba(37,37,40,0.8)' }, ticks: { color: '#606068', font: { size: 9 }, callback: v => v >= 1000 ? `$${(v/1000).toFixed(0)}k` : `$${v}` } },
-            y1: { position: 'right', min: -4, max: 4, grid: { display: false }, ticks: { color: '#606068', font: { size: 9 }, stepSize: 1 } } } }
+        data: {
+          labels,
+          datasets: [
+            { 
+              label: 'BTC Price', 
+              data: priceValues, 
+              borderColor: 'rgba(255,255,255,0.6)', 
+              borderWidth: 1.5, 
+              borderDash: [4, 2], 
+              pointRadius: 0, 
+              yAxisID: 'y', 
+              tension: 0.1 
+            },
+            { 
+              label: 'Z-Composite', 
+              data: zValues, 
+              borderWidth: 2.5, 
+              pointRadius: 0, 
+              yAxisID: 'y1', 
+              tension: 0.1,
+              segment: { borderColor: ctx2 => getZoneColor(ctx2.p0.parsed.y) }
+            }
+          ]
+        },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  if (ctx.datasetIndex === 0) return `BTC: $${Math.round(ctx.parsed.y).toLocaleString()}`;
+                  return `Z: ${ctx.parsed.y?.toFixed(2) || '--'}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#606068', maxTicksLimit: 8, font: { size: 9 } } },
+            y: { type: 'logarithmic', display: true, position: 'left', grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#606068', font: { size: 9 }, callback: v => '$' + (v/1000).toFixed(0) + 'k' } },
+            y1: { display: true, position: 'right', min: -3, max: 3, grid: { display: false }, ticks: { color: '#606068', font: { size: 9 } } }
+          }
+        }
       });
     }
 
@@ -593,17 +803,58 @@
       if (!ctx || state.compositeHistory.length === 0) return;
       
       const data = state.compositeHistory.slice(-365);
-      const labels = data.map(d => d.date);
-      const values = data.map(d => d.value);
       
       if (oscillatorChart) oscillatorChart.destroy();
       
       oscillatorChart = new Chart(ctx, {
         type: 'line',
-        data: { labels, datasets: [{ data: values, borderWidth: 2, pointRadius: 0, tension: 0.2, fill: false, segment: { borderColor: ctx => { try { return getZoneColor(ctx.p1?.parsed?.y); } catch { return '#eab308'; } } } }] },
-        options: { responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false }, annotation: { annotations: { zero: { type: 'line', yMin: 0, yMax: 0, borderColor: '#35353a', borderWidth: 1 }, buy: { type: 'line', yMin: -1.5, yMax: -1.5, borderColor: '#00d97e', borderWidth: 1.5, borderDash: [5, 3] }, sell: { type: 'line', yMin: 1.5, yMax: 1.5, borderColor: '#ef4444', borderWidth: 1.5, borderDash: [5, 3] } } } },
-          scales: { x: { grid: { color: 'rgba(37,37,40,0.8)' }, ticks: { color: '#606068', maxTicksLimit: 10, font: { size: 8 }, callback: (val, idx) => idx % Math.ceil(labels.length / 10) === 0 ? formatDateShort(labels[idx]) : '' } }, y: { min: -4, max: 4, grid: { color: 'rgba(37,37,40,0.8)' }, ticks: { color: '#606068', font: { size: 8 } } } } }
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [{
+            data: data.map(d => d.value),
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: true,
+            backgroundColor: ctx2 => {
+              const val = data[ctx2.dataIndex]?.value || 0;
+              return getZoneColor(val) + '30';
+            },
+            segment: { borderColor: ctx2 => getZoneColor(ctx2.p0.parsed.y) }
+          }]
+        },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: true, grid: { display: false }, ticks: { display: false } },
+            y: { 
+              display: true, 
+              min: -3, 
+              max: 3, 
+              grid: { color: 'rgba(255,255,255,0.05)' }, 
+              ticks: { color: '#606068', font: { size: 9 }, stepSize: 1.5 } 
+            }
+          }
+        },
+        plugins: [{
+          id: 'thresholdLines',
+          beforeDraw: chart => {
+            const { ctx, chartArea, scales } = chart;
+            const thresholds = [-1.5, -0.5, 0.5, 1.5];
+            ctx.save();
+            thresholds.forEach(t => {
+              const y = scales.y.getPixelForValue(t);
+              ctx.beginPath();
+              ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+              ctx.setLineDash([4, 4]);
+              ctx.moveTo(chartArea.left, y);
+              ctx.lineTo(chartArea.right, y);
+              ctx.stroke();
+            });
+            ctx.restore();
+          }
+        }]
       });
     }
 
@@ -611,40 +862,52 @@
       const ctx = document.getElementById('overlayChart')?.getContext('2d');
       if (!ctx) return;
       
+      // Only show metrics marked for overlay (excludes RSI)
       const overlayMetrics = Object.entries(METRICS).filter(([k, m]) => m.showInOverlay);
-      let allDates = new Set();
-      for (const [key] of overlayMetrics) { const history = state.zScoreHistory[key]; if (history) history.slice(-365).forEach(d => allDates.add(d.date)); }
-      const dates = Array.from(allDates).sort((a, b) => new Date(a) - new Date(b)).slice(-365);
-      if (dates.length === 0) return;
       
       const datasets = overlayMetrics.map(([key, metric]) => {
         const history = state.zScoreHistory[key] || [];
-        const historyMap = new Map(history.map(d => [d.date, d.value]));
-        return { label: metric.name.split(' ')[0], data: dates.map(d => historyMap.get(d) ?? null), borderColor: metric.color, borderWidth: 1, pointRadius: 0, tension: 0.3, spanGaps: true, fill: false };
-      });
+        const data365 = history.slice(-365);
+        return {
+          label: metric.name,
+          data: data365.map(d => ({ x: d.date, y: d.value })),
+          borderColor: metric.color,
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.1
+        };
+      }).filter(ds => ds.data.length > 0);
       
       if (overlayChart) overlayChart.destroy();
       
       overlayChart = new Chart(ctx, {
-        type: 'line', data: { labels: dates, datasets },
-        options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-          plugins: { legend: { display: true, position: 'top', labels: { color: '#a0a0ab', font: { size: 8 }, boxWidth: 12, boxHeight: 2, padding: 10 } } },
-          scales: { x: { grid: { color: 'rgba(37,37,40,0.5)' }, ticks: { color: '#606068', maxTicksLimit: 10, font: { size: 8 }, callback: (val, idx) => idx % Math.ceil(dates.length / 10) === 0 ? formatDateShort(dates[idx]) : '' } }, y: { min: -4, max: 4, grid: { color: 'rgba(37,37,40,0.5)' }, ticks: { color: '#606068', font: { size: 8 } } } } }
+        type: 'line',
+        data: { datasets },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false,
+          plugins: { 
+            legend: { 
+              display: true, 
+              position: 'top', 
+              labels: { 
+                boxWidth: 8, 
+                font: { size: 8 }, 
+                color: '#a0a0ab', 
+                padding: 6 
+              } 
+            } 
+          },
+          scales: {
+            x: { type: 'category', display: true, grid: { display: false }, ticks: { display: false } },
+            y: { display: true, min: -3, max: 3, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#606068', font: { size: 9 }, stepSize: 1.5 } }
+          }
+        }
       });
     }
 
-    async function init() {
-      try { await fetchAllData(); } 
-      catch (error) { 
-        console.error('Init error:', error);
-        const eb = document.getElementById('errorBanner');
-        if (eb) { eb.innerHTML = `⚠️ Erro: ${error.message}`; eb.classList.add('visible'); }
-        document.getElementById('loadingOverlay')?.classList.add('hidden'); 
-      }
-      setInterval(fetchAllData, CONFIG.REFRESH_INTERVAL);
-    }
-
-    document.addEventListener('DOMContentLoaded', init);
+    // ========== INIT ==========
+    fetchAllData();
   </script>
 </body>
 </html>
