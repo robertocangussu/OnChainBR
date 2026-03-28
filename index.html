@@ -693,7 +693,8 @@
         generateDemoData();
         calculateAllZScores();
         calculateCompositeHistory();
-        updateUI();
+        _coreUpdateUI();
+        setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSentimentData(); }, 150);
         return;
       }
       
@@ -736,7 +737,8 @@
 
       calculateAllZScores();
       calculateCompositeHistory();
-      updateUI();
+      _coreUpdateUI();
+      setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSentimentData(); }, 150);
     }
 
     // ========== Z-SCORE CALCULATION ==========
@@ -826,7 +828,7 @@
     }
 
     // ========== UI UPDATE ==========
-    function updateUI() {
+    function _coreUpdateUI() {
       document.getElementById('loadingOverlay')?.classList.add('hidden');
       
       // Update header status
@@ -1647,16 +1649,8 @@
       } catch(e) { console.warn('Funding fetch failed:', e.message); }
     }
 
-    // ========== OVERRIDE updateUI to chain extra renders ==========
-    const _origUpdateUI = updateUI;
-    function updateUI() {
-      _origUpdateUI();
-      setTimeout(() => {
-        renderSignalsSection();
-        fetchFlowData();
-        fetchSentimentData();
-      }, 150);
-    }
+    // ========== PUBLIC updateUI (alias for compatibility) ==========
+    function updateUI() { _coreUpdateUI(); setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSentimentData(); }, 150); }
 
     // ========== INIT ==========
     fetchAllData();
