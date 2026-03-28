@@ -110,6 +110,21 @@
     .section-sub { font-size: 9px; color: var(--text-muted); margin-left: auto; letter-spacing: 0.5px; }
 
     /* ===== SIGNALS SECTION ===== */
+    /* Signals redesign */
+    .sig-stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 16px; }
+    .sig-stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+    .sig-stat-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .sig-stat-val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+    .sig-chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+    .sig-chart-topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+    .sig-chart-title { font-size: 12px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.5px; }
+    .sig-chart-sub { font-size: 9px; color: var(--text-muted); margin-top: 4px; }
+    .sig-legend { font-size: 9px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; }
+    .sig-chart-body { height: 440px; position: relative; }
+    .sig-zone-legend { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; font-size: 8px; font-family: 'JetBrains Mono', monospace; }
+    .sig-trades-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .sig-trades-title { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 12px; }
+    .sig-trades-scroll { max-height: 280px; overflow-y: auto; }
     .signals-grid { display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
     .signal-chart-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
     .signal-table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow: hidden; display: flex; flex-direction: column; }
@@ -127,6 +142,7 @@
     .signal-stat-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
     .signal-stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; }
     .chart-container-signals { height: 320px; }
+    .sig-chart-body canvas { width: 100% !important; height: 100% !important; }
 
     /* ===== FLOW SECTION ===== */
     .flow-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
@@ -164,7 +180,8 @@
     .funding-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
     .funding-bar-fill { height: 100%; border-radius: 2px; }
 
-    @media (max-width: 1200px) { .signals-grid { grid-template-columns: 1fr; } .flow-grid { grid-template-columns: 1fr; } .sentiment-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 1200px) { .signals-grid { grid-template-columns: 1fr; } .flow-grid { grid-template-columns: 1fr; } .sentiment-grid { grid-template-columns: 1fr; } .sig-stats-row { grid-template-columns: repeat(3,1fr); } }
+    @media (max-width: 700px) { .sig-stats-row { grid-template-columns: repeat(2,1fr); } }
   </style>
 </head>
 <body>
@@ -264,30 +281,71 @@
     <div class="section-header">
       <span class="section-num">02</span>
       <span class="section-title">Trade Signals</span>
-      <span class="section-sub">Z-COMPOSITE CROSSOVER · BUY ENTRY: Z CROSSES UP −1.5 · SELL EXIT: Z CROSSES UP +0.5</span>
+      <span class="section-sub">FULL HISTORY · BUY: Z exits ACCUMULATE zone (confirmed) · SELL: Z enters ELEVATED zone</span>
     </div>
-    <div class="signals-stats">
-      <div class="signal-stat"><div class="signal-stat-label">Total Trades</div><div class="signal-stat-value" id="sigTotalTrades" style="color:var(--accent-blue)">--</div></div>
-      <div class="signal-stat"><div class="signal-stat-label">Win Rate</div><div class="signal-stat-value" id="sigWinRate">--</div></div>
-      <div class="signal-stat"><div class="signal-stat-label">Avg Return</div><div class="signal-stat-value" id="sigAvgReturn">--</div></div>
-      <div class="signal-stat"><div class="signal-stat-label">Best Trade</div><div class="signal-stat-value" id="sigBestTrade" style="color:var(--accent-green)">--</div></div>
-    </div>
-    <div class="signals-grid">
-      <div class="signal-chart-wrap">
-        <div class="chart-header">
-          <div class="chart-title">BTC/USD — ▲ BUY when Z crosses −1.5 · ▼ SELL when Z crosses +0.5</div>
-          <div class="chart-badges"><span class="badge badge-blue">365 DAYS · LOG SCALE</span></div>
-        </div>
-        <div class="chart-container-signals"><canvas id="signalChart"></canvas></div>
+
+    <!-- Stats row -->
+    <div class="sig-stats-row">
+      <div class="sig-stat-card">
+        <div class="sig-stat-label">Total Signals</div>
+        <div class="sig-stat-val" id="sigTotalTrades" style="color:var(--accent-blue)">--</div>
       </div>
-      <div class="signal-table-wrap">
-        <div class="signal-table-title">Z-COMPOSITE ZONE HISTORY · 90 DAYS</div>
-        <div class="signal-table-scroll">
-          <table class="signal-table">
-            <thead><tr><th>Date</th><th>Z</th><th>Zone</th></tr></thead>
-            <tbody id="signalTableBody"></tbody>
-          </table>
+      <div class="sig-stat-card">
+        <div class="sig-stat-label">Win Rate</div>
+        <div class="sig-stat-val" id="sigWinRate">--</div>
+      </div>
+      <div class="sig-stat-card">
+        <div class="sig-stat-label">Avg Return / Trade</div>
+        <div class="sig-stat-val" id="sigAvgReturn">--</div>
+      </div>
+      <div class="sig-stat-card">
+        <div class="sig-stat-label">Best Trade</div>
+        <div class="sig-stat-val" id="sigBestTrade" style="color:var(--accent-green)">--</div>
+      </div>
+      <div class="sig-stat-card">
+        <div class="sig-stat-label">Total Return (all)</div>
+        <div class="sig-stat-val" id="sigTotalReturn" style="color:var(--accent-green)">--</div>
+      </div>
+      <div class="sig-stat-card">
+        <div class="sig-stat-label">Current Position</div>
+        <div class="sig-stat-val" id="sigPosition">--</div>
+      </div>
+    </div>
+
+    <!-- Main chart -->
+    <div class="sig-chart-card">
+      <div class="sig-chart-topbar">
+        <div>
+          <div class="sig-chart-title">BTC / USD — Z-Composite Signal System · Full History</div>
+          <div class="sig-chart-sub">▲ BUY when Z-Composite exits Accumulate zone · ▼ SELL when Z-Composite enters Elevated zone · Log Scale</div>
         </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <span class="sig-legend"><span style="color:#00d97e;font-size:14px;">▲</span> BUY Signal</span>
+          <span class="sig-legend"><span style="color:#ef4444;font-size:14px;">▼</span> SELL Signal</span>
+          <span class="sig-legend"><span style="display:inline-block;width:20px;height:2px;background:#f97316;vertical-align:middle;"></span> Z-Composite</span>
+        </div>
+      </div>
+      <div class="sig-chart-body">
+        <canvas id="signalChart"></canvas>
+      </div>
+      <!-- Zone background legend -->
+      <div class="sig-zone-legend">
+        <span style="color:#00d97e">■ ACCUMULATE (Z≤−1.5)</span>
+        <span style="color:#84cc16">■ UNDERVALUED (−1.5 to −0.5)</span>
+        <span style="color:#eab308">■ FAIR VALUE</span>
+        <span style="color:#f97316">■ ELEVATED (+0.5 to +1.5)</span>
+        <span style="color:#ef4444">■ OVERHEATED (Z≥+1.5)</span>
+      </div>
+    </div>
+
+    <!-- Trades log -->
+    <div class="sig-trades-wrap">
+      <div class="sig-trades-title">TRADE LOG — ALL HISTORICAL SIGNALS</div>
+      <div class="sig-trades-scroll">
+        <table class="signal-table" style="width:100%">
+          <thead><tr><th>Entry Date</th><th>Entry $</th><th>Exit Date</th><th>Exit $</th><th>Z Entry</th><th>Return</th><th>Status</th></tr></thead>
+          <tbody id="signalTableBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -383,7 +441,7 @@
       <div class="sentiment-stat"><div class="stat-label">7d Avg F&amp;G</div><div class="stat-value" id="sentFg7d">--</div><div class="stat-sub" id="sentFg7dLabel">--</div></div>
       <div class="sentiment-stat"><div class="stat-label">30d Avg F&amp;G</div><div class="stat-value" id="sentFg30d">--</div><div class="stat-sub" id="sentFg30dLabel">--</div></div>
       <div class="sentiment-stat"><div class="stat-label">BTC Funding Rate</div><div class="stat-value" id="sentFundingBtc">--</div><div class="stat-sub">Binance BTCUSDT Perp</div></div>
-      <div class="sentiment-stat"><div class="stat-label">ETH Funding Rate</div><div class="stat-value" id="sentFundingEth">--</div><div class="stat-sub">Binance ETHUSDT Perp</div></div>
+
     </div>
     <div class="sentiment-funding-row">
       <div class="funding-card">
@@ -396,16 +454,7 @@
         </div>
         <div style="font-size:8px;color:var(--text-muted);margin-top:6px;" id="fundingBtcDesc">--</div>
       </div>
-      <div class="funding-card">
-        <div class="funding-label">ETH Funding Rate</div>
-        <div class="funding-value" id="fundingEthBig">--</div>
-        <div class="funding-bar-row">
-          <span style="font-size:8px;color:var(--text-muted)">Short bias</span>
-          <div class="funding-bar"><div class="funding-bar-fill" id="fundingEthBar" style="width:50%;background:var(--accent-yellow)"></div></div>
-          <span style="font-size:8px;color:var(--text-muted)">Long bias</span>
-        </div>
-        <div style="font-size:8px;color:var(--text-muted);margin-top:6px;" id="fundingEthDesc">--</div>
-      </div>
+
       <div class="funding-card">
         <div class="funding-label">Overall Sentiment Score</div>
         <div class="funding-value" id="overallSentScore">--</div>
@@ -544,14 +593,15 @@
       if (!data || !Array.isArray(data)) return [];
       return data.map(item => {
         const date = item.d || item.date || item.t;
-        let value = item[fieldHint];
+        let value = fieldHint ? item[fieldHint] : undefined;
         if (typeof value === 'string') value = parseFloat(value);
         if (value === undefined || value === null) {
+          // Auto-detect: pick first numeric field that isn't a date/meta field
+          const SKIP = new Set(['d','t','date','unixTs','unix','timestamp','id']);
           for (const [k, v] of Object.entries(item)) {
-            if (k !== 'd' && k !== 'unixTs') { 
-              const num = parseFloat(v); 
-              if (!isNaN(num)) { value = num; break; } 
-            }
+            if (SKIP.has(k)) continue;
+            const num = parseFloat(v); 
+            if (!isNaN(num) && isFinite(num)) { value = num; break; }
           }
         }
         const numValue = parseFloat(value);
@@ -1322,9 +1372,14 @@
         const date = compositeHistory[i].date;
         const price = priceMap.get(date);
         if (price == null) continue;
+        // BUY: Z crosses UP through -1.5 AND was below -1.5 for at least 3 of the last 5 days
         if (prev !== null && prev <= BUY_TH && curr > BUY_TH && !openTrade) {
-          openTrade = { date, price, z: curr };
-          signals.push({ type: 'BUY', date, price, z: curr });
+          const lookback = compositeHistory.slice(Math.max(0, i-5), i).filter(d => d.value !== null);
+          const daysInAcc = lookback.filter(d => d.value <= BUY_TH).length;
+          if (daysInAcc >= 2) {
+            openTrade = { date, price, z: curr };
+            signals.push({ type: 'BUY', date, price, z: curr });
+          }
         }
         if (prev !== null && prev <= SELL_TH && curr > SELL_TH && openTrade) {
           const ret = ((price - openTrade.price) / openTrade.price) * 100;
@@ -1346,59 +1401,111 @@
       if (!state.compositeHistory.length || !state.prices.length) return;
       const signals = detectSignals(state.compositeHistory, state.prices);
 
-      // --- Stats ---
       const closed = signals.filter(s => s.type === 'SELL');
       const open   = signals.find(s  => s.type === 'OPEN');
       const wins   = closed.filter(s => s.returnPct > 0).length;
       const avgRet = closed.length ? closed.reduce((a,s) => a + s.returnPct, 0) / closed.length : 0;
       const bestRet= closed.length ? Math.max(...closed.map(s => s.returnPct)) : 0;
+      const totalRet = closed.reduce((a,s) => a + s.returnPct, 0);
       const total  = closed.length + (open ? 1 : 0);
 
       document.getElementById('sigTotalTrades').textContent = total || '--';
+
       const wrEl = document.getElementById('sigWinRate');
       wrEl.textContent = closed.length ? Math.round((wins/closed.length)*100) + '%' : '--';
       wrEl.style.color = closed.length && wins/closed.length >= 0.5 ? 'var(--accent-green)' : 'var(--accent-red)';
+
       const arEl = document.getElementById('sigAvgReturn');
       arEl.textContent = closed.length ? (avgRet >= 0 ? '+' : '') + avgRet.toFixed(0) + '%' : '--';
       arEl.style.color = avgRet >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+
       document.getElementById('sigBestTrade').textContent = bestRet > 0 ? '+' + bestRet.toFixed(0) + '%' : '--';
 
+      const trEl = document.getElementById('sigTotalReturn');
+      trEl.textContent = closed.length ? (totalRet >= 0 ? '+' : '') + totalRet.toFixed(0) + '%' : '--';
+      trEl.style.color = totalRet >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+
+      const posEl = document.getElementById('sigPosition');
+      if (open) {
+        posEl.textContent = 'LONG ' + (open.returnPct >= 0 ? '+' : '') + open.returnPct.toFixed(0) + '%';
+        posEl.style.color = open.returnPct >= 0 ? 'var(--accent-green)' : 'var(--accent-orange)';
+      } else {
+        posEl.textContent = 'CASH';
+        posEl.style.color = 'var(--text-muted)';
+      }
+
       renderSignalChart(signals);
-      renderSignalTable();
+      renderSignalTable(signals);
     }
 
     function renderSignalChart(signals) {
       const ctx = document.getElementById('signalChart')?.getContext('2d');
       if (!ctx) return;
-      const last365 = state.prices.slice(-365);
-      const cMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
-      const labels = last365.map(p => p.date);
 
-      // Build annotations for signals that fall in last 365 days
+      // Use ALL available price history
+      const allPrices = state.prices;
+      const cMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
+      const labels = allPrices.map(p => p.date);
+      const priceData = allPrices.map(p => p.value);
+      const zData = labels.map(d => cMap.get(d) ?? null);
+
+      // Build background zone boxes (colored bands on BTC price area)
       const annotations = {};
+
+      // Zone coloring: draw box annotations per zone segment
+      // Instead, color Z-line segments and use price area fill by zone
+      // Build signal annotations
       signals.forEach((sig, i) => {
-        if (!labels.includes(sig.date)) return;
         const isBuy  = sig.type === 'BUY';
         const isOpen = sig.type === 'OPEN';
-        annotations['sig_' + i] = {
-          type: 'point',
+        const isSell = sig.type === 'SELL';
+        const idx = labels.indexOf(sig.date);
+        if (idx === -1) return;
+
+        // Arrow
+        annotations['arrow_' + i] = {
+          type: 'label',
           xValue: sig.date,
           yValue: sig.price,
-          yScaleID: 'y',
-          radius: 9,
-          backgroundColor: isBuy ? 'rgba(0,217,126,0.9)' : isOpen ? 'rgba(59,130,246,0.85)' : 'rgba(239,68,68,0.9)',
-          borderColor: 'rgba(255,255,255,0.9)',
-          borderWidth: 2,
-          label: {
-            content: isBuy ? '▲ BUY' : isOpen ? '▲ OPEN' : '▼ SELL',
-            display: true,
-            position: 'center',
-            color: '#fff',
-            font: { size: 8, weight: 'bold', family: "'JetBrains Mono', monospace" },
-            backgroundColor: 'transparent',
-            yAdjust: isBuy || isOpen ? 22 : -22
-          }
+          yScaleID: 'yPrice',
+          content: isBuy || isOpen ? '▲' : '▼',
+          color: isBuy ? '#00ff88' : isOpen ? '#60a5fa' : '#ff4444',
+          font: { size: 20, weight: 'bold' },
+          yAdjust: isBuy || isOpen ? 18 : -18,
+          backgroundColor: 'transparent',
+          borderWidth: 0
         };
+        // Label box
+        annotations['box_' + i] = {
+          type: 'label',
+          xValue: sig.date,
+          yValue: sig.price,
+          yScaleID: 'yPrice',
+          content: [isBuy ? 'BUY' : isOpen ? 'OPEN' : 'SELL', '$' + Math.round(sig.price/1000) + 'k'],
+          color: '#fff',
+          font: { size: 7, weight: 'bold', family: "'JetBrains Mono', monospace" },
+          backgroundColor: isBuy ? 'rgba(0,255,136,0.25)' : isOpen ? 'rgba(96,165,250,0.25)' : 'rgba(255,68,68,0.25)',
+          borderColor: isBuy ? '#00ff88' : isOpen ? '#60a5fa' : '#ff4444',
+          borderWidth: 1,
+          borderRadius: 3,
+          padding: { top: 3, bottom: 3, left: 5, right: 5 },
+          yAdjust: isBuy || isOpen ? 44 : -44
+        };
+
+        // Trade return line (connecting buy to sell)
+        if (isSell && sig.buyDate) {
+          annotations['line_' + i] = {
+            type: 'line',
+            xMin: sig.buyDate,
+            xMax: sig.date,
+            yMin: sig.buyPrice,
+            yMax: sig.price,
+            yScaleID: 'yPrice',
+            borderColor: sig.returnPct >= 0 ? 'rgba(0,255,136,0.35)' : 'rgba(255,68,68,0.35)',
+            borderWidth: 1.5,
+            borderDash: [4, 3]
+          };
+        }
       });
 
       if (_signalChart) _signalChart.destroy();
@@ -1407,42 +1514,173 @@
         data: {
           labels,
           datasets: [
-            { label: 'BTC', data: last365.map(p => p.value), borderColor: 'rgba(255,255,255,0.65)', borderWidth: 1.5, borderDash: [3,2], pointRadius: 0, yAxisID: 'y', tension: 0.1 },
-            { label: 'Z', data: labels.map(d => cMap.get(d) ?? null), borderWidth: 2.5, pointRadius: 0, yAxisID: 'y1', tension: 0.1, segment: { borderColor: c => getZoneColor(c.p0.parsed.y) } }
+            {
+              label: 'BTC/USD',
+              data: priceData,
+              yAxisID: 'yPrice',
+              borderColor: 'rgba(255,255,255,0.7)',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              tension: 0.1,
+              fill: {
+                target: 'origin',
+                above: 'rgba(255,255,255,0.03)'
+              }
+            },
+            {
+              label: 'Z-Composite',
+              data: zData,
+              yAxisID: 'yZ',
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.2,
+              segment: {
+                borderColor: ctx => {
+                  const z = ctx.p0.parsed.y;
+                  if (z === null) return 'transparent';
+                  if (z <= -1.5) return '#00d97e';
+                  if (z <= -0.5) return '#84cc16';
+                  if (z <= 0.5)  return '#eab308';
+                  if (z <= 1.5)  return '#f97316';
+                  return '#ef4444';
+                }
+              },
+              fill: {
+                target: 'origin',
+                above: ctx => {
+                  const z = ctx.p0?.parsed?.y;
+                  if (z === null || z === undefined) return 'transparent';
+                  if (z <= -1.5) return 'rgba(0,217,126,0.08)';
+                  if (z <= -0.5) return 'rgba(132,204,22,0.06)';
+                  if (z <= 0.5)  return 'rgba(234,179,8,0.04)';
+                  if (z <= 1.5)  return 'rgba(249,115,22,0.06)';
+                  return 'rgba(239,68,68,0.08)';
+                },
+                below: 'transparent'
+              }
+            }
           ]
         },
         options: {
-          responsive: true, maintainAspectRatio: false,
+          responsive: true,
+          maintainAspectRatio: false,
           interaction: { intersect: false, mode: 'index' },
           plugins: {
             legend: { display: false },
             annotation: { annotations },
-            tooltip: { callbacks: { label: c => c.datasetIndex === 0 ? 'BTC: $' + Math.round(c.parsed.y).toLocaleString() : 'Z: ' + (c.parsed.y?.toFixed(2) || '--') } }
+            tooltip: {
+              backgroundColor: 'rgba(10,10,11,0.92)',
+              borderColor: 'rgba(255,255,255,0.1)',
+              borderWidth: 1,
+              titleColor: '#999',
+              bodyColor: '#fff',
+              callbacks: {
+                title: items => {
+                  const d = new Date(items[0].label);
+                  return d.toLocaleDateString('en-US', { month:'short', day:'2-digit', year:'numeric' }).toUpperCase();
+                },
+                label: c => {
+                  if (c.datasetIndex === 0) return ' BTC: $' + Math.round(c.parsed.y).toLocaleString();
+                  const z = c.parsed.y?.toFixed(2);
+                  if (!z) return '';
+                  const zone = c.parsed.y <= -1.5 ? 'ACCUMULATE' : c.parsed.y <= -0.5 ? 'UNDERVALUED' : c.parsed.y <= 0.5 ? 'FAIR VALUE' : c.parsed.y <= 1.5 ? 'ELEVATED' : 'OVERHEATED';
+                  return ` Z: ${z} · ${zone}`;
+                }
+              }
+            }
           },
           scales: {
-            x:  { display: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#606068', maxTicksLimit: 8, font: { size: 9 } } },
-            y:  { type: 'logarithmic', display: true, position: 'left', grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#606068', font: { size: 9 }, callback: v => v >= 1000 ? '$' + (v/1000).toFixed(0) + 'k' : '$' + v } },
-            y1: { display: true, position: 'right', min: -3, max: 3, grid: { display: false }, ticks: { color: '#606068', font: { size: 9 } } }
+            x: {
+              display: true,
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: {
+                color: '#505058',
+                maxTicksLimit: 10,
+                font: { size: 9, family: "'JetBrains Mono', monospace" },
+                callback: function(val, idx) {
+                  const d = new Date(this.getLabelForValue(val));
+                  return d.getFullYear() + (d.getMonth()===0 ? '' : ' ' + d.toLocaleString('en',{month:'short'}));
+                }
+              }
+            },
+            yPrice: {
+              type: 'logarithmic',
+              display: true,
+              position: 'left',
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: {
+                color: '#505058',
+                font: { size: 9 },
+                callback: v => {
+                  if (v >= 100000) return '$' + (v/1000).toFixed(0) + 'k';
+                  if (v >= 1000)   return '$' + (v/1000).toFixed(0) + 'k';
+                  if (v >= 100)    return '$' + v;
+                  return '';
+                }
+              }
+            },
+            yZ: {
+              display: true,
+              position: 'right',
+              min: -3.5,
+              max: 3.5,
+              grid: { display: false },
+              ticks: {
+                color: '#505058',
+                font: { size: 9 },
+                callback: v => v === 0 ? '0' : (v > 0 ? '+' + v : v)
+              },
+              border: { dash: [4, 4] }
+            }
           }
         }
       });
     }
 
-    function renderSignalTable() {
+    function renderSignalTable(signals) {
       const tbody = document.getElementById('signalTableBody');
       if (!tbody) return;
-      tbody.innerHTML = state.compositeHistory.slice(-90).slice().reverse().map(d => {
-        const z = getZone(d.value);
-        const ds = new Date(d.date).toLocaleDateString('en-US', { month:'short', day:'2-digit', year:'2-digit' }).toUpperCase();
-        return `<tr>
-          <td style="color:var(--text-secondary)">${ds}</td>
-          <td style="color:${z.color};font-weight:600">${d.value.toFixed(2)}</td>
-          <td><span style="background:${z.color}22;color:${z.color};padding:2px 8px;border-radius:3px;font-size:8px;font-weight:600">${z.short}</span></td>
-        </tr>`;
-      }).join('');
+
+      // Build trade pairs from signals
+      const rows = [];
+      const buys = signals.filter(s => s.type === 'BUY');
+      const sells = signals.filter(s => s.type === 'SELL');
+      const open  = signals.find(s => s.type === 'OPEN');
+
+      // Match each SELL to its BUY
+      sells.forEach(sell => {
+        rows.push({
+          entryDate: sell.buyDate, entryPrice: sell.buyPrice,
+          exitDate: sell.date, exitPrice: sell.price,
+          zEntry: sell.z, returnPct: sell.returnPct, status: 'CLOSED'
+        });
+      });
+      if (open) {
+        rows.push({
+          entryDate: open.buyDate, entryPrice: open.buyPrice,
+          exitDate: '--', exitPrice: null,
+          zEntry: open.z, returnPct: open.returnPct, status: 'OPEN'
+        });
+      }
+
+      // Sort newest first
+      rows.sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
+
+      const fmt = d => d && d !== '--' ? new Date(d).toLocaleDateString('en-US', {month:'short', day:'2-digit', year:'2-digit'}).toUpperCase() : '--';
+      const fmtP = v => v != null ? '$' + Math.round(v).toLocaleString() : '--';
+      const fmtR = r => r >= 0 ? `<span style="color:#00d97e">+${r.toFixed(0)}%</span>` : `<span style="color:#ef4444">${r.toFixed(0)}%</span>`;
+
+      tbody.innerHTML = rows.map(r => `<tr>
+        <td style="color:var(--accent-green)">${fmt(r.entryDate)}</td>
+        <td style="color:var(--text-primary);font-weight:600">${fmtP(r.entryPrice)}</td>
+        <td style="color:${r.status==='OPEN'?'var(--accent-blue)':'var(--text-secondary)'}">${fmt(r.exitDate)}</td>
+        <td style="color:var(--text-primary)">${fmtP(r.exitPrice)}</td>
+        <td style="color:var(--text-muted)">${r.zEntry?.toFixed(2) ?? '--'}</td>
+        <td>${fmtR(r.returnPct)}</td>
+        <td><span style="background:${r.status==='OPEN'?'rgba(96,165,250,0.15)':'rgba(255,255,255,0.06)'};color:${r.status==='OPEN'?'#60a5fa':'#888'};padding:2px 8px;border-radius:3px;font-size:8px;font-weight:600">${r.status}</span></td>
+      </tr>`).join('');
     }
 
-    // ========== FLOW SECTION ==========
     function renderFlowLineChart(canvasId, data, label, color, withFill) {
       const ctx = document.getElementById(canvasId)?.getContext('2d');
       if (!ctx) return;
@@ -1475,16 +1713,16 @@
 
     async function fetchFlowData() {
       const [etfR, resR, inR, outR, whaleR] = await Promise.allSettled([
-        fetchBGeometrics('/v1/etf-flow',          'etfFlow'),
-        fetchBGeometrics('/v1/exchange-reserve',   'exchangeReserve'),
-        fetchBGeometrics('/v1/exchange-inflow',    'exchangeInflow'),
-        fetchBGeometrics('/v1/exchange-outflow',   'exchangeOutflow'),
-        fetchBGeometrics('/v1/whale-ratio',        'whaleRatio')
+        fetchBGeometrics('/v1/etf-flow',          'ETF Flow'),
+        fetchBGeometrics('/v1/exchange-reserve',   'Exchange Reserve'),
+        fetchBGeometrics('/v1/exchange-inflow',    'Exchange Inflow'),
+        fetchBGeometrics('/v1/exchange-outflow',   'Exchange Outflow'),
+        fetchBGeometrics('/v1/whale-ratio',        'Whale Ratio')
       ]);
 
       // ETF Flow
       if (etfR.status === 'fulfilled' && etfR.value?.success) {
-        const data = normalizeBGeometricsData(etfR.value.data, 'etfFlow').slice(-90);
+        const data = normalizeBGeometricsData(etfR.value.data, '').slice(-90);
         if (data.length) {
           const latest = data[data.length-1].value;
           const sum7d  = data.slice(-7).reduce((a,d)=>a+(d.value||0),0);
@@ -1499,7 +1737,7 @@
 
       // Exchange Reserve
       if (resR.status === 'fulfilled' && resR.value?.success) {
-        const data = normalizeBGeometricsData(resR.value.data, 'exchangeReserve').slice(-180);
+        const data = normalizeBGeometricsData(resR.value.data, '').slice(-180);
         if (data.length) {
           const latest = data[data.length-1].value;
           const prev7  = data.length > 7 ? data[data.length-8].value : latest;
@@ -1513,8 +1751,8 @@
       }
 
       // Inflow / Outflow
-      const inData  = (inR.status  === 'fulfilled' && inR.value?.success)  ? normalizeBGeometricsData(inR.value.data,  'exchangeInflow').slice(-90)  : [];
-      const outData = (outR.status === 'fulfilled' && outR.value?.success) ? normalizeBGeometricsData(outR.value.data, 'exchangeOutflow').slice(-90) : [];
+      const inData  = (inR.status  === 'fulfilled' && inR.value?.success)  ? normalizeBGeometricsData(inR.value.data,  '').slice(-90)  : [];
+      const outData = (outR.status === 'fulfilled' && outR.value?.success) ? normalizeBGeometricsData(outR.value.data, '').slice(-90) : [];
       if (inData.length || outData.length) renderFlowInOutChart(inData, outData);
 
       // Net Pressure
@@ -1545,7 +1783,7 @@
 
       // Whale Ratio
       if (whaleR.status === 'fulfilled' && whaleR.value?.success) {
-        const data = normalizeBGeometricsData(whaleR.value.data, 'whaleRatio');
+        const data = normalizeBGeometricsData(whaleR.value.data, '');
         if (data.length) {
           const v = data[data.length-1].value;
           const pct = (v * 100).toFixed(1) + '%';
@@ -1640,12 +1878,10 @@
 
       // Funding Rates — Binance Futures API (free, no auth)
       try {
-        const [btcR, ethR] = await Promise.allSettled([
-          fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1').then(r=>r.json()),
-          fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&limit=1').then(r=>r.json())
+        const [btcR] = await Promise.allSettled([
+          fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1').then(r=>r.json())
         ]);
         if (btcR.status==='fulfilled' && btcR.value?.length) _renderFundingCard('fundingBtcBig','fundingBtcBar','fundingBtcDesc','sentFundingBtc', parseFloat(btcR.value[0].fundingRate)*100);
-        if (ethR.status==='fulfilled' && ethR.value?.length) _renderFundingCard('fundingEthBig','fundingEthBar','fundingEthDesc','sentFundingEth', parseFloat(ethR.value[0].fundingRate)*100);
       } catch(e) { console.warn('Funding fetch failed:', e.message); }
     }
 
