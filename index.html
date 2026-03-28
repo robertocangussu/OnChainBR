@@ -506,7 +506,7 @@
       sopr: { name: 'SOPR', api: 'bgeometrics', endpoint: '/v1/sopr', field: 'sopr', color: '#84cc16', showInOverlay: true },
       mayer: { name: 'Mayer Multiple', api: 'bgeometrics', endpoint: '/v1/mayer-multiple', field: 'mayerMultiple', color: '#eab308', showInOverlay: true },
       ssr: { name: 'Stablecoin Ratio', api: 'bgeometrics', endpoint: '/v1/ssr', field: 'ssrStablecoin', color: '#06b6d4', showInOverlay: true },
-      supplyProfit: { name: 'Supply Profit', api: 'bgeometrics', endpoint: '/v1/supply-profit', field: 'supplyProfit', color: '#8b5cf6', showInOverlay: true },
+      supplyProfit: { name: 'Supply Profit %', api: 'bgeometrics', endpoint: '/v1/supply-profit', field: 'supplyProfit', color: '#8b5cf6', showInOverlay: true, transform: v => v > 1000 ? (v / 19700000) * 100 : v },
       fearGreed: { name: 'Fear & Greed', api: 'bgeometrics', endpoint: '/v1/fear-greed', field: 'fearGreed', color: '#ec4899', showInOverlay: true },
       puell: { name: 'Puell Multiple', api: 'bgeometrics', endpoint: '/v1/puell-multiple', field: 'puellMultiple', color: '#3b82f6', showInOverlay: true }
     };
@@ -799,7 +799,9 @@
         } else {
           result = await fetchBGeometrics(metric.endpoint, metric.name);
           if (result.success) {
-            state.metricHistory[key] = normalizeBGeometricsData(result.data, metric.field);
+            let hist = normalizeBGeometricsData(result.data, metric.field);
+            if (metric.transform) hist = hist.map(d => ({ date: d.date, value: metric.transform(d.value) }));
+            state.metricHistory[key] = hist;
           }
         }
         
@@ -878,6 +880,10 @@
       }
       state.composite = count > 0 ? sum / count : null;
       console.log(`COMPOSITE: ${safeFixed(state.composite, 4)} (from ${count} metrics)`);
+      // Log raw values for debugging
+      for (const [k, v] of Object.entries(state.rawValues)) {
+        console.log(`  ${k}: raw=${safeFixed(v,4)}, Z=${safeFixed(state.zScores[k],4)}`);
+      }
     }
 
     function calculateCompositeHistory() {
@@ -899,7 +905,7 @@
             }
           }
         }
-        if (count >= 3) {
+        if (count >= 5) {  // Require 5+ metrics for reliable composite
           state.compositeHistory.push({ date, value: sum / count });
         }
       }
@@ -1394,9 +1400,9 @@
       // ── PARAMETERS ────────────────────────────────────────────────
       const ACC_THRESHOLD  = -1.5;  // ACC zone boundary
       const HOT_THRESHOLD  =  1.5;  // OVERHEATED zone boundary
-      const MIN_DAYS_IN_ACC   = 7;  // must spend ≥7 days in ACC before BUY is valid
-      const CONFIRM_DAYS_BUY  = 3;  // Z must stay above -1.5 for 3 days to confirm BUY
-      const CONFIRM_DAYS_SELL = 2;  // Z must stay above +1.5 for 2 days to confirm SELL
+      const MIN_DAYS_IN_ACC   = 14; // must spend ≥14 days in ACC before BUY is valid
+      const CONFIRM_DAYS_BUY  = 5;  // Z must stay above -1.5 for 5 days to confirm BUY
+      const CONFIRM_DAYS_SELL = 3;  // Z must stay above +1.5 for 3 days to confirm SELL
       // ──────────────────────────────────────────────────────────────
 
       const signals = [];
@@ -1424,10 +1430,13 @@
 
           // Detect the moment Z first crosses -1.5 upward
           if (prev <= ACC_THRESHOLD && curr > ACC_THRESHOLD) {
-            // Check: was Z in ACC for at least MIN_DAYS_IN_ACC before this cross?
-            const lookback = compositeHistory.slice(Math.max(0, i - MIN_DAYS_IN_ACC - 5), i);
-            const daysInAcc = lookback.filter(d => d.value !== null && d.value <= ACC_THRESHOLD).length;
-            if (daysInAcc >= MIN_DAYS_IN_ACC) {
+            // Check: was Z in ACC for MIN_DAYS_IN_ACC AND went below -2.0 (deep capitulation)
+            const lookback = compositeHistory.slice(Math.max(0, i - MIN_DAYS_IN_ACC - 10), i);
+            const accPoints = lookback.filter(d => d.value !== null && d.value <= ACC_THRESHOLD);
+            const deepPoints = lookback.filter(d => d.value !== null && d.value <= -2.0);
+            const daysInAcc = accPoints.length;
+            const hadDeepAcc = deepPoints.length >= 3; // at least 3 days below -2.0
+            if (daysInAcc >= MIN_DAYS_IN_ACC && hadDeepAcc) {
               buyPending = { crossDate: date, crossPrice: price, crossZ: curr };
               daysAboveBuyTh = 1;
             }
