@@ -93,9 +93,90 @@
     
     @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } .top-stats { grid-template-columns: 1fr; } .stats-row { grid-template-columns: repeat(3, 1fr); } .sidebar { max-height: none; } }
     @media (max-width: 600px) { .stats-row { grid-template-columns: repeat(2, 1fr); } .metrics-grid { grid-template-columns: 1fr; } }
+
+    /* ===== NAV BAR ===== */
+    .site-nav { position: sticky; top: 0; z-index: 200; background: rgba(10,10,11,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 2px; height: 40px; }
+    .site-nav a { font-size: 9px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); text-decoration: none; padding: 6px 14px; border-radius: 4px; transition: all 0.15s; }
+    .site-nav a:hover, .site-nav a.active { color: var(--text-primary); background: rgba(255,255,255,0.06); }
+    .site-nav a.active { color: var(--accent-orange); }
+    .nav-brand { font-size: 10px; font-weight: 700; color: var(--accent-orange); margin-right: 16px; letter-spacing: 1px; }
+    .nav-sep { width: 1px; height: 16px; background: var(--border); margin: 0 6px; }
+
+    /* ===== SECTION DIVIDERS ===== */
+    .section-wrap { padding-top: 32px; padding-bottom: 16px; }
+    .section-header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .section-num { font-size: 9px; font-weight: 700; color: var(--accent-orange); letter-spacing: 1px; }
+    .section-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
+    .section-sub { font-size: 9px; color: var(--text-muted); margin-left: auto; letter-spacing: 0.5px; }
+
+    /* ===== SIGNALS SECTION ===== */
+    .signals-grid { display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
+    .signal-chart-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .signal-table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow: hidden; display: flex; flex-direction: column; }
+    .signal-table-title { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .signal-table-scroll { overflow-y: auto; flex: 1; max-height: 380px; }
+    .signal-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+    .signal-table th { padding: 6px 8px; text-align: left; color: var(--text-muted); font-weight: 500; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg-card); }
+    .signal-table td { padding: 7px 8px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .signal-buy { color: #00d97e; font-weight: 700; }
+    .signal-sell { color: #ef4444; font-weight: 700; }
+    .signal-return-pos { color: #00d97e; }
+    .signal-return-neg { color: #ef4444; }
+    .signals-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+    .signal-stat { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 10px; text-align: center; }
+    .signal-stat-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+    .signal-stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; }
+    .chart-container-signals { height: 320px; }
+
+    /* ===== FLOW SECTION ===== */
+    .flow-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+    .flow-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .flow-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .flow-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .flow-card-title { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .flow-card-value { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; }
+    .flow-card-sub { font-size: 8px; color: var(--text-muted); margin-top: 3px; }
+    .chart-container-flow { height: 160px; }
+    .flow-pressure-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center; }
+    .flow-pressure-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .flow-pressure-value { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; margin-bottom: 4px; }
+    .flow-pressure-bar { height: 6px; border-radius: 3px; background: var(--border); margin: 12px 0 6px; overflow: hidden; }
+    .flow-pressure-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+    .flow-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .flow-stat-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+
+    /* ===== SENTIMENT SECTION ===== */
+    .sentiment-grid { display: grid; grid-template-columns: 200px 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .fg-dial-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .fg-value { font-family: 'Space Grotesk', sans-serif; font-size: 52px; font-weight: 700; }
+    .fg-label { font-size: 14px; font-weight: 600; margin-top: 4px; }
+    .fg-sub { font-size: 8px; color: var(--text-muted); margin-top: 6px; }
+    .sentiment-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .sentiment-card-title { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .chart-container-sentiment { height: 160px; }
+    .sentiment-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    .sentiment-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+    .sentiment-funding-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .funding-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .funding-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .funding-value { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; }
+    .funding-bar-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .funding-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
+    .funding-bar-fill { height: 100%; border-radius: 2px; }
+
+    @media (max-width: 1200px) { .signals-grid { grid-template-columns: 1fr; } .flow-grid { grid-template-columns: 1fr; } .sentiment-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
+  <nav class="site-nav">
+    <span class="nav-brand">ONCHAINBR</span>
+    <div class="nav-sep"></div>
+    <a href="#dashboard" class="active" onclick="setActiveNav(this)">01 · Dashboard</a>
+    <a href="#signals" onclick="setActiveNav(this)">02 · Trade Signals</a>
+    <a href="#flow" onclick="setActiveNav(this)">03 · Flow Analysis</a>
+    <a href="#sentiment" onclick="setActiveNav(this)">04 · Sentiment</a>
+  </nav>
+  <div id="dashboard">
   <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
     <div class="loading-text" id="loadingText">Inicializando...</div>
@@ -176,11 +257,173 @@
       </div>
     </div>
     
-    <footer class="footer">
-      <div>@ONCHAINBR · Z-Score Model · Rolling 365d · 9 Metrics</div>
-      <div>APIs:<a href="https://bitview.space" target="_blank">Bitview</a>+<a href="https://bitcoin-data.com" target="_blank">BGeometrics</a></div>
-    </footer>
+  </div><!-- end #dashboard -->
+
+  <!-- ========== SECTION 2: TRADE SIGNALS ========== -->
+  <div class="section-wrap" id="signals" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">Trade Signals</span>
+      <span class="section-sub">Z-COMPOSITE CROSSOVER · BUY ENTRY: Z CROSSES UP −1.5 · SELL EXIT: Z CROSSES UP +0.5</span>
+    </div>
+    <div class="signals-stats">
+      <div class="signal-stat"><div class="signal-stat-label">Total Trades</div><div class="signal-stat-value" id="sigTotalTrades" style="color:var(--accent-blue)">--</div></div>
+      <div class="signal-stat"><div class="signal-stat-label">Win Rate</div><div class="signal-stat-value" id="sigWinRate">--</div></div>
+      <div class="signal-stat"><div class="signal-stat-label">Avg Return</div><div class="signal-stat-value" id="sigAvgReturn">--</div></div>
+      <div class="signal-stat"><div class="signal-stat-label">Best Trade</div><div class="signal-stat-value" id="sigBestTrade" style="color:var(--accent-green)">--</div></div>
+    </div>
+    <div class="signals-grid">
+      <div class="signal-chart-wrap">
+        <div class="chart-header">
+          <div class="chart-title">BTC/USD — ▲ BUY when Z crosses −1.5 · ▼ SELL when Z crosses +0.5</div>
+          <div class="chart-badges"><span class="badge badge-blue">365 DAYS · LOG SCALE</span></div>
+        </div>
+        <div class="chart-container-signals"><canvas id="signalChart"></canvas></div>
+      </div>
+      <div class="signal-table-wrap">
+        <div class="signal-table-title">Z-COMPOSITE ZONE HISTORY · 90 DAYS</div>
+        <div class="signal-table-scroll">
+          <table class="signal-table">
+            <thead><tr><th>Date</th><th>Z</th><th>Zone</th></tr></thead>
+            <tbody id="signalTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- ========== SECTION 3: FLOW ANALYSIS ========== -->
+  <div class="section-wrap" id="flow" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">Flow Analysis</span>
+      <span class="section-sub">ETF FLOWS · EXCHANGE RESERVE · WHALE ACTIVITY</span>
+    </div>
+    <div class="flow-stats-row">
+      <div class="flow-stat-item">
+        <div class="stat-label">ETF Flow (7d Sum)</div>
+        <div class="stat-value" id="flowEtf7d">--</div>
+        <div class="stat-sub" id="flowEtf7dSub">BTC net</div>
+      </div>
+      <div class="flow-stat-item">
+        <div class="stat-label">Exchange Reserve Δ7d</div>
+        <div class="stat-value" id="flowExReserve">--</div>
+        <div class="stat-sub" id="flowExReserveSub">BTC change</div>
+      </div>
+      <div class="flow-stat-item">
+        <div class="stat-label">Whale Ratio</div>
+        <div class="stat-value" id="flowWhaleRatio">--</div>
+        <div class="stat-sub" id="flowWhaleRatioSub">top-10 / total inflow</div>
+      </div>
+    </div>
+    <div class="flow-grid">
+      <div class="flow-card">
+        <div class="flow-card-header">
+          <div class="flow-card-title">ETF Net Flow (90d)</div>
+          <div>
+            <div class="flow-card-value" id="flowEtfLatest">--</div>
+            <div class="flow-card-sub">Latest daily (BTC)</div>
+          </div>
+        </div>
+        <div class="chart-container-flow"><canvas id="flowEtfChart"></canvas></div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-card-header">
+          <div class="flow-card-title">Exchange Reserve (180d)</div>
+          <div>
+            <div class="flow-card-value" id="flowReserveLatest">--</div>
+            <div class="flow-card-sub">Total BTC on exchanges</div>
+          </div>
+        </div>
+        <div class="chart-container-flow"><canvas id="flowReserveChart"></canvas></div>
+      </div>
+    </div>
+    <div class="flow-grid">
+      <div class="flow-card">
+        <div class="flow-card-header">
+          <div class="flow-card-title">Exchange Inflow vs Outflow (90d)</div>
+        </div>
+        <div class="chart-container-flow"><canvas id="flowInOutChart"></canvas></div>
+      </div>
+      <div class="flow-pressure-card">
+        <div class="flow-pressure-label">Net Flow Pressure (30d)</div>
+        <div class="flow-pressure-value" id="flowPressureValue">--</div>
+        <div id="flowPressureLabel" style="font-size:11px;font-weight:600;margin-top:4px;">--</div>
+        <div class="flow-pressure-bar"><div class="flow-pressure-fill" id="flowPressureFill" style="width:50%;background:var(--accent-yellow)"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-muted);margin-top:4px;"><span>SELL PRESSURE</span><span>NEUTRAL</span><span>BUY PRESSURE</span></div>
+        <div style="margin-top:16px;font-size:9px;color:var(--text-muted);line-height:1.6;" id="flowPressureDesc">Loading flow data...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SECTION 4: SENTIMENT INDEX ========== -->
+  <div class="section-wrap" id="sentiment" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <span class="section-title">Sentiment Index</span>
+      <span class="section-sub">FEAR &amp; GREED · FUNDING RATES · COMPOSITE MOOD</span>
+    </div>
+    <div class="sentiment-grid">
+      <div class="fg-dial-card">
+        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Fear &amp; Greed</div>
+        <div class="fg-value" id="fgValue">--</div>
+        <div class="fg-label" id="fgLabel">--</div>
+        <div class="fg-sub" id="fgDate">--</div>
+      </div>
+      <div class="sentiment-card">
+        <div class="sentiment-card-title">Fear &amp; Greed — 90 Day History</div>
+        <div class="chart-container-sentiment"><canvas id="sentimentFgChart"></canvas></div>
+      </div>
+      <div class="sentiment-card">
+        <div class="sentiment-card-title">Z-Composite vs Fear &amp; Greed (normalized)</div>
+        <div class="chart-container-sentiment"><canvas id="sentimentOverlayChart"></canvas></div>
+      </div>
+    </div>
+    <div class="sentiment-stats-row">
+      <div class="sentiment-stat"><div class="stat-label">7d Avg F&amp;G</div><div class="stat-value" id="sentFg7d">--</div><div class="stat-sub" id="sentFg7dLabel">--</div></div>
+      <div class="sentiment-stat"><div class="stat-label">30d Avg F&amp;G</div><div class="stat-value" id="sentFg30d">--</div><div class="stat-sub" id="sentFg30dLabel">--</div></div>
+      <div class="sentiment-stat"><div class="stat-label">BTC Funding Rate</div><div class="stat-value" id="sentFundingBtc">--</div><div class="stat-sub">Binance BTCUSDT Perp</div></div>
+      <div class="sentiment-stat"><div class="stat-label">ETH Funding Rate</div><div class="stat-value" id="sentFundingEth">--</div><div class="stat-sub">Binance ETHUSDT Perp</div></div>
+    </div>
+    <div class="sentiment-funding-row">
+      <div class="funding-card">
+        <div class="funding-label">BTC Funding Rate</div>
+        <div class="funding-value" id="fundingBtcBig">--</div>
+        <div class="funding-bar-row">
+          <span style="font-size:8px;color:var(--text-muted)">Short bias</span>
+          <div class="funding-bar"><div class="funding-bar-fill" id="fundingBtcBar" style="width:50%;background:var(--accent-yellow)"></div></div>
+          <span style="font-size:8px;color:var(--text-muted)">Long bias</span>
+        </div>
+        <div style="font-size:8px;color:var(--text-muted);margin-top:6px;" id="fundingBtcDesc">--</div>
+      </div>
+      <div class="funding-card">
+        <div class="funding-label">ETH Funding Rate</div>
+        <div class="funding-value" id="fundingEthBig">--</div>
+        <div class="funding-bar-row">
+          <span style="font-size:8px;color:var(--text-muted)">Short bias</span>
+          <div class="funding-bar"><div class="funding-bar-fill" id="fundingEthBar" style="width:50%;background:var(--accent-yellow)"></div></div>
+          <span style="font-size:8px;color:var(--text-muted)">Long bias</span>
+        </div>
+        <div style="font-size:8px;color:var(--text-muted);margin-top:6px;" id="fundingEthDesc">--</div>
+      </div>
+      <div class="funding-card">
+        <div class="funding-label">Overall Sentiment Score</div>
+        <div class="funding-value" id="overallSentScore">--</div>
+        <div class="funding-bar-row">
+          <span style="font-size:8px;color:var(--text-muted)">Fear</span>
+          <div class="funding-bar"><div class="funding-bar-fill" id="overallSentBar" style="width:50%;background:var(--accent-yellow)"></div></div>
+          <span style="font-size:8px;color:var(--text-muted)">Greed</span>
+        </div>
+        <div style="font-size:8px;color:var(--text-muted);margin-top:6px;" id="overallSentDesc">Composite F&amp;G + Z-Composite</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== GLOBAL FOOTER ========== -->
+  <footer class="footer" style="max-width:1400px;margin:0 auto;padding:12px 24px 24px;">
+    <div>@ONCHAINBR · Z-Score Model · Rolling 365d · 9 Metrics · Signals · Flow · Sentiment</div>
+    <div>APIs: <a href="https://bitview.space" target="_blank">Bitview</a> + <a href="https://bitcoin-data.com" target="_blank">BGeometrics</a> + <a href="https://alternative.me" target="_blank">Alternative.me</a> + <a href="https://binance.com" target="_blank">Binance</a></div>
+  </footer>
 
   <script>
     // ========== STATE ==========
@@ -259,7 +502,10 @@
     async function fetchBGeometrics(endpoint, label) {
       const url = `${CONFIG.BGEOMETRICS_BASE}${endpoint}?token=${CONFIG.BGEOMETRICS_TOKEN}`;
       try {
-        const response = await fetch(url);
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 5000);
+        const response = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(timer);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         console.log(`✓ ${label} via BGeometrics`);
@@ -276,7 +522,10 @@
     async function fetchBitview(endpoint, label) {
       const url = `${CONFIG.BITVIEW_BASE}${endpoint}`;
       try {
-        const response = await fetch(url);
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 5000);
+        const response = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(timer);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         console.log(`✓ ${label} via Bitview`, data);
@@ -382,10 +631,71 @@
       return result.sort((a, b) => new Date(a.date) - new Date(b.date));
     }
 
+    // ========== DEMO DATA GENERATOR ==========
+    function generateDemoData() {
+      const today = new Date();
+      const days = (n) => Array.from({length:n}, (_,i) => {
+        const d = new Date(today); d.setDate(d.getDate() - (n-1-i));
+        return d.toISOString().split('T')[0];
+      });
+
+      // BTC price: 2-year curve with Apr-25 bottom ~74k
+      const priceDates = days(730);
+      const prices = priceDates.map((_, i) => {
+        const t = i / 730;
+        const base = 30000 + 79000 * Math.sin(Math.PI * t * 1.4);
+        const noise = (Math.sin(i*0.7)*0.08 + Math.cos(i*0.3)*0.05) * base;
+        return Math.max(15000, Math.round(base + noise));
+      });
+      for (let i=350; i<370; i++) prices[i] = Math.round(74000 + (i-350)*200);
+      for (let i=600; i<730; i++) prices[i] = Math.round(84000 + Math.sin((i-600)*0.12)*8000);
+      state.prices = priceDates.map((d,i) => ({date:d, value:prices[i]}));
+
+      const metricDates = days(730);
+      const mvrv = metricDates.map((_,i) => {
+        const t = i/730; return Math.max(0.5, 0.9 + 2.4*Math.sin(Math.PI*t*1.4) + Math.sin(i*0.4)*0.3);
+      });
+      const nupl   = mvrv.map(v => Math.max(-0.35, Math.min(0.85, (v-1)/3.5)));
+      const rsi    = mvrv.map(v => Math.max(28, Math.min(88, 30 + v*16 + (Math.random()||0.5)*5)));
+      const sopr   = mvrv.map(v => Math.max(0.93, Math.min(1.08, 0.97 + v*0.028)));
+      const mayer  = mvrv.map(v => Math.max(0.5, Math.min(2.5, 0.65 + v*0.58)));
+      const ssr    = mvrv.map(v => Math.max(2, Math.min(18, 16 - v*3.5)));
+      const supply = mvrv.map(v => Math.max(42, Math.min(99, 45 + v*16)));
+      const fg     = mvrv.map(v => Math.max(5, Math.min(98, Math.round(10 + v*25))));
+      const puell  = metricDates.map((_,i) => Math.max(0.3, Math.min(4.5, 0.5 + 1.2*Math.abs(Math.sin(i/80)))));
+
+      const s = (arr) => metricDates.map((d,i) => ({date:d, value:arr[i]}));
+      state.metricHistory = {
+        mvrv: s(mvrv), rsi: s(rsi), nupl: s(nupl), sopr: s(sopr),
+        mayer: s(mayer), ssr: s(ssr), supplyProfit: s(supply),
+        fearGreed: s(fg), puell: s(puell)
+      };
+      Object.keys(state.metricHistory).forEach(k => state.apiStatus[k] = true);
+      state.apiStatus['price'] = true;
+
+      const statusEl = document.getElementById('statusEndpoints');
+      if (statusEl) { statusEl.textContent = '● DEMO MODE'; statusEl.style.color = 'var(--accent-orange)'; }
+      const dateEl = document.getElementById('statusDate');
+      if (dateEl) dateEl.textContent = 'DEMO — LOCAL PREVIEW';
+    }
+
     // ========== FETCH ALL DATA ==========
     async function fetchAllData() {
       state.endpointsLoaded = 0;
       state.errors = [];
+
+      // Instant demo for local file:// (no CORS, no waiting)
+      if (window.location.protocol === 'file:') {
+        console.warn('Local file detected — instant DEMO MODE');
+        state.endpointsLoaded = 10;
+        const prog = document.getElementById('loadingProgress');
+        if (prog) prog.textContent = '10 / 10 endpoints';
+        generateDemoData();
+        calculateAllZScores();
+        calculateCompositeHistory();
+        updateUI();
+        return;
+      }
       
       // Fetch BTC Price
       const priceResult = await fetchBGeometrics('/v1/btc-price', 'BTC Price');
@@ -417,6 +727,13 @@
         state.apiStatus[key] = result.success;
       }
       
+      // If all APIs failed (local file / CORS), fall back to demo data
+      const anySuccess = Object.values(state.apiStatus).some(v => v === true);
+      if (!anySuccess) {
+        console.warn('All APIs failed — activating DEMO MODE');
+        generateDemoData();
+      }
+
       calculateAllZScores();
       calculateCompositeHistory();
       updateUI();
@@ -965,6 +1282,380 @@
       html += '</div>';
       
       container.innerHTML = html;
+    }
+
+    // ========== INIT ==========
+
+    // ========== NAV ACTIVE STATE ==========
+    function setActiveNav(el) {
+      document.querySelectorAll('.site-nav a').forEach(a => a.classList.remove('active'));
+      el.classList.add('active');
+    }
+    const _navSections = ['dashboard','signals','flow','sentiment'];
+    const _navObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const id = e.target.id;
+          document.querySelectorAll('.site-nav a').forEach(a => {
+            a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+          });
+        }
+      });
+    }, { threshold: 0.15 });
+    _navSections.forEach(id => { const el = document.getElementById(id); if (el) _navObserver.observe(el); });
+
+    // ========== SIGNAL DETECTION ==========
+    let _signalChart = null;
+
+    function detectSignals(compositeHistory, priceHistory) {
+      if (!compositeHistory || compositeHistory.length < 5) return [];
+      const priceMap = new Map(priceHistory.map(d => [d.date, d.value]));
+      const BUY_TH  = -1.5;  // Z crosses UP through -1.5 → exit deep accumulation = BUY
+      const SELL_TH =  0.5;  // Z crosses UP through +0.5 → enter elevated = SELL
+      const signals = [];
+      let openTrade = null;
+      for (let i = 1; i < compositeHistory.length; i++) {
+        const prev = compositeHistory[i-1].value;
+        const curr = compositeHistory[i].value;
+        const date = compositeHistory[i].date;
+        const price = priceMap.get(date);
+        if (price == null) continue;
+        if (prev !== null && prev <= BUY_TH && curr > BUY_TH && !openTrade) {
+          openTrade = { date, price, z: curr };
+          signals.push({ type: 'BUY', date, price, z: curr });
+        }
+        if (prev !== null && prev <= SELL_TH && curr > SELL_TH && openTrade) {
+          const ret = ((price - openTrade.price) / openTrade.price) * 100;
+          signals.push({ type: 'SELL', date, price, z: curr, returnPct: ret, buyDate: openTrade.date, buyPrice: openTrade.price });
+          openTrade = null;
+        }
+      }
+      if (openTrade) {
+        const last = priceHistory[priceHistory.length - 1];
+        if (last) {
+          const ret = ((last.value - openTrade.price) / openTrade.price) * 100;
+          signals.push({ type: 'OPEN', date: last.date, price: last.value, z: compositeHistory[compositeHistory.length-1].value, returnPct: ret, buyDate: openTrade.date, buyPrice: openTrade.price });
+        }
+      }
+      return signals;
+    }
+
+    function renderSignalsSection() {
+      if (!state.compositeHistory.length || !state.prices.length) return;
+      const signals = detectSignals(state.compositeHistory, state.prices);
+
+      // --- Stats ---
+      const closed = signals.filter(s => s.type === 'SELL');
+      const open   = signals.find(s  => s.type === 'OPEN');
+      const wins   = closed.filter(s => s.returnPct > 0).length;
+      const avgRet = closed.length ? closed.reduce((a,s) => a + s.returnPct, 0) / closed.length : 0;
+      const bestRet= closed.length ? Math.max(...closed.map(s => s.returnPct)) : 0;
+      const total  = closed.length + (open ? 1 : 0);
+
+      document.getElementById('sigTotalTrades').textContent = total || '--';
+      const wrEl = document.getElementById('sigWinRate');
+      wrEl.textContent = closed.length ? Math.round((wins/closed.length)*100) + '%' : '--';
+      wrEl.style.color = closed.length && wins/closed.length >= 0.5 ? 'var(--accent-green)' : 'var(--accent-red)';
+      const arEl = document.getElementById('sigAvgReturn');
+      arEl.textContent = closed.length ? (avgRet >= 0 ? '+' : '') + avgRet.toFixed(0) + '%' : '--';
+      arEl.style.color = avgRet >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      document.getElementById('sigBestTrade').textContent = bestRet > 0 ? '+' + bestRet.toFixed(0) + '%' : '--';
+
+      renderSignalChart(signals);
+      renderSignalTable();
+    }
+
+    function renderSignalChart(signals) {
+      const ctx = document.getElementById('signalChart')?.getContext('2d');
+      if (!ctx) return;
+      const last365 = state.prices.slice(-365);
+      const cMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
+      const labels = last365.map(p => p.date);
+
+      // Build annotations for signals that fall in last 365 days
+      const annotations = {};
+      signals.forEach((sig, i) => {
+        if (!labels.includes(sig.date)) return;
+        const isBuy  = sig.type === 'BUY';
+        const isOpen = sig.type === 'OPEN';
+        annotations['sig_' + i] = {
+          type: 'point',
+          xValue: sig.date,
+          yValue: sig.price,
+          yScaleID: 'y',
+          radius: 9,
+          backgroundColor: isBuy ? 'rgba(0,217,126,0.9)' : isOpen ? 'rgba(59,130,246,0.85)' : 'rgba(239,68,68,0.9)',
+          borderColor: 'rgba(255,255,255,0.9)',
+          borderWidth: 2,
+          label: {
+            content: isBuy ? '▲ BUY' : isOpen ? '▲ OPEN' : '▼ SELL',
+            display: true,
+            position: 'center',
+            color: '#fff',
+            font: { size: 8, weight: 'bold', family: "'JetBrains Mono', monospace" },
+            backgroundColor: 'transparent',
+            yAdjust: isBuy || isOpen ? 22 : -22
+          }
+        };
+      });
+
+      if (_signalChart) _signalChart.destroy();
+      _signalChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'BTC', data: last365.map(p => p.value), borderColor: 'rgba(255,255,255,0.65)', borderWidth: 1.5, borderDash: [3,2], pointRadius: 0, yAxisID: 'y', tension: 0.1 },
+            { label: 'Z', data: labels.map(d => cMap.get(d) ?? null), borderWidth: 2.5, pointRadius: 0, yAxisID: 'y1', tension: 0.1, segment: { borderColor: c => getZoneColor(c.p0.parsed.y) } }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          plugins: {
+            legend: { display: false },
+            annotation: { annotations },
+            tooltip: { callbacks: { label: c => c.datasetIndex === 0 ? 'BTC: $' + Math.round(c.parsed.y).toLocaleString() : 'Z: ' + (c.parsed.y?.toFixed(2) || '--') } }
+          },
+          scales: {
+            x:  { display: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#606068', maxTicksLimit: 8, font: { size: 9 } } },
+            y:  { type: 'logarithmic', display: true, position: 'left', grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#606068', font: { size: 9 }, callback: v => v >= 1000 ? '$' + (v/1000).toFixed(0) + 'k' : '$' + v } },
+            y1: { display: true, position: 'right', min: -3, max: 3, grid: { display: false }, ticks: { color: '#606068', font: { size: 9 } } }
+          }
+        }
+      });
+    }
+
+    function renderSignalTable() {
+      const tbody = document.getElementById('signalTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = state.compositeHistory.slice(-90).slice().reverse().map(d => {
+        const z = getZone(d.value);
+        const ds = new Date(d.date).toLocaleDateString('en-US', { month:'short', day:'2-digit', year:'2-digit' }).toUpperCase();
+        return `<tr>
+          <td style="color:var(--text-secondary)">${ds}</td>
+          <td style="color:${z.color};font-weight:600">${d.value.toFixed(2)}</td>
+          <td><span style="background:${z.color}22;color:${z.color};padding:2px 8px;border-radius:3px;font-size:8px;font-weight:600">${z.short}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ========== FLOW SECTION ==========
+    function renderFlowLineChart(canvasId, data, label, color, withFill) {
+      const ctx = document.getElementById(canvasId)?.getContext('2d');
+      if (!ctx) return;
+      const existing = Chart.getChart(canvasId);
+      if (existing) existing.destroy();
+      new Chart(ctx, {
+        type: 'line',
+        data: { labels: data.map(d => d.date), datasets: [{ label, data: data.map(d => d.value), borderColor: color, borderWidth: 1.5, pointRadius: 0, fill: withFill ? { target: { value: 0 }, above: color + '33', below: '#ef444433' } : { target: 'origin', above: color + '22', below: color + '11' }, tension: 0.3 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: true, grid: { display: false }, ticks: { color: '#606068', maxTicksLimit: 6, font: { size: 8 } } }, y: { display: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#606068', font: { size: 8 }, callback: v => Math.abs(v) >= 1000 ? (v/1000).toFixed(0)+'k' : v.toFixed(0) } } } }
+      });
+    }
+
+    function renderFlowInOutChart(inflowData, outflowData) {
+      const ctx = document.getElementById('flowInOutChart')?.getContext('2d');
+      if (!ctx) return;
+      const existing = Chart.getChart('flowInOutChart');
+      if (existing) existing.destroy();
+      const dates = [...new Set([...inflowData.map(d=>d.date), ...outflowData.map(d=>d.date)])].sort().slice(-90);
+      const inMap  = new Map(inflowData.map(d=>[d.date,d.value]));
+      const outMap = new Map(outflowData.map(d=>[d.date,d.value]));
+      new Chart(ctx, {
+        type: 'bar',
+        data: { labels: dates, datasets: [
+          { label: 'Inflow',  data: dates.map(d => inMap.get(d)||0),  backgroundColor: 'rgba(239,68,68,0.55)',   borderWidth: 0 },
+          { label: 'Outflow', data: dates.map(d => outMap.get(d)||0), backgroundColor: 'rgba(0,217,126,0.55)',  borderWidth: 0 }
+        ]},
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: '#606068', font: { size: 8 }, boxWidth: 10 } } }, scales: { x: { display: true, grid: { display: false }, ticks: { color: '#606068', maxTicksLimit: 6, font: { size: 8 } } }, y: { display: true, stacked: false, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#606068', font: { size: 8 }, callback: v => Math.abs(v)>=1000?(v/1000).toFixed(0)+'k':v.toFixed(0) } } } }
+      });
+    }
+
+    async function fetchFlowData() {
+      const [etfR, resR, inR, outR, whaleR] = await Promise.allSettled([
+        fetchBGeometrics('/v1/etf-flow',          'etfFlow'),
+        fetchBGeometrics('/v1/exchange-reserve',   'exchangeReserve'),
+        fetchBGeometrics('/v1/exchange-inflow',    'exchangeInflow'),
+        fetchBGeometrics('/v1/exchange-outflow',   'exchangeOutflow'),
+        fetchBGeometrics('/v1/whale-ratio',        'whaleRatio')
+      ]);
+
+      // ETF Flow
+      if (etfR.status === 'fulfilled' && etfR.value?.success) {
+        const data = normalizeBGeometricsData(etfR.value.data, 'etfFlow').slice(-90);
+        if (data.length) {
+          const latest = data[data.length-1].value;
+          const sum7d  = data.slice(-7).reduce((a,d)=>a+(d.value||0),0);
+          document.getElementById('flowEtfLatest').textContent = (latest>=0?'+':'') + Math.round(latest).toLocaleString() + ' BTC';
+          document.getElementById('flowEtfLatest').style.color = latest>=0 ? 'var(--accent-green)' : 'var(--accent-red)';
+          document.getElementById('flowEtf7d').textContent = (sum7d>=0?'+':'') + Math.round(sum7d).toLocaleString();
+          document.getElementById('flowEtf7d').style.color = sum7d>=0 ? 'var(--accent-green)' : 'var(--accent-red)';
+          document.getElementById('flowEtf7dSub').textContent = 'BTC net · 7 days';
+          renderFlowLineChart('flowEtfChart', data, 'ETF Flow', '#3b82f6', true);
+        }
+      }
+
+      // Exchange Reserve
+      if (resR.status === 'fulfilled' && resR.value?.success) {
+        const data = normalizeBGeometricsData(resR.value.data, 'exchangeReserve').slice(-180);
+        if (data.length) {
+          const latest = data[data.length-1].value;
+          const prev7  = data.length > 7 ? data[data.length-8].value : latest;
+          const delta  = latest - prev7;
+          document.getElementById('flowReserveLatest').textContent = (latest/1000).toFixed(1) + 'K BTC';
+          document.getElementById('flowExReserve').textContent = (delta>=0?'+':'') + Math.round(delta).toLocaleString();
+          document.getElementById('flowExReserve').style.color = delta < 0 ? 'var(--accent-green)' : 'var(--accent-red)'; // falling reserve = bullish
+          document.getElementById('flowExReserveSub').textContent = delta < 0 ? '▼ coins leaving exchanges' : '▲ coins entering exchanges';
+          renderFlowLineChart('flowReserveChart', data, 'Reserve', '#a855f7', false);
+        }
+      }
+
+      // Inflow / Outflow
+      const inData  = (inR.status  === 'fulfilled' && inR.value?.success)  ? normalizeBGeometricsData(inR.value.data,  'exchangeInflow').slice(-90)  : [];
+      const outData = (outR.status === 'fulfilled' && outR.value?.success) ? normalizeBGeometricsData(outR.value.data, 'exchangeOutflow').slice(-90) : [];
+      if (inData.length || outData.length) renderFlowInOutChart(inData, outData);
+
+      // Net Pressure
+      if (inData.length && outData.length) {
+        const inMap  = new Map(inData.map(d=>[d.date,d.value]));
+        let netIn=0, netOut=0;
+        outData.slice(-30).forEach(d => { netOut += d.value||0; netIn += inMap.get(d.date)||0; });
+        const ratio = netIn > 0 ? netOut / netIn : 1;
+        const pEl = document.getElementById('flowPressureValue');
+        const lEl = document.getElementById('flowPressureLabel');
+        const fEl = document.getElementById('flowPressureFill');
+        const dEl = document.getElementById('flowPressureDesc');
+        pEl.textContent = ratio.toFixed(2) + 'x';
+        if (ratio > 1.05) {
+          pEl.style.color='var(--accent-green)'; lEl.textContent='BUY PRESSURE'; lEl.style.color='var(--accent-green)';
+          fEl.style.cssText='background:var(--accent-green);width:' + Math.min(94, 50 + (ratio-1)*60) + '%';
+          dEl.textContent='Outflows exceed inflows — BTC leaving exchanges. Historically a bullish signal.';
+        } else if (ratio < 0.95) {
+          pEl.style.color='var(--accent-red)'; lEl.textContent='SELL PRESSURE'; lEl.style.color='var(--accent-red)';
+          fEl.style.cssText='background:var(--accent-red);width:' + Math.max(6, 50 - (1-ratio)*60) + '%';
+          dEl.textContent='Inflows exceed outflows — BTC entering exchanges. Historically a bearish signal.';
+        } else {
+          pEl.style.color='var(--accent-yellow)'; lEl.textContent='NEUTRAL'; lEl.style.color='var(--accent-yellow)';
+          fEl.style.cssText='background:var(--accent-yellow);width:50%';
+          dEl.textContent='Exchange flows are balanced. No strong directional signal from flow data.';
+        }
+      }
+
+      // Whale Ratio
+      if (whaleR.status === 'fulfilled' && whaleR.value?.success) {
+        const data = normalizeBGeometricsData(whaleR.value.data, 'whaleRatio');
+        if (data.length) {
+          const v = data[data.length-1].value;
+          const pct = (v * 100).toFixed(1) + '%';
+          document.getElementById('flowWhaleRatio').textContent = pct;
+          document.getElementById('flowWhaleRatio').style.color = v > 0.85 ? 'var(--accent-red)' : v > 0.6 ? 'var(--accent-yellow)' : 'var(--accent-green)';
+          document.getElementById('flowWhaleRatioSub').textContent = v > 0.85 ? 'High whale dominance' : v > 0.6 ? 'Moderate activity' : 'Low whale dominance';
+        }
+      }
+    }
+
+    // ========== SENTIMENT SECTION ==========
+    let _sentFgChart = null, _sentOverlayChart = null;
+
+    function _fgColor(v) { return v<=25?'var(--accent-red)':v<=45?'var(--accent-orange)':v<=55?'var(--accent-yellow)':v<=75?'var(--accent-lime)':'var(--accent-green)'; }
+    function _fgLabel(v) { return v<=25?'Extreme Fear':v<=45?'Fear':v<=55?'Neutral':v<=75?'Greed':'Extreme Greed'; }
+
+    function _renderFundingCard(bigId, barId, descId, miniId, rate) {
+      const color = rate > 0.05 ? 'var(--accent-red)' : rate < -0.01 ? 'var(--accent-green)' : 'var(--accent-yellow)';
+      const desc  = rate > 0.05 ? 'Longs paying — market over-extended long' : rate < -0.01 ? 'Shorts paying — market short-heavy' : 'Balanced funding';
+      const pct   = (rate >= 0 ? '+' : '') + rate.toFixed(4) + '%';
+      const barW  = Math.min(94, Math.max(6, 50 + rate * 600));
+      [bigId, miniId].forEach(id => { const el = document.getElementById(id); if (el) { el.textContent = pct; el.style.color = color; } });
+      const bar = document.getElementById(barId); if (bar) { bar.style.width = barW + '%'; bar.style.background = color; }
+      const dEl = document.getElementById(descId); if (dEl) { dEl.textContent = desc; dEl.style.color = color; }
+    }
+
+    async function fetchSentimentData() {
+      // Fear & Greed — Alternative.me (free, no auth needed)
+      try {
+        const r = await fetch('https://api.alternative.me/fng/?limit=90&format=json');
+        if (r.ok) {
+          const json = await r.json();
+          const data = (json.data || []).reverse(); // oldest first
+          if (data.length) {
+            const latest = data[data.length-1];
+            const val = parseInt(latest.value);
+            const col = _fgColor(val);
+            document.getElementById('fgValue').textContent = val;
+            document.getElementById('fgValue').style.color = col;
+            document.getElementById('fgLabel').textContent = _fgLabel(val);
+            document.getElementById('fgLabel').style.color = col;
+            document.getElementById('fgDate').textContent = new Date(parseInt(latest.timestamp)*1000).toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'}).toUpperCase();
+            const vals = data.map(d => parseInt(d.value));
+            const avg7  = vals.slice(-7).reduce((a,b)=>a+b,0) / Math.min(7,vals.length);
+            const avg30 = vals.slice(-30).reduce((a,b)=>a+b,0) / Math.min(30,vals.length);
+            document.getElementById('sentFg7d').textContent = Math.round(avg7);
+            document.getElementById('sentFg7d').style.color = _fgColor(avg7);
+            document.getElementById('sentFg7dLabel').textContent = _fgLabel(avg7);
+            document.getElementById('sentFg30d').textContent = Math.round(avg30);
+            document.getElementById('sentFg30d').style.color = _fgColor(avg30);
+            document.getElementById('sentFg30dLabel').textContent = _fgLabel(avg30);
+
+            // Overall score: blend F&G (0–100) with Z normalized to 0–100
+            const zNorm = state.composite !== null ? Math.max(0, Math.min(100, (state.composite + 3) / 6 * 100)) : avg7;
+            const overall = Math.round((avg7 + zNorm) / 2);
+            document.getElementById('overallSentScore').textContent = overall;
+            document.getElementById('overallSentScore').style.color = _fgColor(overall);
+            document.getElementById('overallSentBar').style.width = overall + '%';
+            document.getElementById('overallSentBar').style.background = _fgColor(overall);
+            document.getElementById('overallSentDesc').textContent = _fgLabel(overall) + ' — Composite of F&G + Z-Composite';
+
+            // F&G 90d chart
+            if (_sentFgChart) _sentFgChart.destroy();
+            const fgCtx = document.getElementById('sentimentFgChart')?.getContext('2d');
+            if (fgCtx) {
+              _sentFgChart = new Chart(fgCtx, {
+                type: 'line',
+                data: { labels: data.map(d => new Date(parseInt(d.timestamp)*1000).toISOString().split('T')[0]), datasets: [{ data: vals, borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4, backgroundColor: c => { const g=c.chart.ctx.createLinearGradient(0,0,0,140); g.addColorStop(0,'rgba(0,217,126,0.3)'); g.addColorStop(0.5,'rgba(234,179,8,0.1)'); g.addColorStop(1,'rgba(239,68,68,0.2)'); return g; }, segment: { borderColor: c => _fgColor(c.p0.parsed.y) } }] },
+                options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{display:true,grid:{display:false},ticks:{color:'#606068',maxTicksLimit:6,font:{size:8}}}, y:{display:true,min:0,max:100,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#606068',font:{size:8}}} } }
+              });
+            }
+
+            // Z-Composite vs F&G overlay
+            if (_sentOverlayChart) _sentOverlayChart.destroy();
+            const ovCtx = document.getElementById('sentimentOverlayChart')?.getContext('2d');
+            if (ovCtx && state.compositeHistory.length) {
+              const fgMap = new Map(data.map(d=>[new Date(parseInt(d.timestamp)*1000).toISOString().split('T')[0], parseInt(d.value)]));
+              const last90 = state.compositeHistory.slice(-90);
+              const lbls = last90.map(d=>d.date);
+              _sentOverlayChart = new Chart(ovCtx, {
+                type: 'line',
+                data: { labels: lbls, datasets: [
+                  { label:'Z-Composite', data:last90.map(d=>d.value), borderColor:'#f97316', borderWidth:2, pointRadius:0, yAxisID:'y', tension:0.3 },
+                  { label:'F&G ÷10', data:lbls.map(d=>{ const v=fgMap.get(d); return v!=null?v/10:null; }), borderColor:'#3b82f6', borderWidth:2, pointRadius:0, yAxisID:'y', tension:0.3, borderDash:[4,2] }
+                ]},
+                options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:true, labels:{ color:'#606068', font:{size:8}, boxWidth:10 } } }, scales:{ x:{display:true,grid:{display:false},ticks:{color:'#606068',maxTicksLimit:6,font:{size:8}}}, y:{display:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#606068',font:{size:8}}} } }
+              });
+            }
+          }
+        }
+      } catch(e) { console.warn('F&G fetch failed:', e.message); }
+
+      // Funding Rates — Binance Futures API (free, no auth)
+      try {
+        const [btcR, ethR] = await Promise.allSettled([
+          fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1').then(r=>r.json()),
+          fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&limit=1').then(r=>r.json())
+        ]);
+        if (btcR.status==='fulfilled' && btcR.value?.length) _renderFundingCard('fundingBtcBig','fundingBtcBar','fundingBtcDesc','sentFundingBtc', parseFloat(btcR.value[0].fundingRate)*100);
+        if (ethR.status==='fulfilled' && ethR.value?.length) _renderFundingCard('fundingEthBig','fundingEthBar','fundingEthDesc','sentFundingEth', parseFloat(ethR.value[0].fundingRate)*100);
+      } catch(e) { console.warn('Funding fetch failed:', e.message); }
+    }
+
+    // ========== OVERRIDE updateUI to chain extra renders ==========
+    const _origUpdateUI = updateUI;
+    function updateUI() {
+      _origUpdateUI();
+      setTimeout(() => {
+        renderSignalsSection();
+        fetchFlowData();
+        fetchSentimentData();
+      }, 150);
     }
 
     // ========== INIT ==========
