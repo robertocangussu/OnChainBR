@@ -1398,19 +1398,25 @@
       const priceMap = new Map(priceHistory.map(d => [d.date, d.value]));
 
       // ── PARAMETERS ────────────────────────────────────────────────
-      const ACC_THRESHOLD  = -1.5;  // ACC zone boundary
-      const HOT_THRESHOLD  =  1.5;  // OVERHEATED zone boundary
-      const MIN_DAYS_IN_ACC   = 14; // must spend ≥14 days in ACC before BUY is valid
-      const CONFIRM_DAYS_BUY  = 5;  // Z must stay above -1.5 for 5 days to confirm BUY
-      const CONFIRM_DAYS_SELL = 3;  // Z must stay above +1.5 for 3 days to confirm SELL
+      const ACC_THRESHOLD        = -1.5;  // ACC zone boundary
+      const HOT_THRESHOLD        =  1.5;  // OVERHEATED zone boundary
+      const MIN_DAYS_IN_ACC      = 14;    // ≥14 days in ACC before BUY valid
+      const MIN_DEEP_ACC_DAYS    = 5;     // ≥5 days below -2.0 (real capitulation)
+      const Z_RECOVERY_MIN_DAYS  = 5;     // Z local min must be ≥5 days ago
+      const CONFIRM_DAYS_BUY     = 5;     // Z stays above -1.5 for 5 consecutive days
+      const CONFIRM_DAYS_SELL    = 3;     // Z stays in OVERHEATED for 3 consecutive days
+      const PRICE_CONFIRM_PCT    = 0.15;  // price ≥15% above cycle low
       // ──────────────────────────────────────────────────────────────
 
-      const signals = [];
-      let openTrade       = null;
-      let buyPending      = null;  // { crossDate, crossPrice } — waiting for confirmation
-      let sellPending     = null;  // { crossDate, crossPrice }
+      const signals   = [];
+      let openTrade   = null;
+      let buyPending  = null;   // waiting for price confirmation
+      let sellPending = null;
       let daysAboveBuyTh  = 0;
       let daysAboveSellTh = 0;
+
+      // Track ACC phase start to measure price low correctly
+      let accPhaseStartIdx = null;
 
       for (let i = 1; i < compositeHistory.length; i++) {
         const prev  = compositeHistory[i-1].value;
@@ -1419,55 +1425,77 @@
         const price = priceMap.get(date);
         if (price == null || prev === null || curr === null) continue;
 
+        // Track when ACC phase starts
+        if (prev > ACC_THRESHOLD && curr <= ACC_THRESHOLD) {
+          accPhaseStartIdx = i; // entering ACC zone
+        }
+        if (curr > ACC_THRESHOLD && accPhaseStartIdx !== null) {
+          // leaving ACC — reset only if no buyPending
+          if (!buyPending) accPhaseStartIdx = null;
+        }
+
         // ── BUY logic ─────────────────────────────────────────────
         if (!openTrade) {
+
+          // Count consecutive days above -1.5
           if (curr > ACC_THRESHOLD) {
             daysAboveBuyTh++;
           } else {
             daysAboveBuyTh = 0;
-            buyPending = null;
+            if (!buyPending) buyPending = null; // reset only if not yet pending
           }
 
-          // Detect the moment Z first crosses -1.5 upward
+          // Detect upward cross of -1.5
           if (prev <= ACC_THRESHOLD && curr > ACC_THRESHOLD) {
-            // Strict entry conditions:
-            // 1. Z spent ≥ MIN_DAYS_IN_ACC days in ACC zone
-            // 2. Z reached deep capitulation (≤ -2.0) for at least 5 days
-            // 3. Z has made a LOCAL MINIMUM — it peaked down and is now recovering
-            //    (the lowest Z point was at least 5 days ago, not right now)
-            const lookback = compositeHistory.slice(Math.max(0, i - MIN_DAYS_IN_ACC - 20), i);
+            const lookbackStart = Math.max(0, i - MIN_DAYS_IN_ACC - 15);
+            const lookback = compositeHistory.slice(lookbackStart, i);
             const accPoints  = lookback.filter(d => d.value !== null && d.value <= ACC_THRESHOLD);
             const deepPoints = lookback.filter(d => d.value !== null && d.value <= -2.0);
             const daysInAcc  = accPoints.length;
-            const hadDeepAcc = deepPoints.length >= 5;
+            const hadDeepAcc = deepPoints.length >= MIN_DEEP_ACC_DAYS;
 
-            // Find local minimum of Z in the ACC phase
-            const zValues = lookback.map(d => d.value).filter(v => v !== null);
-            const zMin    = Math.min(...zValues);
-            const zMinIdx = lookback.findLastIndex(d => d.value === zMin);
-            // Local min must be at least 5 days before the crossover (Z already recovering)
-            const zMinAgeInDays = lookback.length - 1 - zMinIdx;
-            const zIsRecovering = zMinAgeInDays >= 5;
+            // Z must have made a local minimum (already recovering, not still falling)
+            const zVals   = lookback.map(d => d.value).filter(v => v !== null);
+            const zMin    = Math.min(...zVals);
+            const zMinPos = lookback.findLastIndex(d => d.value === zMin);
+            const zMinAge = lookback.length - 1 - zMinPos;
+            const zRecovering = zMinAge >= Z_RECOVERY_MIN_DAYS;
 
-            if (daysInAcc >= MIN_DAYS_IN_ACC && hadDeepAcc && zIsRecovering) {
-              buyPending = { crossDate: date, crossPrice: price, crossZ: curr };
+            if (daysInAcc >= MIN_DAYS_IN_ACC && hadDeepAcc && zRecovering) {
+              // Find the true cycle low SINCE the start of the ACC phase
+              const phaseStart = accPhaseStartIdx !== null ? accPhaseStartIdx : lookbackStart;
+              const phasePrices = priceHistory.slice(phaseStart, i + 1).map(d => d.value).filter(v => v > 0);
+              const cycleLow = Math.min(...phasePrices);
+              buyPending = { crossDate: date, crossPrice: price, crossZ: curr, cycleLow };
               daysAboveBuyTh = 1;
+              console.log(`BUY pending: ${date} @ $${Math.round(price)} | Cycle low: $${Math.round(cycleLow)} | needs $${Math.round(cycleLow * 1.15)}+ to confirm`);
             }
           }
 
-          // Confirm BUY after CONFIRM_DAYS_BUY consecutive days above -1.5
+          // Confirm BUY: Z confirmed for CONFIRM_DAYS_BUY days AND price ≥15% above cycle low
           if (buyPending && daysAboveBuyTh >= CONFIRM_DAYS_BUY) {
-            openTrade = { date, price, z: curr, entryType: 'confirmed' };
-            signals.push({ type: 'BUY', date, price, z: curr,
-              crossDate: buyPending.crossDate, crossPrice: buyPending.crossPrice });
-            buyPending = null;
-            daysAboveBuyTh = 0;
-            daysAboveSellTh = 0;
-            sellPending = null;
+            const cycleLow    = buyPending.cycleLow;
+            const pctAboveLow = (price - cycleLow) / cycleLow;
+
+            if (pctAboveLow >= PRICE_CONFIRM_PCT) {
+              openTrade = { date, price, z: curr, cycleLow, pctAboveLow };
+              signals.push({ type: 'BUY', date, price, z: curr,
+                crossDate: buyPending.crossDate, crossPrice: buyPending.crossPrice,
+                low90d: cycleLow, pctAboveLow });
+              buyPending      = null;
+              daysAboveBuyTh  = 0;
+              daysAboveSellTh = 0;
+              sellPending     = null;
+              accPhaseStartIdx = null;
+              console.log(`✅ BUY confirmed: ${date} @ $${Math.round(price)} | Low: $${Math.round(cycleLow)} | +${(pctAboveLow*100).toFixed(1)}% above low | Z: ${curr.toFixed(2)}`);
+            } else {
+              // Keep waiting — price not confirmed yet
+              console.log(`⏳ BUY waiting price: ${date} | need +${(PRICE_CONFIRM_PCT*100).toFixed(0)}%, have +${(pctAboveLow*100).toFixed(1)}%`);
+            }
           }
         }
 
-        // ── SELL logic (only when in trade) ───────────────────────
+        // ── SELL logic ────────────────────────────────────────────
         if (openTrade) {
           if (curr >= HOT_THRESHOLD) {
             daysAboveSellTh++;
@@ -1476,40 +1504,51 @@
             sellPending = null;
           }
 
-          // Detect Z entering OVERHEATED
           if (prev < HOT_THRESHOLD && curr >= HOT_THRESHOLD) {
             sellPending = { crossDate: date, crossPrice: price };
             daysAboveSellTh = 1;
           }
 
-          // Confirm SELL after CONFIRM_DAYS_SELL consecutive days in OVERHEATED
           if (sellPending && daysAboveSellTh >= CONFIRM_DAYS_SELL) {
             const ret = ((price - openTrade.price) / openTrade.price) * 100;
             signals.push({ type: 'SELL', date, price, z: curr,
               returnPct: ret, buyDate: openTrade.date, buyPrice: openTrade.price });
-            openTrade = null;
-            sellPending = null;
-            daysAboveSellTh = 0;
-            daysAboveBuyTh = 0;
-            buyPending = null;
+            openTrade        = null;
+            sellPending      = null;
+            daysAboveSellTh  = 0;
+            daysAboveBuyTh   = 0;
+            buyPending       = null;
+            accPhaseStartIdx = null;
+            console.log(`🔴 SELL confirmed: ${date} @ $${Math.round(price)} | Return: ${ret.toFixed(1)}%`);
           }
         }
       }
 
-      // Open trade still running
+      // Still in open trade
       if (openTrade) {
         const last = priceHistory[priceHistory.length - 1];
         if (last) {
           const ret = ((last.value - openTrade.price) / openTrade.price) * 100;
           signals.push({ type: 'OPEN', date: last.date, price: last.value,
             z: compositeHistory[compositeHistory.length-1].value,
-            returnPct: ret, buyDate: openTrade.date, buyPrice: openTrade.price });
+            returnPct: ret, buyDate: openTrade.date, buyPrice: openTrade.price,
+            low90d: openTrade.cycleLow, pctAboveLow: openTrade.pctAboveLow });
+        }
+      } else if (buyPending) {
+        // Signal pending but price not confirmed yet — show as PENDING
+        const last = priceHistory[priceHistory.length - 1];
+        if (last) {
+          const needed = buyPending.cycleLow * (1 + PRICE_CONFIRM_PCT);
+          signals.push({ type: 'PENDING', date: last.date, price: last.value,
+            z: compositeHistory[compositeHistory.length-1].value,
+            cycleLow: buyPending.cycleLow, needed,
+            pctAboveLow: (last.value - buyPending.cycleLow) / buyPending.cycleLow });
+          console.log(`⏳ PENDING signal: cycle low $${Math.round(buyPending.cycleLow)}, need $${Math.round(needed)} to trigger BUY`);
         }
       }
 
       return signals;
     }
-
     function renderSignalsSection() {
       if (!state.compositeHistory.length || !state.prices.length) return;
       const signals = detectSignals(state.compositeHistory, state.prices);
@@ -1539,9 +1578,14 @@
       trEl.style.color = totalRet >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
 
       const posEl = document.getElementById('sigPosition');
+      const pending = signals.find(s => s.type === 'PENDING');
       if (open) {
         posEl.textContent = 'LONG ' + (open.returnPct >= 0 ? '+' : '') + open.returnPct.toFixed(0) + '%';
         posEl.style.color = open.returnPct >= 0 ? 'var(--accent-green)' : 'var(--accent-orange)';
+      } else if (pending) {
+        posEl.innerHTML = '⏳ WATCHING';
+        posEl.style.color = 'var(--accent-yellow)';
+        posEl.title = 'Z confirmed ACC. Waiting for price ≥$' + Math.round(pending.needed).toLocaleString() + ' (+15% above $' + Math.round(pending.cycleLow).toLocaleString() + ' low)';
       } else {
         posEl.textContent = 'CASH';
         posEl.style.color = 'var(--text-muted)';
@@ -1585,11 +1629,45 @@
       // Instead, color Z-line segments and use price area fill by zone
       // Build signal annotations
       signals.forEach((sig, i) => {
-        const isBuy  = sig.type === 'BUY';
-        const isOpen = sig.type === 'OPEN';
-        const isSell = sig.type === 'SELL';
+        const isBuy    = sig.type === 'BUY';
+        const isOpen   = sig.type === 'OPEN';
+        const isSell   = sig.type === 'SELL';
+        const isPending = sig.type === 'PENDING';
         const idx = labels.indexOf(sig.date);
         if (idx === -1) return;
+
+        // PENDING: show a "waiting" marker at current price
+        if (isPending) {
+          annotations['pending_arrow'] = {
+            type: 'label',
+            xValue: sig.date, yValue: sig.price, yScaleID: 'yPrice',
+            content: '◆', color: '#eab308',
+            font: { size: 16, weight: 'bold' }, yAdjust: 18,
+            backgroundColor: 'transparent', borderWidth: 0
+          };
+          annotations['pending_box'] = {
+            type: 'label',
+            xValue: sig.date, yValue: sig.price, yScaleID: 'yPrice',
+            content: ['WATCHING', 'Need $' + Math.round(sig.needed/1000) + 'k'],
+            color: '#fff', font: { size: 7, weight: 'bold', family: "'JetBrains Mono', monospace" },
+            backgroundColor: 'rgba(234,179,8,0.2)', borderColor: '#eab308',
+            borderWidth: 1, borderRadius: 4,
+            padding: { top: 4, bottom: 4, left: 6, right: 6 }, yAdjust: 44
+          };
+          // Horizontal line showing the trigger price
+          annotations['pending_line'] = {
+            type: 'line',
+            yMin: sig.needed, yMax: sig.needed, yScaleID: 'yPrice',
+            borderColor: 'rgba(234,179,8,0.5)', borderWidth: 1.5, borderDash: [6, 3],
+            label: {
+              display: true, content: '▶ BUY trigger $' + Math.round(sig.needed/1000) + 'k',
+              position: 'start', color: '#eab308',
+              font: { size: 8, family: "'JetBrains Mono', monospace" },
+              backgroundColor: 'transparent'
+            }
+          };
+          return;
+        }
 
         // Arrow
         annotations['arrow_' + i] = {
@@ -1605,12 +1683,14 @@
           borderWidth: 0
         };
         // Label box
+        const fmtK = v => v >= 1000 ? '$' + Math.round(v/1000) + 'k' : '$' + Math.round(v);
         const labelLines = isBuy
-          ? ['BUY', '$' + (sig.price >= 1000 ? Math.round(sig.price/1000) + 'k' : Math.round(sig.price))]
+          ? ['BUY', fmtK(sig.price), sig.pctAboveLow ? '+' + (sig.pctAboveLow*100).toFixed(0) + '% low' : '']
+            .filter(s => s !== '')
           : isOpen
-          ? ['OPEN', '$' + (sig.price >= 1000 ? Math.round(sig.price/1000) + 'k' : Math.round(sig.price))]
-          : ['SELL', '$' + (sig.price >= 1000 ? Math.round(sig.price/1000) + 'k' : Math.round(sig.price)),
-             (sig.returnPct >= 0 ? '+' : '') + Math.round(sig.returnPct) + '%'];
+          ? ['OPEN', fmtK(sig.price), sig.pctAboveLow ? '+' + (sig.pctAboveLow*100).toFixed(0) + '% low' : '']
+            .filter(s => s !== '')
+          : ['SELL', fmtK(sig.price), (sig.returnPct >= 0 ? '+' : '') + Math.round(sig.returnPct) + '%'];
         annotations['box_' + i] = {
           type: 'label',
           xValue: sig.date,
