@@ -1779,57 +1779,27 @@
           return;
         }
 
-        // Arrow
-        annotations['arrow_' + i] = {
-          type: 'label',
-          xValue: sig.date,
-          yValue: sig.price,
+        // Vertical marker line at entry/exit (subtle, no label)
+        const sigColor = isBuy ? 'rgba(0,255,136,0.5)' : isOpen ? 'rgba(96,165,250,0.5)' : 'rgba(255,68,68,0.5)';
+        annotations['marker_' + i] = {
+          type: 'line',
+          xMin: sig.date, xMax: sig.date,
+          yMin: 'min', yMax: 'max',
           yScaleID: 'yPrice',
-          content: isBuy || isOpen ? '▲' : '▼',
-          color: isBuy ? '#00ff88' : isOpen ? '#60a5fa' : '#ff4444',
-          font: { size: 20, weight: 'bold' },
-          yAdjust: isBuy || isOpen ? 18 : -18,
-          backgroundColor: 'transparent',
-          borderWidth: 0
-        };
-        // Label box
-        const fmtK = v => v >= 1000 ? '$' + Math.round(v/1000) + 'k' : '$' + Math.round(v);
-        const labelLines = isBuy
-          ? ['BUY', fmtK(sig.price), sig.pctAboveLow ? '+' + (sig.pctAboveLow*100).toFixed(0) + '% low' : '']
-            .filter(s => s !== '')
-          : isOpen
-          ? ['OPEN', fmtK(sig.price), sig.pctAboveLow ? '+' + (sig.pctAboveLow*100).toFixed(0) + '% low' : '']
-            .filter(s => s !== '')
-          : ['SELL', fmtK(sig.price), (sig.returnPct >= 0 ? '+' : '') + Math.round(sig.returnPct) + '%'];
-        annotations['box_' + i] = {
-          type: 'label',
-          xValue: sig.date,
-          yValue: sig.price,
-          yScaleID: 'yPrice',
-          content: labelLines,
-          color: '#fff',
-          font: { size: 7, weight: 'bold', family: "'JetBrains Mono', monospace" },
-          backgroundColor: isBuy ? 'rgba(0,255,136,0.22)' : isOpen ? 'rgba(96,165,250,0.22)' : 'rgba(255,68,68,0.22)',
-          borderColor: isBuy ? '#00ff88' : isOpen ? '#60a5fa' : '#ff4444',
+          borderColor: sigColor,
           borderWidth: 1,
-          borderRadius: 4,
-          padding: { top: 4, bottom: 4, left: 6, right: 6 },
-          yAdjust: isBuy || isOpen ? 50 : -50,
-          xAdjust: 0
+          borderDash: [3, 4]
         };
 
         // Trade return line (connecting buy to sell)
         if (isSell && sig.buyDate) {
           annotations['line_' + i] = {
             type: 'line',
-            xMin: sig.buyDate,
-            xMax: sig.date,
-            yMin: sig.buyPrice,
-            yMax: sig.price,
+            xMin: sig.buyDate, xMax: sig.date,
+            yMin: sig.buyPrice, yMax: sig.price,
             yScaleID: 'yPrice',
-            borderColor: sig.returnPct >= 0 ? 'rgba(0,255,136,0.35)' : 'rgba(255,68,68,0.35)',
-            borderWidth: 1.5,
-            borderDash: [4, 3]
+            borderColor: sig.returnPct >= 0 ? 'rgba(0,255,136,0.3)' : 'rgba(255,68,68,0.3)',
+            borderWidth: 1, borderDash: [4, 3]
           };
         }
       });
