@@ -1303,37 +1303,40 @@
 
       if (oscillatorChart) oscillatorChart.destroy();
 
-      // Get zone color for a Z value
-      const getBarColor = (v) => {
-        if (v <= -1.5) return '#00d97e';
-        if (v <= -0.5) return '#84cc16';
-        if (v <=  0.5) return '#eab308';
-        if (v <=  1.5) return '#f97316';
-        return '#ef4444';
-      };
-
-      // BAR CHART with individual bar colors (professor style)
+      // SMOOTH LINE with gradient fill (professor style)
       oscillatorChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
           labels: data.map(d => d.date),
           datasets: [{
             data: data.map(d => d.value),
-            backgroundColor: data.map(d => getBarColor(d.value)),
-            borderWidth: 0,
-            borderRadius: 0,
-            borderSkipped: false,
-            barPercentage: 1.0,
-            categoryPercentage: 1.0
+            borderColor: '#06b6d4',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            pointHoverBackgroundColor: '#06b6d4',
+            tension: 0.35,
+            fill: {
+              target: 'origin',
+              above: 'rgba(6, 182, 212, 0.15)',
+              below: 'rgba(6, 182, 212, 0.15)'
+            }
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           animation: false,
+          interaction: { intersect: false, mode: 'index' },
           plugins: {
             legend: { display: false },
             tooltip: {
+              backgroundColor: 'rgba(10,10,11,0.9)',
+              borderColor: 'rgba(6,182,212,0.3)',
+              borderWidth: 1,
+              titleColor: '#888',
+              bodyColor: '#fff',
+              padding: 10,
               callbacks: {
                 title: items => new Date(items[0].label).toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'}).toUpperCase(),
                 label: c => {
@@ -1380,23 +1383,23 @@
             ].forEach(({v, color, label}) => {
               const y = scales.y.getPixelForValue(v);
               c.beginPath();
-              c.strokeStyle = color + '66';
+              c.strokeStyle = color + '55';
               c.lineWidth = 1;
-              c.setLineDash([4, 4]);
+              c.setLineDash([6, 4]);
               c.moveTo(chartArea.left, y);
               c.lineTo(chartArea.right, y);
               c.stroke();
-              c.fillStyle = color;
+              c.fillStyle = color + 'cc';
               c.font = 'bold 9px JetBrains Mono, monospace';
               c.textAlign = 'right';
-              c.fillText(label, chartArea.right - 4, y - 4);
+              c.fillText(label, chartArea.right - 6, y - 5);
             });
-            // Zero line
+            // Zero line (subtle)
             const y0 = scales.y.getPixelForValue(0);
             c.beginPath();
-            c.strokeStyle = 'rgba(255,255,255,0.25)';
+            c.strokeStyle = 'rgba(255,255,255,0.15)';
             c.lineWidth = 1;
-            c.setLineDash([]);
+            c.setLineDash([2, 2]);
             c.moveTo(chartArea.left, y0);
             c.lineTo(chartArea.right, y0);
             c.stroke();
@@ -1811,14 +1814,14 @@
               }
             },
             {
-              // Z-Composite line on right axis - more visible
+              // Z-Composite line on right axis - thin and subtle
               label: 'Z-Composite',
               data: zData,
               yAxisID: 'yZ',
-              borderColor: 'rgba(168,85,247,0.6)',
-              borderWidth: 1.5,
+              borderColor: 'rgba(168,85,247,0.4)',
+              borderWidth: 1,
               pointRadius: 0,
-              tension: 0.2,
+              tension: 0.3,
               fill: false
             },
             {
@@ -1935,8 +1938,8 @@
               max: 3.5,
               grid: { display: false },
               ticks: {
-                color: '#a855f7',
-                font: { size: 9 },
+                color: 'rgba(168,85,247,0.5)',
+                font: { size: 8 },
                 stepSize: 1,
                 callback: v => v === 0 ? '0' : (v > 0 ? '+' + v : v)
               }
