@@ -1756,17 +1756,18 @@
             type: 'label',
             xValue: sig.date, yValue: sig.price, yScaleID: 'yPrice',
             content: '◆', color: '#eab308',
-            font: { size: 16, weight: 'bold' }, yAdjust: 18,
+            font: { size: 16, weight: 'bold' }, yAdjust: 18, xAdjust: -80,
             backgroundColor: 'transparent', borderWidth: 0
           };
           annotations['pending_box'] = {
             type: 'label',
             xValue: sig.date, yValue: sig.price, yScaleID: 'yPrice',
-            content: ['WATCHING', 'Need $' + Math.round(sig.needed/1000) + 'k'],
+            content: ['⏳ WATCHING', 'Trigger $' + Math.round(sig.needed/1000) + 'k · Now $' + Math.round(sig.price/1000) + 'k'],
             color: '#fff', font: { size: 7, weight: 'bold', family: "'JetBrains Mono', monospace" },
-            backgroundColor: 'rgba(234,179,8,0.2)', borderColor: '#eab308',
+            backgroundColor: 'rgba(234,179,8,0.22)', borderColor: '#eab308',
             borderWidth: 1, borderRadius: 4,
-            padding: { top: 4, bottom: 4, left: 6, right: 6 }, yAdjust: 44
+            padding: { top: 5, bottom: 5, left: 8, right: 8 },
+            yAdjust: 50, xAdjust: -80
           };
           // Horizontal line showing the trigger price
           annotations['pending_line'] = {
@@ -1894,6 +1895,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          layout: { padding: { right: 20 } },
           interaction: { intersect: false, mode: 'index' },
           plugins: {
             legend: { display: false },
@@ -1935,7 +1937,7 @@
                 maxRotation: 0
               },
               afterFit: function(axis) {
-                axis.paddingRight = 100;
+                axis.paddingRight = 20;
               }
             },
             yPrice: {
