@@ -1483,7 +1483,20 @@
             daysAboveBuyTh++;
           } else {
             daysAboveBuyTh = 0;
-            if (!buyPending) buyPending = null; // reset only if not yet pending
+            // If Z went back into ACC/DEEP-ACC after pending was set,
+            // reset buyPending so a fresher crossover can be detected
+            if (buyPending && curr <= -2.0) {
+              console.log(`BUY pending RESET: Z went back to ${curr.toFixed(2)} (DEEP-ACC) on ${date}`);
+              buyPending = null;
+            }
+          }
+
+          // Also reset buyPending if price dropped more than 15% below the cycle low
+          // that was used as reference (means the bottom wasn't in yet)
+          if (buyPending && price < buyPending.cycleLow * 0.85) {
+            console.log(`BUY pending RESET: price $${Math.round(price)} dropped below cycle low $${Math.round(buyPending.cycleLow)} on ${date}`);
+            buyPending = null;
+            daysAboveBuyTh = 0;
           }
 
           // Detect upward cross of -1.5
