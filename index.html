@@ -1518,6 +1518,9 @@
             const zMin     = Math.min(...zVals);
             const zMinAge  = lb.length - 1 - lb.findLastIndex(d => d.value === zMin);
 
+            // Log every crossover with why it passed or failed
+            console.log(`📊 Z cross -1.5 on ${date}: accDays=${accDays}(need ${MIN_ACC_DAYS}) deepDays=${deepDays}(need ${MIN_DEEP_DAYS}) zMinAge=${zMinAge}(need ${Z_RECOVERY_DAYS}) → ${accDays>=MIN_ACC_DAYS && deepDays>=MIN_DEEP_DAYS && zMinAge>=Z_RECOVERY_DAYS ? '✅ PENDING' : '❌ SKIP'}`);
+
             if (accDays >= MIN_ACC_DAYS && deepDays >= MIN_DEEP_DAYS && zMinAge >= Z_RECOVERY_DAYS) {
               // DATE-based 90-day low: only prices strictly within 90 days before crossover
               const raw90Low = getPriceLow(date, 90);
