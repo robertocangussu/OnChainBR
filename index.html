@@ -1303,44 +1303,28 @@
 
       if (oscillatorChart) oscillatorChart.destroy();
 
-      // Use line chart with fill to origin — most reliable for negative/positive values
+      // Get zone color for a Z value
+      const getBarColor = (v) => {
+        if (v <= -1.5) return '#00d97e';
+        if (v <= -0.5) return '#84cc16';
+        if (v <=  0.5) return '#eab308';
+        if (v <=  1.5) return '#f97316';
+        return '#ef4444';
+      };
+
+      // BAR CHART with individual bar colors (professor style)
       oscillatorChart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
           labels: data.map(d => d.date),
           datasets: [{
             data: data.map(d => d.value),
+            backgroundColor: data.map(d => getBarColor(d.value)),
             borderWidth: 0,
-            pointRadius: 0,
-            fill: 'origin',
-            tension: 0,
-            backgroundColor: ctx2 => {
-              const v = data[ctx2.dataIndex]?.value ?? 0;
-              if (v <= -1.5) return '#00d97ecc';
-              if (v <= -0.5) return '#84cc16cc';
-              if (v <=  0.5) return '#eab308cc';
-              if (v <=  1.5) return '#f97316cc';
-              return '#ef4444cc';
-            },
-            segment: {
-              backgroundColor: ctx2 => {
-                const v = ctx2.p0.parsed.y;
-                if (v <= -1.5) return '#00d97eaa';
-                if (v <= -0.5) return '#84cc16aa';
-                if (v <=  0.5) return '#eab308aa';
-                if (v <=  1.5) return '#f97316aa';
-                return '#ef4444aa';
-              },
-              borderColor: ctx2 => {
-                const v = ctx2.p0.parsed.y;
-                if (v <= -1.5) return '#00d97e';
-                if (v <= -0.5) return '#84cc16';
-                if (v <=  0.5) return '#eab308';
-                if (v <=  1.5) return '#f97316';
-                return '#ef4444';
-              },
-              borderWidth: [1]
-            }
+            borderRadius: 0,
+            borderSkipped: false,
+            barPercentage: 1.0,
+            categoryPercentage: 1.0
           }]
         },
         options: {
@@ -1378,6 +1362,7 @@
               grid: { color: 'rgba(255,255,255,0.04)' },
               ticks: {
                 color: '#505058', font: { size: 9 },
+                stepSize: 1,
                 callback: v => v === 0 ? '0' : (v > 0 ? '+'+v : v)
               }
             }
@@ -1388,25 +1373,28 @@
           beforeDraw: chart => {
             const { ctx: c, chartArea, scales } = chart;
             c.save();
+            // Zone threshold lines
             [
-              { v: -1.5, color: '#00d97e', label: 'ACC' },
-              { v:  1.5, color: '#ef4444', label: 'HOT' }
+              { v: -1.5, color: '#00d97e', label: 'ACC -1.5' },
+              { v:  1.5, color: '#ef4444', label: 'HOT +1.5' }
             ].forEach(({v, color, label}) => {
               const y = scales.y.getPixelForValue(v);
               c.beginPath();
-              c.strokeStyle = color + '55';
+              c.strokeStyle = color + '66';
               c.lineWidth = 1;
               c.setLineDash([4, 4]);
               c.moveTo(chartArea.left, y);
               c.lineTo(chartArea.right, y);
               c.stroke();
-              c.fillStyle = color + 'bb';
-              c.font = 'bold 8px JetBrains Mono, monospace';
-              c.fillText(label + ' ' + (v > 0 ? '+' : '') + v, chartArea.right - 40, y - 3);
+              c.fillStyle = color;
+              c.font = 'bold 9px JetBrains Mono, monospace';
+              c.textAlign = 'right';
+              c.fillText(label, chartArea.right - 4, y - 4);
             });
+            // Zero line
             const y0 = scales.y.getPixelForValue(0);
             c.beginPath();
-            c.strokeStyle = 'rgba(255,255,255,0.3)';
+            c.strokeStyle = 'rgba(255,255,255,0.25)';
             c.lineWidth = 1;
             c.setLineDash([]);
             c.moveTo(chartArea.left, y0);
@@ -1750,67 +1738,49 @@
       // Build background zone boxes (colored bands on BTC price area)
       const annotations = {};
 
-      // Zone coloring: draw box annotations per zone segment
-      // Instead, color Z-line segments and use price area fill by zone
-      // Build signal annotations
-      signals.forEach((sig, i) => {
-        const isBuy    = sig.type === 'BUY';
-        const isOpen   = sig.type === 'OPEN';
-        const isSell   = sig.type === 'SELL';
-        const isPending = sig.type === 'PENDING';
-        const idx = labels.indexOf(sig.date);
-        if (idx === -1) return;
+      // Get BUY and SELL signals only (not PENDING/OPEN for annotations)
+      const buySignals = signals.filter(s => s.type === 'BUY');
+      const sellSignals = signals.filter(s => s.type === 'SELL');
+      const pending = signals.find(s => s.type === 'PENDING');
 
-        // PENDING: show a "waiting" marker at current price
-        if (isPending) {
-          // Horizontal trigger line only (no corner label — use CSS overlay instead)
-          annotations['pending_line'] = {
-            type: 'line',
-            yMin: sig.needed, yMax: sig.needed, yScaleID: 'yPrice',
-            borderColor: 'rgba(234,179,8,0.6)', borderWidth: 1.5, borderDash: [6, 3],
-            label: {
-              display: true,
-              content: '▶ BUY trigger $' + Math.round(sig.needed/1000) + 'k  |  now $' + Math.round(sig.price/1000) + 'k  |  need +' + Math.round((sig.needed/sig.price - 1)*100) + '%',
-              position: 'start', color: '#eab308',
-              font: { size: 9, weight: 'bold', family: "'JetBrains Mono', monospace" },
-              backgroundColor: 'rgba(10,10,11,0.85)',
-              padding: { top: 4, bottom: 4, left: 8, right: 8 },
-              borderRadius: 4
-            }
-          };
-          // CSS overlay badge (positioned top-right, always visible)
-          const watchBadge = document.getElementById('watchingBadge');
-          if (watchBadge) {
-            watchBadge.style.display = 'flex';
-            watchBadge.innerHTML = '⏳ WATCHING · Trigger <strong style="color:#eab308;margin:0 4px">$' + Math.round(sig.needed/1000) + 'k</strong> · Now $' + Math.round(sig.price/1000) + 'k · Need <strong style="color:#eab308;margin-left:4px">+' + Math.round((sig.needed/sig.price-1)*100) + '%</strong>';
-          }
-          return;
-        }
-
-        // Vertical marker line at entry/exit (subtle, no label)
-        const sigColor = isBuy ? 'rgba(0,255,136,0.5)' : isOpen ? 'rgba(96,165,250,0.5)' : 'rgba(255,68,68,0.5)';
-        annotations['marker_' + i] = {
+      // PENDING: horizontal trigger line only
+      if (pending) {
+        annotations['pending_line'] = {
           type: 'line',
-          xMin: sig.date, xMax: sig.date,
-          yMin: 'min', yMax: 'max',
-          yScaleID: 'yPrice',
-          borderColor: sigColor,
-          borderWidth: 1,
-          borderDash: [3, 4]
+          yMin: pending.needed, yMax: pending.needed, yScaleID: 'yPrice',
+          borderColor: 'rgba(234,179,8,0.7)', borderWidth: 2, borderDash: [8, 4],
+          label: {
+            display: true,
+            content: '▶ BUY trigger $' + Math.round(pending.needed/1000) + 'k  |  now $' + Math.round(pending.price/1000) + 'k  |  need +' + Math.round((pending.needed/pending.price - 1)*100) + '%',
+            position: 'start', color: '#eab308',
+            font: { size: 10, weight: 'bold', family: "'JetBrains Mono', monospace" },
+            backgroundColor: 'rgba(10,10,11,0.9)',
+            padding: { top: 5, bottom: 5, left: 10, right: 10 },
+            borderRadius: 4
+          }
         };
-
-        // Trade return line (connecting buy to sell)
-        if (isSell && sig.buyDate) {
-          annotations['line_' + i] = {
-            type: 'line',
-            xMin: sig.buyDate, xMax: sig.date,
-            yMin: sig.buyPrice, yMax: sig.price,
-            yScaleID: 'yPrice',
-            borderColor: sig.returnPct >= 0 ? 'rgba(0,255,136,0.3)' : 'rgba(255,68,68,0.3)',
-            borderWidth: 1, borderDash: [4, 3]
-          };
+        // CSS overlay badge
+        const watchBadge = document.getElementById('watchingBadge');
+        if (watchBadge) {
+          watchBadge.style.display = 'flex';
+          watchBadge.innerHTML = '⏳ WATCHING · Trigger <strong style="color:#eab308;margin:0 4px">$' + Math.round(pending.needed/1000) + 'k</strong> · Now $' + Math.round(pending.price/1000) + 'k · Need <strong style="color:#eab308;margin-left:4px">+' + Math.round((pending.needed/pending.price-1)*100) + '%</strong>';
         }
-      });
+      } else {
+        const watchBadge = document.getElementById('watchingBadge');
+        if (watchBadge) watchBadge.style.display = 'none';
+      }
+
+      // BUY points - simple green triangles (no vertical lines)
+      const buyPoints = buySignals.map(sig => {
+        const idx = labels.indexOf(sig.date);
+        return idx !== -1 ? { x: sig.date, y: sig.price } : null;
+      }).filter(Boolean);
+
+      // SELL points - simple red triangles (no vertical lines)  
+      const sellPoints = sellSignals.map(sig => {
+        const idx = labels.indexOf(sig.date);
+        return idx !== -1 ? { x: sig.date, y: sig.price } : null;
+      }).filter(Boolean);
 
       if (_signalChart) _signalChart.destroy();
       _signalChart = new Chart(ctx, {
@@ -1819,11 +1789,11 @@
           labels,
           datasets: [
             {
-              // BTC price colored by Z zone (same as main dashboard chart)
+              // BTC price colored by Z zone
               label: 'BTC/USD',
               data: priceData,
               yAxisID: 'yPrice',
-              borderWidth: 1.5,
+              borderWidth: 2,
               pointRadius: 0,
               tension: 0.1,
               fill: false,
@@ -1831,7 +1801,7 @@
                 borderColor: ctx => {
                   const date = labels[ctx.p0DataIndex];
                   const z = cMap.get(date);
-                  if (z === null || z === undefined) return 'rgba(255,255,255,0.4)';
+                  if (z === null || z === undefined) return 'rgba(255,255,255,0.5)';
                   if (z <= -1.5) return '#00d97e';
                   if (z <= -0.5) return '#84cc16';
                   if (z <= 0.5)  return '#eab308';
@@ -1841,33 +1811,72 @@
               }
             },
             {
-              // Z-Composite line on right axis
+              // Z-Composite line on right axis - more visible
               label: 'Z-Composite',
               data: zData,
               yAxisID: 'yZ',
-              borderColor: 'rgba(255,255,255,0.25)',
-              borderWidth: 1,
-              borderDash: [3, 3],
+              borderColor: 'rgba(168,85,247,0.6)',
+              borderWidth: 1.5,
               pointRadius: 0,
               tension: 0.2,
               fill: false
+            },
+            {
+              // BUY markers
+              label: 'BUY',
+              data: buyPoints,
+              yAxisID: 'yPrice',
+              type: 'scatter',
+              pointStyle: 'triangle',
+              pointRadius: 10,
+              pointBackgroundColor: '#00ff88',
+              pointBorderColor: '#00ff88',
+              pointBorderWidth: 0,
+              showLine: false
+            },
+            {
+              // SELL markers
+              label: 'SELL',
+              data: sellPoints,
+              yAxisID: 'yPrice',
+              type: 'scatter',
+              pointStyle: 'triangle',
+              rotation: 180,
+              pointRadius: 10,
+              pointBackgroundColor: '#ff4444',
+              pointBorderColor: '#ff4444',
+              pointBorderWidth: 0,
+              showLine: false
             }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          layout: { padding: { right: 20 } },
+          layout: { padding: { right: 10, top: 10 } },
           interaction: { intersect: false, mode: 'index' },
           plugins: {
-            legend: { display: false },
+            legend: {
+              display: true,
+              position: 'top',
+              align: 'end',
+              labels: {
+                color: '#808088',
+                font: { size: 9, family: "'JetBrains Mono', monospace" },
+                boxWidth: 12,
+                padding: 12,
+                usePointStyle: true,
+                filter: item => item.text !== 'BTC/USD' // Hide BTC from legend
+              }
+            },
             annotation: { annotations },
             tooltip: {
-              backgroundColor: 'rgba(10,10,11,0.92)',
+              backgroundColor: 'rgba(10,10,11,0.95)',
               borderColor: 'rgba(255,255,255,0.1)',
               borderWidth: 1,
-              titleColor: '#999',
+              titleColor: '#aaa',
               bodyColor: '#fff',
+              padding: 10,
               callbacks: {
                 title: items => {
                   const d = new Date(items[0].label);
@@ -1875,10 +1884,13 @@
                 },
                 label: c => {
                   if (c.datasetIndex === 0) return ' BTC: $' + Math.round(c.parsed.y).toLocaleString();
-                  const z = c.parsed.y?.toFixed(2);
-                  if (!z) return '';
-                  const zone = c.parsed.y <= -1.5 ? 'ACCUMULATE' : c.parsed.y <= -0.5 ? 'UNDERVALUED' : c.parsed.y <= 0.5 ? 'FAIR VALUE' : c.parsed.y <= 1.5 ? 'ELEVATED' : 'OVERHEATED';
-                  return ` Z: ${z} · ${zone}`;
+                  if (c.datasetIndex === 1) {
+                    const z = c.parsed.y?.toFixed(2);
+                    if (!z) return '';
+                    const zone = c.parsed.y <= -1.5 ? 'ACCUMULATE' : c.parsed.y <= -0.5 ? 'UNDERVALUED' : c.parsed.y <= 0.5 ? 'FAIR VALUE' : c.parsed.y <= 1.5 ? 'ELEVATED' : 'OVERHEATED';
+                    return ` Z: ${z} · ${zone}`;
+                  }
+                  return '';
                 }
               }
             }
@@ -1886,29 +1898,27 @@
           scales: {
             x: {
               display: true,
-              grid: { color: 'rgba(255,255,255,0.04)' },
-              offset: false,
+              grid: { color: 'rgba(255,255,255,0.03)' },
               ticks: {
-                color: '#505058',
-                maxTicksLimit: 10,
+                color: '#606068',
+                maxTicksLimit: 12,
                 font: { size: 9, family: "'JetBrains Mono', monospace" },
                 callback: function(val, idx) {
                   const d = new Date(this.getLabelForValue(val));
-                  return d.getFullYear() + (d.getMonth()===0 ? '' : ' ' + d.toLocaleString('en',{month:'short'}));
+                  // Show year for January, month otherwise
+                  if (d.getMonth() === 0) return d.getFullYear();
+                  return d.toLocaleString('en',{month:'short'});
                 },
                 maxRotation: 0
-              },
-              afterFit: function(axis) {
-                axis.paddingRight = 20;
               }
             },
             yPrice: {
               type: 'logarithmic',
               display: true,
               position: 'left',
-              grid: { color: 'rgba(255,255,255,0.05)' },
+              grid: { color: 'rgba(255,255,255,0.04)' },
               ticks: {
-                color: '#505058',
+                color: '#606068',
                 font: { size: 9 },
                 callback: v => {
                   if (v >= 100000) return '$' + (v/1000).toFixed(0) + 'k';
@@ -1925,14 +1935,38 @@
               max: 3.5,
               grid: { display: false },
               ticks: {
-                color: '#505058',
+                color: '#a855f7',
                 font: { size: 9 },
+                stepSize: 1,
                 callback: v => v === 0 ? '0' : (v > 0 ? '+' + v : v)
-              },
-              border: { dash: [4, 4] }
+              }
             }
           }
-        }
+        },
+        plugins: [{
+          // Draw zone threshold lines
+          id: 'signalZoneLines',
+          beforeDraw: chart => {
+            const { ctx: c, chartArea, scales } = chart;
+            if (!scales.yZ) return;
+            c.save();
+            // ACC and HOT thresholds on Z axis
+            [
+              { v: -1.5, color: '#00d97e', label: 'ACC' },
+              { v:  1.5, color: '#ef4444', label: 'HOT' }
+            ].forEach(({v, color, label}) => {
+              const y = scales.yZ.getPixelForValue(v);
+              c.beginPath();
+              c.strokeStyle = color + '40';
+              c.lineWidth = 1;
+              c.setLineDash([4, 4]);
+              c.moveTo(chartArea.left, y);
+              c.lineTo(chartArea.right, y);
+              c.stroke();
+            });
+            c.restore();
+          }
+        }]
       });
     }
 
