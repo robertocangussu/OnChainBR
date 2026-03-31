@@ -1320,12 +1320,21 @@
           labels: data.map(d => d.date),
           datasets: [{
             data: data.map(d => d.value),
-            backgroundColor: data.map(d => zColor(d.value) + 'bb'),
-            borderColor:     data.map(d => zColor(d.value)),
+            backgroundColor: data.map(d => {
+              const v = d.value;
+              // Negative = cool colors (green/lime), Positive = warm (orange/red)
+              if (v <= -1.5) return '#00d97e99';
+              if (v <= -0.5) return '#84cc1699';
+              if (v <=  0.5) return '#eab30899';
+              if (v <=  1.5) return '#f9731699';
+              return '#ef444499';
+            }),
+            borderColor: 'transparent',
             borderWidth: 0,
-            borderRadius: 0,
-            barPercentage: 1.0,
-            categoryPercentage: 1.0
+            borderRadius: 1,
+            barPercentage: 0.9,
+            categoryPercentage: 1.0,
+            base: 0  // bars always start from zero
           }]
         },
         options: {
