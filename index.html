@@ -208,7 +208,7 @@
       <div>
         <div class="brand-name">@ONCHAINBR</div>
         <div class="brand-title">BTC Valuation Index</div>
-        <div class="brand-sub">Composite Z-Score · Rolling 365d · 9 Metrics · Hybrid API</div>
+        <div class="brand-sub">Composite Z-Score · Rolling 365d · 9 Metrics · Hybrid API · v3.1</div>
       </div>
       <div class="header-right">
         <div class="status-ok" id="statusEndpoints">● 0/10 ENDPOINTS</div>
@@ -880,6 +880,7 @@
       }
       state.composite = count > 0 ? sum / count : null;
       console.log(`COMPOSITE: ${safeFixed(state.composite, 4)} (from ${count} metrics)`);
+      setTimeout(logSignalDiagnostics, 500);
       // Log raw values for debugging
       for (const [k, v] of Object.entries(state.rawValues)) {
         console.log(`  ${k}: raw=${safeFixed(v,4)}, Z=${safeFixed(state.zScores[k],4)}`);
@@ -909,6 +910,66 @@
           state.compositeHistory.push({ date, value: sum / count });
         }
       }
+    }
+
+    function logSignalDiagnostics() {
+      if (!state.compositeHistory.length) return;
+      console.group('=== SIGNAL DIAGNOSTICS ===');
+      
+      // Last 60 days of Z
+      const last60 = state.compositeHistory.slice(-60);
+      console.log('Last 60 days Z-Composite:');
+      last60.forEach(d => {
+        const zone = d.value <= -2.0 ? 'DEEP-ACC' : d.value <= -1.5 ? 'ACC' : d.value <= -0.5 ? 'UND' : d.value <= 0.5 ? 'FAIR' : d.value <= 1.5 ? 'ELEV' : 'HOT';
+        console.log(`  ${d.date}  Z=${d.value.toFixed(3)}  [${zone}]`);
+      });
+
+      // 2025 cycle deep-dive: Apr-Nov 2025
+      console.group('=== 2025 CYCLE (Apr-Nov) ===');
+      const cycle2025 = state.compositeHistory.filter(d => d.date >= '2025-03-01' && d.date <= '2025-11-30');
+      let accCount = 0, deepCount = 0;
+      cycle2025.forEach(d => {
+        const zone = d.value <= -2.0 ? 'DEEP-ACC' : d.value <= -1.5 ? 'ACC' : d.value <= -0.5 ? 'UND' : 'OTHER';
+        if (d.value <= -1.5) accCount++;
+        if (d.value <= -2.0) deepCount++;
+        if (d.value <= -1.3) console.log(`  ${d.date}  Z=${d.value.toFixed(3)}  [${zone}]`);
+      });
+      console.log(`2025: ${accCount} days in ACC (≤-1.5), ${deepCount} days DEEP-ACC (≤-2.0)`);
+      // Find price low in Apr-Jun 2025
+      const prices2025 = state.prices.filter(d => d.date >= '2025-03-01' && d.date <= '2025-07-01');
+      if (prices2025.length) {
+        const low = Math.min(...prices2025.map(d => d.value));
+        const lowDate = prices2025.find(d => d.value === low)?.date;
+        console.log(`2025 price low: $${Math.round(low).toLocaleString()} on ${lowDate}`);
+      }
+      console.groupEnd();
+
+      // Price range last 90 days
+      const last90p = state.prices.slice(-90);
+      const low90 = Math.min(...last90p.map(d => d.value));
+      const high90 = Math.max(...last90p.map(d => d.value));
+      const cur = state.prices[state.prices.length-1]?.value;
+      console.log(`Price last 90d: low=$${Math.round(low90).toLocaleString()} | high=$${Math.round(high90).toLocaleString()} | current=$${Math.round(cur).toLocaleString()}`);
+      console.log(`+15% trigger = $${Math.round(low90*1.15).toLocaleString()}`);
+
+      // Count days in ACC
+      const accDays = state.compositeHistory.filter(d => d.value <= -1.5).length;
+      const deepDays = state.compositeHistory.filter(d => d.value <= -2.0).length;
+      console.log(`Total days in ACC (≤-1.5): ${accDays} | Deep ACC (≤-2.0): ${deepDays}`);
+
+      // Find last time Z crossed -1.5 upward
+      for (let i = state.compositeHistory.length-1; i > 0; i--) {
+        const prev = state.compositeHistory[i-1].value;
+        const curr = state.compositeHistory[i].value;
+        if (prev <= -1.5 && curr > -1.5) {
+          const crossDate = state.compositeHistory[i].date;
+          const crossPrice = state.prices.find(p => p.date === crossDate)?.value;
+          console.log(`Last Z cross above -1.5: ${crossDate} @ $${crossPrice ? Math.round(crossPrice).toLocaleString() : '?'}`);
+          break;
+        }
+      }
+
+      console.groupEnd();
     }
 
     // ========== UI UPDATE ==========
@@ -1236,58 +1297,113 @@
     function renderOscillatorChart() {
       const ctx = document.getElementById('oscillatorChart')?.getContext('2d');
       if (!ctx || state.compositeHistory.length === 0) return;
-      
+
+      // Use last 365 days aligned with main price chart
       const data = state.compositeHistory.slice(-365);
-      
+      const zoneColors = {
+        acc:  '#00d97e', und: '#84cc16', fair: '#eab308', over: '#f97316', hot: '#ef4444'
+      };
+      function zColor(v) {
+        if (v <= -1.5) return zoneColors.acc;
+        if (v <= -0.5) return zoneColors.und;
+        if (v <=  0.5) return zoneColors.fair;
+        if (v <=  1.5) return zoneColors.over;
+        return zoneColors.hot;
+      }
+
       if (oscillatorChart) oscillatorChart.destroy();
-      
+
       oscillatorChart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
           labels: data.map(d => d.date),
           datasets: [{
             data: data.map(d => d.value),
-            borderWidth: 2,
-            pointRadius: 0,
-            fill: true,
-            backgroundColor: ctx2 => {
-              const val = data[ctx2.dataIndex]?.value || 0;
-              return getZoneColor(val) + '30';
-            },
-            segment: { borderColor: ctx2 => getZoneColor(ctx2.p0.parsed.y) }
+            backgroundColor: data.map(d => zColor(d.value) + 'bb'),
+            borderColor:     data.map(d => zColor(d.value)),
+            borderWidth: 0,
+            borderRadius: 0,
+            barPercentage: 1.0,
+            categoryPercentage: 1.0
           }]
         },
         options: {
-          responsive: true, 
+          responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          animation: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: items => new Date(items[0].label).toLocaleDateString('en-US', {month:'short',day:'2-digit',year:'numeric'}).toUpperCase(),
+                label: c => {
+                  const v = c.parsed.y;
+                  const zone = v <= -1.5 ? 'ACCUMULATE' : v <= -0.5 ? 'UNDERVALUED' : v <= 0.5 ? 'FAIR VALUE' : v <= 1.5 ? 'ELEVATED' : 'OVERHEATED';
+                  return ` Z: ${v.toFixed(3)}  ·  ${zone}`;
+                }
+              }
+            }
+          },
           scales: {
-            x: { display: true, grid: { display: false }, ticks: { display: false } },
-            y: { 
-              display: true, 
-              min: -3, 
-              max: 3, 
-              grid: { color: 'rgba(255,255,255,0.05)' }, 
-              ticks: { color: '#606068', font: { size: 9 }, stepSize: 1.5 } 
+            x: {
+              display: true,
+              grid: { display: false },
+              ticks: {
+                color: '#505058', font: { size: 8 }, maxTicksLimit: 8,
+                callback: function(val, idx) {
+                  const d = new Date(this.getLabelForValue(val));
+                  return d.toLocaleString('en',{month:'short',year:'2-digit'}).toUpperCase();
+                }
+              }
+            },
+            y: {
+              display: true,
+              min: -3.5, max: 3.5,
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: {
+                color: '#505058', font: { size: 9 },
+                callback: v => v === 0 ? '0' : (v > 0 ? '+'+v : v)
+              }
             }
           }
         },
         plugins: [{
-          id: 'thresholdLines',
+          id: 'zoneLines',
           beforeDraw: chart => {
-            const { ctx, chartArea, scales } = chart;
-            const thresholds = [-1.5, -0.5, 0.5, 1.5];
-            ctx.save();
-            thresholds.forEach(t => {
-              const y = scales.y.getPixelForValue(t);
-              ctx.beginPath();
-              ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-              ctx.setLineDash([4, 4]);
-              ctx.moveTo(chartArea.left, y);
-              ctx.lineTo(chartArea.right, y);
-              ctx.stroke();
+            const { ctx: c, chartArea, scales } = chart;
+            c.save();
+            // Zone threshold lines with labels
+            const lines = [
+              { v: -1.5, color: '#00d97e', label: 'ACC' },
+              { v: -0.5, color: '#84cc16', label: '' },
+              { v:  0.5, color: '#f97316', label: '' },
+              { v:  1.5, color: '#ef4444', label: 'HOT' }
+            ];
+            lines.forEach(({v, color, label}) => {
+              const y = scales.y.getPixelForValue(v);
+              c.beginPath();
+              c.strokeStyle = color + '55';
+              c.lineWidth = 1;
+              c.setLineDash([4, 4]);
+              c.moveTo(chartArea.left, y);
+              c.lineTo(chartArea.right, y);
+              c.stroke();
+              if (label) {
+                c.fillStyle = color + 'aa';
+                c.font = '8px JetBrains Mono, monospace';
+                c.fillText(label, chartArea.left + 4, y - 3);
+              }
             });
-            ctx.restore();
+            // Zero line solid
+            const y0 = scales.y.getPixelForValue(0);
+            c.beginPath();
+            c.strokeStyle = 'rgba(255,255,255,0.2)';
+            c.lineWidth = 1;
+            c.setLineDash([]);
+            c.moveTo(chartArea.left, y0);
+            c.lineTo(chartArea.right, y0);
+            c.stroke();
+            c.restore();
           }
         }]
       });
@@ -1395,28 +1511,38 @@
 
     function detectSignals(compositeHistory, priceHistory) {
       if (!compositeHistory || compositeHistory.length < 14) return [];
+
       const priceMap = new Map(priceHistory.map(d => [d.date, d.value]));
 
-      // ── PARAMETERS ────────────────────────────────────────────────
-      const ACC_THRESHOLD        = -1.5;  // ACC zone boundary
-      const HOT_THRESHOLD        =  1.5;  // OVERHEATED zone boundary
-      const MIN_DAYS_IN_ACC      = 14;    // ≥14 days in ACC before BUY valid
-      const MIN_DEEP_ACC_DAYS    = 5;     // ≥5 days below -2.0 (real capitulation)
-      const Z_RECOVERY_MIN_DAYS  = 5;     // Z local min must be ≥5 days ago
-      const CONFIRM_DAYS_BUY     = 5;     // Z stays above -1.5 for 5 consecutive days
-      const CONFIRM_DAYS_SELL    = 3;     // Z stays in OVERHEATED for 3 consecutive days
-      const PRICE_CONFIRM_PCT    = 0.15;  // price ≥15% above cycle low
-      // ──────────────────────────────────────────────────────────────
+      // ── PARAMETERS ──────────────────────────────────────────────
+      const ACC_TH           = -1.5;
+      const HOT_TH           =  1.5;
+      const MIN_ACC_DAYS     = 10;   // reduced: 2025 cycle was fast (was 14)
+      const MIN_DEEP_DAYS    = 3;    // reduced: fewer days needed below -2.0 (was 5)
+      const Z_RECOVERY_DAYS  = 3;    // reduced: faster recovery confirmation (was 5)
+      const CONFIRM_BUY_DAYS = 5;
+      const CONFIRM_SEL_DAYS = 3;
+      const PRICE_CONFIRM    = 0.15;
+      // ────────────────────────────────────────────────────────────
+
+      // Helper: get min price in last N days before a given date (date-string based)
+      function getPriceLow(beforeDate, days) {
+        const d = new Date(beforeDate);
+        d.setDate(d.getDate() - days);
+        const cutoff = d.toISOString().split('T')[0];
+        // priceHistory is sorted oldest→newest, filter by date string comparison
+        const vals = priceHistory
+          .filter(p => p.date > cutoff && p.date <= beforeDate && p.value > 0)
+          .map(p => p.value);
+        return vals.length ? Math.min(...vals) : null;
+      }
 
       const signals   = [];
       let openTrade   = null;
-      let buyPending  = null;   // waiting for price confirmation
+      let buyPending  = null;
       let sellPending = null;
-      let daysAboveBuyTh  = 0;
-      let daysAboveSellTh = 0;
-
-      // Track ACC phase start to measure price low correctly
-      let accPhaseStartIdx = null;
+      let daysAboveBuy  = 0;
+      let daysAboveSell = 0;
 
       for (let i = 1; i < compositeHistory.length; i++) {
         const prev  = compositeHistory[i-1].value;
@@ -1425,106 +1551,95 @@
         const price = priceMap.get(date);
         if (price == null || prev === null || curr === null) continue;
 
-        // Track when ACC phase starts
-        if (prev > ACC_THRESHOLD && curr <= ACC_THRESHOLD) {
-          accPhaseStartIdx = i; // entering ACC zone
-        }
-        if (curr > ACC_THRESHOLD && accPhaseStartIdx !== null) {
-          // leaving ACC — reset only if no buyPending
-          if (!buyPending) accPhaseStartIdx = null;
-        }
-
-        // ── BUY logic ─────────────────────────────────────────────
+        // ── BUY ─────────────────────────────────────────────────
         if (!openTrade) {
-
-          // Count consecutive days above -1.5
-          if (curr > ACC_THRESHOLD) {
-            daysAboveBuyTh++;
+          if (curr > ACC_TH) {
+            daysAboveBuy++;
           } else {
-            daysAboveBuyTh = 0;
-            if (!buyPending) buyPending = null; // reset only if not yet pending
-          }
-
-          // Detect upward cross of -1.5
-          if (prev <= ACC_THRESHOLD && curr > ACC_THRESHOLD) {
-            const lookbackStart = Math.max(0, i - MIN_DAYS_IN_ACC - 15);
-            const lookback = compositeHistory.slice(lookbackStart, i);
-            const accPoints  = lookback.filter(d => d.value !== null && d.value <= ACC_THRESHOLD);
-            const deepPoints = lookback.filter(d => d.value !== null && d.value <= -2.0);
-            const daysInAcc  = accPoints.length;
-            const hadDeepAcc = deepPoints.length >= MIN_DEEP_ACC_DAYS;
-
-            // Z must have made a local minimum (already recovering, not still falling)
-            const zVals   = lookback.map(d => d.value).filter(v => v !== null);
-            const zMin    = Math.min(...zVals);
-            const zMinPos = lookback.findLastIndex(d => d.value === zMin);
-            const zMinAge = lookback.length - 1 - zMinPos;
-            const zRecovering = zMinAge >= Z_RECOVERY_MIN_DAYS;
-
-            if (daysInAcc >= MIN_DAYS_IN_ACC && hadDeepAcc && zRecovering) {
-              // Find the true cycle low SINCE the start of the ACC phase
-              const phaseStart = accPhaseStartIdx !== null ? accPhaseStartIdx : lookbackStart;
-              const phasePrices = priceHistory.slice(phaseStart, i + 1).map(d => d.value).filter(v => v > 0);
-              const cycleLow = Math.min(...phasePrices);
-              buyPending = { crossDate: date, crossPrice: price, crossZ: curr, cycleLow };
-              daysAboveBuyTh = 1;
-              console.log(`BUY pending: ${date} @ $${Math.round(price)} | Cycle low: $${Math.round(cycleLow)} | needs $${Math.round(cycleLow * 1.15)}+ to confirm`);
+            daysAboveBuy = 0;
+            // Reset pending if Z returns to DEEP-ACC
+            if (buyPending && curr <= -2.0) {
+              console.log(`↩ BUY pending reset (deep ACC): ${date} Z=${curr.toFixed(2)}`);
+              buyPending = null;
             }
           }
 
-          // Confirm BUY: Z confirmed for CONFIRM_DAYS_BUY days AND price ≥15% above cycle low
-          if (buyPending && daysAboveBuyTh >= CONFIRM_DAYS_BUY) {
+          // Detect Z crossing -1.5 upward
+          if (prev <= ACC_TH && curr > ACC_TH) {
+            const lb = compositeHistory.slice(Math.max(0, i - MIN_ACC_DAYS - 15), i);
+            const accDays  = lb.filter(d => d.value !== null && d.value <= ACC_TH).length;
+            const deepDays = lb.filter(d => d.value !== null && d.value <= -2.0).length;
+            const zVals    = lb.map(d => d.value).filter(v => v !== null);
+            const zMin     = Math.min(...zVals);
+            const zMinAge  = lb.length - 1 - lb.findLastIndex(d => d.value === zMin);
+
+            // Log every crossover with why it passed or failed
+            console.log(`📊 Z cross -1.5 on ${date}: accDays=${accDays}(need ${MIN_ACC_DAYS}) deepDays=${deepDays}(need ${MIN_DEEP_DAYS}) zMinAge=${zMinAge}(need ${Z_RECOVERY_DAYS}) → ${accDays>=MIN_ACC_DAYS && deepDays>=MIN_DEEP_DAYS && zMinAge>=Z_RECOVERY_DAYS ? '✅ PENDING' : '❌ SKIP'}`);
+
+            if (accDays >= MIN_ACC_DAYS && deepDays >= MIN_DEEP_DAYS && zMinAge >= Z_RECOVERY_DAYS) {
+              // DATE-based 90-day low: only prices strictly within 90 days before crossover
+              const raw90Low = getPriceLow(date, 90);
+              // Safety: if 90d low is more than 50% below current price, it's a stale ancient low
+              // Use 60d low instead which is more recent
+              let cycleLow = raw90Low;
+              if (raw90Low !== null && raw90Low < price * 0.50) {
+                const raw60Low = getPriceLow(date, 60);
+                cycleLow = raw60Low !== null ? raw60Low : price * 0.80;
+                console.log(`⚠ 90d low $${Math.round(raw90Low)} too old, using 60d: $${Math.round(cycleLow)}`);
+              }
+              if (cycleLow === null) cycleLow = price * 0.80;
+
+              buyPending = { crossDate: date, crossPrice: price, cycleLow };
+              daysAboveBuy = 1;
+              console.log(`🟡 BUY pending: ${date} @ $${Math.round(price)} | cycleLow: $${Math.round(cycleLow)} | trigger: $${Math.round(cycleLow * (1 + PRICE_CONFIRM))}`);
+            }
+          }
+
+          // Confirm BUY
+          if (buyPending && daysAboveBuy >= CONFIRM_BUY_DAYS) {
+            // Refresh cycleLow — update if price made new lows since pending was created
+            const freshLow = getPriceLow(date, 90);
+            if (freshLow !== null && freshLow < buyPending.cycleLow && freshLow >= price * 0.50) {
+              buyPending.cycleLow = freshLow;
+            }
             const cycleLow    = buyPending.cycleLow;
             const pctAboveLow = (price - cycleLow) / cycleLow;
 
-            if (pctAboveLow >= PRICE_CONFIRM_PCT) {
+            if (pctAboveLow >= PRICE_CONFIRM) {
               openTrade = { date, price, z: curr, cycleLow, pctAboveLow };
               signals.push({ type: 'BUY', date, price, z: curr,
-                crossDate: buyPending.crossDate, crossPrice: buyPending.crossPrice,
-                low90d: cycleLow, pctAboveLow });
-              buyPending      = null;
-              daysAboveBuyTh  = 0;
-              daysAboveSellTh = 0;
-              sellPending     = null;
-              accPhaseStartIdx = null;
-              console.log(`✅ BUY confirmed: ${date} @ $${Math.round(price)} | Low: $${Math.round(cycleLow)} | +${(pctAboveLow*100).toFixed(1)}% above low | Z: ${curr.toFixed(2)}`);
+                crossDate: buyPending.crossDate, low90d: cycleLow, pctAboveLow });
+              buyPending = null; daysAboveBuy = 0; daysAboveSell = 0; sellPending = null;
+              console.log(`✅ BUY confirmed: ${date} @ $${Math.round(price)} | low: $${Math.round(cycleLow)} | +${(pctAboveLow*100).toFixed(1)}% | Z: ${curr.toFixed(2)}`);
             } else {
-              // Keep waiting — price not confirmed yet
-              console.log(`⏳ BUY waiting price: ${date} | need +${(PRICE_CONFIRM_PCT*100).toFixed(0)}%, have +${(pctAboveLow*100).toFixed(1)}%`);
+              console.log(`⏳ BUY waiting: ${date} | need +${(PRICE_CONFIRM*100).toFixed(0)}%, have +${(pctAboveLow*100).toFixed(1)}% | trigger $${Math.round(cycleLow*(1+PRICE_CONFIRM))}`);
             }
           }
         }
 
-        // ── SELL logic ────────────────────────────────────────────
+        // ── SELL ─────────────────────────────────────────────────
         if (openTrade) {
-          if (curr >= HOT_THRESHOLD) {
-            daysAboveSellTh++;
+          if (curr >= HOT_TH) {
+            daysAboveSell++;
           } else {
-            daysAboveSellTh = 0;
+            daysAboveSell = 0;
             sellPending = null;
           }
-
-          if (prev < HOT_THRESHOLD && curr >= HOT_THRESHOLD) {
-            sellPending = { crossDate: date, crossPrice: price };
-            daysAboveSellTh = 1;
+          if (prev < HOT_TH && curr >= HOT_TH) {
+            sellPending = { crossDate: date };
+            daysAboveSell = 1;
           }
-
-          if (sellPending && daysAboveSellTh >= CONFIRM_DAYS_SELL) {
+          if (sellPending && daysAboveSell >= CONFIRM_SEL_DAYS) {
             const ret = ((price - openTrade.price) / openTrade.price) * 100;
             signals.push({ type: 'SELL', date, price, z: curr,
               returnPct: ret, buyDate: openTrade.date, buyPrice: openTrade.price });
-            openTrade        = null;
-            sellPending      = null;
-            daysAboveSellTh  = 0;
-            daysAboveBuyTh   = 0;
-            buyPending       = null;
-            accPhaseStartIdx = null;
-            console.log(`🔴 SELL confirmed: ${date} @ $${Math.round(price)} | Return: ${ret.toFixed(1)}%`);
+            console.log(`🔴 SELL: ${date} @ $${Math.round(price)} | Return: ${ret.toFixed(1)}%`);
+            openTrade = null; sellPending = null; daysAboveSell = 0; daysAboveBuy = 0; buyPending = null;
           }
         }
       }
 
-      // Still in open trade
+      // Open trade still running
       if (openTrade) {
         const last = priceHistory[priceHistory.length - 1];
         if (last) {
@@ -1535,15 +1650,14 @@
             low90d: openTrade.cycleLow, pctAboveLow: openTrade.pctAboveLow });
         }
       } else if (buyPending) {
-        // Signal pending but price not confirmed yet — show as PENDING
         const last = priceHistory[priceHistory.length - 1];
         if (last) {
-          const needed = buyPending.cycleLow * (1 + PRICE_CONFIRM_PCT);
+          const needed = buyPending.cycleLow * (1 + PRICE_CONFIRM);
           signals.push({ type: 'PENDING', date: last.date, price: last.value,
             z: compositeHistory[compositeHistory.length-1].value,
             cycleLow: buyPending.cycleLow, needed,
             pctAboveLow: (last.value - buyPending.cycleLow) / buyPending.cycleLow });
-          console.log(`⏳ PENDING signal: cycle low $${Math.round(buyPending.cycleLow)}, need $${Math.round(needed)} to trigger BUY`);
+          console.log(`⏳ PENDING: low $${Math.round(buyPending.cycleLow)}, need $${Math.round(needed)}, current $${Math.round(last.value)}`);
         }
       }
 
@@ -1817,10 +1931,11 @@
                 callback: function(val, idx) {
                   const d = new Date(this.getLabelForValue(val));
                   return d.getFullYear() + (d.getMonth()===0 ? '' : ' ' + d.toLocaleString('en',{month:'short'}));
-                }
+                },
+                maxRotation: 0
               },
               afterFit: function(axis) {
-                axis.paddingRight = 80; // extra space for right-edge signal labels
+                axis.paddingRight = 100;
               }
             },
             yPrice: {
@@ -1889,6 +2004,7 @@
       const fmt = d => d && d !== '--' ? new Date(d).toLocaleDateString('en-US', {month:'short', day:'2-digit', year:'2-digit'}).toUpperCase() : '--';
       const fmtP = v => v != null ? '$' + Math.round(v).toLocaleString() : '--';
       const fmtR = r => r >= 0 ? `<span style="color:#00d97e">+${r.toFixed(0)}%</span>` : `<span style="color:#ef4444">${r.toFixed(0)}%</span>`;
+      const fmtReason = r => false ? '🛑 STOP' : r.status === 'OPEN' ? '📈 OPEN' : '✅ Z-SELL';
 
       tbody.innerHTML = rows.map(r => `<tr>
         <td style="color:var(--accent-green)">${fmt(r.entryDate)}</td>
@@ -1897,7 +2013,7 @@
         <td style="color:var(--text-primary)">${fmtP(r.exitPrice)}</td>
         <td style="color:var(--text-muted)">${r.zEntry?.toFixed(2) ?? '--'}</td>
         <td>${fmtR(r.returnPct)}</td>
-        <td><span style="background:${r.status==='OPEN'?'rgba(96,165,250,0.15)':'rgba(255,255,255,0.06)'};color:${r.status==='OPEN'?'#60a5fa':'#888'};padding:2px 8px;border-radius:3px;font-size:8px;font-weight:600">${r.status}</span></td>
+        <td><span style="background:${r.status==='OPEN'?'rgba(96,165,250,0.15)':'rgba(255,255,255,0.06)'};color:${r.status==='OPEN'?'#60a5fa':'#888'};padding:2px 8px;border-radius:3px;font-size:8px;font-weight:600">${r.status==='OPEN'?'OPEN':'CLOSED'}</span></td>
       </tr>`).join('');
     }
 
