@@ -120,7 +120,7 @@
     .sig-chart-title { font-size: 12px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.5px; }
     .sig-chart-sub { font-size: 9px; color: var(--text-muted); margin-top: 4px; }
     .sig-legend { font-size: 9px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; }
-    .sig-chart-body { height: 500px; position: relative; }
+    .sig-chart-body { height: 520px; position: relative; }
     .sig-zone-legend { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; font-size: 8px; font-family: 'JetBrains Mono', monospace; }
     .sig-range-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #606068; font-size: 8px; font-weight: 700; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; transition: all 0.15s; }
     .sig-range-btn:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
@@ -336,6 +336,7 @@
       </div>
       <div class="sig-chart-body">
         <canvas id="signalChart"></canvas>
+        <div id="watchingBadge" style="display:none;position:absolute;top:10px;right:10px;background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.5);border-radius:6px;padding:6px 12px;font-size:9px;font-family:'JetBrains Mono',monospace;color:#e8e8ed;align-items:center;gap:4px;z-index:10;backdrop-filter:blur(4px);"></div>
       </div>
       <!-- Zone background legend -->
       <div class="sig-zone-legend">
@@ -1703,6 +1704,8 @@
       } else {
         posEl.textContent = 'CASH';
         posEl.style.color = 'var(--text-muted)';
+        const wb = document.getElementById('watchingBadge');
+        if (wb) wb.style.display = 'none';
       }
 
       renderSignalChart(signals);
@@ -1752,35 +1755,27 @@
 
         // PENDING: show a "waiting" marker at current price
         if (isPending) {
-          annotations['pending_arrow'] = {
-            type: 'label',
-            xValue: sig.date, yValue: sig.price, yScaleID: 'yPrice',
-            content: '◆', color: '#eab308',
-            font: { size: 16, weight: 'bold' }, yAdjust: 18, xAdjust: -80,
-            backgroundColor: 'transparent', borderWidth: 0
-          };
-          annotations['pending_box'] = {
-            type: 'label',
-            xValue: sig.date, yValue: sig.price, yScaleID: 'yPrice',
-            content: ['⏳ WATCHING', 'Trigger $' + Math.round(sig.needed/1000) + 'k · Now $' + Math.round(sig.price/1000) + 'k'],
-            color: '#fff', font: { size: 7, weight: 'bold', family: "'JetBrains Mono', monospace" },
-            backgroundColor: 'rgba(234,179,8,0.22)', borderColor: '#eab308',
-            borderWidth: 1, borderRadius: 4,
-            padding: { top: 5, bottom: 5, left: 8, right: 8 },
-            yAdjust: 50, xAdjust: -80
-          };
-          // Horizontal line showing the trigger price
+          // Horizontal trigger line only (no corner label — use CSS overlay instead)
           annotations['pending_line'] = {
             type: 'line',
             yMin: sig.needed, yMax: sig.needed, yScaleID: 'yPrice',
-            borderColor: 'rgba(234,179,8,0.5)', borderWidth: 1.5, borderDash: [6, 3],
+            borderColor: 'rgba(234,179,8,0.6)', borderWidth: 1.5, borderDash: [6, 3],
             label: {
-              display: true, content: '▶ BUY trigger $' + Math.round(sig.needed/1000) + 'k',
+              display: true,
+              content: '▶ BUY trigger $' + Math.round(sig.needed/1000) + 'k  |  now $' + Math.round(sig.price/1000) + 'k  |  need +' + Math.round((sig.needed/sig.price - 1)*100) + '%',
               position: 'start', color: '#eab308',
-              font: { size: 8, family: "'JetBrains Mono', monospace" },
-              backgroundColor: 'transparent'
+              font: { size: 9, weight: 'bold', family: "'JetBrains Mono', monospace" },
+              backgroundColor: 'rgba(10,10,11,0.85)',
+              padding: { top: 4, bottom: 4, left: 8, right: 8 },
+              borderRadius: 4
             }
           };
+          // CSS overlay badge (positioned top-right, always visible)
+          const watchBadge = document.getElementById('watchingBadge');
+          if (watchBadge) {
+            watchBadge.style.display = 'flex';
+            watchBadge.innerHTML = '⏳ WATCHING · Trigger <strong style="color:#eab308;margin:0 4px">$' + Math.round(sig.needed/1000) + 'k</strong> · Now $' + Math.round(sig.price/1000) + 'k · Need <strong style="color:#eab308;margin-left:4px">+' + Math.round((sig.needed/sig.price-1)*100) + '%</strong>';
+          }
           return;
         }
 
