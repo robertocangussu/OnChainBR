@@ -1442,9 +1442,9 @@
       // ── PARAMETERS ──────────────────────────────────────────────
       const ACC_TH           = -1.5;
       const HOT_TH           =  1.5;
-      const MIN_ACC_DAYS     = 14;
-      const MIN_DEEP_DAYS    = 5;
-      const Z_RECOVERY_DAYS  = 5;
+      const MIN_ACC_DAYS     = 10;   // reduced: 2025 cycle was fast (was 14)
+      const MIN_DEEP_DAYS    = 3;    // reduced: fewer days needed below -2.0 (was 5)
+      const Z_RECOVERY_DAYS  = 3;    // reduced: faster recovery confirmation (was 5)
       const CONFIRM_BUY_DAYS = 5;
       const CONFIRM_SEL_DAYS = 3;
       const PRICE_CONFIRM    = 0.15;
