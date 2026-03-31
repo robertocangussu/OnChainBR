@@ -1503,13 +1503,15 @@
             const zRecovering = zMinAge >= Z_RECOVERY_MIN_DAYS;
 
             if (daysInAcc >= MIN_DAYS_IN_ACC && hadDeepAcc && zRecovering) {
-              // Find the true cycle low SINCE the start of the ACC phase
-              const phaseStart = accPhaseStartIdx !== null ? accPhaseStartIdx : lookbackStart;
-              const phasePrices = priceHistory.slice(phaseStart, i + 1).map(d => d.value).filter(v => v > 0);
-              const cycleLow = Math.min(...phasePrices);
+              // Use 90-day rolling low — captures the recent cycle bottom correctly
+              // Going back further risks picking up ancient lows (e.g. 2022 bottom in a 2026 signal)
+              const RECENT_LOW_WINDOW = 120; // 4 months back from crossover point
+              const recentPrices = priceHistory.slice(Math.max(0, i - RECENT_LOW_WINDOW), i + 1)
+                .map(d => d.value).filter(v => v > 0);
+              const cycleLow = Math.min(...recentPrices);
               buyPending = { crossDate: date, crossPrice: price, crossZ: curr, cycleLow };
               daysAboveBuyTh = 1;
-              console.log(`BUY pending: ${date} @ $${Math.round(price)} | Cycle low: $${Math.round(cycleLow)} | needs $${Math.round(cycleLow * 1.15)}+ to confirm`);
+              console.log(`BUY pending: ${date} @ $${Math.round(price)} | 120d low: $${Math.round(cycleLow)} | needs $${Math.round(cycleLow * 1.15)}+ to confirm`);
             }
           }
 
