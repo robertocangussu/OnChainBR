@@ -924,6 +924,26 @@
         console.log(`  ${d.date}  Z=${d.value.toFixed(3)}  [${zone}]`);
       });
 
+      // 2025 cycle deep-dive: Apr-Nov 2025
+      console.group('=== 2025 CYCLE (Apr-Nov) ===');
+      const cycle2025 = state.compositeHistory.filter(d => d.date >= '2025-03-01' && d.date <= '2025-11-30');
+      let accCount = 0, deepCount = 0;
+      cycle2025.forEach(d => {
+        const zone = d.value <= -2.0 ? 'DEEP-ACC' : d.value <= -1.5 ? 'ACC' : d.value <= -0.5 ? 'UND' : 'OTHER';
+        if (d.value <= -1.5) accCount++;
+        if (d.value <= -2.0) deepCount++;
+        if (d.value <= -1.3) console.log(`  ${d.date}  Z=${d.value.toFixed(3)}  [${zone}]`);
+      });
+      console.log(`2025: ${accCount} days in ACC (≤-1.5), ${deepCount} days DEEP-ACC (≤-2.0)`);
+      // Find price low in Apr-Jun 2025
+      const prices2025 = state.prices.filter(d => d.date >= '2025-03-01' && d.date <= '2025-07-01');
+      if (prices2025.length) {
+        const low = Math.min(...prices2025.map(d => d.value));
+        const lowDate = prices2025.find(d => d.value === low)?.date;
+        console.log(`2025 price low: $${Math.round(low).toLocaleString()} on ${lowDate}`);
+      }
+      console.groupEnd();
+
       // Price range last 90 days
       const last90p = state.prices.slice(-90);
       const low90 = Math.min(...last90p.map(d => d.value));
