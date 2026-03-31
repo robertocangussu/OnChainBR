@@ -34,7 +34,7 @@
     .price-date { font-size: 9px; color: var(--text-muted); margin-top: 6px; }
     .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
     .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
-    .stat-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+    .stat-label { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 6px; }
     .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
     .stat-sub { font-size: 8px; color: var(--text-muted); margin-top: 4px; }
     .main-grid { display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
@@ -107,18 +107,18 @@
     .section-header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
     .section-num { font-size: 9px; font-weight: 700; color: var(--accent-orange); letter-spacing: 1px; }
     .section-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
-    .section-sub { font-size: 9px; color: var(--text-muted); margin-left: auto; letter-spacing: 0.5px; }
+    .section-sub { font-size: 10px; color: var(--text-secondary); margin-left: auto; letter-spacing: 0.5px; }
 
     /* ===== SIGNALS SECTION ===== */
     /* Signals redesign */
     .sig-stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 16px; }
     .sig-stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
-    .sig-stat-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .sig-stat-label { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
     .sig-stat-val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
     .sig-chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
     .sig-chart-topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
     .sig-chart-title { font-size: 12px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.5px; }
-    .sig-chart-sub { font-size: 9px; color: var(--text-muted); margin-top: 4px; }
+    .sig-chart-sub { font-size: 10px; color: var(--text-secondary); margin-top: 4px; }
     .sig-legend { font-size: 9px; color: var(--text-secondary); display: flex; align-items: center; gap: 5px; font-family: 'JetBrains Mono', monospace; }
     .sig-chart-body { height: 520px; position: relative; }
     .sig-zone-legend { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; font-size: 8px; font-family: 'JetBrains Mono', monospace; }
@@ -336,7 +336,7 @@
       </div>
       <div class="sig-chart-body">
         <canvas id="signalChart"></canvas>
-        <div id="watchingBadge" style="display:none;position:absolute;top:10px;right:10px;background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.5);border-radius:6px;padding:6px 12px;font-size:9px;font-family:'JetBrains Mono',monospace;color:#e8e8ed;align-items:center;gap:4px;z-index:10;backdrop-filter:blur(4px);"></div>
+        <div id="watchingBadge" style="display:none;position:absolute;top:12px;right:12px;background:rgba(20,20,22,0.95);border:1px solid rgba(234,179,8,0.6);border-radius:6px;padding:8px 14px;font-size:10px;font-family:'JetBrains Mono',monospace;color:#e8e8ed;align-items:center;gap:6px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.4);"></div>
       </div>
       <!-- Zone background legend -->
       <div class="sig-zone-legend">
@@ -1766,24 +1766,40 @@
         const watchBadge = document.getElementById('watchingBadge');
         if (watchBadge) {
           watchBadge.style.display = 'flex';
-          watchBadge.innerHTML = '⏳ WATCHING · Trigger <strong style="color:#eab308;margin:0 4px">$' + Math.round(pending.needed/1000) + 'k</strong> · Now $' + Math.round(pending.price/1000) + 'k · Need <strong style="color:#eab308;margin-left:4px">+' + Math.round((pending.needed/pending.price-1)*100) + '%</strong>';
+          watchBadge.innerHTML = '<span style="color:#eab308;font-weight:700;">⏳ WATCHING</span><span style="color:#666;margin:0 8px;">·</span>Trigger <span style="color:#eab308;font-weight:600;margin:0 3px;">$' + Math.round(pending.needed/1000) + 'k</span><span style="color:#666;margin:0 8px;">·</span>Now <span style="color:#fff;font-weight:500;">$' + Math.round(pending.price/1000) + 'k</span><span style="color:#666;margin:0 8px;">·</span>Need <span style="color:#eab308;font-weight:600;">+' + Math.round((pending.needed/pending.price-1)*100) + '%</span>';
         }
       } else {
         const watchBadge = document.getElementById('watchingBadge');
         if (watchBadge) watchBadge.style.display = 'none';
       }
 
-      // BUY points - simple green triangles (no vertical lines)
-      const buyPoints = buySignals.map(sig => {
-        const idx = labels.indexOf(sig.date);
-        return idx !== -1 ? { x: sig.date, y: sig.price } : null;
-      }).filter(Boolean);
+      // BUY annotations - small circles with labels
+      buySignals.forEach((sig, i) => {
+        annotations['buy_' + i] = {
+          type: 'point',
+          xValue: sig.date,
+          yValue: sig.price,
+          yScaleID: 'yPrice',
+          backgroundColor: '#00d97e',
+          borderColor: '#000',
+          borderWidth: 1,
+          radius: 6
+        };
+      });
 
-      // SELL points - simple red triangles (no vertical lines)  
-      const sellPoints = sellSignals.map(sig => {
-        const idx = labels.indexOf(sig.date);
-        return idx !== -1 ? { x: sig.date, y: sig.price } : null;
-      }).filter(Boolean);
+      // SELL annotations - small circles with labels
+      sellSignals.forEach((sig, i) => {
+        annotations['sell_' + i] = {
+          type: 'point',
+          xValue: sig.date,
+          yValue: sig.price,
+          yScaleID: 'yPrice',
+          backgroundColor: '#ef4444',
+          borderColor: '#000',
+          borderWidth: 1,
+          radius: 6
+        };
+      });
 
       if (_signalChart) _signalChart.destroy();
       _signalChart = new Chart(ctx, {
@@ -1818,38 +1834,11 @@
               label: 'Z-Composite',
               data: zData,
               yAxisID: 'yZ',
-              borderColor: 'rgba(168,85,247,0.4)',
+              borderColor: 'rgba(168,85,247,0.35)',
               borderWidth: 1,
               pointRadius: 0,
               tension: 0.3,
               fill: false
-            },
-            {
-              // BUY markers
-              label: 'BUY',
-              data: buyPoints,
-              yAxisID: 'yPrice',
-              type: 'scatter',
-              pointStyle: 'triangle',
-              pointRadius: 10,
-              pointBackgroundColor: '#00ff88',
-              pointBorderColor: '#00ff88',
-              pointBorderWidth: 0,
-              showLine: false
-            },
-            {
-              // SELL markers
-              label: 'SELL',
-              data: sellPoints,
-              yAxisID: 'yPrice',
-              type: 'scatter',
-              pointStyle: 'triangle',
-              rotation: 180,
-              pointRadius: 10,
-              pointBackgroundColor: '#ff4444',
-              pointBorderColor: '#ff4444',
-              pointBorderWidth: 0,
-              showLine: false
             }
           ]
         },
@@ -1859,19 +1848,7 @@
           layout: { padding: { right: 10, top: 10 } },
           interaction: { intersect: false, mode: 'index' },
           plugins: {
-            legend: {
-              display: true,
-              position: 'top',
-              align: 'end',
-              labels: {
-                color: '#808088',
-                font: { size: 9, family: "'JetBrains Mono', monospace" },
-                boxWidth: 12,
-                padding: 12,
-                usePointStyle: true,
-                filter: item => item.text !== 'BTC/USD' // Hide BTC from legend
-              }
-            },
+            legend: { display: false },
             annotation: { annotations },
             tooltip: {
               backgroundColor: 'rgba(10,10,11,0.95)',
@@ -1903,7 +1880,7 @@
               display: true,
               grid: { color: 'rgba(255,255,255,0.03)' },
               ticks: {
-                color: '#606068',
+                color: '#707078',
                 maxTicksLimit: 12,
                 font: { size: 9, family: "'JetBrains Mono', monospace" },
                 callback: function(val, idx) {
