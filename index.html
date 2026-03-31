@@ -1299,17 +1299,14 @@
       const ctx = document.getElementById('oscillatorChart')?.getContext('2d');
       if (!ctx || state.compositeHistory.length === 0) return;
 
-      // Use last 365 days aligned with main price chart
       const data = state.compositeHistory.slice(-365);
-      const zoneColors = {
-        acc:  '#00d97e', und: '#84cc16', fair: '#eab308', over: '#f97316', hot: '#ef4444'
-      };
+
       function zColor(v) {
-        if (v <= -1.5) return zoneColors.acc;
-        if (v <= -0.5) return zoneColors.und;
-        if (v <=  0.5) return zoneColors.fair;
-        if (v <=  1.5) return zoneColors.over;
-        return zoneColors.hot;
+        if (v <= -1.5) return '#00d97e';
+        if (v <= -0.5) return '#84cc16';
+        if (v <=  0.5) return '#eab308';
+        if (v <=  1.5) return '#f97316';
+        return '#ef4444';
       }
 
       if (oscillatorChart) oscillatorChart.destroy();
@@ -1319,22 +1316,13 @@
         data: {
           labels: data.map(d => d.date),
           datasets: [{
+            label: 'Z-Composite',
             data: data.map(d => d.value),
-            backgroundColor: data.map(d => {
-              const v = d.value;
-              // Negative = cool colors (green/lime), Positive = warm (orange/red)
-              if (v <= -1.5) return '#00d97e99';
-              if (v <= -0.5) return '#84cc1699';
-              if (v <=  0.5) return '#eab30899';
-              if (v <=  1.5) return '#f9731699';
-              return '#ef444499';
-            }),
+            backgroundColor: data.map(d => zColor(d.value) + 'cc'),
             borderColor: 'transparent',
             borderWidth: 0,
-            borderRadius: 1,
-            barPercentage: 0.9,
-            categoryPercentage: 1.0,
-            base: 0  // bars always start from zero
+            barPercentage: 1.0,
+            categoryPercentage: 1.0
           }]
         },
         options: {
@@ -1345,10 +1333,10 @@
             legend: { display: false },
             tooltip: {
               callbacks: {
-                title: items => new Date(items[0].label).toLocaleDateString('en-US', {month:'short',day:'2-digit',year:'numeric'}).toUpperCase(),
+                title: items => new Date(items[0].label).toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'}).toUpperCase(),
                 label: c => {
                   const v = c.parsed.y;
-                  const zone = v <= -1.5 ? 'ACCUMULATE' : v <= -0.5 ? 'UNDERVALUED' : v <= 0.5 ? 'FAIR VALUE' : v <= 1.5 ? 'ELEVATED' : 'OVERHEATED';
+                  const zone = v<=-1.5?'ACCUMULATE':v<=-0.5?'UNDERVALUED':v<=0.5?'FAIR VALUE':v<=1.5?'ELEVATED':'OVERHEATED';
                   return ` Z: ${v.toFixed(3)}  ·  ${zone}`;
                 }
               }
@@ -1382,17 +1370,16 @@
           beforeDraw: chart => {
             const { ctx: c, chartArea, scales } = chart;
             c.save();
-            // Zone threshold lines with labels
             const lines = [
-              { v: -1.5, color: '#00d97e', label: 'ACC' },
+              { v: -1.5, color: '#00d97e', label: 'ACC  -1.5' },
               { v: -0.5, color: '#84cc16', label: '' },
               { v:  0.5, color: '#f97316', label: '' },
-              { v:  1.5, color: '#ef4444', label: 'HOT' }
+              { v:  1.5, color: '#ef4444', label: 'HOT  +1.5' }
             ];
             lines.forEach(({v, color, label}) => {
               const y = scales.y.getPixelForValue(v);
               c.beginPath();
-              c.strokeStyle = color + '55';
+              c.strokeStyle = color + '44';
               c.lineWidth = 1;
               c.setLineDash([4, 4]);
               c.moveTo(chartArea.left, y);
@@ -1401,13 +1388,13 @@
               if (label) {
                 c.fillStyle = color + 'aa';
                 c.font = '8px JetBrains Mono, monospace';
-                c.fillText(label, chartArea.left + 4, y - 3);
+                c.fillText(label, chartArea.left + 6, y - 3);
               }
             });
-            // Zero line solid
+            // Zero line
             const y0 = scales.y.getPixelForValue(0);
             c.beginPath();
-            c.strokeStyle = 'rgba(255,255,255,0.2)';
+            c.strokeStyle = 'rgba(255,255,255,0.25)';
             c.lineWidth = 1;
             c.setLineDash([]);
             c.moveTo(chartArea.left, y0);
