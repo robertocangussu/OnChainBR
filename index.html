@@ -1540,35 +1540,6 @@
             }
           }
 
-          // ── SECONDARY BUY LOGIC: Price Crash + Z Stressed ──────
-          // Catches fast cycles where Z stays in UNDERVALUED but price crashes hard
-          // Conditions: price fell ≥15% in 30d + Z < -1.3 + Z recovering + price +10% off low
-          if (!buyPending && curr > -1.5 && curr < -1.0 && daysAboveBuy >= 3) {
-            const priceLow30  = getPriceLow(date, 30);
-            const priceHigh30 = (() => {
-              const d = new Date(date); d.setDate(d.getDate() - 30);
-              const cut = d.toISOString().split('T')[0];
-              const vals = priceHistory.filter(p => p.date > cut && p.date <= date && p.value > 0).map(p => p.value);
-              return vals.length ? Math.max(...vals) : null;
-            })();
-
-            if (priceLow30 && priceHigh30) {
-              const priceDrop   = (priceHigh30 - priceLow30) / priceHigh30; // % drop from 30d high to 30d low
-              const priceRecov  = (price - priceLow30) / priceLow30;        // % recovery from 30d low
-
-              // Z must be trending up (last 5 days average rising)
-              const zLast5 = compositeHistory.slice(Math.max(0,i-5), i).map(d => d.value).filter(v => v!==null);
-              const zTrend = zLast5.length >= 3 ? zLast5[zLast5.length-1] - zLast5[0] : 0;
-
-              if (priceDrop >= 0.15 && priceRecov >= 0.10 && zTrend > 0) {
-                console.log(`🔶 SECONDARY pending: ${date} | drop=${(priceDrop*100).toFixed(1)}% | recov=${(priceRecov*100).toFixed(1)}% | Z=${curr.toFixed(2)} trend↑ | low30=$${Math.round(priceLow30)}`);
-                // Use same price confirmation: need +15% above 30d low
-                buyPending = { crossDate: date, crossPrice: price, cycleLow: priceLow30, secondary: true };
-                daysAboveBuy = 3; // already have 3 days confirmed
-              }
-            }
-          }
-
           // Confirm BUY
           if (buyPending && daysAboveBuy >= CONFIRM_BUY_DAYS) {
             // Refresh cycleLow — update if price made new lows since pending was created
