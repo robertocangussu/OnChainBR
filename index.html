@@ -1301,28 +1301,46 @@
 
       const data = state.compositeHistory.slice(-365);
 
-      function zColor(v) {
-        if (v <= -1.5) return '#00d97e';
-        if (v <= -0.5) return '#84cc16';
-        if (v <=  0.5) return '#eab308';
-        if (v <=  1.5) return '#f97316';
-        return '#ef4444';
-      }
-
       if (oscillatorChart) oscillatorChart.destroy();
 
+      // Use line chart with fill to origin — most reliable for negative/positive values
       oscillatorChart = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
           labels: data.map(d => d.date),
           datasets: [{
-            label: 'Z-Composite',
             data: data.map(d => d.value),
-            backgroundColor: data.map(d => zColor(d.value) + 'cc'),
-            borderColor: 'transparent',
             borderWidth: 0,
-            barPercentage: 1.0,
-            categoryPercentage: 1.0
+            pointRadius: 0,
+            fill: 'origin',
+            tension: 0,
+            backgroundColor: ctx2 => {
+              const v = data[ctx2.dataIndex]?.value ?? 0;
+              if (v <= -1.5) return '#00d97ecc';
+              if (v <= -0.5) return '#84cc16cc';
+              if (v <=  0.5) return '#eab308cc';
+              if (v <=  1.5) return '#f97316cc';
+              return '#ef4444cc';
+            },
+            segment: {
+              backgroundColor: ctx2 => {
+                const v = ctx2.p0.parsed.y;
+                if (v <= -1.5) return '#00d97eaa';
+                if (v <= -0.5) return '#84cc16aa';
+                if (v <=  0.5) return '#eab308aa';
+                if (v <=  1.5) return '#f97316aa';
+                return '#ef4444aa';
+              },
+              borderColor: ctx2 => {
+                const v = ctx2.p0.parsed.y;
+                if (v <= -1.5) return '#00d97e';
+                if (v <= -0.5) return '#84cc16';
+                if (v <=  0.5) return '#eab308';
+                if (v <=  1.5) return '#f97316';
+                return '#ef4444';
+              },
+              borderWidth: [1]
+            }
           }]
         },
         options: {
@@ -1370,31 +1388,25 @@
           beforeDraw: chart => {
             const { ctx: c, chartArea, scales } = chart;
             c.save();
-            const lines = [
-              { v: -1.5, color: '#00d97e', label: 'ACC  -1.5' },
-              { v: -0.5, color: '#84cc16', label: '' },
-              { v:  0.5, color: '#f97316', label: '' },
-              { v:  1.5, color: '#ef4444', label: 'HOT  +1.5' }
-            ];
-            lines.forEach(({v, color, label}) => {
+            [
+              { v: -1.5, color: '#00d97e', label: 'ACC' },
+              { v:  1.5, color: '#ef4444', label: 'HOT' }
+            ].forEach(({v, color, label}) => {
               const y = scales.y.getPixelForValue(v);
               c.beginPath();
-              c.strokeStyle = color + '44';
+              c.strokeStyle = color + '55';
               c.lineWidth = 1;
               c.setLineDash([4, 4]);
               c.moveTo(chartArea.left, y);
               c.lineTo(chartArea.right, y);
               c.stroke();
-              if (label) {
-                c.fillStyle = color + 'aa';
-                c.font = '8px JetBrains Mono, monospace';
-                c.fillText(label, chartArea.left + 6, y - 3);
-              }
+              c.fillStyle = color + 'bb';
+              c.font = 'bold 8px JetBrains Mono, monospace';
+              c.fillText(label + ' ' + (v > 0 ? '+' : '') + v, chartArea.right - 40, y - 3);
             });
-            // Zero line
             const y0 = scales.y.getPixelForValue(0);
             c.beginPath();
-            c.strokeStyle = 'rgba(255,255,255,0.25)';
+            c.strokeStyle = 'rgba(255,255,255,0.3)';
             c.lineWidth = 1;
             c.setLineDash([]);
             c.moveTo(chartArea.left, y0);
@@ -1807,49 +1819,38 @@
           labels,
           datasets: [
             {
+              // BTC price colored by Z zone (same as main dashboard chart)
               label: 'BTC/USD',
               data: priceData,
               yAxisID: 'yPrice',
-              borderColor: 'rgba(255,255,255,0.7)',
               borderWidth: 1.5,
               pointRadius: 0,
               tension: 0.1,
-              fill: {
-                target: 'origin',
-                above: 'rgba(255,255,255,0.03)'
-              }
-            },
-            {
-              label: 'Z-Composite',
-              data: zData,
-              yAxisID: 'yZ',
-              borderWidth: 2,
-              pointRadius: 0,
-              tension: 0.2,
+              fill: false,
               segment: {
                 borderColor: ctx => {
-                  const z = ctx.p0.parsed.y;
-                  if (z === null) return 'transparent';
+                  const date = labels[ctx.p0DataIndex];
+                  const z = cMap.get(date);
+                  if (z === null || z === undefined) return 'rgba(255,255,255,0.4)';
                   if (z <= -1.5) return '#00d97e';
                   if (z <= -0.5) return '#84cc16';
                   if (z <= 0.5)  return '#eab308';
                   if (z <= 1.5)  return '#f97316';
                   return '#ef4444';
                 }
-              },
-              fill: {
-                target: 'origin',
-                above: ctx => {
-                  const z = ctx.p0?.parsed?.y;
-                  if (z === null || z === undefined) return 'transparent';
-                  if (z <= -1.5) return 'rgba(0,217,126,0.08)';
-                  if (z <= -0.5) return 'rgba(132,204,22,0.06)';
-                  if (z <= 0.5)  return 'rgba(234,179,8,0.04)';
-                  if (z <= 1.5)  return 'rgba(249,115,22,0.06)';
-                  return 'rgba(239,68,68,0.08)';
-                },
-                below: 'transparent'
               }
+            },
+            {
+              // Z-Composite line on right axis
+              label: 'Z-Composite',
+              data: zData,
+              yAxisID: 'yZ',
+              borderColor: 'rgba(255,255,255,0.25)',
+              borderWidth: 1,
+              borderDash: [3, 3],
+              pointRadius: 0,
+              tension: 0.2,
+              fill: false
             }
           ]
         },
