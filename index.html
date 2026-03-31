@@ -1299,27 +1299,46 @@
       const ctx = document.getElementById('oscillatorChart')?.getContext('2d');
       if (!ctx || state.compositeHistory.length === 0) return;
 
-      const data = state.compositeHistory.slice(-365);
+      // Use ALL composite history, not just last 365 days
+      const data = state.compositeHistory;
+      
+      // Sample if too many points for performance
+      const maxPoints = 500;
+      const step = data.length > maxPoints ? Math.ceil(data.length / maxPoints) : 1;
+      const sampledData = step > 1 ? data.filter((_, i) => i % step === 0 || i === data.length - 1) : data;
 
       if (oscillatorChart) oscillatorChart.destroy();
 
-      // SMOOTH LINE with gradient fill (professor style)
+      // Get zone color for Z value
+      const getZoneColor = (z) => {
+        if (z <= -1.5) return '#00d97e';
+        if (z <= -0.5) return '#84cc16';
+        if (z <=  0.5) return '#eab308';
+        if (z <=  1.5) return '#f97316';
+        return '#ef4444';
+      };
+
+      // SMOOTH LINE colored by zone with gradient fill
       oscillatorChart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: data.map(d => d.date),
+          labels: sampledData.map(d => d.date),
           datasets: [{
-            data: data.map(d => d.value),
-            borderColor: '#06b6d4',
+            data: sampledData.map(d => d.value),
             borderWidth: 2,
             pointRadius: 0,
             pointHoverRadius: 4,
-            pointHoverBackgroundColor: '#06b6d4',
-            tension: 0.35,
+            tension: 0.3,
             fill: {
               target: 'origin',
-              above: 'rgba(6, 182, 212, 0.15)',
-              below: 'rgba(6, 182, 212, 0.15)'
+              above: 'rgba(6, 182, 212, 0.12)',
+              below: 'rgba(6, 182, 212, 0.12)'
+            },
+            segment: {
+              borderColor: ctx => {
+                const v = ctx.p0.parsed.y;
+                return getZoneColor(v);
+              }
             }
           }]
         },
@@ -1352,7 +1371,7 @@
               display: true,
               grid: { display: false },
               ticks: {
-                color: '#505058', font: { size: 8 }, maxTicksLimit: 8,
+                color: '#606068', font: { size: 8 }, maxTicksLimit: 10,
                 callback: function(val, idx) {
                   const d = new Date(this.getLabelForValue(val));
                   return d.toLocaleString('en',{month:'short',year:'2-digit'}).toUpperCase();
@@ -1364,7 +1383,7 @@
               min: -3.5, max: 3.5,
               grid: { color: 'rgba(255,255,255,0.04)' },
               ticks: {
-                color: '#505058', font: { size: 9 },
+                color: '#606068', font: { size: 9 },
                 stepSize: 1,
                 callback: v => v === 0 ? '0' : (v > 0 ? '+'+v : v)
               }
@@ -1762,19 +1781,24 @@
             borderRadius: 4
           }
         };
-        // CSS overlay badge
+        // No floating badge - removed for cleaner look
         const watchBadge = document.getElementById('watchingBadge');
-        if (watchBadge) {
-          watchBadge.style.display = 'flex';
-          watchBadge.innerHTML = '<span style="color:#eab308;font-weight:700;">⏳ WATCHING</span><span style="color:#666;margin:0 8px;">·</span>Trigger <span style="color:#eab308;font-weight:600;margin:0 3px;">$' + Math.round(pending.needed/1000) + 'k</span><span style="color:#666;margin:0 8px;">·</span>Now <span style="color:#fff;font-weight:500;">$' + Math.round(pending.price/1000) + 'k</span><span style="color:#666;margin:0 8px;">·</span>Need <span style="color:#eab308;font-weight:600;">+' + Math.round((pending.needed/pending.price-1)*100) + '%</span>';
-        }
+        if (watchBadge) watchBadge.style.display = 'none';
       } else {
         const watchBadge = document.getElementById('watchingBadge');
         if (watchBadge) watchBadge.style.display = 'none';
       }
 
-      // BUY annotations - small circles with labels
-      buySignals.forEach((sig, i) => {
+      // Get the date range for filtering signals
+      const startDate = labels[0];
+      const endDate = labels[labels.length - 1];
+      
+      // Filter signals to only those within the visible date range
+      const visibleBuySignals = buySignals.filter(sig => sig.date >= startDate && sig.date <= endDate);
+      const visibleSellSignals = sellSignals.filter(sig => sig.date >= startDate && sig.date <= endDate);
+
+      // BUY annotations - small circles
+      visibleBuySignals.forEach((sig, i) => {
         annotations['buy_' + i] = {
           type: 'point',
           xValue: sig.date,
@@ -1787,8 +1811,8 @@
         };
       });
 
-      // SELL annotations - small circles with labels
-      sellSignals.forEach((sig, i) => {
+      // SELL annotations - small circles
+      visibleSellSignals.forEach((sig, i) => {
         annotations['sell_' + i] = {
           type: 'point',
           xValue: sig.date,
