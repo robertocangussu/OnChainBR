@@ -1437,41 +1437,37 @@
     function detectSignals(compositeHistory, priceHistory) {
       if (!compositeHistory || compositeHistory.length < 14) return [];
 
-      // Build date-indexed price map for O(1) lookups
       const priceMap = new Map(priceHistory.map(d => [d.date, d.value]));
-      const priceByDate = priceHistory; // sorted oldest→newest
 
       // ── PARAMETERS ──────────────────────────────────────────────
-      const ACC_TH           = -1.5;   // ACC zone boundary
-      const HOT_TH           =  1.5;   // OVERHEATED boundary
-      const MIN_ACC_DAYS     = 14;     // ≥14 days in ACC before BUY valid
-      const MIN_DEEP_DAYS    = 5;      // ≥5 days Z≤-2.0 (real capitulation)
-      const Z_RECOVERY_DAYS  = 5;      // Z local min must be ≥5 days ago
-      const CONFIRM_BUY_DAYS = 5;      // Z stays above -1.5 for 5 days
-      const CONFIRM_SEL_DAYS = 3;      // Z stays in HOT for 3 days
-      const PRICE_CONFIRM    = 0.15;   // price ≥15% above cycle low
-      const TRAILING_STOP    = 0.20;   // 20% trailing stop from peak while in trade
-      const HOT_DAYS_SOFT    = 3;      // days in ELEVATED before soft SELL considered
+      const ACC_TH           = -1.5;
+      const HOT_TH           =  1.5;
+      const MIN_ACC_DAYS     = 14;
+      const MIN_DEEP_DAYS    = 5;
+      const Z_RECOVERY_DAYS  = 5;
+      const CONFIRM_BUY_DAYS = 5;
+      const CONFIRM_SEL_DAYS = 3;
+      const PRICE_CONFIRM    = 0.15;
       // ────────────────────────────────────────────────────────────
 
+      // Helper: get min price in last N days before a given date (date-string based)
+      function getPriceLow(beforeDate, days) {
+        const d = new Date(beforeDate);
+        d.setDate(d.getDate() - days);
+        const cutoff = d.toISOString().split('T')[0];
+        // priceHistory is sorted oldest→newest, filter by date string comparison
+        const vals = priceHistory
+          .filter(p => p.date > cutoff && p.date <= beforeDate && p.value > 0)
+          .map(p => p.value);
+        return vals.length ? Math.min(...vals) : null;
+      }
+
       const signals   = [];
-      let openTrade   = null;  // { date, price, z, cycleLow, peakPrice }
-      let buyPending  = null;  // { crossDate, crossPrice, cycleLow }
+      let openTrade   = null;
+      let buyPending  = null;
       let sellPending = null;
       let daysAboveBuy  = 0;
       let daysAboveSell = 0;
-      let daysInElevated = 0;
-
-      // Helper: get 90-day low BEFORE a given date using date strings
-      function getLow90d(beforeDate) {
-        const cutoff = new Date(beforeDate);
-        cutoff.setDate(cutoff.getDate() - 90);
-        const cutStr = cutoff.toISOString().split('T')[0];
-        const prices = priceByDate
-          .filter(d => d.date >= cutStr && d.date <= beforeDate)
-          .map(d => d.value);
-        return prices.length ? Math.min(...prices) : null;
-      }
 
       for (let i = 1; i < compositeHistory.length; i++) {
         const prev  = compositeHistory[i-1].value;
@@ -1480,24 +1476,17 @@
         const price = priceMap.get(date);
         if (price == null || prev === null || curr === null) continue;
 
-        // ── BUY LOGIC ────────────────────────────────────────────
+        // ── BUY ─────────────────────────────────────────────────
         if (!openTrade) {
-
           if (curr > ACC_TH) {
             daysAboveBuy++;
           } else {
             daysAboveBuy = 0;
-          }
-
-          // Reset buyPending if Z returns to DEEP-ACC
-          if (buyPending && curr <= -2.0) {
-            buyPending = null;
-            daysAboveBuy = 0;
-          }
-
-          // Reset buyPending if price drops >10% below the stored cycle low
-          if (buyPending && price < buyPending.cycleLow * 0.90) {
-            buyPending.cycleLow = price; // update to new lower low
+            // Reset pending if Z returns to DEEP-ACC
+            if (buyPending && curr <= -2.0) {
+              console.log(`↩ BUY pending reset (deep ACC): ${date} Z=${curr.toFixed(2)}`);
+              buyPending = null;
+            }
           }
 
           // Detect Z crossing -1.5 upward
@@ -1505,68 +1494,53 @@
             const lb = compositeHistory.slice(Math.max(0, i - MIN_ACC_DAYS - 15), i);
             const accDays  = lb.filter(d => d.value !== null && d.value <= ACC_TH).length;
             const deepDays = lb.filter(d => d.value !== null && d.value <= -2.0).length;
-            
-            // Z must have made a local minimum (recovering, not still falling)
-            const zVals = lb.map(d => d.value).filter(v => v !== null);
-            const zMin  = Math.min(...zVals);
-            const zMinAge = lb.length - 1 - lb.findLastIndex(d => d.value === zMin);
-            
+            const zVals    = lb.map(d => d.value).filter(v => v !== null);
+            const zMin     = Math.min(...zVals);
+            const zMinAge  = lb.length - 1 - lb.findLastIndex(d => d.value === zMin);
+
             if (accDays >= MIN_ACC_DAYS && deepDays >= MIN_DEEP_DAYS && zMinAge >= Z_RECOVERY_DAYS) {
-              // Use DATE-based 90-day price low (not index-based — avoids misalignment)
-              const low90 = getLow90d(date);
-              const cycleLow = low90 !== null ? low90 : price * 0.85;
+              // DATE-based 90-day low: only prices strictly within 90 days before crossover
+              const raw90Low = getPriceLow(date, 90);
+              // Safety: if 90d low is more than 50% below current price, it's a stale ancient low
+              // Use 60d low instead which is more recent
+              let cycleLow = raw90Low;
+              if (raw90Low !== null && raw90Low < price * 0.50) {
+                const raw60Low = getPriceLow(date, 60);
+                cycleLow = raw60Low !== null ? raw60Low : price * 0.80;
+                console.log(`⚠ 90d low $${Math.round(raw90Low)} too old, using 60d: $${Math.round(cycleLow)}`);
+              }
+              if (cycleLow === null) cycleLow = price * 0.80;
+
               buyPending = { crossDate: date, crossPrice: price, cycleLow };
               daysAboveBuy = 1;
-              console.log(`BUY pending: ${date} @ $${Math.round(price)} | 90d low: $${Math.round(cycleLow)} | trigger: $${Math.round(cycleLow * 1.15)}`);
+              console.log(`🟡 BUY pending: ${date} @ $${Math.round(price)} | cycleLow: $${Math.round(cycleLow)} | trigger: $${Math.round(cycleLow * (1 + PRICE_CONFIRM))}`);
             }
           }
 
-          // Confirm BUY: Z confirmed AND price ≥15% above cycle low
+          // Confirm BUY
           if (buyPending && daysAboveBuy >= CONFIRM_BUY_DAYS) {
-            // Update cycleLow if price made new lows since pending
-            const updatedLow = getLow90d(date);
-            if (updatedLow !== null && updatedLow < buyPending.cycleLow) {
-              buyPending.cycleLow = updatedLow;
+            // Refresh cycleLow — update if price made new lows since pending was created
+            const freshLow = getPriceLow(date, 90);
+            if (freshLow !== null && freshLow < buyPending.cycleLow && freshLow >= price * 0.50) {
+              buyPending.cycleLow = freshLow;
             }
             const cycleLow    = buyPending.cycleLow;
             const pctAboveLow = (price - cycleLow) / cycleLow;
 
             if (pctAboveLow >= PRICE_CONFIRM) {
-              openTrade = { date, price, z: curr, cycleLow, pctAboveLow, peakPrice: price };
+              openTrade = { date, price, z: curr, cycleLow, pctAboveLow };
               signals.push({ type: 'BUY', date, price, z: curr,
                 crossDate: buyPending.crossDate, low90d: cycleLow, pctAboveLow });
-              buyPending    = null;
-              daysAboveBuy  = 0;
-              daysAboveSell = 0;
-              daysInElevated = 0;
-              sellPending   = null;
-              console.log(`✅ BUY confirmed: ${date} @ $${Math.round(price)} | Low: $${Math.round(cycleLow)} | +${(pctAboveLow*100).toFixed(1)}% | Z: ${curr.toFixed(2)}`);
+              buyPending = null; daysAboveBuy = 0; daysAboveSell = 0; sellPending = null;
+              console.log(`✅ BUY confirmed: ${date} @ $${Math.round(price)} | low: $${Math.round(cycleLow)} | +${(pctAboveLow*100).toFixed(1)}% | Z: ${curr.toFixed(2)}`);
             } else {
-              console.log(`⏳ BUY waiting: ${date} | need +${(PRICE_CONFIRM*100).toFixed(0)}%, have +${(pctAboveLow*100).toFixed(1)}%`);
+              console.log(`⏳ BUY waiting: ${date} | need +${(PRICE_CONFIRM*100).toFixed(0)}%, have +${(pctAboveLow*100).toFixed(1)}% | trigger $${Math.round(cycleLow*(1+PRICE_CONFIRM))}`);
             }
           }
         }
 
-        // ── SELL LOGIC ───────────────────────────────────────────
+        // ── SELL ─────────────────────────────────────────────────
         if (openTrade) {
-          // Track peak price for trailing stop
-          if (price > openTrade.peakPrice) openTrade.peakPrice = price;
-
-          // TRAILING STOP: if price drops 20% from peak while in trade → SELL
-          const drawdownFromPeak = (openTrade.peakPrice - price) / openTrade.peakPrice;
-          if (drawdownFromPeak >= TRAILING_STOP && openTrade.peakPrice > openTrade.price * 1.10) {
-            // Only trigger trailing stop if we're at least 10% in profit from entry
-            // (avoids stopping out on small initial dips)
-            const ret = ((price - openTrade.price) / openTrade.price) * 100;
-            signals.push({ type: 'SELL', date, price, z: curr,
-              returnPct: ret, buyDate: openTrade.date, buyPrice: openTrade.price,
-              reason: 'TRAILING_STOP' });
-            console.log(`🛑 TRAILING STOP: ${date} @ $${Math.round(price)} | Peak: $${Math.round(openTrade.peakPrice)} | DD: ${(drawdownFromPeak*100).toFixed(1)}% | Return: ${ret.toFixed(1)}%`);
-            openTrade = null; buyPending = null; daysAboveBuy = 0; daysAboveSell = 0;
-            continue;
-          }
-
-          // Z-based SELL: Z enters OVERHEATED
           if (curr >= HOT_TH) {
             daysAboveSell++;
           } else {
@@ -1580,26 +1554,22 @@
           if (sellPending && daysAboveSell >= CONFIRM_SEL_DAYS) {
             const ret = ((price - openTrade.price) / openTrade.price) * 100;
             signals.push({ type: 'SELL', date, price, z: curr,
-              returnPct: ret, buyDate: openTrade.date, buyPrice: openTrade.price,
-              reason: 'Z_OVERHEATED' });
-            console.log(`🔴 SELL (Z): ${date} @ $${Math.round(price)} | Return: ${ret.toFixed(1)}%`);
-            openTrade = null; sellPending = null; daysAboveSell = 0;
-            daysAboveBuy = 0; buyPending = null;
+              returnPct: ret, buyDate: openTrade.date, buyPrice: openTrade.price });
+            console.log(`🔴 SELL: ${date} @ $${Math.round(price)} | Return: ${ret.toFixed(1)}%`);
+            openTrade = null; sellPending = null; daysAboveSell = 0; daysAboveBuy = 0; buyPending = null;
           }
         }
       }
 
-      // Still in open trade
+      // Open trade still running
       if (openTrade) {
         const last = priceHistory[priceHistory.length - 1];
         if (last) {
           const ret = ((last.value - openTrade.price) / openTrade.price) * 100;
-          const ddFromPeak = ((openTrade.peakPrice - last.value) / openTrade.peakPrice * 100).toFixed(1);
           signals.push({ type: 'OPEN', date: last.date, price: last.value,
             z: compositeHistory[compositeHistory.length-1].value,
             returnPct: ret, buyDate: openTrade.date, buyPrice: openTrade.price,
-            low90d: openTrade.cycleLow, pctAboveLow: openTrade.pctAboveLow,
-            peakPrice: openTrade.peakPrice, ddFromPeak });
+            low90d: openTrade.cycleLow, pctAboveLow: openTrade.pctAboveLow });
         }
       } else if (buyPending) {
         const last = priceHistory[priceHistory.length - 1];
@@ -1609,7 +1579,7 @@
             z: compositeHistory[compositeHistory.length-1].value,
             cycleLow: buyPending.cycleLow, needed,
             pctAboveLow: (last.value - buyPending.cycleLow) / buyPending.cycleLow });
-          console.log(`⏳ PENDING: cycle low $${Math.round(buyPending.cycleLow)}, need $${Math.round(needed)} to trigger BUY`);
+          console.log(`⏳ PENDING: low $${Math.round(buyPending.cycleLow)}, need $${Math.round(needed)}, current $${Math.round(last.value)}`);
         }
       }
 
@@ -1955,7 +1925,7 @@
       const fmt = d => d && d !== '--' ? new Date(d).toLocaleDateString('en-US', {month:'short', day:'2-digit', year:'2-digit'}).toUpperCase() : '--';
       const fmtP = v => v != null ? '$' + Math.round(v).toLocaleString() : '--';
       const fmtR = r => r >= 0 ? `<span style="color:#00d97e">+${r.toFixed(0)}%</span>` : `<span style="color:#ef4444">${r.toFixed(0)}%</span>`;
-      const fmtReason = r => r.reason === 'TRAILING_STOP' ? '🛑 STOP' : r.status === 'OPEN' ? '📈 OPEN' : '✅ Z-SELL';
+      const fmtReason = r => false ? '🛑 STOP' : r.status === 'OPEN' ? '📈 OPEN' : '✅ Z-SELL';
 
       tbody.innerHTML = rows.map(r => `<tr>
         <td style="color:var(--accent-green)">${fmt(r.entryDate)}</td>
@@ -1964,7 +1934,7 @@
         <td style="color:var(--text-primary)">${fmtP(r.exitPrice)}</td>
         <td style="color:var(--text-muted)">${r.zEntry?.toFixed(2) ?? '--'}</td>
         <td>${fmtR(r.returnPct)}</td>
-        <td><span style="background:${r.reason==='TRAILING_STOP'?'rgba(234,179,8,0.15)':r.status==='OPEN'?'rgba(96,165,250,0.15)':'rgba(255,255,255,0.06)'};color:${r.reason==='TRAILING_STOP'?'#eab308':r.status==='OPEN'?'#60a5fa':'#888'};padding:2px 8px;border-radius:3px;font-size:8px;font-weight:600">${fmtReason(r)}</span></td>
+        <td><span style="background:${r.status==='OPEN'?'rgba(96,165,250,0.15)':'rgba(255,255,255,0.06)'};color:${r.status==='OPEN'?'#60a5fa':'#888'};padding:2px 8px;border-radius:3px;font-size:8px;font-weight:600">${r.status==='OPEN'?'OPEN':'CLOSED'}</span></td>
       </tr>`).join('');
     }
 
