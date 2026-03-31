@@ -880,6 +880,7 @@
       }
       state.composite = count > 0 ? sum / count : null;
       console.log(`COMPOSITE: ${safeFixed(state.composite, 4)} (from ${count} metrics)`);
+      setTimeout(logSignalDiagnostics, 500);
       // Log raw values for debugging
       for (const [k, v] of Object.entries(state.rawValues)) {
         console.log(`  ${k}: raw=${safeFixed(v,4)}, Z=${safeFixed(state.zScores[k],4)}`);
@@ -909,6 +910,46 @@
           state.compositeHistory.push({ date, value: sum / count });
         }
       }
+    }
+
+    function logSignalDiagnostics() {
+      if (!state.compositeHistory.length) return;
+      console.group('=== SIGNAL DIAGNOSTICS ===');
+      
+      // Last 60 days of Z
+      const last60 = state.compositeHistory.slice(-60);
+      console.log('Last 60 days Z-Composite:');
+      last60.forEach(d => {
+        const zone = d.value <= -2.0 ? 'DEEP-ACC' : d.value <= -1.5 ? 'ACC' : d.value <= -0.5 ? 'UND' : d.value <= 0.5 ? 'FAIR' : d.value <= 1.5 ? 'ELEV' : 'HOT';
+        console.log(`  ${d.date}  Z=${d.value.toFixed(3)}  [${zone}]`);
+      });
+
+      // Price range last 90 days
+      const last90p = state.prices.slice(-90);
+      const low90 = Math.min(...last90p.map(d => d.value));
+      const high90 = Math.max(...last90p.map(d => d.value));
+      const cur = state.prices[state.prices.length-1]?.value;
+      console.log(`Price last 90d: low=$${Math.round(low90).toLocaleString()} | high=$${Math.round(high90).toLocaleString()} | current=$${Math.round(cur).toLocaleString()}`);
+      console.log(`+15% trigger = $${Math.round(low90*1.15).toLocaleString()}`);
+
+      // Count days in ACC
+      const accDays = state.compositeHistory.filter(d => d.value <= -1.5).length;
+      const deepDays = state.compositeHistory.filter(d => d.value <= -2.0).length;
+      console.log(`Total days in ACC (≤-1.5): ${accDays} | Deep ACC (≤-2.0): ${deepDays}`);
+
+      // Find last time Z crossed -1.5 upward
+      for (let i = state.compositeHistory.length-1; i > 0; i--) {
+        const prev = state.compositeHistory[i-1].value;
+        const curr = state.compositeHistory[i].value;
+        if (prev <= -1.5 && curr > -1.5) {
+          const crossDate = state.compositeHistory[i].date;
+          const crossPrice = state.prices.find(p => p.date === crossDate)?.value;
+          console.log(`Last Z cross above -1.5: ${crossDate} @ $${crossPrice ? Math.round(crossPrice).toLocaleString() : '?'}`);
+          break;
+        }
+      }
+
+      console.groupEnd();
     }
 
     // ========== UI UPDATE ==========
