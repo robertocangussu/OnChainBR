@@ -8,7 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
   <style>
-    :root { --bg-primary: #0a0a0b; --bg-secondary: #111113; --bg-card: #161619; --border: #252528; --text-primary: #e8e8ed; --text-secondary: #a0a0ab; --text-muted: #606068; --accent-green: #00d97e; --accent-lime: #84cc16; --accent-yellow: #eab308; --accent-orange: #f97316; --accent-red: #ef4444; --accent-blue: #3b82f6; --accent-purple: #a855f7; --accent-pink: #ec4899; --accent-cyan: #06b6d4; --accent-teal: #14b8a6; }
+    :root { --bg-primary: #0a0a0b; --bg-secondary: #111113; --bg-card: #161619; --border: #252528; --text-primary: #e8e8ed; --text-secondary: #b8b8c4; --text-muted: #8a8a96; --accent-green: #00d97e; --accent-lime: #84cc16; --accent-yellow: #eab308; --accent-orange: #f97316; --accent-red: #ef4444; --accent-blue: #3b82f6; --accent-purple: #a855f7; --accent-pink: #ec4899; --accent-cyan: #06b6d4; --accent-teal: #14b8a6; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'JetBrains Mono', monospace; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
     .container { max-width: 1400px; margin: 0 auto; padding: 16px 24px; }
@@ -1283,9 +1283,9 @@
             }
           },
           scales: {
-            x: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#606068', maxTicksLimit: 10, font: { size: 9 } } },
-            y: { type: 'logarithmic', display: true, position: 'left', grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#606068', font: { size: 9 }, callback: v => v >= 1000 ? '$' + (v/1000).toFixed(0) + 'k' : '$' + v } },
-            y1: { display: true, position: 'right', min: -3, max: 3, grid: { display: false }, ticks: { color: '#606068', font: { size: 9 } } }
+            x: { display: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9a9aa6', maxTicksLimit: 10, font: { size: 9 } } },
+            y: { type: 'logarithmic', display: true, position: 'left', grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9a9aa6', font: { size: 9 }, callback: v => v >= 1000 ? '$' + (v/1000).toFixed(0) + 'k' : '$' + v } },
+            y1: { display: true, position: 'right', min: -3, max: 3, grid: { display: false }, ticks: { color: '#9a9aa6', font: { size: 9 } } }
           }
         }
       });
@@ -1371,7 +1371,7 @@
               display: true,
               grid: { display: false },
               ticks: {
-                color: '#606068', font: { size: 8 }, maxTicksLimit: 10,
+                color: '#9a9aa6', font: { size: 8 }, maxTicksLimit: 10,
                 callback: function(val, idx) {
                   const d = new Date(this.getLabelForValue(val));
                   return d.toLocaleString('en',{month:'short',year:'2-digit'}).toUpperCase();
@@ -1383,7 +1383,7 @@
               min: -3.5, max: 3.5,
               grid: { color: 'rgba(255,255,255,0.04)' },
               ticks: {
-                color: '#606068', font: { size: 9 },
+                color: '#9a9aa6', font: { size: 9 },
                 stepSize: 1,
                 callback: v => v === 0 ? '0' : (v > 0 ? '+'+v : v)
               }
@@ -1904,7 +1904,7 @@
               display: true,
               grid: { color: 'rgba(255,255,255,0.03)' },
               ticks: {
-                color: '#707078',
+                color: '#9a9aa6',
                 maxTicksLimit: 12,
                 font: { size: 9, family: "'JetBrains Mono', monospace" },
                 callback: function(val, idx) {
@@ -1922,7 +1922,7 @@
               position: 'left',
               grid: { color: 'rgba(255,255,255,0.04)' },
               ticks: {
-                color: '#606068',
+                color: '#9a9aa6',
                 font: { size: 9 },
                 callback: v => {
                   if (v >= 100000) return '$' + (v/1000).toFixed(0) + 'k';
@@ -2027,7 +2027,7 @@
       new Chart(ctx, {
         type: 'line',
         data: { labels: data.map(d => d.date), datasets: [{ label, data: data.map(d => d.value), borderColor: color, borderWidth: 1.5, pointRadius: 0, fill: withFill ? { target: { value: 0 }, above: color + '33', below: '#ef444433' } : { target: 'origin', above: color + '22', below: color + '11' }, tension: 0.3 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: true, grid: { display: false }, ticks: { color: '#606068', maxTicksLimit: 6, font: { size: 8 } } }, y: { display: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#606068', font: { size: 8 }, callback: v => Math.abs(v) >= 1000 ? (v/1000).toFixed(0)+'k' : v.toFixed(0) } } } }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: true, grid: { display: false }, ticks: { color: '#9a9aa6', maxTicksLimit: 6, font: { size: 8 } } }, y: { display: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9a9aa6', font: { size: 8 }, callback: v => Math.abs(v) >= 1000 ? (v/1000).toFixed(0)+'k' : v.toFixed(0) } } } }
       });
     }
 
@@ -2045,7 +2045,7 @@
           { label: 'Inflow',  data: dates.map(d => inMap.get(d)||0),  backgroundColor: 'rgba(239,68,68,0.55)',   borderWidth: 0 },
           { label: 'Outflow', data: dates.map(d => outMap.get(d)||0), backgroundColor: 'rgba(0,217,126,0.55)',  borderWidth: 0 }
         ]},
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: '#606068', font: { size: 8 }, boxWidth: 10 } } }, scales: { x: { display: true, grid: { display: false }, ticks: { color: '#606068', maxTicksLimit: 6, font: { size: 8 } } }, y: { display: true, stacked: false, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#606068', font: { size: 8 }, callback: v => Math.abs(v)>=1000?(v/1000).toFixed(0)+'k':v.toFixed(0) } } } }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: '#9a9aa6', font: { size: 8 }, boxWidth: 10 } } }, scales: { x: { display: true, grid: { display: false }, ticks: { color: '#9a9aa6', maxTicksLimit: 6, font: { size: 8 } } }, y: { display: true, stacked: false, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9a9aa6', font: { size: 8 }, callback: v => Math.abs(v)>=1000?(v/1000).toFixed(0)+'k':v.toFixed(0) } } } }
       });
     }
 
@@ -2201,7 +2201,7 @@
               _sentFgChart = new Chart(fgCtx, {
                 type: 'line',
                 data: { labels: data.map(d => new Date(parseInt(d.timestamp)*1000).toISOString().split('T')[0]), datasets: [{ data: vals, borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4, backgroundColor: c => { const g=c.chart.ctx.createLinearGradient(0,0,0,140); g.addColorStop(0,'rgba(0,217,126,0.3)'); g.addColorStop(0.5,'rgba(234,179,8,0.1)'); g.addColorStop(1,'rgba(239,68,68,0.2)'); return g; }, segment: { borderColor: c => _fgColor(c.p0.parsed.y) } }] },
-                options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{display:true,grid:{display:false},ticks:{color:'#606068',maxTicksLimit:6,font:{size:8}}}, y:{display:true,min:0,max:100,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#606068',font:{size:8}}} } }
+                options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{display:true,grid:{display:false},ticks:{color:'#9a9aa6',maxTicksLimit:6,font:{size:8}}}, y:{display:true,min:0,max:100,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#9a9aa6',font:{size:8}}} } }
               });
             }
 
@@ -2218,7 +2218,7 @@
                   { label:'Z-Composite', data:last90.map(d=>d.value), borderColor:'#f97316', borderWidth:2, pointRadius:0, yAxisID:'y', tension:0.3 },
                   { label:'F&G ÷10', data:lbls.map(d=>{ const v=fgMap.get(d); return v!=null?v/10:null; }), borderColor:'#3b82f6', borderWidth:2, pointRadius:0, yAxisID:'y', tension:0.3, borderDash:[4,2] }
                 ]},
-                options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:true, labels:{ color:'#606068', font:{size:8}, boxWidth:10 } } }, scales:{ x:{display:true,grid:{display:false},ticks:{color:'#606068',maxTicksLimit:6,font:{size:8}}}, y:{display:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#606068',font:{size:8}}} } }
+                options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:true, labels:{ color:'#9a9aa6', font:{size:8}, boxWidth:10 } } }, scales:{ x:{display:true,grid:{display:false},ticks:{color:'#9a9aa6',maxTicksLimit:6,font:{size:8}}}, y:{display:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#9a9aa6',font:{size:8}}} } }
               });
             }
           }
