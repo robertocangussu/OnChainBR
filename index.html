@@ -1288,15 +1288,16 @@
               type: 'logarithmic', 
               display: true, 
               position: 'left', 
+              min: 100,
+              max: 150000,
               grid: { color: 'rgba(255,255,255,0.05)' }, 
+              afterBuildTicks: function(axis) {
+                axis.ticks = [100, 500, 1000, 5000, 10000, 50000, 100000].map(v => ({value: v}));
+              },
               ticks: { 
                 color: '#9a9aa6', 
                 font: { size: 9 },
-                autoSkip: false,
                 callback: function(v) {
-                  // Only show clean values: 100, 200, 500, 1k, 2k, 5k, 10k, 20k, 50k, 100k
-                  const cleanValues = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000];
-                  if (!cleanValues.includes(v)) return null;
                   if (v >= 1000) return '$' + (v/1000).toFixed(0) + 'k';
                   return '$' + v;
                 }
