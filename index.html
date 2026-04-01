@@ -379,9 +379,9 @@
         <div class="stat-sub" id="flowExReserveSub">BTC change</div>
       </div>
       <div class="flow-stat-item">
-        <div class="stat-label">Whale Ratio</div>
+        <div class="stat-label">Net Flow (30d avg)</div>
         <div class="stat-value" id="flowWhaleRatio">--</div>
-        <div class="stat-sub" id="flowWhaleRatioSub">top-10 / total inflow</div>
+        <div class="stat-sub" id="flowWhaleRatioSub">daily exchange flow</div>
       </div>
     </div>
     <div class="flow-grid">
@@ -2050,13 +2050,26 @@
     }
 
     async function fetchFlowData() {
-      const [etfR, resR, inR, outR, whaleR] = await Promise.allSettled([
-        fetchBGeometrics('/v1/etf-flow',          'ETF Flow'),
-        fetchBGeometrics('/v1/exchange-reserve',   'Exchange Reserve'),
-        fetchBGeometrics('/v1/exchange-inflow',    'Exchange Inflow'),
-        fetchBGeometrics('/v1/exchange-outflow',   'Exchange Outflow'),
-        fetchBGeometrics('/v1/whale-ratio',        'Whale Ratio')
+      console.log('🔄 Fetching Flow Analysis data...');
+      
+      // BGeometrics Advanced Plan endpoints (correct names per docs)
+      // Try multiple possible ETF endpoint names
+      const [etfR1, etfR2, resR, inR, outR, netflowR] = await Promise.allSettled([
+        fetchBGeometrics('/v1/etf-btc-flow',        'ETF Flow v1'),
+        fetchBGeometrics('/v1/etf',                  'ETF Flow v2'),
+        fetchBGeometrics('/v1/exchange-reserve-btc', 'Exchange Reserve'),
+        fetchBGeometrics('/v1/exchange-inflow-btc',  'Exchange Inflow'),
+        fetchBGeometrics('/v1/exchange-outflow-btc', 'Exchange Outflow'),
+        fetchBGeometrics('/v1/exchange-netflow-btc', 'Exchange Netflow')
       ]);
+      
+      // Use whichever ETF endpoint worked
+      const etfR = (etfR1.status === 'fulfilled' && etfR1.value?.success) ? etfR1 : etfR2;
+      console.log('ETF result:', etfR.status, etfR.value?.success);
+      console.log('Reserve result:', resR.status, resR.value?.success);
+      console.log('Inflow result:', inR.status, inR.value?.success);
+      console.log('Outflow result:', outR.status, outR.value?.success);
+      console.log('Netflow result:', netflowR.status, netflowR.value?.success);
 
       // ETF Flow
       if (etfR.status === 'fulfilled' && etfR.value?.success) {
@@ -2119,15 +2132,17 @@
         }
       }
 
-      // Whale Ratio
-      if (whaleR.status === 'fulfilled' && whaleR.value?.success) {
-        const data = normalizeBGeometricsData(whaleR.value.data, '');
+      // Netflow (replaces Whale Ratio - shows net exchange flow direction)
+      if (netflowR.status === 'fulfilled' && netflowR.value?.success) {
+        const data = normalizeBGeometricsData(netflowR.value.data, '').slice(-30);
         if (data.length) {
-          const v = data[data.length-1].value;
-          const pct = (v * 100).toFixed(1) + '%';
-          document.getElementById('flowWhaleRatio').textContent = pct;
-          document.getElementById('flowWhaleRatio').style.color = v > 0.85 ? 'var(--accent-red)' : v > 0.6 ? 'var(--accent-yellow)' : 'var(--accent-green)';
-          document.getElementById('flowWhaleRatioSub').textContent = v > 0.85 ? 'High whale dominance' : v > 0.6 ? 'Moderate activity' : 'Low whale dominance';
+          const sum30d = data.reduce((a,d) => a + (d.value || 0), 0);
+          const avgDaily = sum30d / data.length;
+          const label = avgDaily < -500 ? 'Strong Outflow' : avgDaily < 0 ? 'Net Outflow' : avgDaily < 500 ? 'Net Inflow' : 'Strong Inflow';
+          const color = avgDaily < 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+          document.getElementById('flowWhaleRatio').textContent = (avgDaily >= 0 ? '+' : '') + Math.round(avgDaily).toLocaleString() + ' BTC/d';
+          document.getElementById('flowWhaleRatio').style.color = color;
+          document.getElementById('flowWhaleRatioSub').textContent = label + ' (30d avg)';
         }
       }
     }
