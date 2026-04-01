@@ -1797,31 +1797,31 @@
       const visibleBuySignals = buySignals.filter(sig => sig.date >= startDate && sig.date <= endDate);
       const visibleSellSignals = sellSignals.filter(sig => sig.date >= startDate && sig.date <= endDate);
 
-      // BUY annotations - small circles
+      // BUY annotations - small elegant dots
       visibleBuySignals.forEach((sig, i) => {
         annotations['buy_' + i] = {
           type: 'point',
           xValue: sig.date,
           yValue: sig.price,
           yScaleID: 'yPrice',
-          backgroundColor: '#00d97e',
+          backgroundColor: '#00ff88',
           borderColor: '#000',
-          borderWidth: 1,
-          radius: 6
+          borderWidth: 2,
+          radius: 4
         };
       });
 
-      // SELL annotations - small circles
+      // SELL annotations - small elegant dots
       visibleSellSignals.forEach((sig, i) => {
         annotations['sell_' + i] = {
           type: 'point',
           xValue: sig.date,
           yValue: sig.price,
           yScaleID: 'yPrice',
-          backgroundColor: '#ef4444',
+          backgroundColor: '#ff4444',
           borderColor: '#000',
-          borderWidth: 1,
-          radius: 6
+          borderWidth: 2,
+          radius: 4
         };
       });
 
