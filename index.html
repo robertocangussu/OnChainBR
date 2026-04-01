@@ -2052,19 +2052,15 @@
     async function fetchFlowData() {
       console.log('🔄 Fetching Flow Analysis data...');
       
-      // BGeometrics Advanced Plan endpoints (correct names per docs)
-      // Try multiple possible ETF endpoint names
-      const [etfR1, etfR2, resR, inR, outR, netflowR] = await Promise.allSettled([
-        fetchBGeometrics('/v1/etf-btc-flow',        'ETF Flow v1'),
-        fetchBGeometrics('/v1/etf',                  'ETF Flow v2'),
+      // BGeometrics Advanced Plan endpoints (correct names per API docs)
+      const [etfR, resR, inR, outR, netflowR] = await Promise.allSettled([
+        fetchBGeometrics('/v1/etf-flow-btc',         'ETF Flow'),
         fetchBGeometrics('/v1/exchange-reserve-btc', 'Exchange Reserve'),
         fetchBGeometrics('/v1/exchange-inflow-btc',  'Exchange Inflow'),
         fetchBGeometrics('/v1/exchange-outflow-btc', 'Exchange Outflow'),
         fetchBGeometrics('/v1/exchange-netflow-btc', 'Exchange Netflow')
       ]);
       
-      // Use whichever ETF endpoint worked
-      const etfR = (etfR1.status === 'fulfilled' && etfR1.value?.success) ? etfR1 : etfR2;
       console.log('ETF result:', etfR.status, etfR.value?.success);
       console.log('Reserve result:', resR.status, resR.value?.success);
       console.log('Inflow result:', inR.status, inR.value?.success);
