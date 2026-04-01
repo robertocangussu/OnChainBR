@@ -183,7 +183,51 @@
     .funding-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
     .funding-bar-fill { height: 100%; border-radius: 2px; }
 
-    @media (max-width: 1200px) { .signals-grid { grid-template-columns: 1fr; } .flow-grid { grid-template-columns: 1fr; } .sentiment-grid { grid-template-columns: 1fr; } .sig-stats-row { grid-template-columns: repeat(3,1fr); } }
+    /* Section 05: Trading Systems */
+    .trading-status-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+    .trading-status-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center; }
+    .trading-status-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+    .trading-status-value { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+    .trading-status-sub { font-size: 9px; color: var(--text-muted); margin-bottom: 12px; }
+    .trading-status-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .trading-status-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+    
+    .trading-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 20px; }
+    .trading-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+    .trading-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .trading-panel-title { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .trading-panel-badge { font-size: 8px; padding: 3px 8px; border-radius: 3px; background: rgba(255,255,255,0.06); color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; }
+    
+    .trading-indicators { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .trading-indicator-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 4px; }
+    .indicator-name { font-size: 10px; color: var(--text-secondary); }
+    .indicator-value { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; }
+    
+    .trading-signal-box { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; padding: 16px; text-align: center; }
+    .signal-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .signal-value { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .signal-desc { font-size: 9px; color: var(--text-muted); line-height: 1.4; }
+    
+    .trading-chart-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .trading-chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .trading-chart-title { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .trading-chart-legend { display: flex; gap: 16px; align-items: center; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text-muted); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .legend-line { width: 16px; height: 2px; border-radius: 1px; }
+    .trading-chart-container { height: 350px; position: relative; }
+    
+    .trading-history-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+    .trading-history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .trading-history-title { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .trading-history-stats { font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    .trading-history-table-wrap { max-height: 300px; overflow-y: auto; }
+    .trading-history-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .trading-history-table th { padding: 8px 12px; text-align: left; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg-card); }
+    .trading-history-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .trading-history-table tr:hover { background: rgba(255,255,255,0.02); }
+
+    @media (max-width: 1200px) { .signals-grid { grid-template-columns: 1fr; } .flow-grid { grid-template-columns: 1fr; } .sentiment-grid { grid-template-columns: 1fr; } .sig-stats-row { grid-template-columns: repeat(3,1fr); } .trading-grid { grid-template-columns: 1fr; } .trading-status-row { grid-template-columns: 1fr; } }
     @media (max-width: 700px) { .sig-stats-row { grid-template-columns: repeat(2,1fr); } }
   </style>
 </head>
@@ -195,6 +239,7 @@
     <a href="#signals" onclick="setActiveNav(this)">02 · Trade Signals</a>
     <a href="#flow" onclick="setActiveNav(this)">03 · Flow Analysis</a>
     <a href="#sentiment" onclick="setActiveNav(this)">04 · Sentiment</a>
+    <a href="#trading" onclick="setActiveNav(this)">05 · Trading</a>
   </nav>
   <div id="dashboard">
   <div class="loading-overlay" id="loadingOverlay">
@@ -478,9 +523,162 @@
     </div>
   </div>
 
+  <!-- ========== SECTION 5: TRADING SYSTEMS ========== -->
+  <div class="section-wrap" id="trading" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <span class="section-title">Trading Systems</span>
+      <span class="section-sub">TREND FOLLOWING · REVERSAL DETECTION · MOMENTUM</span>
+    </div>
+    
+    <!-- Status Cards Row -->
+    <div class="trading-status-row">
+      <div class="trading-status-card trend-card">
+        <div class="trading-status-label">TREND SYSTEM</div>
+        <div class="trading-status-value" id="trendStatus">--</div>
+        <div class="trading-status-sub" id="trendStatusSub">Daily timeframe</div>
+        <div class="trading-status-bar"><div class="trading-status-fill" id="trendStatusFill"></div></div>
+      </div>
+      <div class="trading-status-card reversal-card">
+        <div class="trading-status-label">REVERSAL SYSTEM</div>
+        <div class="trading-status-value" id="reversalStatus">--</div>
+        <div class="trading-status-sub" id="reversalStatusSub">Weekly timeframe</div>
+        <div class="trading-status-bar"><div class="trading-status-fill" id="reversalStatusFill"></div></div>
+      </div>
+      <div class="trading-status-card momentum-card">
+        <div class="trading-status-label">MOMENTUM</div>
+        <div class="trading-status-value" id="momentumValue">--</div>
+        <div class="trading-status-sub" id="momentumSub">MACD Signal</div>
+      </div>
+    </div>
+
+    <!-- Indicators Grid -->
+    <div class="trading-grid">
+      <!-- Trend System Panel -->
+      <div class="trading-panel">
+        <div class="trading-panel-header">
+          <span class="trading-panel-title">Trend Indicators (Daily)</span>
+          <span class="trading-panel-badge" id="trendBadge">ANALYZING</span>
+        </div>
+        <div class="trading-indicators">
+          <div class="trading-indicator-row">
+            <span class="indicator-name">SMA 50 vs SMA 200</span>
+            <span class="indicator-value" id="indSmaStatus">--</span>
+          </div>
+          <div class="trading-indicator-row">
+            <span class="indicator-name">Price vs SMA 200</span>
+            <span class="indicator-value" id="indPriceVsSma">--</span>
+          </div>
+          <div class="trading-indicator-row">
+            <span class="indicator-name">MACD</span>
+            <span class="indicator-value" id="indMacd">--</span>
+          </div>
+          <div class="trading-indicator-row">
+            <span class="indicator-name">MACD Histogram</span>
+            <span class="indicator-value" id="indMacdHist">--</span>
+          </div>
+          <div class="trading-indicator-row">
+            <span class="indicator-name">RSI (14)</span>
+            <span class="indicator-value" id="indRsiDaily">--</span>
+          </div>
+          <div class="trading-indicator-row">
+            <span class="indicator-name">Mayer Multiple</span>
+            <span class="indicator-value" id="indMayer">--</span>
+          </div>
+        </div>
+        <div class="trading-signal-box" id="trendSignalBox">
+          <div class="signal-label">SIGNAL</div>
+          <div class="signal-value" id="trendSignal">WAITING</div>
+          <div class="signal-desc" id="trendSignalDesc">Loading indicators...</div>
+        </div>
+      </div>
+
+      <!-- Reversal System Panel -->
+      <div class="trading-panel">
+        <div class="trading-panel-header">
+          <span class="trading-panel-title">Reversal Indicators (Weekly)</span>
+          <span class="trading-panel-badge" id="reversalBadge">ANALYZING</span>
+        </div>
+        <div class="trading-indicators">
+          <div class="trading-indicator-row">
+            <span class="indicator-name">RSI Weekly</span>
+            <span class="indicator-value" id="indRsiWeekly">--</span>
+          </div>
+          <div class="trading-indicator-row">
+            <span class="indicator-name">SOPR</span>
+            <span class="indicator-value" id="indSopr">--</span>
+          </div>
+          <div class="trading-indicator-row">
+            <span class="indicator-name">MVRV STH</span>
+            <span class="indicator-value" id="indMvrvSth">--</span>
+          </div>
+          <div class="trading-indicator-row">
+            <span class="indicator-name">Funding Rate</span>
+            <span class="indicator-value" id="indFunding">--</span>
+          </div>
+          <div class="trading-indicator-row">
+            <span class="indicator-name">NUPL</span>
+            <span class="indicator-value" id="indNupl">--</span>
+          </div>
+          <div class="trading-indicator-row">
+            <span class="indicator-name">Fear & Greed</span>
+            <span class="indicator-value" id="indFearGreed">--</span>
+          </div>
+        </div>
+        <div class="trading-signal-box" id="reversalSignalBox">
+          <div class="signal-label">SIGNAL</div>
+          <div class="signal-value" id="reversalSignal">WAITING</div>
+          <div class="signal-desc" id="reversalSignalDesc">Loading indicators...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="trading-chart-section">
+      <div class="trading-chart-header">
+        <span class="trading-chart-title">BTC / USD — Trend & Reversal Signals</span>
+        <div class="trading-chart-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#00d97e"></span> LONG</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> SHORT</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#eab308"></span> CASH</span>
+          <span class="legend-item"><span class="legend-line" style="background:#3b82f6"></span> SMA50</span>
+          <span class="legend-item"><span class="legend-line" style="background:#f97316"></span> SMA200</span>
+        </div>
+      </div>
+      <div class="trading-chart-container">
+        <canvas id="tradingChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Signal History Table -->
+    <div class="trading-history-section">
+      <div class="trading-history-header">
+        <span class="trading-history-title">Signal History</span>
+        <span class="trading-history-stats" id="tradingStats">-- trades · --% win rate</span>
+      </div>
+      <div class="trading-history-table-wrap">
+        <table class="trading-history-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>System</th>
+              <th>Signal</th>
+              <th>Price</th>
+              <th>P&L</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tradingHistoryBody">
+            <tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Loading signals...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- ========== GLOBAL FOOTER ========== -->
   <footer class="footer" style="max-width:1400px;margin:0 auto;padding:12px 24px 24px;">
-    <div>@ONCHAINBR · Z-Score Model · Rolling 365d · 9 Metrics · Signals · Flow · Sentiment</div>
+    <div>@ONCHAINBR · Z-Score Model · Rolling 365d · 9 Metrics · Signals · Flow · Sentiment · Trading</div>
     <div>APIs: <a href="https://bitview.space" target="_blank">Bitview</a> + <a href="https://bitcoin-data.com" target="_blank">BGeometrics</a> + <a href="https://alternative.me" target="_blank">Alternative.me</a> + <a href="https://binance.com" target="_blank">Binance</a></div>
   </footer>
 
@@ -2255,8 +2453,546 @@
       } catch(e) { console.warn('Funding fetch failed:', e.message); }
     }
 
+    // ========== SECTION 05: TRADING SYSTEMS ==========
+    let _tradingChart = null;
+    const tradingState = {
+      technicalData: [],
+      rsiWeekly: null,
+      sopr: null,
+      mvrvSth: null,
+      funding: null,
+      nupl: null,
+      fearGreed: null,
+      signals: [],
+      trendStatus: 'CASH',
+      reversalStatus: 'NEUTRAL'
+    };
+
+    async function fetchTradingData() {
+      const token = CONFIG.BGEOMETRICS_TOKEN;
+      const base = CONFIG.BGEOMETRICS_BASE;
+      
+      // Fetch all trading indicators in parallel
+      const fetches = await Promise.allSettled([
+        // Technical indicators (daily)
+        fetch(`${base}/v1/technical-indicators?token=${token}`).then(r => r.json()),
+        // RSI Weekly from Bitview
+        fetch(`${CONFIG.BITVIEW_BASE}/series/rsi-1w/week1`).then(r => r.json()),
+        // SOPR
+        fetch(`${base}/v1/sopr?token=${token}`).then(r => r.json()),
+        // MVRV STH
+        fetch(`${base}/v1/mvrv-sth?token=${token}`).then(r => r.json()),
+        // Funding Rate (Binance)
+        fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1').then(r => r.json()),
+        // NUPL
+        fetch(`${base}/v1/nupl?token=${token}`).then(r => r.json()),
+        // Fear & Greed
+        fetch('https://api.alternative.me/fng/?limit=1&format=json').then(r => r.json()),
+        // Price with SMAs for chart
+        fetch(`${base}/v1/btc-price?token=${token}`).then(r => r.json())
+      ]);
+
+      // Process Technical Indicators
+      if (fetches[0].status === 'fulfilled' && Array.isArray(fetches[0].value)) {
+        tradingState.technicalData = fetches[0].value;
+        updateTrendIndicators(fetches[0].value);
+      }
+
+      // Process RSI Weekly
+      if (fetches[1].status === 'fulfilled') {
+        const data = fetches[1].value;
+        if (Array.isArray(data) && data.length) {
+          tradingState.rsiWeekly = parseFloat(data[data.length - 1].week1);
+        }
+      }
+
+      // Process SOPR
+      if (fetches[2].status === 'fulfilled' && Array.isArray(fetches[2].value) && fetches[2].value.length) {
+        const latest = fetches[2].value[fetches[2].value.length - 1];
+        tradingState.sopr = parseFloat(latest.sopr);
+      }
+
+      // Process MVRV STH
+      if (fetches[3].status === 'fulfilled' && Array.isArray(fetches[3].value) && fetches[3].value.length) {
+        const latest = fetches[3].value[fetches[3].value.length - 1];
+        tradingState.mvrvSth = parseFloat(latest.mvrvSth || latest.mvrv);
+      }
+
+      // Process Funding Rate
+      if (fetches[4].status === 'fulfilled' && Array.isArray(fetches[4].value) && fetches[4].value.length) {
+        tradingState.funding = parseFloat(fetches[4].value[0].fundingRate) * 100;
+      }
+
+      // Process NUPL
+      if (fetches[5].status === 'fulfilled' && Array.isArray(fetches[5].value) && fetches[5].value.length) {
+        const latest = fetches[5].value[fetches[5].value.length - 1];
+        tradingState.nupl = parseFloat(latest.nupl);
+      }
+
+      // Process Fear & Greed
+      if (fetches[6].status === 'fulfilled' && fetches[6].value?.data?.length) {
+        tradingState.fearGreed = parseInt(fetches[6].value.data[0].value);
+      }
+
+      // Update UI
+      updateReversalIndicators();
+      calculateTradingSignals();
+      renderTradingChart();
+      renderTradingHistory();
+    }
+
+    function updateTrendIndicators(data) {
+      if (!data.length) return;
+      const latest = data[data.length - 1];
+      
+      const sma50 = parseFloat(latest.sma50);
+      const sma200 = parseFloat(latest.sma200);
+      const macd = parseFloat(latest.macd);
+      const macdHist = parseFloat(latest.macdhist || latest.macdHist);
+      const rsi = parseFloat(latest.rsi);
+      const price = parseFloat(latest.priceUsd || latest.price);
+
+      // SMA Status
+      const smaStatus = sma50 > sma200 ? 'BULLISH' : 'BEARISH';
+      const smaColor = sma50 > sma200 ? '#00d97e' : '#ef4444';
+      document.getElementById('indSmaStatus').textContent = smaStatus;
+      document.getElementById('indSmaStatus').style.color = smaColor;
+
+      // Price vs SMA200
+      const priceVsSma = price > sma200 ? 'ABOVE' : 'BELOW';
+      const priceVsSmaColor = price > sma200 ? '#00d97e' : '#ef4444';
+      document.getElementById('indPriceVsSma').textContent = `${priceVsSma} (${((price/sma200 - 1) * 100).toFixed(1)}%)`;
+      document.getElementById('indPriceVsSma').style.color = priceVsSmaColor;
+
+      // MACD
+      const macdColor = macd > 0 ? '#00d97e' : '#ef4444';
+      document.getElementById('indMacd').textContent = macd.toFixed(0);
+      document.getElementById('indMacd').style.color = macdColor;
+
+      // MACD Histogram
+      const histColor = macdHist > 0 ? '#00d97e' : '#ef4444';
+      document.getElementById('indMacdHist').textContent = macdHist.toFixed(0);
+      document.getElementById('indMacdHist').style.color = histColor;
+
+      // RSI Daily
+      const rsiColor = rsi > 70 ? '#ef4444' : rsi < 30 ? '#00d97e' : '#eab308';
+      document.getElementById('indRsiDaily').textContent = rsi.toFixed(1);
+      document.getElementById('indRsiDaily').style.color = rsiColor;
+
+      // Mayer Multiple (price / sma200)
+      const mayer = price / sma200;
+      const mayerColor = mayer > 2.4 ? '#ef4444' : mayer < 0.8 ? '#00d97e' : '#eab308';
+      document.getElementById('indMayer').textContent = mayer.toFixed(2);
+      document.getElementById('indMayer').style.color = mayerColor;
+    }
+
+    function updateReversalIndicators() {
+      // RSI Weekly
+      if (tradingState.rsiWeekly !== null) {
+        const rsiW = tradingState.rsiWeekly;
+        const rsiWColor = rsiW < 30 ? '#00d97e' : rsiW > 70 ? '#ef4444' : '#eab308';
+        const rsiWLabel = rsiW < 30 ? 'OVERSOLD' : rsiW > 70 ? 'OVERBOUGHT' : 'NEUTRAL';
+        document.getElementById('indRsiWeekly').textContent = `${rsiW.toFixed(1)} (${rsiWLabel})`;
+        document.getElementById('indRsiWeekly').style.color = rsiWColor;
+      }
+
+      // SOPR
+      if (tradingState.sopr !== null) {
+        const sopr = tradingState.sopr;
+        const soprColor = sopr < 1 ? '#00d97e' : sopr > 1.05 ? '#ef4444' : '#eab308';
+        const soprLabel = sopr < 1 ? 'LOSS' : 'PROFIT';
+        document.getElementById('indSopr').textContent = `${sopr.toFixed(3)} (${soprLabel})`;
+        document.getElementById('indSopr').style.color = soprColor;
+      }
+
+      // MVRV STH
+      if (tradingState.mvrvSth !== null) {
+        const mvrv = tradingState.mvrvSth;
+        const mvrvColor = mvrv < 1 ? '#00d97e' : mvrv > 1.5 ? '#ef4444' : '#eab308';
+        document.getElementById('indMvrvSth').textContent = mvrv.toFixed(2);
+        document.getElementById('indMvrvSth').style.color = mvrvColor;
+      }
+
+      // Funding Rate
+      if (tradingState.funding !== null) {
+        const fr = tradingState.funding;
+        const frColor = fr < 0 ? '#00d97e' : fr > 0.05 ? '#ef4444' : '#eab308';
+        document.getElementById('indFunding').textContent = `${fr.toFixed(4)}%`;
+        document.getElementById('indFunding').style.color = frColor;
+      }
+
+      // NUPL
+      if (tradingState.nupl !== null) {
+        const nupl = tradingState.nupl;
+        const nuplColor = nupl < 0 ? '#00d97e' : nupl > 0.5 ? '#ef4444' : '#eab308';
+        const nuplLabel = nupl < 0 ? 'CAPITULATION' : nupl > 0.75 ? 'EUPHORIA' : nupl > 0.5 ? 'GREED' : 'NEUTRAL';
+        document.getElementById('indNupl').textContent = `${(nupl * 100).toFixed(1)}% (${nuplLabel})`;
+        document.getElementById('indNupl').style.color = nuplColor;
+      }
+
+      // Fear & Greed
+      if (tradingState.fearGreed !== null) {
+        const fg = tradingState.fearGreed;
+        const fgColor = fg < 25 ? '#00d97e' : fg > 75 ? '#ef4444' : '#eab308';
+        const fgLabel = fg < 25 ? 'EXTREME FEAR' : fg > 75 ? 'EXTREME GREED' : fg < 45 ? 'FEAR' : fg > 55 ? 'GREED' : 'NEUTRAL';
+        document.getElementById('indFearGreed').textContent = `${fg} (${fgLabel})`;
+        document.getElementById('indFearGreed').style.color = fgColor;
+      }
+    }
+
+    function calculateTradingSignals() {
+      const tech = tradingState.technicalData;
+      if (!tech.length) return;
+      
+      const latest = tech[tech.length - 1];
+      const sma50 = parseFloat(latest.sma50);
+      const sma200 = parseFloat(latest.sma200);
+      const macd = parseFloat(latest.macd);
+      const rsi = parseFloat(latest.rsi);
+      const price = parseFloat(latest.priceUsd || latest.price);
+
+      // === TREND SYSTEM LOGIC ===
+      let trendScore = 0;
+      let trendSignals = [];
+
+      // SMA50 vs SMA200 (weight: 2)
+      if (sma50 > sma200) { trendScore += 2; trendSignals.push('SMA50 > SMA200'); }
+      else { trendScore -= 2; trendSignals.push('SMA50 < SMA200'); }
+
+      // Price vs SMA200 (weight: 1)
+      if (price > sma200) { trendScore += 1; trendSignals.push('Price above SMA200'); }
+      else { trendScore -= 1; trendSignals.push('Price below SMA200'); }
+
+      // MACD (weight: 1)
+      if (macd > 0) { trendScore += 1; trendSignals.push('MACD positive'); }
+      else { trendScore -= 1; trendSignals.push('MACD negative'); }
+
+      // RSI (weight: 1)
+      if (rsi > 50) { trendScore += 1; }
+      else { trendScore -= 1; }
+
+      // Determine Trend Status
+      let trendStatus, trendColor, trendFill;
+      if (trendScore >= 3) {
+        trendStatus = 'LONG';
+        trendColor = '#00d97e';
+        trendFill = 100;
+      } else if (trendScore <= -3) {
+        trendStatus = 'SHORT';
+        trendColor = '#ef4444';
+        trendFill = 100;
+      } else {
+        trendStatus = 'CASH';
+        trendColor = '#eab308';
+        trendFill = 50;
+      }
+
+      tradingState.trendStatus = trendStatus;
+
+      // Update Trend UI
+      document.getElementById('trendStatus').textContent = trendStatus;
+      document.getElementById('trendStatus').style.color = trendColor;
+      document.getElementById('trendStatusSub').textContent = `Score: ${trendScore > 0 ? '+' : ''}${trendScore} / 5`;
+      document.getElementById('trendStatusFill').style.width = trendFill + '%';
+      document.getElementById('trendStatusFill').style.background = trendColor;
+      document.getElementById('trendBadge').textContent = trendStatus;
+      document.getElementById('trendBadge').style.background = trendColor + '22';
+      document.getElementById('trendBadge').style.color = trendColor;
+
+      document.getElementById('trendSignal').textContent = trendStatus;
+      document.getElementById('trendSignal').style.color = trendColor;
+      document.getElementById('trendSignalDesc').textContent = trendSignals.slice(0, 2).join(' · ');
+      document.getElementById('trendSignalBox').style.borderColor = trendColor + '44';
+
+      // === REVERSAL SYSTEM LOGIC ===
+      let reversalScore = 0;
+      let reversalSignals = [];
+
+      // RSI Weekly
+      if (tradingState.rsiWeekly !== null) {
+        if (tradingState.rsiWeekly < 35) { reversalScore += 2; reversalSignals.push('RSI Weekly oversold'); }
+        else if (tradingState.rsiWeekly > 70) { reversalScore -= 2; reversalSignals.push('RSI Weekly overbought'); }
+      }
+
+      // SOPR
+      if (tradingState.sopr !== null) {
+        if (tradingState.sopr < 1) { reversalScore += 1; reversalSignals.push('SOPR < 1 (loss)'); }
+        else if (tradingState.sopr > 1.05) { reversalScore -= 1; reversalSignals.push('SOPR high (profit taking)'); }
+      }
+
+      // Funding Rate
+      if (tradingState.funding !== null) {
+        if (tradingState.funding < 0) { reversalScore += 1; reversalSignals.push('Funding negative'); }
+        else if (tradingState.funding > 0.05) { reversalScore -= 1; reversalSignals.push('Funding elevated'); }
+      }
+
+      // NUPL
+      if (tradingState.nupl !== null) {
+        if (tradingState.nupl < 0) { reversalScore += 2; reversalSignals.push('NUPL capitulation'); }
+        else if (tradingState.nupl > 0.6) { reversalScore -= 2; reversalSignals.push('NUPL euphoria'); }
+      }
+
+      // Fear & Greed
+      if (tradingState.fearGreed !== null) {
+        if (tradingState.fearGreed < 25) { reversalScore += 1; reversalSignals.push('Extreme Fear'); }
+        else if (tradingState.fearGreed > 75) { reversalScore -= 1; reversalSignals.push('Extreme Greed'); }
+      }
+
+      // Determine Reversal Status
+      let reversalStatus, reversalColor, reversalFill;
+      if (reversalScore >= 3) {
+        reversalStatus = 'BULLISH';
+        reversalColor = '#00d97e';
+        reversalFill = 100;
+      } else if (reversalScore <= -3) {
+        reversalStatus = 'BEARISH';
+        reversalColor = '#ef4444';
+        reversalFill = 100;
+      } else {
+        reversalStatus = 'NEUTRAL';
+        reversalColor = '#eab308';
+        reversalFill = 50;
+      }
+
+      tradingState.reversalStatus = reversalStatus;
+
+      // Update Reversal UI
+      document.getElementById('reversalStatus').textContent = reversalStatus;
+      document.getElementById('reversalStatus').style.color = reversalColor;
+      document.getElementById('reversalStatusSub').textContent = `Score: ${reversalScore > 0 ? '+' : ''}${reversalScore}`;
+      document.getElementById('reversalStatusFill').style.width = reversalFill + '%';
+      document.getElementById('reversalStatusFill').style.background = reversalColor;
+      document.getElementById('reversalBadge').textContent = reversalStatus;
+      document.getElementById('reversalBadge').style.background = reversalColor + '22';
+      document.getElementById('reversalBadge').style.color = reversalColor;
+
+      document.getElementById('reversalSignal').textContent = reversalStatus;
+      document.getElementById('reversalSignal').style.color = reversalColor;
+      document.getElementById('reversalSignalDesc').textContent = reversalSignals.slice(0, 2).join(' · ') || 'No strong signals';
+      document.getElementById('reversalSignalBox').style.borderColor = reversalColor + '44';
+
+      // === MOMENTUM ===
+      const macdHist = parseFloat(latest.macdhist || latest.macdHist || 0);
+      const momentumColor = macdHist > 0 ? '#00d97e' : '#ef4444';
+      const momentumLabel = macdHist > 0 ? 'POSITIVE' : 'NEGATIVE';
+      document.getElementById('momentumValue').textContent = momentumLabel;
+      document.getElementById('momentumValue').style.color = momentumColor;
+      document.getElementById('momentumSub').textContent = `MACD Hist: ${macdHist.toFixed(0)}`;
+
+      // Generate signal history from data
+      generateSignalHistory(tech);
+    }
+
+    function generateSignalHistory(data) {
+      if (data.length < 30) return;
+      
+      const signals = [];
+      let lastSignal = null;
+      let entryPrice = null;
+
+      // Scan data for signal changes (sample every 7 days for performance)
+      for (let i = 30; i < data.length; i += 7) {
+        const d = data[i];
+        const sma50 = parseFloat(d.sma50);
+        const sma200 = parseFloat(d.sma200);
+        const macd = parseFloat(d.macd);
+        const price = parseFloat(d.priceUsd || d.price);
+        const date = d.day || d.date;
+
+        let score = 0;
+        if (sma50 > sma200) score += 2; else score -= 2;
+        if (price > sma200) score += 1; else score -= 1;
+        if (macd > 0) score += 1; else score -= 1;
+
+        let currentSignal;
+        if (score >= 3) currentSignal = 'LONG';
+        else if (score <= -3) currentSignal = 'SHORT';
+        else currentSignal = 'CASH';
+
+        if (currentSignal !== lastSignal && lastSignal !== null) {
+          const pnl = lastSignal === 'LONG' && entryPrice ? ((price / entryPrice - 1) * 100).toFixed(1) : '--';
+          signals.push({
+            date: date,
+            system: 'TREND',
+            signal: currentSignal,
+            price: price,
+            pnl: pnl,
+            status: 'CLOSED'
+          });
+          entryPrice = currentSignal !== 'CASH' ? price : null;
+        } else if (lastSignal === null && currentSignal !== 'CASH') {
+          entryPrice = price;
+        }
+
+        lastSignal = currentSignal;
+      }
+
+      // Add current open position
+      if (lastSignal && lastSignal !== 'CASH' && data.length) {
+        const latest = data[data.length - 1];
+        signals.push({
+          date: latest.day || latest.date || new Date().toISOString().split('T')[0],
+          system: 'TREND',
+          signal: lastSignal,
+          price: parseFloat(latest.priceUsd || latest.price),
+          pnl: '--',
+          status: 'OPEN'
+        });
+      }
+
+      tradingState.signals = signals.reverse().slice(0, 20);
+    }
+
+    function renderTradingHistory() {
+      const tbody = document.getElementById('tradingHistoryBody');
+      if (!tradingState.signals.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No signals detected yet</td></tr>';
+        return;
+      }
+
+      const wins = tradingState.signals.filter(s => parseFloat(s.pnl) > 0).length;
+      const total = tradingState.signals.filter(s => s.pnl !== '--').length;
+      const winRate = total > 0 ? ((wins / total) * 100).toFixed(0) : '--';
+      document.getElementById('tradingStats').textContent = `${tradingState.signals.length} trades · ${winRate}% win rate`;
+
+      tbody.innerHTML = tradingState.signals.map(s => {
+        const signalColor = s.signal === 'LONG' ? '#00d97e' : s.signal === 'SHORT' ? '#ef4444' : '#eab308';
+        const pnlColor = parseFloat(s.pnl) > 0 ? '#00d97e' : parseFloat(s.pnl) < 0 ? '#ef4444' : 'var(--text-muted)';
+        const statusColor = s.status === 'OPEN' ? '#3b82f6' : 'var(--text-muted)';
+        return `<tr>
+          <td style="font-family:'JetBrains Mono',monospace;">${s.date}</td>
+          <td>${s.system}</td>
+          <td style="color:${signalColor};font-weight:600;">${s.signal}</td>
+          <td style="font-family:'JetBrains Mono',monospace;">$${s.price.toLocaleString('en-US',{maximumFractionDigits:0})}</td>
+          <td style="color:${pnlColor};font-family:'JetBrains Mono',monospace;">${s.pnl !== '--' ? s.pnl + '%' : '--'}</td>
+          <td style="color:${statusColor};">${s.status}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderTradingChart() {
+      const ctx = document.getElementById('tradingChart')?.getContext('2d');
+      if (!ctx) return;
+
+      const data = tradingState.technicalData;
+      if (!data.length) return;
+
+      // Sample data for chart (last 365 days, max 200 points)
+      const sampled = data.length > 200 ? data.filter((_, i) => i % Math.ceil(data.length / 200) === 0) : data;
+      
+      const labels = sampled.map(d => d.day || d.date);
+      const prices = sampled.map(d => parseFloat(d.priceUsd || d.price));
+      const sma50s = sampled.map(d => parseFloat(d.sma50));
+      const sma200s = sampled.map(d => parseFloat(d.sma200));
+
+      // Generate signal annotations
+      const annotations = {};
+      let lastSignal = null;
+      sampled.forEach((d, i) => {
+        const sma50 = parseFloat(d.sma50);
+        const sma200 = parseFloat(d.sma200);
+        const macd = parseFloat(d.macd);
+        const price = parseFloat(d.priceUsd || d.price);
+
+        let score = 0;
+        if (sma50 > sma200) score += 2; else score -= 2;
+        if (price > sma200) score += 1; else score -= 1;
+        if (macd > 0) score += 1; else score -= 1;
+
+        let currentSignal;
+        if (score >= 3) currentSignal = 'LONG';
+        else if (score <= -3) currentSignal = 'SHORT';
+        else currentSignal = 'CASH';
+
+        if (currentSignal !== lastSignal && lastSignal !== null) {
+          const color = currentSignal === 'LONG' ? '#00d97e' : currentSignal === 'SHORT' ? '#ef4444' : '#eab308';
+          annotations[`signal${i}`] = {
+            type: 'point',
+            xValue: i,
+            yValue: price,
+            backgroundColor: color,
+            borderColor: color,
+            borderWidth: 2,
+            radius: 5
+          };
+        }
+        lastSignal = currentSignal;
+      });
+
+      if (_tradingChart) _tradingChart.destroy();
+
+      _tradingChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'BTC Price',
+              data: prices,
+              borderColor: 'rgba(255,255,255,0.8)',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false,
+              tension: 0.1,
+              yAxisID: 'y'
+            },
+            {
+              label: 'SMA 50',
+              data: sma50s,
+              borderColor: '#3b82f6',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false,
+              tension: 0.1,
+              yAxisID: 'y'
+            },
+            {
+              label: 'SMA 200',
+              data: sma200s,
+              borderColor: '#f97316',
+              borderWidth: 1.5,
+              pointRadius: 0,
+              fill: false,
+              tension: 0.1,
+              yAxisID: 'y'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            annotation: { annotations: annotations }
+          },
+          scales: {
+            x: {
+              display: true,
+              grid: { display: false },
+              ticks: { color: '#9a9aa6', maxTicksLimit: 8, font: { size: 9 } }
+            },
+            y: {
+              type: 'logarithmic',
+              display: true,
+              position: 'right',
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: {
+                color: '#9a9aa6',
+                font: { size: 9 },
+                callback: v => v >= 1000 ? '$' + (v/1000) + 'k' : '$' + v
+              },
+              afterBuildTicks: function(axis) {
+                axis.ticks = [1000, 5000, 10000, 20000, 50000, 100000].map(v => ({value: v}));
+              }
+            }
+          }
+        }
+      });
+    }
+
     // ========== PUBLIC updateUI (alias for compatibility) ==========
-    function updateUI() { _coreUpdateUI(); setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSentimentData(); }, 150); }
+    function updateUI() { _coreUpdateUI(); setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSentimentData(); fetchTradingData(); }, 150); }
 
     // ========== INIT ==========
     fetchAllData();
