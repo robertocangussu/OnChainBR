@@ -1938,15 +1938,18 @@
               type: 'logarithmic',
               display: true,
               position: 'left',
+              min: 100,
+              max: 150000,
               grid: { color: 'rgba(255,255,255,0.04)' },
+              afterBuildTicks: function(axis) {
+                axis.ticks = [100, 500, 1000, 5000, 10000, 50000, 100000].map(v => ({value: v}));
+              },
               ticks: {
                 color: '#9a9aa6',
                 font: { size: 9 },
-                callback: v => {
-                  if (v >= 100000) return '$' + (v/1000).toFixed(0) + 'k';
-                  if (v >= 1000)   return '$' + (v/1000).toFixed(0) + 'k';
-                  if (v >= 100)    return '$' + v;
-                  return '';
+                callback: function(v) {
+                  if (v >= 1000) return '$' + (v/1000).toFixed(0) + 'k';
+                  return '$' + v;
                 }
               }
             },
