@@ -2457,6 +2457,7 @@
     let _tradingChart = null;
     const tradingState = {
       technicalData: [],
+      currentPrice: null,
       rsiWeekly: null,
       sopr: null,
       mvrvSth: null,
@@ -2472,30 +2473,60 @@
       const token = CONFIG.BGEOMETRICS_TOKEN;
       const base = CONFIG.BGEOMETRICS_BASE;
       
+      console.log('[Trading] Fetching trading data...');
+      
       // Fetch all trading indicators in parallel
       const fetches = await Promise.allSettled([
-        // Technical indicators (daily)
+        // Technical indicators (daily) - index 0
         fetch(`${base}/v1/technical-indicators?token=${token}`).then(r => r.json()),
-        // RSI Weekly from Bitview
+        // RSI Weekly from Bitview - index 1
         fetch(`${CONFIG.BITVIEW_BASE}/series/rsi-1w/week1`).then(r => r.json()),
-        // SOPR
+        // SOPR - index 2
         fetch(`${base}/v1/sopr?token=${token}`).then(r => r.json()),
-        // MVRV STH
+        // MVRV STH - index 3
         fetch(`${base}/v1/mvrv-sth?token=${token}`).then(r => r.json()),
-        // Funding Rate (Binance)
+        // Funding Rate (Binance) - index 4
         fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1').then(r => r.json()),
-        // NUPL
+        // NUPL - index 5
         fetch(`${base}/v1/nupl?token=${token}`).then(r => r.json()),
-        // Fear & Greed
+        // Fear & Greed - index 6
         fetch('https://api.alternative.me/fng/?limit=1&format=json').then(r => r.json()),
-        // Price with SMAs for chart
+        // BTC Price (for chart and mayer multiple) - index 7
         fetch(`${base}/v1/btc-price?token=${token}`).then(r => r.json())
       ]);
 
-      // Process Technical Indicators
-      if (fetches[0].status === 'fulfilled' && Array.isArray(fetches[0].value)) {
-        tradingState.technicalData = fetches[0].value;
-        updateTrendIndicators(fetches[0].value);
+      // Process BTC Price first to get current price
+      let priceMap = new Map();
+      let currentPrice = null;
+      if (fetches[7].status === 'fulfilled' && Array.isArray(fetches[7].value) && fetches[7].value.length) {
+        const priceData = fetches[7].value;
+        priceData.forEach(p => {
+          const dateKey = p.d || p.day;
+          const priceVal = parseFloat(p.priceUsd || p.price || p.close);
+          if (dateKey && !isNaN(priceVal)) priceMap.set(dateKey, priceVal);
+        });
+        const latestPrice = priceData[priceData.length - 1];
+        currentPrice = parseFloat(latestPrice.priceUsd || latestPrice.price || latestPrice.close);
+        tradingState.currentPrice = currentPrice;
+        console.log('[Trading] Current price:', currentPrice);
+      }
+
+      // Process Technical Indicators and merge with price
+      if (fetches[0].status === 'fulfilled' && Array.isArray(fetches[0].value) && fetches[0].value.length) {
+        const techData = fetches[0].value;
+        console.log('[Trading] Technical indicators loaded:', techData.length, 'points');
+        
+        // Merge price into technical data
+        const mergedData = techData.map(t => {
+          const dateKey = t.d || t.day;
+          const price = priceMap.get(dateKey) || currentPrice;
+          return { ...t, price, day: dateKey };
+        });
+        
+        tradingState.technicalData = mergedData;
+        updateTrendIndicators(mergedData, currentPrice);
+      } else {
+        console.warn('[Trading] Technical indicators failed:', fetches[0].reason || 'Unknown error');
       }
 
       // Process RSI Weekly
@@ -2503,6 +2534,7 @@
         const data = fetches[1].value;
         if (Array.isArray(data) && data.length) {
           tradingState.rsiWeekly = parseFloat(data[data.length - 1].week1);
+          console.log('[Trading] RSI Weekly:', tradingState.rsiWeekly);
         }
       }
 
@@ -2510,28 +2542,33 @@
       if (fetches[2].status === 'fulfilled' && Array.isArray(fetches[2].value) && fetches[2].value.length) {
         const latest = fetches[2].value[fetches[2].value.length - 1];
         tradingState.sopr = parseFloat(latest.sopr);
+        console.log('[Trading] SOPR:', tradingState.sopr);
       }
 
       // Process MVRV STH
       if (fetches[3].status === 'fulfilled' && Array.isArray(fetches[3].value) && fetches[3].value.length) {
         const latest = fetches[3].value[fetches[3].value.length - 1];
         tradingState.mvrvSth = parseFloat(latest.mvrvSth || latest.mvrv);
+        console.log('[Trading] MVRV STH:', tradingState.mvrvSth);
       }
 
       // Process Funding Rate
       if (fetches[4].status === 'fulfilled' && Array.isArray(fetches[4].value) && fetches[4].value.length) {
         tradingState.funding = parseFloat(fetches[4].value[0].fundingRate) * 100;
+        console.log('[Trading] Funding:', tradingState.funding);
       }
 
       // Process NUPL
       if (fetches[5].status === 'fulfilled' && Array.isArray(fetches[5].value) && fetches[5].value.length) {
         const latest = fetches[5].value[fetches[5].value.length - 1];
         tradingState.nupl = parseFloat(latest.nupl);
+        console.log('[Trading] NUPL:', tradingState.nupl);
       }
 
       // Process Fear & Greed
       if (fetches[6].status === 'fulfilled' && fetches[6].value?.data?.length) {
         tradingState.fearGreed = parseInt(fetches[6].value.data[0].value);
+        console.log('[Trading] Fear & Greed:', tradingState.fearGreed);
       }
 
       // Update UI
@@ -2541,49 +2578,61 @@
       renderTradingHistory();
     }
 
-    function updateTrendIndicators(data) {
+    function updateTrendIndicators(data, currentPrice) {
       if (!data.length) return;
       const latest = data[data.length - 1];
       
       const sma50 = parseFloat(latest.sma50);
       const sma200 = parseFloat(latest.sma200);
       const macd = parseFloat(latest.macd);
-      const macdHist = parseFloat(latest.macdhist || latest.macdHist);
+      const macdHist = parseFloat(latest.macdhist);
       const rsi = parseFloat(latest.rsi);
-      const price = parseFloat(latest.priceUsd || latest.price);
+      const price = currentPrice || parseFloat(latest.price) || sma200 * 1.1; // fallback
+
+      console.log('[Trading] Trend indicators:', { sma50, sma200, macd, macdHist, rsi, price });
 
       // SMA Status
-      const smaStatus = sma50 > sma200 ? 'BULLISH' : 'BEARISH';
-      const smaColor = sma50 > sma200 ? '#00d97e' : '#ef4444';
-      document.getElementById('indSmaStatus').textContent = smaStatus;
-      document.getElementById('indSmaStatus').style.color = smaColor;
+      if (!isNaN(sma50) && !isNaN(sma200)) {
+        const smaStatus = sma50 > sma200 ? 'BULLISH' : 'BEARISH';
+        const smaColor = sma50 > sma200 ? '#00d97e' : '#ef4444';
+        document.getElementById('indSmaStatus').textContent = smaStatus;
+        document.getElementById('indSmaStatus').style.color = smaColor;
+      }
 
       // Price vs SMA200
-      const priceVsSma = price > sma200 ? 'ABOVE' : 'BELOW';
-      const priceVsSmaColor = price > sma200 ? '#00d97e' : '#ef4444';
-      document.getElementById('indPriceVsSma').textContent = `${priceVsSma} (${((price/sma200 - 1) * 100).toFixed(1)}%)`;
-      document.getElementById('indPriceVsSma').style.color = priceVsSmaColor;
+      if (!isNaN(price) && !isNaN(sma200) && sma200 > 0) {
+        const priceVsSma = price > sma200 ? 'ABOVE' : 'BELOW';
+        const priceVsSmaColor = price > sma200 ? '#00d97e' : '#ef4444';
+        document.getElementById('indPriceVsSma').textContent = `${priceVsSma} (${((price/sma200 - 1) * 100).toFixed(1)}%)`;
+        document.getElementById('indPriceVsSma').style.color = priceVsSmaColor;
+        
+        // Mayer Multiple (price / sma200)
+        const mayer = price / sma200;
+        const mayerColor = mayer > 2.4 ? '#ef4444' : mayer < 0.8 ? '#00d97e' : '#eab308';
+        document.getElementById('indMayer').textContent = mayer.toFixed(2);
+        document.getElementById('indMayer').style.color = mayerColor;
+      }
 
       // MACD
-      const macdColor = macd > 0 ? '#00d97e' : '#ef4444';
-      document.getElementById('indMacd').textContent = macd.toFixed(0);
-      document.getElementById('indMacd').style.color = macdColor;
+      if (!isNaN(macd)) {
+        const macdColor = macd > 0 ? '#00d97e' : '#ef4444';
+        document.getElementById('indMacd').textContent = macd.toFixed(0);
+        document.getElementById('indMacd').style.color = macdColor;
+      }
 
       // MACD Histogram
-      const histColor = macdHist > 0 ? '#00d97e' : '#ef4444';
-      document.getElementById('indMacdHist').textContent = macdHist.toFixed(0);
-      document.getElementById('indMacdHist').style.color = histColor;
+      if (!isNaN(macdHist)) {
+        const histColor = macdHist > 0 ? '#00d97e' : '#ef4444';
+        document.getElementById('indMacdHist').textContent = macdHist.toFixed(0);
+        document.getElementById('indMacdHist').style.color = histColor;
+      }
 
       // RSI Daily
-      const rsiColor = rsi > 70 ? '#ef4444' : rsi < 30 ? '#00d97e' : '#eab308';
-      document.getElementById('indRsiDaily').textContent = rsi.toFixed(1);
-      document.getElementById('indRsiDaily').style.color = rsiColor;
-
-      // Mayer Multiple (price / sma200)
-      const mayer = price / sma200;
-      const mayerColor = mayer > 2.4 ? '#ef4444' : mayer < 0.8 ? '#00d97e' : '#eab308';
-      document.getElementById('indMayer').textContent = mayer.toFixed(2);
-      document.getElementById('indMayer').style.color = mayerColor;
+      if (!isNaN(rsi)) {
+        const rsiColor = rsi > 70 ? '#ef4444' : rsi < 30 ? '#00d97e' : '#eab308';
+        document.getElementById('indRsiDaily').textContent = rsi.toFixed(1);
+        document.getElementById('indRsiDaily').style.color = rsiColor;
+      }
     }
 
     function updateReversalIndicators() {
@@ -2649,7 +2698,13 @@
       const sma200 = parseFloat(latest.sma200);
       const macd = parseFloat(latest.macd);
       const rsi = parseFloat(latest.rsi);
-      const price = parseFloat(latest.priceUsd || latest.price);
+      const price = tradingState.currentPrice || parseFloat(latest.price) || sma200 * 1.1;
+
+      // Check if we have valid data
+      if (isNaN(sma50) || isNaN(sma200)) {
+        console.warn('[Trading] Invalid SMA data, skipping signal calculation');
+        return;
+      }
 
       // === TREND SYSTEM LOGIC ===
       let trendScore = 0;
@@ -2664,12 +2719,16 @@
       else { trendScore -= 1; trendSignals.push('Price below SMA200'); }
 
       // MACD (weight: 1)
-      if (macd > 0) { trendScore += 1; trendSignals.push('MACD positive'); }
-      else { trendScore -= 1; trendSignals.push('MACD negative'); }
+      if (!isNaN(macd)) {
+        if (macd > 0) { trendScore += 1; trendSignals.push('MACD positive'); }
+        else { trendScore -= 1; trendSignals.push('MACD negative'); }
+      }
 
       // RSI (weight: 1)
-      if (rsi > 50) { trendScore += 1; }
-      else { trendScore -= 1; }
+      if (!isNaN(rsi)) {
+        if (rsi > 50) { trendScore += 1; }
+        else { trendScore -= 1; }
+      }
 
       // Determine Trend Status
       let trendStatus, trendColor, trendFill;
@@ -2796,13 +2855,17 @@
         const sma50 = parseFloat(d.sma50);
         const sma200 = parseFloat(d.sma200);
         const macd = parseFloat(d.macd);
-        const price = parseFloat(d.priceUsd || d.price);
-        const date = d.day || d.date;
+        const price = parseFloat(d.price) || sma200 * 1.1;
+        const date = d.day || d.d;
+
+        if (isNaN(sma50) || isNaN(sma200)) continue;
 
         let score = 0;
         if (sma50 > sma200) score += 2; else score -= 2;
         if (price > sma200) score += 1; else score -= 1;
-        if (macd > 0) score += 1; else score -= 1;
+        if (!isNaN(macd)) {
+          if (macd > 0) score += 1; else score -= 1;
+        }
 
         let currentSignal;
         if (score >= 3) currentSignal = 'LONG';
@@ -2830,11 +2893,12 @@
       // Add current open position
       if (lastSignal && lastSignal !== 'CASH' && data.length) {
         const latest = data[data.length - 1];
+        const currentPrice = tradingState.currentPrice || parseFloat(latest.price);
         signals.push({
-          date: latest.day || latest.date || new Date().toISOString().split('T')[0],
+          date: latest.day || latest.d || new Date().toISOString().split('T')[0],
           system: 'TREND',
           signal: lastSignal,
-          price: parseFloat(latest.priceUsd || latest.price),
+          price: currentPrice,
           pnl: '--',
           status: 'OPEN'
         });
@@ -2875,15 +2939,25 @@
       if (!ctx) return;
 
       const data = tradingState.technicalData;
-      if (!data.length) return;
+      if (!data.length) {
+        console.warn('[Trading] No data for chart');
+        return;
+      }
 
       // Sample data for chart (last 365 days, max 200 points)
       const sampled = data.length > 200 ? data.filter((_, i) => i % Math.ceil(data.length / 200) === 0) : data;
       
-      const labels = sampled.map(d => d.day || d.date);
-      const prices = sampled.map(d => parseFloat(d.priceUsd || d.price));
+      const labels = sampled.map(d => d.day || d.d);
+      const prices = sampled.map(d => parseFloat(d.price) || parseFloat(d.sma200) * 1.1);
       const sma50s = sampled.map(d => parseFloat(d.sma50));
       const sma200s = sampled.map(d => parseFloat(d.sma200));
+
+      // Check if we have valid price data
+      const validPrices = prices.filter(p => !isNaN(p) && p > 0);
+      if (validPrices.length === 0) {
+        console.warn('[Trading] No valid price data for chart');
+        return;
+      }
 
       // Generate signal annotations
       const annotations = {};
@@ -2892,12 +2966,16 @@
         const sma50 = parseFloat(d.sma50);
         const sma200 = parseFloat(d.sma200);
         const macd = parseFloat(d.macd);
-        const price = parseFloat(d.priceUsd || d.price);
+        const price = parseFloat(d.price) || sma200 * 1.1;
+
+        if (isNaN(sma50) || isNaN(sma200)) return;
 
         let score = 0;
         if (sma50 > sma200) score += 2; else score -= 2;
         if (price > sma200) score += 1; else score -= 1;
-        if (macd > 0) score += 1; else score -= 1;
+        if (!isNaN(macd)) {
+          if (macd > 0) score += 1; else score -= 1;
+        }
 
         let currentSignal;
         if (score >= 3) currentSignal = 'LONG';
