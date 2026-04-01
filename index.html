@@ -2475,6 +2475,18 @@
       
       console.log('[Trading] Fetching trading data...');
       
+      // Use existing price data from state if available
+      let currentPrice = null;
+      let priceMap = new Map();
+      if (state.prices && state.prices.length) {
+        state.prices.forEach(p => {
+          priceMap.set(p.date, p.price);
+        });
+        currentPrice = state.prices[state.prices.length - 1].price;
+        tradingState.currentPrice = currentPrice;
+        console.log('[Trading] Using existing price data, current:', currentPrice);
+      }
+      
       // Fetch all trading indicators in parallel
       const fetches = await Promise.allSettled([
         // Technical indicators (daily) - index 0
@@ -2491,34 +2503,33 @@
         fetch(`${base}/v1/nupl?token=${token}`).then(r => r.json()),
         // Fear & Greed - index 6
         fetch('https://api.alternative.me/fng/?limit=1&format=json').then(r => r.json()),
-        // BTC Price (for chart and mayer multiple) - index 7
+        // BTC Price (fallback if state.prices is empty) - index 7
         fetch(`${base}/v1/btc-price?token=${token}`).then(r => r.json())
       ]);
 
-      // Process BTC Price first to get current price
-      let priceMap = new Map();
-      let currentPrice = null;
-      if (fetches[7].status === 'fulfilled' && Array.isArray(fetches[7].value) && fetches[7].value.length) {
+      // Process BTC Price (fallback) if not already loaded
+      if (!currentPrice && fetches[7].status === 'fulfilled' && Array.isArray(fetches[7].value) && fetches[7].value.length) {
         const priceData = fetches[7].value;
         priceData.forEach(p => {
-          const dateKey = p.d || p.day;
-          const priceVal = parseFloat(p.priceUsd || p.price || p.close);
+          const dateKey = p.d;
+          const priceVal = parseFloat(p.btcPrice || p.priceUsd);
           if (dateKey && !isNaN(priceVal)) priceMap.set(dateKey, priceVal);
         });
         const latestPrice = priceData[priceData.length - 1];
-        currentPrice = parseFloat(latestPrice.priceUsd || latestPrice.price || latestPrice.close);
+        currentPrice = parseFloat(latestPrice.btcPrice || latestPrice.priceUsd);
         tradingState.currentPrice = currentPrice;
-        console.log('[Trading] Current price:', currentPrice);
+        console.log('[Trading] Fetched price from API:', currentPrice);
       }
 
       // Process Technical Indicators and merge with price
       if (fetches[0].status === 'fulfilled' && Array.isArray(fetches[0].value) && fetches[0].value.length) {
         const techData = fetches[0].value;
         console.log('[Trading] Technical indicators loaded:', techData.length, 'points');
+        console.log('[Trading] Sample data:', techData[techData.length - 1]);
         
         // Merge price into technical data
         const mergedData = techData.map(t => {
-          const dateKey = t.d || t.day;
+          const dateKey = t.d;
           const price = priceMap.get(dateKey) || currentPrice;
           return { ...t, price, day: dateKey };
         });
@@ -2526,7 +2537,7 @@
         tradingState.technicalData = mergedData;
         updateTrendIndicators(mergedData, currentPrice);
       } else {
-        console.warn('[Trading] Technical indicators failed:', fetches[0].reason || 'Unknown error');
+        console.warn('[Trading] Technical indicators failed:', fetches[0].status, fetches[0].reason?.message || '');
       }
 
       // Process RSI Weekly
@@ -2536,6 +2547,8 @@
           tradingState.rsiWeekly = parseFloat(data[data.length - 1].week1);
           console.log('[Trading] RSI Weekly:', tradingState.rsiWeekly);
         }
+      } else {
+        console.warn('[Trading] RSI Weekly failed');
       }
 
       // Process SOPR
@@ -2576,6 +2589,8 @@
       calculateTradingSignals();
       renderTradingChart();
       renderTradingHistory();
+      
+      console.log('[Trading] All done!');
     }
 
     function updateTrendIndicators(data, currentPrice) {
