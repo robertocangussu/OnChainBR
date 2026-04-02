@@ -2470,127 +2470,134 @@
     };
 
     async function fetchTradingData() {
-      const token = CONFIG.BGEOMETRICS_TOKEN;
-      const base = CONFIG.BGEOMETRICS_BASE;
-      
-      console.log('[Trading] Fetching trading data...');
-      
-      // Use existing price data from state if available
-      let currentPrice = null;
-      let priceMap = new Map();
-      if (state.prices && state.prices.length) {
-        state.prices.forEach(p => {
-          priceMap.set(p.date, p.price);
-        });
-        currentPrice = state.prices[state.prices.length - 1].price;
-        tradingState.currentPrice = currentPrice;
-        console.log('[Trading] Using existing price data, current:', currentPrice);
-      }
-      
-      // Fetch all trading indicators in parallel
-      const fetches = await Promise.allSettled([
-        // Technical indicators (daily) - index 0
-        fetch(`${base}/v1/technical-indicators?token=${token}`).then(r => r.json()),
-        // RSI Weekly from Bitview - index 1
-        fetch(`${CONFIG.BITVIEW_BASE}/series/rsi-1w/week1`).then(r => r.json()),
-        // SOPR - index 2
-        fetch(`${base}/v1/sopr?token=${token}`).then(r => r.json()),
-        // MVRV STH - index 3
-        fetch(`${base}/v1/mvrv-sth?token=${token}`).then(r => r.json()),
-        // Funding Rate (Binance) - index 4
-        fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1').then(r => r.json()),
-        // NUPL - index 5
-        fetch(`${base}/v1/nupl?token=${token}`).then(r => r.json()),
-        // Fear & Greed - index 6
-        fetch('https://api.alternative.me/fng/?limit=1&format=json').then(r => r.json()),
-        // BTC Price (fallback if state.prices is empty) - index 7
-        fetch(`${base}/v1/btc-price?token=${token}`).then(r => r.json())
-      ]);
-
-      // Process BTC Price (fallback) if not already loaded
-      if (!currentPrice && fetches[7].status === 'fulfilled' && Array.isArray(fetches[7].value) && fetches[7].value.length) {
-        const priceData = fetches[7].value;
-        priceData.forEach(p => {
-          const dateKey = p.d;
-          const priceVal = parseFloat(p.btcPrice || p.priceUsd);
-          if (dateKey && !isNaN(priceVal)) priceMap.set(dateKey, priceVal);
-        });
-        const latestPrice = priceData[priceData.length - 1];
-        currentPrice = parseFloat(latestPrice.btcPrice || latestPrice.priceUsd);
-        tradingState.currentPrice = currentPrice;
-        console.log('[Trading] Fetched price from API:', currentPrice);
-      }
-
-      // Process Technical Indicators and merge with price
-      if (fetches[0].status === 'fulfilled' && Array.isArray(fetches[0].value) && fetches[0].value.length) {
-        const techData = fetches[0].value;
-        console.log('[Trading] Technical indicators loaded:', techData.length, 'points');
-        console.log('[Trading] Sample data:', techData[techData.length - 1]);
+      try {
+        const token = CONFIG.BGEOMETRICS_TOKEN;
+        const base = CONFIG.BGEOMETRICS_BASE;
         
-        // Merge price into technical data
-        const mergedData = techData.map(t => {
-          const dateKey = t.d;
-          const price = priceMap.get(dateKey) || currentPrice;
-          return { ...t, price, day: dateKey };
-        });
+        console.log('[Trading] Fetching trading data...');
         
-        tradingState.technicalData = mergedData;
-        updateTrendIndicators(mergedData, currentPrice);
-      } else {
-        console.warn('[Trading] Technical indicators failed:', fetches[0].status, fetches[0].reason?.message || '');
-      }
-
-      // Process RSI Weekly
-      if (fetches[1].status === 'fulfilled') {
-        const data = fetches[1].value;
-        if (Array.isArray(data) && data.length) {
-          tradingState.rsiWeekly = parseFloat(data[data.length - 1].week1);
-          console.log('[Trading] RSI Weekly:', tradingState.rsiWeekly);
+        // Use existing price data from state if available
+        let currentPrice = null;
+        let priceMap = new Map();
+        if (state.prices && state.prices.length) {
+          state.prices.forEach(p => {
+            priceMap.set(p.date, p.price);
+          });
+          currentPrice = state.prices[state.prices.length - 1].price;
+          tradingState.currentPrice = currentPrice;
+          console.log('[Trading] Using existing price data, current:', currentPrice);
         }
-      } else {
-        console.warn('[Trading] RSI Weekly failed');
-      }
+        
+        // Fetch all trading indicators in parallel
+        const fetches = await Promise.allSettled([
+          // Technical indicators (daily) - index 0
+          fetch(`${base}/v1/technical-indicators?token=${token}`).then(r => r.json()),
+          // RSI Weekly from Bitview - index 1
+          fetch(`${CONFIG.BITVIEW_BASE}/series/rsi-1w/week1`).then(r => r.json()),
+          // SOPR - index 2
+          fetch(`${base}/v1/sopr?token=${token}`).then(r => r.json()),
+          // MVRV STH - index 3
+          fetch(`${base}/v1/mvrv-sth?token=${token}`).then(r => r.json()),
+          // Funding Rate (Binance) - index 4
+          fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1').then(r => r.json()),
+          // NUPL - index 5
+          fetch(`${base}/v1/nupl?token=${token}`).then(r => r.json()),
+          // Fear & Greed - index 6
+          fetch('https://api.alternative.me/fng/?limit=1&format=json').then(r => r.json()),
+          // BTC Price (fallback if state.prices is empty) - index 7
+          fetch(`${base}/v1/btc-price?token=${token}`).then(r => r.json())
+        ]);
 
-      // Process SOPR
-      if (fetches[2].status === 'fulfilled' && Array.isArray(fetches[2].value) && fetches[2].value.length) {
-        const latest = fetches[2].value[fetches[2].value.length - 1];
-        tradingState.sopr = parseFloat(latest.sopr);
-        console.log('[Trading] SOPR:', tradingState.sopr);
-      }
+        console.log('[Trading] Fetches completed, processing...');
 
-      // Process MVRV STH
-      if (fetches[3].status === 'fulfilled' && Array.isArray(fetches[3].value) && fetches[3].value.length) {
-        const latest = fetches[3].value[fetches[3].value.length - 1];
-        tradingState.mvrvSth = parseFloat(latest.mvrvSth || latest.mvrv);
-        console.log('[Trading] MVRV STH:', tradingState.mvrvSth);
-      }
+        // Process BTC Price (fallback) if not already loaded
+        if (!currentPrice && fetches[7].status === 'fulfilled' && Array.isArray(fetches[7].value) && fetches[7].value.length) {
+          const priceData = fetches[7].value;
+          priceData.forEach(p => {
+            const dateKey = p.d;
+            const priceVal = parseFloat(p.btcPrice || p.priceUsd);
+            if (dateKey && !isNaN(priceVal)) priceMap.set(dateKey, priceVal);
+          });
+          const latestPrice = priceData[priceData.length - 1];
+          currentPrice = parseFloat(latestPrice.btcPrice || latestPrice.priceUsd);
+          tradingState.currentPrice = currentPrice;
+          console.log('[Trading] Fetched price from API:', currentPrice);
+        }
 
-      // Process Funding Rate
-      if (fetches[4].status === 'fulfilled' && Array.isArray(fetches[4].value) && fetches[4].value.length) {
-        tradingState.funding = parseFloat(fetches[4].value[0].fundingRate) * 100;
-        console.log('[Trading] Funding:', tradingState.funding);
-      }
+        // Process Technical Indicators and merge with price
+        if (fetches[0].status === 'fulfilled' && Array.isArray(fetches[0].value) && fetches[0].value.length) {
+          const techData = fetches[0].value;
+          console.log('[Trading] Technical indicators loaded:', techData.length, 'points');
+          console.log('[Trading] Sample data:', JSON.stringify(techData[techData.length - 1]));
+          
+          // Merge price into technical data
+          const mergedData = techData.map(t => {
+            const dateKey = t.d;
+            const price = priceMap.get(dateKey) || currentPrice;
+            return { ...t, price, day: dateKey };
+          });
+          
+          tradingState.technicalData = mergedData;
+          updateTrendIndicators(mergedData, currentPrice);
+        } else {
+          console.warn('[Trading] Technical indicators failed:', fetches[0].status, fetches[0].reason?.message || '');
+        }
 
-      // Process NUPL
-      if (fetches[5].status === 'fulfilled' && Array.isArray(fetches[5].value) && fetches[5].value.length) {
-        const latest = fetches[5].value[fetches[5].value.length - 1];
-        tradingState.nupl = parseFloat(latest.nupl);
-        console.log('[Trading] NUPL:', tradingState.nupl);
-      }
+        // Process RSI Weekly
+        if (fetches[1].status === 'fulfilled') {
+          const data = fetches[1].value;
+          if (Array.isArray(data) && data.length) {
+            tradingState.rsiWeekly = parseFloat(data[data.length - 1].week1);
+            console.log('[Trading] RSI Weekly:', tradingState.rsiWeekly);
+          }
+        } else {
+          console.warn('[Trading] RSI Weekly failed');
+        }
 
-      // Process Fear & Greed
-      if (fetches[6].status === 'fulfilled' && fetches[6].value?.data?.length) {
-        tradingState.fearGreed = parseInt(fetches[6].value.data[0].value);
-        console.log('[Trading] Fear & Greed:', tradingState.fearGreed);
-      }
+        // Process SOPR
+        if (fetches[2].status === 'fulfilled' && Array.isArray(fetches[2].value) && fetches[2].value.length) {
+          const latest = fetches[2].value[fetches[2].value.length - 1];
+          tradingState.sopr = parseFloat(latest.sopr);
+          console.log('[Trading] SOPR:', tradingState.sopr);
+        }
 
-      // Update UI
-      updateReversalIndicators();
-      calculateTradingSignals();
-      renderTradingChart();
-      renderTradingHistory();
-      
-      console.log('[Trading] All done!');
+        // Process MVRV STH
+        if (fetches[3].status === 'fulfilled' && Array.isArray(fetches[3].value) && fetches[3].value.length) {
+          const latest = fetches[3].value[fetches[3].value.length - 1];
+          tradingState.mvrvSth = parseFloat(latest.mvrvSth || latest.mvrv);
+          console.log('[Trading] MVRV STH:', tradingState.mvrvSth);
+        }
+
+        // Process Funding Rate
+        if (fetches[4].status === 'fulfilled' && Array.isArray(fetches[4].value) && fetches[4].value.length) {
+          tradingState.funding = parseFloat(fetches[4].value[0].fundingRate) * 100;
+          console.log('[Trading] Funding:', tradingState.funding);
+        }
+
+        // Process NUPL
+        if (fetches[5].status === 'fulfilled' && Array.isArray(fetches[5].value) && fetches[5].value.length) {
+          const latest = fetches[5].value[fetches[5].value.length - 1];
+          tradingState.nupl = parseFloat(latest.nupl);
+          console.log('[Trading] NUPL:', tradingState.nupl);
+        }
+
+        // Process Fear & Greed
+        if (fetches[6].status === 'fulfilled' && fetches[6].value?.data?.length) {
+          tradingState.fearGreed = parseInt(fetches[6].value.data[0].value);
+          console.log('[Trading] Fear & Greed:', tradingState.fearGreed);
+        }
+
+        // Update UI
+        console.log('[Trading] Updating UI...');
+        updateReversalIndicators();
+        calculateTradingSignals();
+        renderTradingChart();
+        renderTradingHistory();
+        
+        console.log('[Trading] All done!');
+      } catch (err) {
+        console.error('[Trading] Fatal error:', err);
+      }
     }
 
     function updateTrendIndicators(data, currentPrice) {
@@ -3085,10 +3092,24 @@
     }
 
     // ========== PUBLIC updateUI (alias for compatibility) ==========
-    function updateUI() { _coreUpdateUI(); setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSentimentData(); fetchTradingData(); }, 150); }
+    function updateUI() { 
+      _coreUpdateUI(); 
+      setTimeout(() => { 
+        renderSignalsSection(); 
+        fetchFlowData(); 
+        fetchSentimentData(); 
+        try { fetchTradingData(); } catch(e) { console.error('[Trading] Error:', e); }
+      }, 150); 
+    }
 
     // ========== INIT ==========
     fetchAllData();
+    
+    // Also call trading data after a delay to ensure other data is loaded
+    setTimeout(() => {
+      console.log('[Trading] Delayed init starting...');
+      try { fetchTradingData(); } catch(e) { console.error('[Trading] Delayed init error:', e); }
+    }, 3000);
   </script>
 </body>
 </html>
