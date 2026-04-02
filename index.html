@@ -2898,47 +2898,41 @@
       let position = null;
       
       /*
-       * PROFESSOR-STYLE TRADING SYSTEM v5
+       * PROFESSOR-STYLE TRADING SYSTEM v6
        * ==================================
        * 
        * Baseado na análise visual dos sinais do professor:
-       * - 18 trades, 77.8% win rate, +93.9% return
+       * - Entries em pullbacks para SMA50 ou SMA200
+       * - Usa SMA20 crossing SMA50 como trigger
+       * - Exits quando esticado ou SMA20 vira
        * 
-       * INDICADORES:
-       *   - SMA20 (timing rápido)
-       *   - SMA50 (tendência intermediária) 
-       *   - SMA200 (tendência macro)
-       *   - RSI para confirmação
+       * REGRAS SIMPLIFICADAS:
        * 
-       * REGRAS DE ENTRY LONG:
-       *   1. SMA50 > SMA200 (bull market) OU preço > SMA200 (recuperando)
-       *   2. Preço fez pullback e está próximo/abaixo da SMA50
-       *   3. SMA20 cruzando SMA50 de baixo pra cima OU
-       *      Preço cruzando SMA20 de baixo pra cima (bounce)
-       *   4. RSI < 50 (ainda não overbought)
+       * LONG quando:
+       *   - Preço próximo ou abaixo da SMA50 (pullback)
+       *   - SMA20 cruza SMA50 pra cima OU preço cruza SMA50 pra cima
+       *   - SMA50 > SMA200 OU preço > SMA200 (não estamos em bear profundo)
        * 
-       * REGRAS DE ENTRY SHORT:
-       *   1. SMA50 < SMA200 (bear market)
-       *   2. Preço fez rally e está próximo/acima da SMA50
-       *   3. SMA20 cruzando SMA50 de cima pra baixo OU
-       *      Preço cruzando SMA20 de cima pra baixo (rejeição)
-       *   4. RSI > 50 (ainda não oversold)
+       * SHORT quando:
+       *   - SMA50 < SMA200 (bear market confirmado)
+       *   - Preço próximo ou acima da SMA50 (rally)
+       *   - SMA20 cruza SMA50 pra baixo
        * 
-       * REGRAS DE EXIT:
-       *   - Take profit: +20% 
-       *   - Stop loss: -10%
-       *   - SMA20 cruza contra a posição
-       *   - Preço muito esticado (>15% da SMA50)
+       * EXIT:
+       *   - TP: +25%
+       *   - SL: -12%
+       *   - Esticado: >20% da SMA50
+       *   - SMA20 cruza contra
        */
       
       let lastTradeIndex = 0;
-      const MIN_BARS_BETWEEN_TRADES = 20; // ~20 dias entre trades
-      const TAKE_PROFIT_PCT = 20;
-      const STOP_LOSS_PCT = 10;
-      const MAX_DISTANCE_FROM_SMA50 = 8; // Entry só se preço dentro de 8% da SMA50
-      const STRETCHED_EXIT_PCT = 15; // Exit se preço >15% da SMA50
+      const MIN_BARS_BETWEEN_TRADES = 25; // ~25 dias entre trades
+      const TAKE_PROFIT_PCT = 25;
+      const STOP_LOSS_PCT = 12;
+      const ENTRY_ZONE_PCT = 10; // Entry quando preço dentro de 10% da SMA50
+      const STRETCHED_PCT = 20; // Exit se >20% da SMA50
       
-      // Calcular SMA20 se não existir
+      // Calcular SMA20
       const sma20 = [];
       for (let i = 0; i < data.length; i++) {
         if (i < 19) {
@@ -2961,7 +2955,7 @@
         const sma50 = parseFloat(d.sma50) || 0;
         const sma200 = parseFloat(d.sma200) || 0;
         const prevSma50 = parseFloat(prev.sma50) || 0;
-        const rsi = parseFloat(d.rsi);
+        const prevSma200 = parseFloat(prev.sma200) || 0;
         const date = d.day || d.d;
         
         const currentSma20 = sma20[i];
@@ -2970,33 +2964,25 @@
         if (price === 0 || sma50 === 0 || sma200 === 0 || !currentSma20) continue;
         
         // === TREND CONDITIONS ===
-        const bullMarket = sma50 > sma200;
-        const bearMarket = sma50 < sma200;
-        const priceRecovering = price > sma200; // Preço acima da SMA200 mesmo em bear
+        const bullTrend = sma50 > sma200;
+        const bearTrend = sma50 < sma200;
+        const priceAboveSma200 = price > sma200;
         
-        // === DISTANCE FROM SMAs ===
+        // === DISTANCE FROM SMA50 ===
         const distFromSma50 = ((price / sma50) - 1) * 100;
-        const distFromSma20 = ((price / currentSma20) - 1) * 100;
-        const nearSma50 = Math.abs(distFromSma50) < MAX_DISTANCE_FROM_SMA50;
-        const stretched = Math.abs(distFromSma50) > STRETCHED_EXIT_PCT;
+        const inEntryZone = Math.abs(distFromSma50) < ENTRY_ZONE_PCT;
+        const stretched = Math.abs(distFromSma50) > STRETCHED_PCT;
         
-        // === SMA20 CROSSOVER CONDITIONS ===
+        // === CROSSOVER CONDITIONS ===
         const sma20CrossAboveSma50 = prevSma20 <= prevSma50 && currentSma20 > sma50;
         const sma20CrossBelowSma50 = prevSma20 >= prevSma50 && currentSma20 < sma50;
-        const sma20AboveSma50 = currentSma20 > sma50;
-        const sma20BelowSma50 = currentSma20 < sma50;
-        
-        // === PRICE vs SMA20 CONDITIONS ===
+        const priceCrossAboveSma50 = prevPrice <= prevSma50 && price > sma50;
+        const priceCrossBelowSma50 = prevPrice >= prevSma50 && price < sma50;
         const priceCrossAboveSma20 = prevPrice <= prevSma20 && price > currentSma20;
-        const priceCrossBelowSma20 = prevPrice >= prevSma20 && price < currentSma20;
-        const priceAboveSma20 = price > currentSma20;
-        const priceBelowSma20 = price < currentSma20;
         
-        // === RSI CONDITIONS ===
-        const rsiNotOverbought = rsi < 65;
-        const rsiNotOversold = rsi > 35;
-        const rsiOverbought = rsi > 70;
-        const rsiOversold = rsi < 30;
+        // === BOUNCE CONDITIONS ===
+        const bounceFromSma50 = distFromSma50 > -5 && distFromSma50 < 5 && price > currentSma20;
+        const bounceFromSma200 = price > sma200 * 0.97 && price < sma200 * 1.05 && price > currentSma20;
         
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
         
@@ -3012,39 +2998,30 @@
           // Take profit
           if (currentPnl >= TAKE_PROFIT_PCT) {
             shouldExit = true;
-            exitReason = 'Take profit';
+            exitReason = 'TP';
           }
           // Stop loss
           else if (currentPnl <= -STOP_LOSS_PCT) {
             shouldExit = true;
-            exitReason = 'Stop loss';
+            exitReason = 'SL';
           }
-          // Price too stretched from SMA50
-          else if (position.signal === 'LONG' && distFromSma50 > STRETCHED_EXIT_PCT) {
+          // Stretched from SMA50
+          else if (position.signal === 'LONG' && distFromSma50 > STRETCHED_PCT) {
             shouldExit = true;
             exitReason = 'Stretched';
           }
-          else if (position.signal === 'SHORT' && distFromSma50 < -STRETCHED_EXIT_PCT) {
+          else if (position.signal === 'SHORT' && distFromSma50 < -STRETCHED_PCT) {
             shouldExit = true;
             exitReason = 'Stretched';
           }
-          // SMA20 cross against position
+          // SMA20 cross against
           else if (position.signal === 'LONG' && sma20CrossBelowSma50) {
             shouldExit = true;
-            exitReason = 'SMA20 cross down';
+            exitReason = 'SMA cross';
           }
           else if (position.signal === 'SHORT' && sma20CrossAboveSma50) {
             shouldExit = true;
-            exitReason = 'SMA20 cross up';
-          }
-          // RSI extreme
-          else if (position.signal === 'LONG' && rsiOverbought && stretched) {
-            shouldExit = true;
-            exitReason = 'RSI overbought';
-          }
-          else if (position.signal === 'SHORT' && rsiOversold && stretched) {
-            shouldExit = true;
-            exitReason = 'RSI oversold';
+            exitReason = 'SMA cross';
           }
           
           if (shouldExit) {
@@ -3055,7 +3032,7 @@
             signals.push({
               date: position.entryDate,
               exitDate: date,
-              system: 'SMA20/50',
+              system: 'SMA',
               signal: position.signal,
               entryPrice: position.entryPrice,
               exitPrice: price,
@@ -3072,21 +3049,20 @@
         }
         
         // ===== ENTRY LOGIC =====
-        if (!position && canTrade && nearSma50) {
+        if (!position && canTrade) {
           
-          // LONG CONDITIONS
-          const longCondition1 = bullMarket || priceRecovering; // Trend filter
-          const longCondition2 = distFromSma50 < 5; // Preço próximo ou abaixo da SMA50
-          const longCondition3 = sma20CrossAboveSma50 || (priceCrossAboveSma20 && sma20AboveSma50) || (price > currentSma20 && prevPrice < prevSma20);
-          const longCondition4 = rsiNotOverbought;
+          // LONG: Pullback para SMA50/200 + crossover ou bounce
+          const longEntry = (bullTrend || priceAboveSma200) && 
+                           inEntryZone &&
+                           (sma20CrossAboveSma50 || priceCrossAboveSma50 || bounceFromSma50 || bounceFromSma200);
           
-          // SHORT CONDITIONS  
-          const shortCondition1 = bearMarket && !priceRecovering; // Trend filter
-          const shortCondition2 = distFromSma50 > -5; // Preço próximo ou acima da SMA50
-          const shortCondition3 = sma20CrossBelowSma50 || (priceCrossBelowSma20 && sma20BelowSma50) || (price < currentSma20 && prevPrice > prevSma20);
-          const shortCondition4 = rsiNotOversold;
+          // SHORT: Bear trend + rally para SMA50 + rejection
+          const shortEntry = bearTrend && 
+                            !priceAboveSma200 &&
+                            inEntryZone &&
+                            (sma20CrossBelowSma50 || priceCrossBelowSma50);
           
-          if (longCondition1 && longCondition2 && longCondition3 && longCondition4) {
+          if (longEntry) {
             position = {
               signal: 'LONG',
               entryPrice: price,
@@ -3094,7 +3070,8 @@
               entryIndex: i
             };
             lastTradeIndex = i;
-          } else if (shortCondition1 && shortCondition2 && shortCondition3 && shortCondition4) {
+            console.log('[Signal] LONG entry:', date, 'price:', price, 'sma50:', sma50.toFixed(0));
+          } else if (shortEntry) {
             position = {
               signal: 'SHORT',
               entryPrice: price,
@@ -3102,6 +3079,7 @@
               entryIndex: i
             };
             lastTradeIndex = i;
+            console.log('[Signal] SHORT entry:', date, 'price:', price, 'sma50:', sma50.toFixed(0));
           }
         }
       }
@@ -3116,7 +3094,7 @@
         signals.push({
           date: position.entryDate,
           exitDate: '--',
-          system: 'SMA20/50',
+          system: 'SMA',
           signal: position.signal,
           entryPrice: position.entryPrice,
           exitPrice: currentPrice,
@@ -3128,7 +3106,7 @@
       }
 
       tradingState.signals = signals;
-      console.log('[Trading] Generated', signals.length, 'signals with SMA20/50 system');
+      console.log('[Trading] Generated', signals.length, 'signals with v6 system');
     }
 
     function renderTradingHistory() {
