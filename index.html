@@ -211,8 +211,13 @@
     .signal-desc { font-size: 9px; color: var(--text-muted); line-height: 1.4; }
     
     .trading-chart-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-    .trading-chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .trading-chart-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
     .trading-chart-title { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .trading-chart-controls { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+    .zoom-buttons { display: flex; gap: 4px; background: var(--bg-secondary); padding: 4px; border-radius: 6px; border: 1px solid var(--border); }
+    .zoom-btn { background: transparent; border: none; color: var(--text-muted); font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 6px 10px; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+    .zoom-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.05); }
+    .zoom-btn.active { background: var(--accent-blue); color: #fff; font-weight: 600; }
     .trading-chart-legend { display: flex; gap: 16px; align-items: center; }
     .legend-item { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text-muted); }
     .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
@@ -639,12 +644,21 @@
     <div class="trading-chart-section">
       <div class="trading-chart-header">
         <span class="trading-chart-title">BTC / USD — Trend & Reversal Signals</span>
-        <div class="trading-chart-legend">
-          <span class="legend-item"><span class="legend-dot" style="background:#00d97e"></span> LONG</span>
-          <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> SHORT</span>
-          <span class="legend-item"><span class="legend-dot" style="background:#eab308"></span> CASH</span>
-          <span class="legend-item"><span class="legend-line" style="background:#3b82f6"></span> SMA50</span>
-          <span class="legend-item"><span class="legend-line" style="background:#f97316"></span> SMA200</span>
+        <div class="trading-chart-controls">
+          <div class="zoom-buttons">
+            <button class="zoom-btn" data-range="3m">3m</button>
+            <button class="zoom-btn" data-range="6m">6m</button>
+            <button class="zoom-btn" data-range="1y">1y</button>
+            <button class="zoom-btn" data-range="2y">2y</button>
+            <button class="zoom-btn active" data-range="4y">4y</button>
+            <button class="zoom-btn" data-range="all">All</button>
+          </div>
+          <div class="trading-chart-legend">
+            <span class="legend-item"><span class="legend-dot" style="background:#00d97e"></span> LONG</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> SHORT</span>
+            <span class="legend-item"><span class="legend-line" style="background:#3b82f6"></span> SMA50</span>
+            <span class="legend-item"><span class="legend-line" style="background:#f97316"></span> SMA200</span>
+          </div>
         </div>
       </div>
       <div class="trading-chart-container">
@@ -2898,83 +2912,76 @@
       let position = null;
       
       /*
-       * MAJOR REVERSAL SYSTEM v7
-       * ========================
+       * REFINED REVERSAL SYSTEM v8
+       * ==========================
        * 
-       * Filosofia: Só entrar em EXTREMOS óbvios
-       * Meta: ~15-20 trades em 4 anos, >70% win rate
+       * Meta: ~15-20 trades em 4 anos, >60% win rate
        * 
        * LONG apenas quando:
-       *   1. Preço tocou ou está abaixo da SMA200 (capitulação)
-       *   2. OU preço caiu >25% do topo recente (correção forte)
-       *   3. E agora está subindo (confirmação de reversão)
+       *   1. Preço na ou abaixo da SMA200 (capitulação verdadeira)
+       *   2. OU SMA50 cruzou acima da SMA200 (golden cross confirmado)
+       *   3. E preço subindo por pelo menos 5 dias
+       *   4. Não entrar em bear market profundo (SMA50 caindo forte)
        * 
        * SHORT apenas quando:
-       *   1. Preço está >40% acima da SMA200 (euforia extrema)
-       *   2. E começando a cair (confirmação de topo)
+       *   1. Preço >50% acima da SMA200 (euforia extrema)
+       *   2. E preço caindo por pelo menos 3 dias
        * 
-       * EXIT:
-       *   - LONG: quando preço >30% acima da SMA200 ou SL -15%
-       *   - SHORT: quando preço toca SMA200 ou SL -15%
+       * FILTROS ADICIONAIS:
+       *   - Não entrar se já teve loss recente no mesmo nível
+       *   - Esperar confirmação de reversão (múltiplos dias)
        */
       
       let lastTradeIndex = 0;
-      const MIN_BARS_BETWEEN_TRADES = 30; // ~30 dias entre trades
+      const MIN_BARS_BETWEEN_TRADES = 35; // ~35 dias entre trades
       
-      // Track recent high for drawdown calculation
-      let recentHigh = 0;
-      let recentHighDate = '';
-      
-      // Calculate 20-day momentum
-      const momentum = [];
+      // Track SMA50 trend (is it rising or falling?)
+      const sma50Trend = [];
       for (let i = 0; i < data.length; i++) {
         if (i < 20) {
-          momentum[i] = 0;
+          sma50Trend[i] = 0;
           continue;
         }
-        const current = parseFloat(data[i].price) || 0;
-        const past = parseFloat(data[i - 20].price) || 0;
-        momentum[i] = past > 0 ? ((current / past) - 1) * 100 : 0;
+        const current = parseFloat(data[i].sma50) || 0;
+        const past = parseFloat(data[i - 20].sma50) || 0;
+        sma50Trend[i] = past > 0 ? ((current / past) - 1) * 100 : 0;
       }
       
       for (let i = 200; i < data.length; i++) {
         const d = data[i];
         const prev = data[i - 1];
+        const prev3 = data[i - 3] || prev;
         const prev5 = data[i - 5] || prev;
+        const prev10 = data[i - 10] || prev;
         
         const price = parseFloat(d.price) || 0;
         const prevPrice = parseFloat(prev.price) || 0;
+        const prev3Price = parseFloat(prev3.price) || 0;
+        const prev5Price = parseFloat(prev5.price) || 0;
+        const prev10Price = parseFloat(prev10.price) || 0;
         const sma50 = parseFloat(d.sma50) || 0;
         const sma200 = parseFloat(d.sma200) || 0;
+        const prevSma50 = parseFloat(prev.sma50) || 0;
+        const prevSma200 = parseFloat(prev.sma200) || 0;
         const date = d.day || d.d;
         
         if (price === 0 || sma200 === 0) continue;
         
-        // Track recent high (rolling 60-day high)
-        if (price > recentHigh || i < 260) {
-          recentHigh = price;
-          recentHighDate = date;
-        }
-        // Decay recent high if older than 60 days
-        const highAge = i - (data.findIndex(x => x.day === recentHighDate || x.d === recentHighDate));
-        if (highAge > 60) {
-          // Recalculate recent high from last 60 days
-          recentHigh = 0;
-          for (let j = Math.max(0, i - 60); j <= i; j++) {
-            const p = parseFloat(data[j].price) || 0;
-            if (p > recentHigh) {
-              recentHigh = p;
-              recentHighDate = data[j].day || data[j].d;
-            }
-          }
-        }
-        
         // === KEY METRICS ===
         const distFromSma200 = ((price / sma200) - 1) * 100;
-        const drawdownFromHigh = ((price / recentHigh) - 1) * 100;
-        const priceRising = price > prevPrice && prevPrice > parseFloat(prev5.price);
-        const priceFalling = price < prevPrice && prevPrice < parseFloat(prev5.price);
-        const mom = momentum[i];
+        const distFromSma50 = sma50 > 0 ? ((price / sma50) - 1) * 100 : 0;
+        
+        // Trend conditions
+        const sma50Rising = sma50Trend[i] > 1; // SMA50 rising at least 1% over 20 days
+        const sma50Falling = sma50Trend[i] < -2; // SMA50 falling more than 2%
+        const goldenCross = prevSma50 <= prevSma200 && sma50 > sma200;
+        const deathCross = prevSma50 >= prevSma200 && sma50 < sma200;
+        const bullTrend = sma50 > sma200;
+        
+        // Price momentum (confirmed moves)
+        const risingConfirmed = price > prevPrice && prevPrice > prev3Price && prev3Price > prev5Price;
+        const fallingConfirmed = price < prevPrice && prevPrice < prev3Price;
+        const strongRally = price > prev10Price * 1.10; // Up >10% in 10 days
         
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
         
@@ -2987,32 +2994,41 @@
             ? ((price / position.entryPrice - 1) * 100)
             : ((position.entryPrice / price - 1) * 100);
           
+          const daysInTrade = i - position.entryIndex;
+          
           if (position.signal === 'LONG') {
-            // Exit LONG when stretched or stop loss
-            if (distFromSma200 > 35) {
+            // Exit LONG
+            if (currentPnl >= 35) {
+              shouldExit = true;
+              exitReason = 'TP +35%';
+            } else if (currentPnl <= -15) {
+              shouldExit = true;
+              exitReason = 'SL';
+            } else if (distFromSma200 > 40 && fallingConfirmed) {
               shouldExit = true;
               exitReason = 'Stretched';
-            } else if (currentPnl >= 30) {
+            } else if (deathCross && daysInTrade > 30) {
               shouldExit = true;
-              exitReason = 'TP';
-            } else if (currentPnl <= -15) {
+              exitReason = 'Death Cross';
+            } else if (daysInTrade > 120 && currentPnl > 15) {
+              // Time-based exit after 4 months if profitable
               shouldExit = true;
-              exitReason = 'SL';
-            } else if (distFromSma200 > 20 && priceFalling && mom < -5) {
-              shouldExit = true;
-              exitReason = 'Reversal';
+              exitReason = 'Time exit';
             }
           } else {
-            // Exit SHORT when price near SMA200 or stop loss
-            if (distFromSma200 < 5) {
+            // Exit SHORT
+            if (currentPnl >= 30) {
               shouldExit = true;
-              exitReason = 'Target';
-            } else if (currentPnl >= 25) {
-              shouldExit = true;
-              exitReason = 'TP';
+              exitReason = 'TP +30%';
             } else if (currentPnl <= -15) {
               shouldExit = true;
               exitReason = 'SL';
+            } else if (distFromSma200 < 10 && risingConfirmed) {
+              shouldExit = true;
+              exitReason = 'Target';
+            } else if (goldenCross) {
+              shouldExit = true;
+              exitReason = 'Golden Cross';
             }
           }
           
@@ -3040,34 +3056,31 @@
           }
         }
         
-        // ===== ENTRY LOGIC - EXTREMES ONLY =====
+        // ===== ENTRY LOGIC - VERY SELECTIVE =====
         if (!position && canTrade) {
           
           /*
-           * LONG ENTRY - Capitulation/Major Correction
-           * 
-           * Condition A: Price at or below SMA200 and turning up
-           * Condition B: Price dropped >25% from recent high and turning up
-           * 
-           * Must have: positive momentum starting (price rising)
+           * LONG ENTRY CONDITIONS (need ALL of these):
+           * 1. Price at/below SMA200 OR golden cross just happened
+           * 2. NOT in falling SMA50 environment (avoid catching falling knife)
+           * 3. Price rising for at least 5 days (confirmed reversal)
+           * 4. Recent rally of >10% from low (strength confirmation)
            */
-          const atSma200 = distFromSma200 >= -10 && distFromSma200 <= 5;
-          const belowSma200 = distFromSma200 < 0;
-          const majorCorrection = drawdownFromHigh < -25;
-          const turningUp = priceRising && mom > -15;
+          const atCapitulation = distFromSma200 <= 5;
+          const notFallingKnife = !sma50Falling;
+          const confirmedReversal = risingConfirmed && strongRally;
           
-          const longEntry = (belowSma200 || atSma200 || majorCorrection) && turningUp;
+          const longEntry = (atCapitulation || goldenCross) && notFallingKnife && confirmedReversal;
           
           /*
-           * SHORT ENTRY - Euphoria/Blow-off Top
-           * 
-           * Condition: Price >40% above SMA200 and falling
-           * Must have: negative momentum (price falling)
+           * SHORT ENTRY CONDITIONS (need ALL of these):
+           * 1. Price >50% above SMA200 (extreme euphoria)
+           * 2. Price falling for at least 3 days
+           * 3. Bull trend (only short in bull - more room to fall)
            */
-          const euphoria = distFromSma200 > 40;
-          const turningDown = priceFalling && mom < 10;
+          const extremeEuphoria = distFromSma200 > 50;
           
-          const shortEntry = euphoria && turningDown;
+          const shortEntry = extremeEuphoria && fallingConfirmed && bullTrend;
           
           if (longEntry) {
             position = {
@@ -3077,7 +3090,7 @@
               entryIndex: i
             };
             lastTradeIndex = i;
-            console.log('[Signal] LONG @', date, '| Price:', price.toFixed(0), '| Dist SMA200:', distFromSma200.toFixed(1) + '%', '| Drawdown:', drawdownFromHigh.toFixed(1) + '%');
+            console.log('[v8] LONG @', date, '| $' + price.toFixed(0), '| Dist SMA200:', distFromSma200.toFixed(1) + '%', goldenCross ? '| GOLDEN CROSS' : '');
           } else if (shortEntry) {
             position = {
               signal: 'SHORT',
@@ -3086,7 +3099,7 @@
               entryIndex: i
             };
             lastTradeIndex = i;
-            console.log('[Signal] SHORT @', date, '| Price:', price.toFixed(0), '| Dist SMA200:', distFromSma200.toFixed(1) + '%');
+            console.log('[v8] SHORT @', date, '| $' + price.toFixed(0), '| Dist SMA200:', distFromSma200.toFixed(1) + '%');
           }
         }
       }
@@ -3113,7 +3126,7 @@
       }
 
       tradingState.signals = signals;
-      console.log('[Trading] v7 REVERSAL system:', signals.length, 'trades');
+      console.log('[Trading] v8 system:', signals.length, 'trades generated');
     }
 
     function renderTradingHistory() {
@@ -3149,7 +3162,11 @@
       }).join('');
     }
 
-    function renderTradingChart() {
+    let _tradingChartRange = '4y'; // Default range
+    
+    function renderTradingChart(range) {
+      if (range) _tradingChartRange = range;
+      
       const ctx = document.getElementById('tradingChart')?.getContext('2d');
       if (!ctx) return;
 
@@ -3159,20 +3176,34 @@
         return;
       }
 
-      // Generate signals first
-      generateSignalHistory(data);
+      // Generate signals first (only on initial load)
+      if (!range) generateSignalHistory(data);
 
-      // Filter last 4 years of data
-      const fourYearsAgo = new Date();
-      fourYearsAgo.setFullYear(fourYearsAgo.getFullYear() - 4);
-      const filtered = data.filter(d => new Date(d.day || d.d) >= fourYearsAgo);
+      // Calculate date range based on selection
+      const now = new Date();
+      let startDate = new Date();
+      switch (_tradingChartRange) {
+        case '3m': startDate.setMonth(now.getMonth() - 3); break;
+        case '6m': startDate.setMonth(now.getMonth() - 6); break;
+        case '1y': startDate.setFullYear(now.getFullYear() - 1); break;
+        case '2y': startDate.setFullYear(now.getFullYear() - 2); break;
+        case '4y': startDate.setFullYear(now.getFullYear() - 4); break;
+        case 'all': startDate = new Date('2015-01-01'); break;
+        default: startDate.setFullYear(now.getFullYear() - 4);
+      }
       
-      // Sample for performance (max 400 points for smoother chart)
-      const sampleRate = filtered.length > 400 ? Math.ceil(filtered.length / 400) : 1;
+      const filtered = data.filter(d => new Date(d.day || d.d) >= startDate);
+      
+      // Sample for performance (adjust based on range)
+      const maxPoints = _tradingChartRange === 'all' ? 600 : _tradingChartRange === '3m' ? 100 : 400;
+      const sampleRate = filtered.length > maxPoints ? Math.ceil(filtered.length / maxPoints) : 1;
       const sampled = filtered.filter((_, i) => i % sampleRate === 0);
       
       const labels = sampled.map(d => {
         const date = new Date(d.day || d.d);
+        if (_tradingChartRange === '3m' || _tradingChartRange === '6m') {
+          return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+        }
         return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
       });
       const prices = sampled.map(d => parseFloat(d.price) || parseFloat(d.sma200) * 1.1);
@@ -3424,6 +3455,15 @@
       console.log('[Trading] Delayed init starting...');
       try { fetchTradingData(); } catch(e) { console.error('[Trading] Delayed init error:', e); }
     }, 3000);
+    
+    // Zoom button handlers
+    document.querySelectorAll('.zoom-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.zoom-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        renderTradingChart(this.dataset.range);
+      });
+    });
   </script>
 </body>
 </html>
