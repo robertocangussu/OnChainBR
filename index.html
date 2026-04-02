@@ -2912,39 +2912,31 @@
       let position = null;
       
       /*
-       * FILTERED SMA CROSSOVER SYSTEM v10
-       * ==================================
+       * TREND SYSTEM BASED STRATEGY v11
+       * ================================
        * 
-       * Melhorias para reduzir falsos sinais (whipsaws):
+       * Baseado na sua ideia: usar o Trading Systems como filtro de entrada!
        * 
-       * FILTRO 1: Confirmação de 3 dias
-       *   - Só entra se SMA20 > SMA50 por 3 dias consecutivos
+       * ENTRY (LONG) quando Trend Score >= 0:
+       *   Simulamos o score do Trend System:
+       *   +1 se SMA50 > SMA200 (bullish structure)
+       *   +1 se Price > SMA200
+       *   +1 se MACD > 0
+       *   +1 se RSI > 40 (não oversold demais)
+       *   +1 se Price > SMA50
+       *   
+       *   Score >= 3 = LONG signal (maioria bullish)
        * 
-       * FILTRO 2: Tendência Macro
-       *   - Só entra se SMA50 está subindo (não em queda livre)
-       *   - OU preço está acima da SMA200
+       * EXIT quando:
+       *   - SMA50 cruza abaixo SMA20 (tendência virou)
+       *   - OU Stop Loss -15%
        * 
-       * FILTRO 3: RSI não overbought
-       *   - Não entra se RSI > 65 (evita topos)
-       * 
-       * FILTRO 4: Exit rápido em fraqueza
-       *   - Sai se preço fecha abaixo da SMA20 por 3 dias
-       * 
-       * ENTRY (LONG):
-       *   - SMA20 > SMA50 por 3+ dias (confirmado)
-       *   - Preço acima da SMA20
-       *   - SMA50 subindo OU preço > SMA200
-       *   - RSI < 65
-       * 
-       * EXIT:
-       *   - SMA20 cruza abaixo SMA50
-       *   - OU preço abaixo SMA20 por 3 dias
-       *   - OU Stop Loss -12%
-       *   - OU Take Profit +40%
+       * Isso deve reduzir MUITO os falsos sinais porque
+       * só entra quando a estrutura macro é bullish!
        */
       
       let lastTradeIndex = 0;
-      const MIN_BARS_BETWEEN_TRADES = 15;
+      const MIN_BARS_BETWEEN_TRADES = 10;
       
       // Calculate SMA20
       const sma20 = [];
@@ -2960,22 +2952,8 @@
         sma20[i] = sum / 20;
       }
       
-      // Track SMA50 trend (rising or falling)
-      const sma50Trend = [];
-      for (let i = 0; i < data.length; i++) {
-        if (i < 10) {
-          sma50Trend[i] = 0;
-          continue;
-        }
-        const current = parseFloat(data[i].sma50) || 0;
-        const past = parseFloat(data[i - 10].sma50) || 0;
-        sma50Trend[i] = past > 0 ? ((current / past) - 1) * 100 : 0;
-      }
-      
-      // Track consecutive days SMA20 > SMA50
-      let daysAbove = 0;
-      // Track consecutive days price below SMA20
-      let daysBelowSma20 = 0;
+      // Track when score transitions from negative to positive
+      let prevScore = -99;
       
       for (let i = 60; i < data.length; i++) {
         const d = data[i];
@@ -2984,40 +2962,49 @@
         const price = parseFloat(d.price) || 0;
         const sma50 = parseFloat(d.sma50) || 0;
         const sma200 = parseFloat(d.sma200) || 0;
+        const macd = parseFloat(d.macd) || 0;
         const rsi = parseFloat(d.rsi) || 50;
         const date = d.day || d.d;
         
         const currentSma20 = sma20[i];
         const prevSma20 = sma20[i - 1];
+        const prevSma50 = parseFloat(prev.sma50) || 0;
         
-        if (price === 0 || sma50 === 0 || !currentSma20) continue;
+        if (price === 0 || sma50 === 0 || sma200 === 0 || !currentSma20) continue;
         
-        // Update counters
-        if (currentSma20 > sma50) {
-          daysAbove++;
-        } else {
-          daysAbove = 0;
-        }
+        // ========================================
+        // CALCULATE TREND SYSTEM SCORE (simulated)
+        // ========================================
+        let trendScore = 0;
         
-        if (price < currentSma20) {
-          daysBelowSma20++;
-        } else {
-          daysBelowSma20 = 0;
-        }
+        // +1/-1: SMA50 vs SMA200
+        if (sma50 > sma200) trendScore += 1;
+        else trendScore -= 1;
         
-        // === CONDITIONS ===
-        const sma20AboveSma50Confirmed = daysAbove >= 3; // FILTRO 1
-        const sma20CrossBelowSma50 = prevSma20 >= parseFloat(prev.sma50) && currentSma20 < sma50;
+        // +1/-1: Price vs SMA200
+        if (price > sma200) trendScore += 1;
+        else trendScore -= 1;
         
-        const priceAboveSma20 = price > currentSma20;
-        const priceAboveSma200 = sma200 > 0 && price > sma200;
-        const sma50Rising = sma50Trend[i] > 0; // FILTRO 2
-        const macroOk = sma50Rising || priceAboveSma200;
+        // +1/-1: MACD
+        if (macd > 0) trendScore += 1;
+        else trendScore -= 1;
         
-        const rsiNotOverbought = rsi < 65; // FILTRO 3
+        // +1/-1: RSI (bullish if > 45)
+        if (rsi > 45) trendScore += 1;
+        else trendScore -= 1;
         
-        const distFromSma50 = ((price / sma50) - 1) * 100;
-        const notTooStretched = distFromSma50 < 15;
+        // +1/-1: Price vs SMA50
+        if (price > sma50) trendScore += 1;
+        else trendScore -= 1;
+        
+        // Score range: -5 to +5
+        // LONG when >= 3 (at least 4 out of 5 bullish)
+        
+        const isBullish = trendScore >= 3;
+        const scoreJustTurnedBullish = trendScore >= 3 && prevScore < 3;
+        
+        // EXIT condition: SMA50 crosses below SMA20
+        const sma50CrossBelowSma20 = prevSma50 >= prevSma20 && sma50 < currentSma20;
         
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
         
@@ -3028,30 +3015,27 @@
           
           const currentPnl = ((price / position.entryPrice) - 1) * 100;
           
-          // Exit conditions
-          if (sma20CrossBelowSma50) {
+          // Exit: SMA50 crosses below SMA20 (your idea!)
+          if (sma50CrossBelowSma20) {
             shouldExit = true;
-            exitReason = 'SMA Cross';
-          } else if (daysBelowSma20 >= 3 && currentPnl < 5) {
-            // FILTRO 4: Exit rápido se preço fraco
+            exitReason = 'SMA50<SMA20';
+          }
+          // Exit: Trend Score goes very negative
+          else if (trendScore <= -3) {
             shouldExit = true;
-            exitReason = 'Weakness';
-          } else if (currentPnl <= -12) {
+            exitReason = 'Score -3';
+          }
+          // Stop Loss
+          else if (currentPnl <= -15) {
             shouldExit = true;
             exitReason = 'Stop Loss';
-          } else if (currentPnl >= 40) {
-            shouldExit = true;
-            exitReason = 'Take Profit';
-          } else if (distFromSma50 > 30 && rsi > 70) {
-            shouldExit = true;
-            exitReason = 'Overbought';
           }
           
           if (shouldExit) {
             signals.push({
               date: position.entryDate,
               exitDate: date,
-              system: 'SMA',
+              system: 'TREND',
               signal: 'LONG',
               entryPrice: position.entryPrice,
               exitPrice: price,
@@ -3064,7 +3048,6 @@
             
             position = null;
             lastTradeIndex = i;
-            daysAbove = 0; // Reset counter
           }
         }
         
@@ -3072,30 +3055,24 @@
         if (!position && canTrade) {
           
           /*
-           * LONG ENTRY com todos os filtros:
-           * 1. SMA20 > SMA50 por 3+ dias (confirmado, não whipsaw)
-           * 2. Preço acima da SMA20 (momentum)
-           * 3. Macro OK (SMA50 subindo OU preço > SMA200)
-           * 4. RSI < 65 (não overbought)
-           * 5. Não muito esticado
+           * LONG ENTRY when:
+           * - Trend Score just turned bullish (>= 3)
+           * - This means 4+ indicators are bullish
            */
-          const entrySignal = sma20AboveSma50Confirmed && 
-                             priceAboveSma20 && 
-                             macroOk && 
-                             rsiNotOverbought && 
-                             notTooStretched;
-          
-          if (entrySignal) {
+          if (scoreJustTurnedBullish) {
             position = {
               signal: 'LONG',
               entryPrice: price,
               entryDate: date,
-              entryIndex: i
+              entryIndex: i,
+              entryScore: trendScore
             };
             lastTradeIndex = i;
-            console.log('[v10] LONG @', date, '| $' + price.toFixed(0), '| RSI:', rsi.toFixed(0), '| Days confirmed:', daysAbove);
+            console.log('[v11] LONG @', date, '| $' + price.toFixed(0), '| Score:', trendScore);
           }
         }
+        
+        prevScore = trendScore;
       }
 
       // Add current open position
@@ -3106,7 +3083,7 @@
         signals.push({
           date: position.entryDate,
           exitDate: '--',
-          system: 'SMA',
+          system: 'TREND',
           signal: 'LONG',
           entryPrice: position.entryPrice,
           exitPrice: currentPrice,
@@ -3123,7 +3100,8 @@
       const closed = signals.filter(s => s.status === 'CLOSED');
       const wins = closed.filter(s => parseFloat(s.pnl) > 0).length;
       const winRate = closed.length > 0 ? (wins / closed.length * 100).toFixed(0) : 0;
-      console.log('[Trading] v10:', signals.length, 'trades |', winRate + '% win rate');
+      const totalPnl = closed.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
+      console.log('[Trading] v11 TREND SYSTEM:', signals.length, 'trades |', winRate + '% win rate |', totalPnl.toFixed(1) + '% total');
     }
 
     function renderTradingHistory() {
