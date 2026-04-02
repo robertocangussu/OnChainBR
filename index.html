@@ -2898,91 +2898,83 @@
       let position = null;
       
       /*
-       * PROFESSOR-STYLE TRADING SYSTEM v6
-       * ==================================
+       * MAJOR REVERSAL SYSTEM v7
+       * ========================
        * 
-       * Baseado na análise visual dos sinais do professor:
-       * - Entries em pullbacks para SMA50 ou SMA200
-       * - Usa SMA20 crossing SMA50 como trigger
-       * - Exits quando esticado ou SMA20 vira
+       * Filosofia: Só entrar em EXTREMOS óbvios
+       * Meta: ~15-20 trades em 4 anos, >70% win rate
        * 
-       * REGRAS SIMPLIFICADAS:
+       * LONG apenas quando:
+       *   1. Preço tocou ou está abaixo da SMA200 (capitulação)
+       *   2. OU preço caiu >25% do topo recente (correção forte)
+       *   3. E agora está subindo (confirmação de reversão)
        * 
-       * LONG quando:
-       *   - Preço próximo ou abaixo da SMA50 (pullback)
-       *   - SMA20 cruza SMA50 pra cima OU preço cruza SMA50 pra cima
-       *   - SMA50 > SMA200 OU preço > SMA200 (não estamos em bear profundo)
-       * 
-       * SHORT quando:
-       *   - SMA50 < SMA200 (bear market confirmado)
-       *   - Preço próximo ou acima da SMA50 (rally)
-       *   - SMA20 cruza SMA50 pra baixo
+       * SHORT apenas quando:
+       *   1. Preço está >40% acima da SMA200 (euforia extrema)
+       *   2. E começando a cair (confirmação de topo)
        * 
        * EXIT:
-       *   - TP: +25%
-       *   - SL: -12%
-       *   - Esticado: >20% da SMA50
-       *   - SMA20 cruza contra
+       *   - LONG: quando preço >30% acima da SMA200 ou SL -15%
+       *   - SHORT: quando preço toca SMA200 ou SL -15%
        */
       
       let lastTradeIndex = 0;
-      const MIN_BARS_BETWEEN_TRADES = 25; // ~25 dias entre trades
-      const TAKE_PROFIT_PCT = 25;
-      const STOP_LOSS_PCT = 12;
-      const ENTRY_ZONE_PCT = 10; // Entry quando preço dentro de 10% da SMA50
-      const STRETCHED_PCT = 20; // Exit se >20% da SMA50
+      const MIN_BARS_BETWEEN_TRADES = 30; // ~30 dias entre trades
       
-      // Calcular SMA20
-      const sma20 = [];
+      // Track recent high for drawdown calculation
+      let recentHigh = 0;
+      let recentHighDate = '';
+      
+      // Calculate 20-day momentum
+      const momentum = [];
       for (let i = 0; i < data.length; i++) {
-        if (i < 19) {
-          sma20[i] = null;
+        if (i < 20) {
+          momentum[i] = 0;
           continue;
         }
-        let sum = 0;
-        for (let j = i - 19; j <= i; j++) {
-          sum += parseFloat(data[j].price) || 0;
-        }
-        sma20[i] = sum / 20;
+        const current = parseFloat(data[i].price) || 0;
+        const past = parseFloat(data[i - 20].price) || 0;
+        momentum[i] = past > 0 ? ((current / past) - 1) * 100 : 0;
       }
       
       for (let i = 200; i < data.length; i++) {
         const d = data[i];
         const prev = data[i - 1];
+        const prev5 = data[i - 5] || prev;
         
         const price = parseFloat(d.price) || 0;
         const prevPrice = parseFloat(prev.price) || 0;
         const sma50 = parseFloat(d.sma50) || 0;
         const sma200 = parseFloat(d.sma200) || 0;
-        const prevSma50 = parseFloat(prev.sma50) || 0;
-        const prevSma200 = parseFloat(prev.sma200) || 0;
         const date = d.day || d.d;
         
-        const currentSma20 = sma20[i];
-        const prevSma20 = sma20[i - 1];
+        if (price === 0 || sma200 === 0) continue;
         
-        if (price === 0 || sma50 === 0 || sma200 === 0 || !currentSma20) continue;
+        // Track recent high (rolling 60-day high)
+        if (price > recentHigh || i < 260) {
+          recentHigh = price;
+          recentHighDate = date;
+        }
+        // Decay recent high if older than 60 days
+        const highAge = i - (data.findIndex(x => x.day === recentHighDate || x.d === recentHighDate));
+        if (highAge > 60) {
+          // Recalculate recent high from last 60 days
+          recentHigh = 0;
+          for (let j = Math.max(0, i - 60); j <= i; j++) {
+            const p = parseFloat(data[j].price) || 0;
+            if (p > recentHigh) {
+              recentHigh = p;
+              recentHighDate = data[j].day || data[j].d;
+            }
+          }
+        }
         
-        // === TREND CONDITIONS ===
-        const bullTrend = sma50 > sma200;
-        const bearTrend = sma50 < sma200;
-        const priceAboveSma200 = price > sma200;
-        
-        // === DISTANCE FROM SMA50 ===
-        const distFromSma50 = ((price / sma50) - 1) * 100;
-        const inEntryZone = Math.abs(distFromSma50) < ENTRY_ZONE_PCT;
-        const stretched = Math.abs(distFromSma50) > STRETCHED_PCT;
-        
-        // === CROSSOVER CONDITIONS ===
-        const sma20CrossAboveSma50 = prevSma20 <= prevSma50 && currentSma20 > sma50;
-        const sma20CrossBelowSma50 = prevSma20 >= prevSma50 && currentSma20 < sma50;
-        const priceCrossAboveSma50 = prevPrice <= prevSma50 && price > sma50;
-        const priceCrossBelowSma50 = prevPrice >= prevSma50 && price < sma50;
-        const priceCrossAboveSma20 = prevPrice <= prevSma20 && price > currentSma20;
-        
-        // === BOUNCE CONDITIONS ===
-        const bounceFromSma50 = distFromSma50 > -5 && distFromSma50 < 5 && price > currentSma20;
-        const bounceFromSma200 = price > sma200 * 0.97 && price < sma200 * 1.05 && price > currentSma20;
+        // === KEY METRICS ===
+        const distFromSma200 = ((price / sma200) - 1) * 100;
+        const drawdownFromHigh = ((price / recentHigh) - 1) * 100;
+        const priceRising = price > prevPrice && prevPrice > parseFloat(prev5.price);
+        const priceFalling = price < prevPrice && prevPrice < parseFloat(prev5.price);
+        const mom = momentum[i];
         
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
         
@@ -2995,33 +2987,33 @@
             ? ((price / position.entryPrice - 1) * 100)
             : ((position.entryPrice / price - 1) * 100);
           
-          // Take profit
-          if (currentPnl >= TAKE_PROFIT_PCT) {
-            shouldExit = true;
-            exitReason = 'TP';
-          }
-          // Stop loss
-          else if (currentPnl <= -STOP_LOSS_PCT) {
-            shouldExit = true;
-            exitReason = 'SL';
-          }
-          // Stretched from SMA50
-          else if (position.signal === 'LONG' && distFromSma50 > STRETCHED_PCT) {
-            shouldExit = true;
-            exitReason = 'Stretched';
-          }
-          else if (position.signal === 'SHORT' && distFromSma50 < -STRETCHED_PCT) {
-            shouldExit = true;
-            exitReason = 'Stretched';
-          }
-          // SMA20 cross against
-          else if (position.signal === 'LONG' && sma20CrossBelowSma50) {
-            shouldExit = true;
-            exitReason = 'SMA cross';
-          }
-          else if (position.signal === 'SHORT' && sma20CrossAboveSma50) {
-            shouldExit = true;
-            exitReason = 'SMA cross';
+          if (position.signal === 'LONG') {
+            // Exit LONG when stretched or stop loss
+            if (distFromSma200 > 35) {
+              shouldExit = true;
+              exitReason = 'Stretched';
+            } else if (currentPnl >= 30) {
+              shouldExit = true;
+              exitReason = 'TP';
+            } else if (currentPnl <= -15) {
+              shouldExit = true;
+              exitReason = 'SL';
+            } else if (distFromSma200 > 20 && priceFalling && mom < -5) {
+              shouldExit = true;
+              exitReason = 'Reversal';
+            }
+          } else {
+            // Exit SHORT when price near SMA200 or stop loss
+            if (distFromSma200 < 5) {
+              shouldExit = true;
+              exitReason = 'Target';
+            } else if (currentPnl >= 25) {
+              shouldExit = true;
+              exitReason = 'TP';
+            } else if (currentPnl <= -15) {
+              shouldExit = true;
+              exitReason = 'SL';
+            }
           }
           
           if (shouldExit) {
@@ -3032,7 +3024,7 @@
             signals.push({
               date: position.entryDate,
               exitDate: date,
-              system: 'SMA',
+              system: 'REV',
               signal: position.signal,
               entryPrice: position.entryPrice,
               exitPrice: price,
@@ -3048,19 +3040,34 @@
           }
         }
         
-        // ===== ENTRY LOGIC =====
+        // ===== ENTRY LOGIC - EXTREMES ONLY =====
         if (!position && canTrade) {
           
-          // LONG: Pullback para SMA50/200 + crossover ou bounce
-          const longEntry = (bullTrend || priceAboveSma200) && 
-                           inEntryZone &&
-                           (sma20CrossAboveSma50 || priceCrossAboveSma50 || bounceFromSma50 || bounceFromSma200);
+          /*
+           * LONG ENTRY - Capitulation/Major Correction
+           * 
+           * Condition A: Price at or below SMA200 and turning up
+           * Condition B: Price dropped >25% from recent high and turning up
+           * 
+           * Must have: positive momentum starting (price rising)
+           */
+          const atSma200 = distFromSma200 >= -10 && distFromSma200 <= 5;
+          const belowSma200 = distFromSma200 < 0;
+          const majorCorrection = drawdownFromHigh < -25;
+          const turningUp = priceRising && mom > -15;
           
-          // SHORT: Bear trend + rally para SMA50 + rejection
-          const shortEntry = bearTrend && 
-                            !priceAboveSma200 &&
-                            inEntryZone &&
-                            (sma20CrossBelowSma50 || priceCrossBelowSma50);
+          const longEntry = (belowSma200 || atSma200 || majorCorrection) && turningUp;
+          
+          /*
+           * SHORT ENTRY - Euphoria/Blow-off Top
+           * 
+           * Condition: Price >40% above SMA200 and falling
+           * Must have: negative momentum (price falling)
+           */
+          const euphoria = distFromSma200 > 40;
+          const turningDown = priceFalling && mom < 10;
+          
+          const shortEntry = euphoria && turningDown;
           
           if (longEntry) {
             position = {
@@ -3070,7 +3077,7 @@
               entryIndex: i
             };
             lastTradeIndex = i;
-            console.log('[Signal] LONG entry:', date, 'price:', price, 'sma50:', sma50.toFixed(0));
+            console.log('[Signal] LONG @', date, '| Price:', price.toFixed(0), '| Dist SMA200:', distFromSma200.toFixed(1) + '%', '| Drawdown:', drawdownFromHigh.toFixed(1) + '%');
           } else if (shortEntry) {
             position = {
               signal: 'SHORT',
@@ -3079,7 +3086,7 @@
               entryIndex: i
             };
             lastTradeIndex = i;
-            console.log('[Signal] SHORT entry:', date, 'price:', price, 'sma50:', sma50.toFixed(0));
+            console.log('[Signal] SHORT @', date, '| Price:', price.toFixed(0), '| Dist SMA200:', distFromSma200.toFixed(1) + '%');
           }
         }
       }
@@ -3094,7 +3101,7 @@
         signals.push({
           date: position.entryDate,
           exitDate: '--',
-          system: 'SMA',
+          system: 'REV',
           signal: position.signal,
           entryPrice: position.entryPrice,
           exitPrice: currentPrice,
@@ -3106,7 +3113,7 @@
       }
 
       tradingState.signals = signals;
-      console.log('[Trading] Generated', signals.length, 'signals with v6 system');
+      console.log('[Trading] v7 REVERSAL system:', signals.length, 'trades');
     }
 
     function renderTradingHistory() {
