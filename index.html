@@ -215,7 +215,7 @@
     .legend-item { display: flex; align-items: center; gap: 5px; font-size: 9px; color: var(--text-muted); }
     .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
     .legend-line { width: 16px; height: 2px; border-radius: 1px; }
-    .trading-chart-container { height: 420px; position: relative; }
+    .trading-chart-container { height: 500px; position: relative; }
     
     .trading-history-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
     .trading-history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
@@ -2871,13 +2871,13 @@
       let lastSignal = null;
       let entryPrice = null;
       let entryDate = null;
+      let entryIndex = null;
 
       // Scan data for signal changes - only LONG and SHORT
-      for (let i = 30; i < data.length; i += 7) {
+      for (let i = 30; i < data.length; i++) {
         const d = data[i];
         const sma50 = parseFloat(d.sma50);
         const sma200 = parseFloat(d.sma200);
-        const macd = parseFloat(d.macd);
         const price = parseFloat(d.price) || sma200 * 1.1;
         const date = d.day || d.d;
 
@@ -2890,8 +2890,8 @@
           // Close previous position
           if (lastSignal !== null && entryPrice) {
             const pnl = lastSignal === 'LONG' 
-              ? ((price / entryPrice - 1) * 100).toFixed(1) 
-              : ((entryPrice / price - 1) * 100).toFixed(1);
+              ? ((price / entryPrice - 1) * 100)
+              : ((entryPrice / price - 1) * 100);
             signals.push({
               date: entryDate,
               exitDate: date,
@@ -2899,7 +2899,9 @@
               signal: lastSignal,
               entryPrice: entryPrice,
               exitPrice: price,
-              pnl: pnl,
+              entryIndex: entryIndex,
+              exitIndex: i,
+              pnl: pnl.toFixed(1),
               status: 'CLOSED'
             });
           }
@@ -2907,6 +2909,7 @@
           // Open new position
           entryPrice = price;
           entryDate = date;
+          entryIndex = i;
         }
 
         lastSignal = currentSignal;
@@ -2917,8 +2920,8 @@
         const latest = data[data.length - 1];
         const currentPrice = tradingState.currentPrice || parseFloat(latest.price);
         const unrealizedPnl = lastSignal === 'LONG'
-          ? ((currentPrice / entryPrice - 1) * 100).toFixed(1)
-          : ((entryPrice / currentPrice - 1) * 100).toFixed(1);
+          ? ((currentPrice / entryPrice - 1) * 100)
+          : ((entryPrice / currentPrice - 1) * 100);
         signals.push({
           date: entryDate,
           exitDate: '--',
@@ -2926,28 +2929,33 @@
           signal: lastSignal,
           entryPrice: entryPrice,
           exitPrice: currentPrice,
-          pnl: unrealizedPnl,
+          entryIndex: entryIndex,
+          exitIndex: data.length - 1,
+          pnl: unrealizedPnl.toFixed(1),
           status: 'OPEN'
         });
       }
 
-      tradingState.signals = signals.reverse().slice(0, 15);
+      tradingState.signals = signals;
     }
 
     function renderTradingHistory() {
       const tbody = document.getElementById('tradingHistoryBody');
-      if (!tradingState.signals.length) {
+      const displaySignals = tradingState.signals.slice().reverse().slice(0, 15);
+      
+      if (!displaySignals.length) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No signals detected yet</td></tr>';
         return;
       }
 
-      const wins = tradingState.signals.filter(s => parseFloat(s.pnl) > 0).length;
-      const total = tradingState.signals.length;
+      const closedSignals = tradingState.signals.filter(s => s.status === 'CLOSED');
+      const wins = closedSignals.filter(s => parseFloat(s.pnl) > 0).length;
+      const total = closedSignals.length;
       const winRate = total > 0 ? ((wins / total) * 100).toFixed(0) : '--';
-      const totalPnl = tradingState.signals.filter(s => s.status === 'CLOSED').reduce((sum, s) => sum + parseFloat(s.pnl || 0), 0);
+      const totalPnl = closedSignals.reduce((sum, s) => sum + parseFloat(s.pnl || 0), 0);
       document.getElementById('tradingStats').textContent = `${total} trades · ${winRate}% win rate · ${totalPnl > 0 ? '+' : ''}${totalPnl.toFixed(1)}% total`;
 
-      tbody.innerHTML = tradingState.signals.map(s => {
+      tbody.innerHTML = displaySignals.map(s => {
         const signalColor = s.signal === 'LONG' ? '#00d97e' : '#ef4444';
         const signalIcon = s.signal === 'LONG' ? '▲' : '▼';
         const pnlVal = parseFloat(s.pnl);
@@ -2957,7 +2965,7 @@
           <td style="font-family:'JetBrains Mono',monospace;font-size:9px;">${s.date}</td>
           <td style="color:${signalColor};font-weight:700;font-size:11px;">${signalIcon} ${s.signal}</td>
           <td style="font-family:'JetBrains Mono',monospace;font-size:10px;">$${s.entryPrice?.toLocaleString('en-US',{maximumFractionDigits:0}) || '--'}</td>
-          <td style="font-family:'JetBrains Mono',monospace;font-size:10px;">${s.status === 'OPEN' ? '$'+s.exitPrice?.toLocaleString('en-US',{maximumFractionDigits:0}) : '$'+s.exitPrice?.toLocaleString('en-US',{maximumFractionDigits:0})}</td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:10px;">$${s.exitPrice?.toLocaleString('en-US',{maximumFractionDigits:0}) || '--'}</td>
           <td style="color:${pnlColor};font-family:'JetBrains Mono',monospace;font-weight:600;">${pnlVal > 0 ? '+' : ''}${s.pnl}%</td>
           <td style="color:${statusColor};font-size:9px;">${s.status}</td>
         </tr>`;
@@ -2974,11 +2982,17 @@
         return;
       }
 
-      // Sample last 3 years of data for cleaner chart
-      const threeYearsAgo = new Date();
-      threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
-      const filtered = data.filter(d => new Date(d.day || d.d) >= threeYearsAgo);
-      const sampled = filtered.length > 150 ? filtered.filter((_, i) => i % Math.ceil(filtered.length / 150) === 0) : filtered;
+      // Generate signals first
+      generateSignalHistory(data);
+
+      // Filter last 4 years of data
+      const fourYearsAgo = new Date();
+      fourYearsAgo.setFullYear(fourYearsAgo.getFullYear() - 4);
+      const filtered = data.filter(d => new Date(d.day || d.d) >= fourYearsAgo);
+      
+      // Sample for performance (max 300 points)
+      const sampleRate = filtered.length > 300 ? Math.ceil(filtered.length / 300) : 1;
+      const sampled = filtered.filter((_, i) => i % sampleRate === 0);
       
       const labels = sampled.map(d => {
         const date = new Date(d.day || d.d);
@@ -2988,44 +3002,91 @@
       const sma50s = sampled.map(d => parseFloat(d.sma50));
       const sma200s = sampled.map(d => parseFloat(d.sma200));
 
-      // Generate LONG/SHORT signal points and background zones
-      const longPoints = [];
-      const shortPoints = [];
-      const backgroundColors = [];
-      let lastSignal = null;
+      // Build annotations for signals - TradingView style
+      const annotations = {};
+      
+      // Map original data indices to sampled indices
+      const getChartIndex = (originalIdx) => {
+        const startIdx = data.length - filtered.length;
+        const filteredIdx = originalIdx - startIdx;
+        return Math.floor(filteredIdx / sampleRate);
+      };
 
-      sampled.forEach((d, i) => {
-        const sma50 = parseFloat(d.sma50);
-        const sma200 = parseFloat(d.sma200);
-        const price = prices[i];
-
-        if (isNaN(sma50) || isNaN(sma200)) {
-          backgroundColors.push('transparent');
-          longPoints.push(null);
-          shortPoints.push(null);
-          return;
-        }
-
-        const currentSignal = sma50 > sma200 ? 'LONG' : 'SHORT';
+      // Create signal annotations with labels and horizontal lines
+      tradingState.signals.forEach((sig, idx) => {
+        const chartEntryIdx = getChartIndex(sig.entryIndex);
+        const chartExitIdx = getChartIndex(sig.exitIndex);
         
-        // Background color based on trend
-        backgroundColors.push(currentSignal === 'LONG' ? 'rgba(0,217,126,0.08)' : 'rgba(239,68,68,0.08)');
+        if (chartEntryIdx < 0 || chartEntryIdx >= sampled.length) return;
+        
+        const entryPrice = sig.entryPrice;
+        const exitPrice = sig.exitPrice;
+        const isLong = sig.signal === 'LONG';
+        const color = isLong ? '#00d97e' : '#ef4444';
+        const pnlVal = parseFloat(sig.pnl);
+        const pnlText = (pnlVal > 0 ? '+' : '') + pnlVal.toFixed(1) + '%';
 
-        // Signal change markers - only show on actual changes
-        if (currentSignal !== lastSignal && lastSignal !== null) {
-          if (currentSignal === 'LONG') {
-            longPoints.push(price * 0.97); // Slightly below price for buy arrow
-            shortPoints.push(null);
-          } else {
-            shortPoints.push(price * 1.03); // Slightly above price for sell arrow
-            longPoints.push(null);
-          }
-        } else {
-          longPoints.push(null);
-          shortPoints.push(null);
+        // Entry arrow and label
+        annotations[`entry${idx}`] = {
+          type: 'label',
+          xValue: chartEntryIdx,
+          yValue: entryPrice,
+          yAdjust: isLong ? 30 : -30,
+          backgroundColor: 'transparent',
+          content: [isLong ? '▲' : '▼', isLong ? 'Long' : 'Short'],
+          color: color,
+          font: { size: 10, weight: 'bold', family: 'JetBrains Mono' },
+          textAlign: 'center'
+        };
+
+        // Entry point
+        annotations[`entryPoint${idx}`] = {
+          type: 'point',
+          xValue: chartEntryIdx,
+          yValue: entryPrice,
+          backgroundColor: color,
+          borderColor: color,
+          radius: 4
+        };
+
+        // Horizontal line from entry to exit
+        if (chartExitIdx > chartEntryIdx && chartExitIdx < sampled.length) {
+          annotations[`line${idx}`] = {
+            type: 'line',
+            xMin: chartEntryIdx,
+            xMax: chartExitIdx,
+            yMin: entryPrice,
+            yMax: entryPrice,
+            borderColor: color,
+            borderWidth: 1,
+            borderDash: [4, 4]
+          };
+
+          // P&L label at exit
+          annotations[`pnl${idx}`] = {
+            type: 'label',
+            xValue: chartExitIdx,
+            yValue: entryPrice,
+            yAdjust: isLong ? -15 : 15,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            content: pnlText,
+            color: pnlVal > 0 ? '#00d97e' : '#ef4444',
+            font: { size: 9, weight: 'bold', family: 'JetBrains Mono' },
+            padding: { top: 2, bottom: 2, left: 4, right: 4 },
+            borderRadius: 3
+          };
+
+          // Exit point
+          annotations[`exitPoint${idx}`] = {
+            type: 'point',
+            xValue: chartExitIdx,
+            yValue: exitPrice,
+            backgroundColor: pnlVal > 0 ? '#00d97e' : '#ef4444',
+            borderColor: '#fff',
+            borderWidth: 1,
+            radius: 3
+          };
         }
-
-        lastSignal = currentSignal;
       });
 
       if (_tradingChart) _tradingChart.destroy();
@@ -3038,60 +3099,31 @@
             {
               label: 'BTC',
               data: prices,
-              borderColor: '#ffffff',
+              borderColor: 'rgba(255,255,255,0.9)',
               borderWidth: 2,
               pointRadius: 0,
-              fill: true,
-              backgroundColor: (context) => {
-                const idx = context.dataIndex;
-                return backgroundColors[idx] || 'transparent';
-              },
+              fill: false,
               tension: 0.1,
               yAxisID: 'y'
             },
             {
-              label: 'SMA 50',
+              label: 'SMA50',
               data: sma50s,
               borderColor: '#3b82f6',
               borderWidth: 1.5,
-              borderDash: [5, 3],
               pointRadius: 0,
               fill: false,
               tension: 0.1,
               yAxisID: 'y'
             },
             {
-              label: 'SMA 200',
+              label: 'SMA200',
               data: sma200s,
               borderColor: '#f97316',
               borderWidth: 1.5,
-              borderDash: [5, 3],
               pointRadius: 0,
               fill: false,
               tension: 0.1,
-              yAxisID: 'y'
-            },
-            {
-              label: 'LONG',
-              data: longPoints,
-              borderColor: '#00d97e',
-              backgroundColor: '#00d97e',
-              pointStyle: 'triangle',
-              pointRadius: 8,
-              pointHoverRadius: 10,
-              showLine: false,
-              yAxisID: 'y'
-            },
-            {
-              label: 'SHORT',
-              data: shortPoints,
-              borderColor: '#ef4444',
-              backgroundColor: '#ef4444',
-              pointStyle: 'triangle',
-              rotation: 180,
-              pointRadius: 8,
-              pointHoverRadius: 10,
-              showLine: false,
               yAxisID: 'y'
             }
           ]
@@ -3107,11 +3139,14 @@
               align: 'end',
               labels: { 
                 color: '#9a9aa6', 
-                font: { size: 9 }, 
+                font: { size: 10 }, 
                 boxWidth: 12,
-                padding: 8,
+                padding: 15,
                 usePointStyle: true
               }
+            },
+            annotation: { 
+              annotations: annotations 
             },
             tooltip: {
               backgroundColor: 'rgba(0,0,0,0.9)',
@@ -3121,8 +3156,6 @@
               borderWidth: 1,
               callbacks: {
                 label: function(context) {
-                  if (context.dataset.label === 'LONG' && context.raw) return '▲ BUY SIGNAL';
-                  if (context.dataset.label === 'SHORT' && context.raw) return '▼ SELL SIGNAL';
                   if (context.dataset.label === 'BTC') return 'BTC: $' + context.raw?.toLocaleString();
                   return context.dataset.label + ': $' + context.raw?.toLocaleString();
                 }
@@ -3133,7 +3166,7 @@
             x: {
               display: true,
               grid: { display: false },
-              ticks: { color: '#9a9aa6', maxTicksLimit: 10, font: { size: 9 } }
+              ticks: { color: '#9a9aa6', maxTicksLimit: 12, font: { size: 9 } }
             },
             y: {
               type: 'logarithmic',
@@ -3144,9 +3177,6 @@
                 color: '#9a9aa6',
                 font: { size: 9 },
                 callback: v => v >= 1000 ? '$' + (v/1000).toFixed(0) + 'k' : '$' + v
-              },
-              afterBuildTicks: function(axis) {
-                axis.ticks = [10000, 20000, 30000, 50000, 70000, 100000].map(v => ({value: v}));
               }
             }
           }
