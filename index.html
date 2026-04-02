@@ -2912,27 +2912,21 @@
       let position = null;
       
       /*
-       * TREND SYSTEM BASED STRATEGY v11
+       * TREND SYSTEM BASED STRATEGY v12
        * ================================
        * 
-       * Baseado na sua ideia: usar o Trading Systems como filtro de entrada!
+       * FIXES:
+       * - Adiciona filtro de DIREÇÃO da tendência (SMA50 deve estar SUBINDO)
+       * - Evita entradas quando médias estão cruzando pra baixo
        * 
-       * ENTRY (LONG) quando Trend Score >= 0:
-       *   Simulamos o score do Trend System:
-       *   +1 se SMA50 > SMA200 (bullish structure)
-       *   +1 se Price > SMA200
-       *   +1 se MACD > 0
-       *   +1 se RSI > 40 (não oversold demais)
-       *   +1 se Price > SMA50
-       *   
-       *   Score >= 3 = LONG signal (maioria bullish)
+       * ENTRY (LONG) quando:
+       *   1. Trend Score >= 3 (estrutura bullish)
+       *   2. SMA50 está SUBINDO (não caindo)
+       *   3. SMA20 > SMA50 (ordem correta)
        * 
        * EXIT quando:
-       *   - SMA50 cruza abaixo SMA20 (tendência virou)
+       *   - SMA50 cruza abaixo SMA20
        *   - OU Stop Loss -15%
-       * 
-       * Isso deve reduzir MUITO os falsos sinais porque
-       * só entra quando a estrutura macro é bullish!
        */
       
       let lastTradeIndex = 0;
@@ -2952,7 +2946,18 @@
         sma20[i] = sum / 20;
       }
       
-      // Track when score transitions from negative to positive
+      // Track SMA50 direction (is it rising?)
+      const sma50Rising = [];
+      for (let i = 0; i < data.length; i++) {
+        if (i < 5) {
+          sma50Rising[i] = false;
+          continue;
+        }
+        const current = parseFloat(data[i].sma50) || 0;
+        const past = parseFloat(data[i - 5].sma50) || 0;
+        sma50Rising[i] = current > past;
+      }
+      
       let prevScore = -99;
       
       for (let i = 60; i < data.length; i++) {
@@ -2973,37 +2978,35 @@
         if (price === 0 || sma50 === 0 || sma200 === 0 || !currentSma20) continue;
         
         // ========================================
-        // CALCULATE TREND SYSTEM SCORE (simulated)
+        // CALCULATE TREND SYSTEM SCORE
         // ========================================
         let trendScore = 0;
         
-        // +1/-1: SMA50 vs SMA200
         if (sma50 > sma200) trendScore += 1;
         else trendScore -= 1;
         
-        // +1/-1: Price vs SMA200
         if (price > sma200) trendScore += 1;
         else trendScore -= 1;
         
-        // +1/-1: MACD
         if (macd > 0) trendScore += 1;
         else trendScore -= 1;
         
-        // +1/-1: RSI (bullish if > 45)
         if (rsi > 45) trendScore += 1;
         else trendScore -= 1;
         
-        // +1/-1: Price vs SMA50
         if (price > sma50) trendScore += 1;
         else trendScore -= 1;
-        
-        // Score range: -5 to +5
-        // LONG when >= 3 (at least 4 out of 5 bullish)
         
         const isBullish = trendScore >= 3;
         const scoreJustTurnedBullish = trendScore >= 3 && prevScore < 3;
         
-        // EXIT condition: SMA50 crosses below SMA20
+        // NOVO FILTRO: SMA50 deve estar subindo
+        const trendRising = sma50Rising[i];
+        
+        // NOVO FILTRO: SMA20 > SMA50 (estrutura correta)
+        const smasAligned = currentSma20 > sma50;
+        
+        // EXIT: SMA50 crosses below SMA20
         const sma50CrossBelowSma20 = prevSma50 >= prevSma20 && sma50 < currentSma20;
         
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
@@ -3015,17 +3018,14 @@
           
           const currentPnl = ((price / position.entryPrice) - 1) * 100;
           
-          // Exit: SMA50 crosses below SMA20 (your idea!)
           if (sma50CrossBelowSma20) {
             shouldExit = true;
             exitReason = 'SMA50<SMA20';
           }
-          // Exit: Trend Score goes very negative
           else if (trendScore <= -3) {
             shouldExit = true;
             exitReason = 'Score -3';
           }
-          // Stop Loss
           else if (currentPnl <= -15) {
             shouldExit = true;
             exitReason = 'Stop Loss';
@@ -3055,11 +3055,12 @@
         if (!position && canTrade) {
           
           /*
-           * LONG ENTRY when:
-           * - Trend Score just turned bullish (>= 3)
-           * - This means 4+ indicators are bullish
+           * LONG ENTRY quando:
+           * 1. Score acabou de virar bullish (>= 3)
+           * 2. SMA50 está SUBINDO (não caindo) - NOVO!
+           * 3. SMA20 > SMA50 (estrutura correta) - NOVO!
            */
-          if (scoreJustTurnedBullish) {
+          if (scoreJustTurnedBullish && trendRising && smasAligned) {
             position = {
               signal: 'LONG',
               entryPrice: price,
@@ -3068,14 +3069,14 @@
               entryScore: trendScore
             };
             lastTradeIndex = i;
-            console.log('[v11] LONG @', date, '| $' + price.toFixed(0), '| Score:', trendScore);
+            console.log('[v12] LONG @', date, '| $' + price.toFixed(0), '| Score:', trendScore, '| Rising:', trendRising);
           }
         }
         
         prevScore = trendScore;
       }
 
-      // Add current open position
+      // Open position
       if (position && data.length) {
         const latest = data[data.length - 1];
         const currentPrice = tradingState.currentPrice || parseFloat(latest.price);
@@ -3096,12 +3097,11 @@
 
       tradingState.signals = signals;
       
-      // Calculate win rate
       const closed = signals.filter(s => s.status === 'CLOSED');
       const wins = closed.filter(s => parseFloat(s.pnl) > 0).length;
       const winRate = closed.length > 0 ? (wins / closed.length * 100).toFixed(0) : 0;
       const totalPnl = closed.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
-      console.log('[Trading] v11 TREND SYSTEM:', signals.length, 'trades |', winRate + '% win rate |', totalPnl.toFixed(1) + '% total');
+      console.log('[Trading] v12:', signals.length, 'trades |', winRate + '% win rate |', totalPnl.toFixed(1) + '% total');
     }
 
     function renderTradingHistory() {
@@ -3199,7 +3199,7 @@
         sma20s.push(sum / 20);
       }
 
-      // Build annotations for signals - cleaner style
+      // Build annotations for signals - smaller, cleaner style
       const annotations = {};
       
       // Map original data indices to sampled indices
@@ -3209,7 +3209,7 @@
         return Math.floor(filteredIdx / sampleRate);
       };
 
-      // Create signal annotations - simpler, cleaner
+      // Create signal annotations - smaller markers
       tradingState.signals.forEach((sig, idx) => {
         const chartEntryIdx = getChartIndex(sig.entryIndex);
         const chartExitIdx = getChartIndex(sig.exitIndex);
@@ -3221,28 +3221,28 @@
         const color = isLong ? '#00d97e' : '#ef4444';
         const pnlVal = parseFloat(sig.pnl);
 
-        // Entry point with small label
+        // Entry point - smaller
         annotations[`entry${idx}`] = {
           type: 'point',
           xValue: chartEntryIdx,
           yValue: entryPrice,
           backgroundColor: color,
           borderColor: '#fff',
-          borderWidth: 2,
-          radius: 6
+          borderWidth: 1,
+          radius: 4
         };
 
-        // Entry label
+        // Entry label - smaller, just arrow
         annotations[`entryLabel${idx}`] = {
           type: 'label',
           xValue: chartEntryIdx,
           yValue: entryPrice,
-          yAdjust: isLong ? 20 : -20,
+          yAdjust: isLong ? 16 : -16,
           backgroundColor: color,
-          content: isLong ? '▲ L' : '▼ S',
+          content: '▲',
           color: '#fff',
-          font: { size: 8, weight: 'bold' },
-          padding: { top: 2, bottom: 2, left: 3, right: 3 },
+          font: { size: 7, weight: 'bold' },
+          padding: { top: 1, bottom: 1, left: 2, right: 2 },
           borderRadius: 2
         };
 
@@ -3258,12 +3258,12 @@
             xMax: chartExitIdx,
             yMin: entryPrice,
             yMax: entryPrice,
-            borderColor: color + '60',
+            borderColor: color + '40',
             borderWidth: 1,
-            borderDash: [3, 3]
+            borderDash: [2, 2]
           };
 
-          // Exit point
+          // Exit point - smaller
           annotations[`exit${idx}`] = {
             type: 'point',
             xValue: chartExitIdx,
@@ -3271,20 +3271,20 @@
             backgroundColor: pnlColor,
             borderColor: '#fff',
             borderWidth: 1,
-            radius: 4
+            radius: 3
           };
 
-          // P&L badge
+          // P&L badge - smaller
           annotations[`pnl${idx}`] = {
             type: 'label',
             xValue: chartExitIdx,
             yValue: exitPrice,
-            yAdjust: -15,
+            yAdjust: -12,
             backgroundColor: pnlColor + 'cc',
             content: (pnlVal > 0 ? '+' : '') + pnlVal.toFixed(0) + '%',
             color: '#fff',
-            font: { size: 7, weight: 'bold' },
-            padding: { top: 1, bottom: 1, left: 3, right: 3 },
+            font: { size: 6, weight: 'bold' },
+            padding: { top: 1, bottom: 1, left: 2, right: 2 },
             borderRadius: 2
           };
         }
@@ -3370,6 +3370,20 @@
               borderColor: 'rgba(255,255,255,0.1)',
               borderWidth: 1,
               callbacks: {
+                title: function(context) {
+                  // Show full date
+                  const idx = context[0].dataIndex;
+                  const d = sampled[idx];
+                  if (d && (d.day || d.d)) {
+                    const date = new Date(d.day || d.d);
+                    return date.toLocaleDateString('en-US', { 
+                      day: 'numeric', 
+                      month: 'short', 
+                      year: 'numeric' 
+                    });
+                  }
+                  return context[0].label;
+                },
                 label: function(context) {
                   const val = context.raw;
                   if (!val) return null;
