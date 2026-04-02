@@ -2545,20 +2545,33 @@
           console.warn('[Trading] Technical indicators failed:', fetches[0].status, fetches[0].reason?.message || '');
         }
 
-        // Process RSI Weekly
+        // Process RSI Weekly - Bitview returns {version, index, type, total, start, data: [...]}
         if (fetches[1].status === 'fulfilled') {
-          const data = fetches[1].value;
-          console.log('[Trading] RSI Weekly raw response:', data?.slice?.(-3) || data);
-          if (Array.isArray(data) && data.length) {
-            const latest = data[data.length - 1];
-            // Try different field names
-            const rsiVal = parseFloat(latest.week1 || latest.value || latest.rsi || latest.RSI || Object.values(latest).find(v => typeof v === 'number' || !isNaN(parseFloat(v))));
-            if (!isNaN(rsiVal)) {
+          const response = fetches[1].value;
+          console.log('[Trading] RSI Weekly raw response:', response);
+          
+          // Bitview format: { data: [values...] } or just array
+          let dataArray = null;
+          if (response && response.data && Array.isArray(response.data)) {
+            dataArray = response.data;
+          } else if (Array.isArray(response)) {
+            dataArray = response;
+          }
+          
+          if (dataArray && dataArray.length > 0) {
+            // Get last value - could be number or object with value property
+            const lastItem = dataArray[dataArray.length - 1];
+            const rsiVal = typeof lastItem === 'number' ? lastItem : 
+                          (lastItem?.value || lastItem?.week1 || lastItem?.rsi || parseFloat(lastItem));
+            
+            if (!isNaN(rsiVal) && rsiVal > 0 && rsiVal <= 100) {
               tradingState.rsiWeekly = rsiVal;
               console.log('[Trading] RSI Weekly:', tradingState.rsiWeekly);
             } else {
-              console.warn('[Trading] RSI Weekly - could not parse value from:', latest);
+              console.warn('[Trading] RSI Weekly - invalid value:', rsiVal, 'from:', lastItem);
             }
+          } else {
+            console.warn('[Trading] RSI Weekly - no data array found in response');
           }
         } else {
           console.warn('[Trading] RSI Weekly failed:', fetches[1].reason?.message || fetches[1].status);
@@ -2877,113 +2890,102 @@
     }
 
     function generateSignalHistory(data) {
-      if (data.length < 50) return;
+      if (data.length < 200) return;
       
       const signals = [];
       let position = null;
       
       /*
-       * REFINED TRADING SYSTEM v3 - FASTER SIGNALS
-       * ==========================================
+       * CONSERVATIVE TRADING SYSTEM v4
+       * ==============================
        * 
-       * Usando médias mais rápidas e RSI crossover de 50
+       * FILOSOFIA: Menos trades, maior assertividade
        * 
-       * INDICADORES:
-       *   - EMA7 vs EMA21 (trend rápido)
-       *   - Preço vs SMA50 (filtro de tendência)
-       *   - RSI(14) crossover de 50
-       *   - MACD Histogram (momentum)
+       * TREND FILTER (obrigatório):
+       *   - LONG só quando SMA50 > SMA200 (bull market)
+       *   - SHORT só quando SMA50 < SMA200 (bear market)
        * 
-       * ENTRY LONG:
-       *   - EMA7 > EMA21 (tendência de curto prazo bullish)
-       *   - RSI cruza acima de 50 OU já está entre 50-65
-       *   - MACD Histogram > 0 ou virando positivo
-       *   - Preço > SMA50 (confirma uptrend)
+       * ENTRY LONG (todos obrigatórios):
+       *   1. SMA50 > SMA200 (bull market confirmado)
+       *   2. Preço faz pullback e toca/cruza SMA50 de cima pra baixo
+       *   3. RSI < 45 (oversold no pullback)
+       *   4. RSI começa a subir (RSI hoje > RSI ontem)
+       *   5. MACD > Signal OU MACD cruzando pra cima
        * 
-       * ENTRY SHORT:
-       *   - EMA7 < EMA21 (tendência de curto prazo bearish)
-       *   - RSI cruza abaixo de 50 OU já está entre 35-50
-       *   - MACD Histogram < 0 ou virando negativo
-       *   - Preço < SMA50 (confirma downtrend)
+       * ENTRY SHORT (todos obrigatórios):
+       *   1. SMA50 < SMA200 (bear market confirmado)
+       *   2. Preço faz rally e toca/cruza SMA50 de baixo pra cima
+       *   3. RSI > 55 (overbought no rally)
+       *   4. RSI começa a cair (RSI hoje < RSI ontem)
+       *   5. MACD < Signal OU MACD cruzando pra baixo
        * 
        * EXIT:
-       *   - EMA7 cruza EMA21 na direção oposta
-       *   - RSI extremo (>70 para long, <30 para short)
-       *   - Stop: -8% do entry
+       *   - Take profit: +15%
+       *   - Stop loss: -8%
+       *   - Trend reversal (SMA50 cruza SMA200)
+       *   - RSI extremo contrário (>75 long, <25 short)
+       * 
+       * FILTROS:
+       *   - Mínimo 15 dias entre trades
+       *   - Preço deve estar dentro de 5% do SMA50 para entry
        */
       
       let lastTradeIndex = 0;
-      const MIN_BARS_BETWEEN_TRADES = 3;
+      const MIN_BARS_BETWEEN_TRADES = 15;
+      const TAKE_PROFIT_PCT = 15;
       const STOP_LOSS_PCT = 8;
+      const ENTRY_DISTANCE_PCT = 5; // Max distance from SMA50 for entry
       
-      // Calcular EMAs manualmente se não existirem
-      const ema7 = [];
-      const ema21 = [];
-      const k7 = 2 / (7 + 1);
-      const k21 = 2 / (21 + 1);
-      
-      for (let i = 0; i < data.length; i++) {
-        const price = parseFloat(data[i].price) || parseFloat(data[i].sma50) || 0;
-        
-        // Use existing EMAs if available, otherwise calculate
-        if (data[i].ema7) {
-          ema7[i] = parseFloat(data[i].ema7);
-        } else if (i === 0) {
-          ema7[i] = price;
-        } else {
-          ema7[i] = price * k7 + ema7[i-1] * (1 - k7);
-        }
-        
-        if (data[i].ema21) {
-          ema21[i] = parseFloat(data[i].ema21);
-        } else if (i === 0) {
-          ema21[i] = price;
-        } else {
-          ema21[i] = price * k21 + ema21[i-1] * (1 - k21);
-        }
-      }
-      
-      for (let i = 30; i < data.length; i++) {
+      for (let i = 200; i < data.length; i++) {
         const d = data[i];
         const prev = data[i - 1];
+        const prev2 = data[i - 2];
         
         const price = parseFloat(d.price) || 0;
         const sma50 = parseFloat(d.sma50) || 0;
+        const sma200 = parseFloat(d.sma200) || 0;
         const rsi = parseFloat(d.rsi);
-        const macdHist = parseFloat(d.macdhist);
+        const macd = parseFloat(d.macd);
+        const macdSignal = parseFloat(d.macdsignal);
         const date = d.day || d.d;
         
+        const prevPrice = parseFloat(prev.price) || 0;
         const prevRsi = parseFloat(prev.rsi);
-        const prevMacdHist = parseFloat(prev.macdhist);
+        const prevMacd = parseFloat(prev.macd);
+        const prevMacdSignal = parseFloat(prev.macdsignal);
+        const prevSma50 = parseFloat(prev.sma50) || 0;
         
-        if (price === 0 || isNaN(rsi)) continue;
+        const prev2Price = parseFloat(prev2.price) || 0;
         
-        const currentEma7 = ema7[i];
-        const currentEma21 = ema21[i];
-        const prevEma7 = ema7[i-1];
-        const prevEma21 = ema21[i-1];
+        if (price === 0 || sma50 === 0 || sma200 === 0 || isNaN(rsi)) continue;
         
-        // Trend conditions
-        const emaUptrend = currentEma7 > currentEma21;
-        const emaDowntrend = currentEma7 < currentEma21;
-        const emaCrossUp = prevEma7 <= prevEma21 && currentEma7 > currentEma21;
-        const emaCrossDown = prevEma7 >= prevEma21 && currentEma7 < currentEma21;
-        const priceAboveSma50 = price > sma50;
-        const priceBelowSma50 = price < sma50;
+        // === TREND CONDITIONS ===
+        const isBullMarket = sma50 > sma200;
+        const isBearMarket = sma50 < sma200;
+        const trendReversal = (parseFloat(prev.sma50) > parseFloat(prev.sma200)) !== (sma50 > sma200);
         
-        // RSI conditions
-        const rsiCrossUp50 = prevRsi < 50 && rsi >= 50;
-        const rsiCrossDown50 = prevRsi > 50 && rsi <= 50;
-        const rsiBullishZone = rsi >= 45 && rsi <= 70;
-        const rsiBearishZone = rsi >= 30 && rsi <= 55;
-        const rsiOverbought = rsi > 70;
-        const rsiOversold = rsi < 30;
+        // === PULLBACK/RALLY CONDITIONS ===
+        const distanceFromSma50 = ((price / sma50) - 1) * 100;
+        const nearSma50 = Math.abs(distanceFromSma50) < ENTRY_DISTANCE_PCT;
         
-        // MACD conditions
-        const macdPositive = macdHist > 0;
-        const macdNegative = macdHist < 0;
-        const macdTurningUp = prevMacdHist < macdHist && macdHist > -50;
-        const macdTurningDown = prevMacdHist > macdHist && macdHist < 50;
+        // Price touching SMA50 from above (pullback in uptrend)
+        const pullbackToSma50 = prevPrice > prevSma50 && price <= sma50 * 1.02;
+        // Price touching SMA50 from below (rally in downtrend)
+        const rallyToSma50 = prevPrice < prevSma50 && price >= sma50 * 0.98;
+        
+        // === RSI CONDITIONS ===
+        const rsiOversold = rsi < 45;
+        const rsiOverbought = rsi > 55;
+        const rsiTurningUp = rsi > prevRsi && prevRsi < 50;
+        const rsiTurningDown = rsi < prevRsi && prevRsi > 50;
+        const rsiExtremeHigh = rsi > 75;
+        const rsiExtremeLow = rsi < 25;
+        
+        // === MACD CONDITIONS ===
+        const macdAboveSignal = macd > macdSignal;
+        const macdBelowSignal = macd < macdSignal;
+        const macdCrossingUp = prevMacd <= prevMacdSignal && macd > macdSignal;
+        const macdCrossingDown = prevMacd >= prevMacdSignal && macd < macdSignal;
         
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
         
@@ -2992,32 +2994,33 @@
           let shouldExit = false;
           let exitReason = '';
           
-          // Stop loss check
           const currentPnl = position.signal === 'LONG' 
             ? ((price / position.entryPrice - 1) * 100)
             : ((position.entryPrice / price - 1) * 100);
           
-          if (currentPnl <= -STOP_LOSS_PCT) {
+          // Take profit
+          if (currentPnl >= TAKE_PROFIT_PCT) {
+            shouldExit = true;
+            exitReason = 'Take profit';
+          }
+          // Stop loss
+          else if (currentPnl <= -STOP_LOSS_PCT) {
             shouldExit = true;
             exitReason = 'Stop loss';
           }
-          
-          if (position.signal === 'LONG') {
-            if (emaCrossDown) {
-              shouldExit = true;
-              exitReason = 'EMA cross down';
-            } else if (rsiOverbought && macdTurningDown) {
-              shouldExit = true;
-              exitReason = 'RSI overbought';
-            }
-          } else if (position.signal === 'SHORT') {
-            if (emaCrossUp) {
-              shouldExit = true;
-              exitReason = 'EMA cross up';
-            } else if (rsiOversold && macdTurningUp) {
-              shouldExit = true;
-              exitReason = 'RSI oversold';
-            }
+          // Trend reversal
+          else if (trendReversal) {
+            shouldExit = true;
+            exitReason = 'Trend reversal';
+          }
+          // RSI extreme
+          else if (position.signal === 'LONG' && rsiExtremeHigh) {
+            shouldExit = true;
+            exitReason = 'RSI overbought';
+          }
+          else if (position.signal === 'SHORT' && rsiExtremeLow) {
+            shouldExit = true;
+            exitReason = 'RSI oversold';
           }
           
           if (shouldExit) {
@@ -3028,7 +3031,7 @@
             signals.push({
               date: position.entryDate,
               exitDate: date,
-              system: 'EMA',
+              system: 'PULLBACK',
               signal: position.signal,
               entryPrice: position.entryPrice,
               exitPrice: price,
@@ -3047,8 +3050,25 @@
         // ===== ENTRY LOGIC =====
         if (!position && canTrade) {
           
-          // LONG: EMA7 > EMA21 + RSI bullish + MACD positive + Price > SMA50
-          if (emaUptrend && (rsiCrossUp50 || rsiBullishZone) && (macdPositive || macdTurningUp) && priceAboveSma50) {
+          // LONG: Bull market + Pullback to SMA50 + RSI oversold turning up + MACD bullish
+          const longConditions = 
+            isBullMarket && 
+            nearSma50 &&
+            (pullbackToSma50 || distanceFromSma50 < 2) &&
+            rsiOversold && 
+            rsiTurningUp &&
+            (macdAboveSignal || macdCrossingUp);
+          
+          // SHORT: Bear market + Rally to SMA50 + RSI overbought turning down + MACD bearish
+          const shortConditions = 
+            isBearMarket && 
+            nearSma50 &&
+            (rallyToSma50 || distanceFromSma50 > -2) &&
+            rsiOverbought && 
+            rsiTurningDown &&
+            (macdBelowSignal || macdCrossingDown);
+          
+          if (longConditions) {
             position = {
               signal: 'LONG',
               entryPrice: price,
@@ -3056,9 +3076,7 @@
               entryIndex: i
             };
             lastTradeIndex = i;
-          }
-          // SHORT: EMA7 < EMA21 + RSI bearish + MACD negative + Price < SMA50
-          else if (emaDowntrend && (rsiCrossDown50 || rsiBearishZone) && (macdNegative || macdTurningDown) && priceBelowSma50) {
+          } else if (shortConditions) {
             position = {
               signal: 'SHORT',
               entryPrice: price,
@@ -3080,7 +3098,7 @@
         signals.push({
           date: position.entryDate,
           exitDate: '--',
-          system: 'EMA',
+          system: 'PULLBACK',
           signal: position.signal,
           entryPrice: position.entryPrice,
           exitPrice: currentPrice,
@@ -3092,7 +3110,7 @@
       }
 
       tradingState.signals = signals;
-      console.log('[Trading] Generated', signals.length, 'signals with EMA system');
+      console.log('[Trading] Generated', signals.length, 'signals with PULLBACK system');
     }
 
     function renderTradingHistory() {
