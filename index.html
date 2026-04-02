@@ -2496,8 +2496,8 @@
           fetch(`${CONFIG.BITVIEW_BASE}/series/rsi-1w/week1`).then(r => r.json()),
           // SOPR - index 2
           fetch(`${base}/v1/sopr?token=${token}`).then(r => r.json()),
-          // MVRV STH - index 3
-          fetch(`${base}/v1/mvrv-sth?token=${token}`).then(r => r.json()),
+          // MVRV STH - index 3 (CORRECTED: sth-mvrv not mvrv-sth)
+          fetch(`${base}/v1/sth-mvrv?token=${token}`).then(r => r.json()),
           // Funding Rate (Binance) - index 4
           fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1').then(r => r.json()),
           // NUPL - index 5
@@ -2505,7 +2505,9 @@
           // Fear & Greed - index 6
           fetch('https://api.alternative.me/fng/?limit=1&format=json').then(r => r.json()),
           // BTC Price (fallback if state.prices is empty) - index 7
-          fetch(`${base}/v1/btc-price?token=${token}`).then(r => r.json())
+          fetch(`${base}/v1/btc-price?token=${token}`).then(r => r.json()),
+          // RSI 14 Daily - index 8 (for faster signals)
+          fetch(`${base}/v1/technical-indicators?token=${token}`).then(r => r.json())
         ]);
 
         console.log('[Trading] Fetches completed, processing...');
@@ -2561,11 +2563,13 @@
           console.log('[Trading] SOPR:', tradingState.sopr);
         }
 
-        // Process MVRV STH
+        // Process MVRV STH (field is sthMvrv)
         if (fetches[3].status === 'fulfilled' && Array.isArray(fetches[3].value) && fetches[3].value.length) {
           const latest = fetches[3].value[fetches[3].value.length - 1];
-          tradingState.mvrvSth = parseFloat(latest.mvrvSth || latest.mvrv);
-          console.log('[Trading] MVRV STH:', tradingState.mvrvSth);
+          tradingState.mvrvSth = parseFloat(latest.sthMvrv);
+          console.log('[Trading] MVRV STH:', tradingState.mvrvSth, 'raw:', latest);
+        } else {
+          console.warn('[Trading] MVRV STH failed:', fetches[3].status, fetches[3].reason?.message || '');
         }
 
         // Process Funding Rate
@@ -2865,71 +2869,195 @@
     }
 
     function generateSignalHistory(data) {
-      if (data.length < 30) return;
+      if (data.length < 50) return;
       
       const signals = [];
-      let lastSignal = null;
-      let entryPrice = null;
-      let entryDate = null;
-      let entryIndex = null;
-
-      // Scan data for signal changes - only LONG and SHORT
-      for (let i = 30; i < data.length; i++) {
+      let position = null; // { signal, entryPrice, entryDate, entryIndex }
+      let prevRsi = null;
+      let prevMacdHist = null;
+      
+      /*
+       * REFINED TRADING SYSTEM v2
+       * ========================
+       * 
+       * TREND FILTER (macro direction):
+       *   - Uptrend: SMA50 > SMA200
+       *   - Downtrend: SMA50 < SMA200
+       * 
+       * ENTRY CONDITIONS:
+       *   LONG: In uptrend AND (RSI crosses above 45 from below OR RSI < 35 oversold bounce)
+       *         AND MACD Histogram turning positive (or already positive)
+       *   
+       *   SHORT: In downtrend AND (RSI crosses below 55 from above OR RSI > 65 overbought rejection)
+       *          AND MACD Histogram turning negative (or already negative)
+       * 
+       * EXIT CONDITIONS:
+       *   - Trend reversal (SMA50 crosses SMA200)
+       *   - RSI extreme (>75 for longs, <25 for shorts)
+       *   - MACD Histogram changes sign against position
+       * 
+       * FILTERS:
+       *   - Minimum 3 days between trades (avoid whipsaws)
+       *   - Price must be within 15% of SMA200 for entries (avoid chasing)
+       */
+      
+      let lastTradeIndex = 0;
+      const MIN_BARS_BETWEEN_TRADES = 5;
+      
+      for (let i = 50; i < data.length; i++) {
         const d = data[i];
+        const prev = data[i - 1];
+        
+        const price = parseFloat(d.price) || 0;
         const sma50 = parseFloat(d.sma50);
         const sma200 = parseFloat(d.sma200);
-        const price = parseFloat(d.price) || sma200 * 1.1;
+        const rsi = parseFloat(d.rsi);
+        const macdHist = parseFloat(d.macdhist);
+        const macd = parseFloat(d.macd);
         const date = d.day || d.d;
-
-        if (isNaN(sma50) || isNaN(sma200)) continue;
-
-        // Determine signal: LONG when SMA50 > SMA200, SHORT when SMA50 < SMA200
-        const currentSignal = sma50 > sma200 ? 'LONG' : 'SHORT';
-
-        if (currentSignal !== lastSignal) {
-          // Close previous position
-          if (lastSignal !== null && entryPrice) {
-            const pnl = lastSignal === 'LONG' 
-              ? ((price / entryPrice - 1) * 100)
-              : ((entryPrice / price - 1) * 100);
-            signals.push({
-              date: entryDate,
-              exitDate: date,
-              system: 'TREND',
-              signal: lastSignal,
-              entryPrice: entryPrice,
-              exitPrice: price,
-              entryIndex: entryIndex,
-              exitIndex: i,
-              pnl: pnl.toFixed(1),
-              status: 'CLOSED'
-            });
+        
+        const prevPrice = parseFloat(prev.price) || 0;
+        const prevSma50 = parseFloat(prev.sma50);
+        const prevSma200 = parseFloat(prev.sma200);
+        
+        if (isNaN(sma50) || isNaN(sma200) || price === 0) continue;
+        
+        const isUptrend = sma50 > sma200;
+        const isDowntrend = sma50 < sma200;
+        const trendJustChanged = (prevSma50 > prevSma200) !== (sma50 > sma200);
+        
+        // Calculate distance from SMA200
+        const distFromSma200 = ((price / sma200) - 1) * 100;
+        
+        // RSI conditions
+        const rsiCrossUp45 = prevRsi !== null && prevRsi < 45 && rsi >= 45;
+        const rsiCrossDown55 = prevRsi !== null && prevRsi > 55 && rsi <= 55;
+        const rsiOversold = rsi < 35;
+        const rsiOverbought = rsi > 65;
+        const rsiExtremeHigh = rsi > 75;
+        const rsiExtremeLow = rsi < 25;
+        
+        // MACD conditions
+        const macdTurningPositive = prevMacdHist !== null && prevMacdHist <= 0 && macdHist > 0;
+        const macdTurningNegative = prevMacdHist !== null && prevMacdHist >= 0 && macdHist < 0;
+        const macdPositive = macdHist > 0;
+        const macdNegative = macdHist < 0;
+        
+        const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
+        
+        // ===== EXIT LOGIC =====
+        if (position) {
+          let shouldExit = false;
+          let exitReason = '';
+          
+          if (position.signal === 'LONG') {
+            // Exit LONG conditions
+            if (trendJustChanged && isDowntrend) {
+              shouldExit = true;
+              exitReason = 'Trend reversal';
+            } else if (rsiExtremeHigh) {
+              shouldExit = true;
+              exitReason = 'RSI overbought';
+            } else if (macdTurningNegative && rsi > 60) {
+              shouldExit = true;
+              exitReason = 'MACD bearish';
+            }
+          } else if (position.signal === 'SHORT') {
+            // Exit SHORT conditions
+            if (trendJustChanged && isUptrend) {
+              shouldExit = true;
+              exitReason = 'Trend reversal';
+            } else if (rsiExtremeLow) {
+              shouldExit = true;
+              exitReason = 'RSI oversold';
+            } else if (macdTurningPositive && rsi < 40) {
+              shouldExit = true;
+              exitReason = 'MACD bullish';
+            }
           }
           
-          // Open new position
-          entryPrice = price;
-          entryDate = date;
-          entryIndex = i;
+          if (shouldExit) {
+            const pnl = position.signal === 'LONG' 
+              ? ((price / position.entryPrice - 1) * 100)
+              : ((position.entryPrice / price - 1) * 100);
+            
+            signals.push({
+              date: position.entryDate,
+              exitDate: date,
+              system: 'REFINED',
+              signal: position.signal,
+              entryPrice: position.entryPrice,
+              exitPrice: price,
+              entryIndex: position.entryIndex,
+              exitIndex: i,
+              pnl: pnl.toFixed(1),
+              status: 'CLOSED',
+              exitReason: exitReason
+            });
+            
+            position = null;
+            lastTradeIndex = i;
+          }
         }
-
-        lastSignal = currentSignal;
+        
+        // ===== ENTRY LOGIC =====
+        if (!position && canTrade) {
+          let shouldEnterLong = false;
+          let shouldEnterShort = false;
+          
+          // LONG entry conditions
+          if (isUptrend && Math.abs(distFromSma200) < 20) {
+            if ((rsiCrossUp45 || rsiOversold) && (macdPositive || macdTurningPositive)) {
+              shouldEnterLong = true;
+            }
+          }
+          
+          // SHORT entry conditions
+          if (isDowntrend && Math.abs(distFromSma200) < 20) {
+            if ((rsiCrossDown55 || rsiOverbought) && (macdNegative || macdTurningNegative)) {
+              shouldEnterShort = true;
+            }
+          }
+          
+          if (shouldEnterLong) {
+            position = {
+              signal: 'LONG',
+              entryPrice: price,
+              entryDate: date,
+              entryIndex: i
+            };
+            lastTradeIndex = i;
+          } else if (shouldEnterShort) {
+            position = {
+              signal: 'SHORT',
+              entryPrice: price,
+              entryDate: date,
+              entryIndex: i
+            };
+            lastTradeIndex = i;
+          }
+        }
+        
+        // Update previous values
+        prevRsi = rsi;
+        prevMacdHist = macdHist;
       }
 
       // Add current open position
-      if (lastSignal && data.length) {
+      if (position && data.length) {
         const latest = data[data.length - 1];
         const currentPrice = tradingState.currentPrice || parseFloat(latest.price);
-        const unrealizedPnl = lastSignal === 'LONG'
-          ? ((currentPrice / entryPrice - 1) * 100)
-          : ((entryPrice / currentPrice - 1) * 100);
+        const unrealizedPnl = position.signal === 'LONG'
+          ? ((currentPrice / position.entryPrice - 1) * 100)
+          : ((position.entryPrice / currentPrice - 1) * 100);
         signals.push({
-          date: entryDate,
+          date: position.entryDate,
           exitDate: '--',
-          system: 'TREND',
-          signal: lastSignal,
-          entryPrice: entryPrice,
+          system: 'REFINED',
+          signal: position.signal,
+          entryPrice: position.entryPrice,
           exitPrice: currentPrice,
-          entryIndex: entryIndex,
+          entryIndex: position.entryIndex,
           exitIndex: data.length - 1,
           pnl: unrealizedPnl.toFixed(1),
           status: 'OPEN'
@@ -2937,6 +3065,7 @@
       }
 
       tradingState.signals = signals;
+      console.log('[Trading] Generated', signals.length, 'signals with refined system');
     }
 
     function renderTradingHistory() {
