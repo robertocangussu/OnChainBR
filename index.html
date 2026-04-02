@@ -7,6 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
   <style>
     :root { --bg-primary: #0a0a0b; --bg-secondary: #111113; --bg-card: #161619; --border: #252528; --text-primary: #e8e8ed; --text-secondary: #b8b8c4; --text-muted: #8a8a96; --accent-green: #00d97e; --accent-lime: #84cc16; --accent-yellow: #eab308; --accent-orange: #f97316; --accent-red: #ef4444; --accent-blue: #3b82f6; --accent-purple: #a855f7; --accent-pink: #ec4899; --accent-cyan: #06b6d4; --accent-teal: #14b8a6; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -2896,96 +2898,105 @@
       let position = null;
       
       /*
-       * CONSERVATIVE TRADING SYSTEM v4
-       * ==============================
+       * PROFESSOR-STYLE TRADING SYSTEM v5
+       * ==================================
        * 
-       * FILOSOFIA: Menos trades, maior assertividade
+       * Baseado na análise visual dos sinais do professor:
+       * - 18 trades, 77.8% win rate, +93.9% return
        * 
-       * TREND FILTER (obrigatório):
-       *   - LONG só quando SMA50 > SMA200 (bull market)
-       *   - SHORT só quando SMA50 < SMA200 (bear market)
+       * INDICADORES:
+       *   - SMA20 (timing rápido)
+       *   - SMA50 (tendência intermediária) 
+       *   - SMA200 (tendência macro)
+       *   - RSI para confirmação
        * 
-       * ENTRY LONG (todos obrigatórios):
-       *   1. SMA50 > SMA200 (bull market confirmado)
-       *   2. Preço faz pullback e toca/cruza SMA50 de cima pra baixo
-       *   3. RSI < 45 (oversold no pullback)
-       *   4. RSI começa a subir (RSI hoje > RSI ontem)
-       *   5. MACD > Signal OU MACD cruzando pra cima
+       * REGRAS DE ENTRY LONG:
+       *   1. SMA50 > SMA200 (bull market) OU preço > SMA200 (recuperando)
+       *   2. Preço fez pullback e está próximo/abaixo da SMA50
+       *   3. SMA20 cruzando SMA50 de baixo pra cima OU
+       *      Preço cruzando SMA20 de baixo pra cima (bounce)
+       *   4. RSI < 50 (ainda não overbought)
        * 
-       * ENTRY SHORT (todos obrigatórios):
-       *   1. SMA50 < SMA200 (bear market confirmado)
-       *   2. Preço faz rally e toca/cruza SMA50 de baixo pra cima
-       *   3. RSI > 55 (overbought no rally)
-       *   4. RSI começa a cair (RSI hoje < RSI ontem)
-       *   5. MACD < Signal OU MACD cruzando pra baixo
+       * REGRAS DE ENTRY SHORT:
+       *   1. SMA50 < SMA200 (bear market)
+       *   2. Preço fez rally e está próximo/acima da SMA50
+       *   3. SMA20 cruzando SMA50 de cima pra baixo OU
+       *      Preço cruzando SMA20 de cima pra baixo (rejeição)
+       *   4. RSI > 50 (ainda não oversold)
        * 
-       * EXIT:
-       *   - Take profit: +15%
-       *   - Stop loss: -8%
-       *   - Trend reversal (SMA50 cruza SMA200)
-       *   - RSI extremo contrário (>75 long, <25 short)
-       * 
-       * FILTROS:
-       *   - Mínimo 15 dias entre trades
-       *   - Preço deve estar dentro de 5% do SMA50 para entry
+       * REGRAS DE EXIT:
+       *   - Take profit: +20% 
+       *   - Stop loss: -10%
+       *   - SMA20 cruza contra a posição
+       *   - Preço muito esticado (>15% da SMA50)
        */
       
       let lastTradeIndex = 0;
-      const MIN_BARS_BETWEEN_TRADES = 15;
-      const TAKE_PROFIT_PCT = 15;
-      const STOP_LOSS_PCT = 8;
-      const ENTRY_DISTANCE_PCT = 5; // Max distance from SMA50 for entry
+      const MIN_BARS_BETWEEN_TRADES = 20; // ~20 dias entre trades
+      const TAKE_PROFIT_PCT = 20;
+      const STOP_LOSS_PCT = 10;
+      const MAX_DISTANCE_FROM_SMA50 = 8; // Entry só se preço dentro de 8% da SMA50
+      const STRETCHED_EXIT_PCT = 15; // Exit se preço >15% da SMA50
+      
+      // Calcular SMA20 se não existir
+      const sma20 = [];
+      for (let i = 0; i < data.length; i++) {
+        if (i < 19) {
+          sma20[i] = null;
+          continue;
+        }
+        let sum = 0;
+        for (let j = i - 19; j <= i; j++) {
+          sum += parseFloat(data[j].price) || 0;
+        }
+        sma20[i] = sum / 20;
+      }
       
       for (let i = 200; i < data.length; i++) {
         const d = data[i];
         const prev = data[i - 1];
-        const prev2 = data[i - 2];
         
         const price = parseFloat(d.price) || 0;
+        const prevPrice = parseFloat(prev.price) || 0;
         const sma50 = parseFloat(d.sma50) || 0;
         const sma200 = parseFloat(d.sma200) || 0;
+        const prevSma50 = parseFloat(prev.sma50) || 0;
         const rsi = parseFloat(d.rsi);
-        const macd = parseFloat(d.macd);
-        const macdSignal = parseFloat(d.macdsignal);
         const date = d.day || d.d;
         
-        const prevPrice = parseFloat(prev.price) || 0;
-        const prevRsi = parseFloat(prev.rsi);
-        const prevMacd = parseFloat(prev.macd);
-        const prevMacdSignal = parseFloat(prev.macdsignal);
-        const prevSma50 = parseFloat(prev.sma50) || 0;
+        const currentSma20 = sma20[i];
+        const prevSma20 = sma20[i - 1];
         
-        const prev2Price = parseFloat(prev2.price) || 0;
-        
-        if (price === 0 || sma50 === 0 || sma200 === 0 || isNaN(rsi)) continue;
+        if (price === 0 || sma50 === 0 || sma200 === 0 || !currentSma20) continue;
         
         // === TREND CONDITIONS ===
-        const isBullMarket = sma50 > sma200;
-        const isBearMarket = sma50 < sma200;
-        const trendReversal = (parseFloat(prev.sma50) > parseFloat(prev.sma200)) !== (sma50 > sma200);
+        const bullMarket = sma50 > sma200;
+        const bearMarket = sma50 < sma200;
+        const priceRecovering = price > sma200; // Preço acima da SMA200 mesmo em bear
         
-        // === PULLBACK/RALLY CONDITIONS ===
-        const distanceFromSma50 = ((price / sma50) - 1) * 100;
-        const nearSma50 = Math.abs(distanceFromSma50) < ENTRY_DISTANCE_PCT;
+        // === DISTANCE FROM SMAs ===
+        const distFromSma50 = ((price / sma50) - 1) * 100;
+        const distFromSma20 = ((price / currentSma20) - 1) * 100;
+        const nearSma50 = Math.abs(distFromSma50) < MAX_DISTANCE_FROM_SMA50;
+        const stretched = Math.abs(distFromSma50) > STRETCHED_EXIT_PCT;
         
-        // Price touching SMA50 from above (pullback in uptrend)
-        const pullbackToSma50 = prevPrice > prevSma50 && price <= sma50 * 1.02;
-        // Price touching SMA50 from below (rally in downtrend)
-        const rallyToSma50 = prevPrice < prevSma50 && price >= sma50 * 0.98;
+        // === SMA20 CROSSOVER CONDITIONS ===
+        const sma20CrossAboveSma50 = prevSma20 <= prevSma50 && currentSma20 > sma50;
+        const sma20CrossBelowSma50 = prevSma20 >= prevSma50 && currentSma20 < sma50;
+        const sma20AboveSma50 = currentSma20 > sma50;
+        const sma20BelowSma50 = currentSma20 < sma50;
+        
+        // === PRICE vs SMA20 CONDITIONS ===
+        const priceCrossAboveSma20 = prevPrice <= prevSma20 && price > currentSma20;
+        const priceCrossBelowSma20 = prevPrice >= prevSma20 && price < currentSma20;
+        const priceAboveSma20 = price > currentSma20;
+        const priceBelowSma20 = price < currentSma20;
         
         // === RSI CONDITIONS ===
-        const rsiOversold = rsi < 45;
-        const rsiOverbought = rsi > 55;
-        const rsiTurningUp = rsi > prevRsi && prevRsi < 50;
-        const rsiTurningDown = rsi < prevRsi && prevRsi > 50;
-        const rsiExtremeHigh = rsi > 75;
-        const rsiExtremeLow = rsi < 25;
-        
-        // === MACD CONDITIONS ===
-        const macdAboveSignal = macd > macdSignal;
-        const macdBelowSignal = macd < macdSignal;
-        const macdCrossingUp = prevMacd <= prevMacdSignal && macd > macdSignal;
-        const macdCrossingDown = prevMacd >= prevMacdSignal && macd < macdSignal;
+        const rsiNotOverbought = rsi < 65;
+        const rsiNotOversold = rsi > 35;
+        const rsiOverbought = rsi > 70;
+        const rsiOversold = rsi < 30;
         
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
         
@@ -3008,17 +3019,30 @@
             shouldExit = true;
             exitReason = 'Stop loss';
           }
-          // Trend reversal
-          else if (trendReversal) {
+          // Price too stretched from SMA50
+          else if (position.signal === 'LONG' && distFromSma50 > STRETCHED_EXIT_PCT) {
             shouldExit = true;
-            exitReason = 'Trend reversal';
+            exitReason = 'Stretched';
+          }
+          else if (position.signal === 'SHORT' && distFromSma50 < -STRETCHED_EXIT_PCT) {
+            shouldExit = true;
+            exitReason = 'Stretched';
+          }
+          // SMA20 cross against position
+          else if (position.signal === 'LONG' && sma20CrossBelowSma50) {
+            shouldExit = true;
+            exitReason = 'SMA20 cross down';
+          }
+          else if (position.signal === 'SHORT' && sma20CrossAboveSma50) {
+            shouldExit = true;
+            exitReason = 'SMA20 cross up';
           }
           // RSI extreme
-          else if (position.signal === 'LONG' && rsiExtremeHigh) {
+          else if (position.signal === 'LONG' && rsiOverbought && stretched) {
             shouldExit = true;
             exitReason = 'RSI overbought';
           }
-          else if (position.signal === 'SHORT' && rsiExtremeLow) {
+          else if (position.signal === 'SHORT' && rsiOversold && stretched) {
             shouldExit = true;
             exitReason = 'RSI oversold';
           }
@@ -3031,7 +3055,7 @@
             signals.push({
               date: position.entryDate,
               exitDate: date,
-              system: 'PULLBACK',
+              system: 'SMA20/50',
               signal: position.signal,
               entryPrice: position.entryPrice,
               exitPrice: price,
@@ -3048,27 +3072,21 @@
         }
         
         // ===== ENTRY LOGIC =====
-        if (!position && canTrade) {
+        if (!position && canTrade && nearSma50) {
           
-          // LONG: Bull market + Pullback to SMA50 + RSI oversold turning up + MACD bullish
-          const longConditions = 
-            isBullMarket && 
-            nearSma50 &&
-            (pullbackToSma50 || distanceFromSma50 < 2) &&
-            rsiOversold && 
-            rsiTurningUp &&
-            (macdAboveSignal || macdCrossingUp);
+          // LONG CONDITIONS
+          const longCondition1 = bullMarket || priceRecovering; // Trend filter
+          const longCondition2 = distFromSma50 < 5; // Preço próximo ou abaixo da SMA50
+          const longCondition3 = sma20CrossAboveSma50 || (priceCrossAboveSma20 && sma20AboveSma50) || (price > currentSma20 && prevPrice < prevSma20);
+          const longCondition4 = rsiNotOverbought;
           
-          // SHORT: Bear market + Rally to SMA50 + RSI overbought turning down + MACD bearish
-          const shortConditions = 
-            isBearMarket && 
-            nearSma50 &&
-            (rallyToSma50 || distanceFromSma50 > -2) &&
-            rsiOverbought && 
-            rsiTurningDown &&
-            (macdBelowSignal || macdCrossingDown);
+          // SHORT CONDITIONS  
+          const shortCondition1 = bearMarket && !priceRecovering; // Trend filter
+          const shortCondition2 = distFromSma50 > -5; // Preço próximo ou acima da SMA50
+          const shortCondition3 = sma20CrossBelowSma50 || (priceCrossBelowSma20 && sma20BelowSma50) || (price < currentSma20 && prevPrice > prevSma20);
+          const shortCondition4 = rsiNotOversold;
           
-          if (longConditions) {
+          if (longCondition1 && longCondition2 && longCondition3 && longCondition4) {
             position = {
               signal: 'LONG',
               entryPrice: price,
@@ -3076,7 +3094,7 @@
               entryIndex: i
             };
             lastTradeIndex = i;
-          } else if (shortConditions) {
+          } else if (shortCondition1 && shortCondition2 && shortCondition3 && shortCondition4) {
             position = {
               signal: 'SHORT',
               entryPrice: price,
@@ -3098,7 +3116,7 @@
         signals.push({
           date: position.entryDate,
           exitDate: '--',
-          system: 'PULLBACK',
+          system: 'SMA20/50',
           signal: position.signal,
           entryPrice: position.entryPrice,
           exitPrice: currentPrice,
@@ -3110,7 +3128,7 @@
       }
 
       tradingState.signals = signals;
-      console.log('[Trading] Generated', signals.length, 'signals with PULLBACK system');
+      console.log('[Trading] Generated', signals.length, 'signals with SMA20/50 system');
     }
 
     function renderTradingHistory() {
@@ -3164,8 +3182,8 @@
       fourYearsAgo.setFullYear(fourYearsAgo.getFullYear() - 4);
       const filtered = data.filter(d => new Date(d.day || d.d) >= fourYearsAgo);
       
-      // Sample for performance (max 300 points)
-      const sampleRate = filtered.length > 300 ? Math.ceil(filtered.length / 300) : 1;
+      // Sample for performance (max 400 points for smoother chart)
+      const sampleRate = filtered.length > 400 ? Math.ceil(filtered.length / 400) : 1;
       const sampled = filtered.filter((_, i) => i % sampleRate === 0);
       
       const labels = sampled.map(d => {
@@ -3175,8 +3193,22 @@
       const prices = sampled.map(d => parseFloat(d.price) || parseFloat(d.sma200) * 1.1);
       const sma50s = sampled.map(d => parseFloat(d.sma50));
       const sma200s = sampled.map(d => parseFloat(d.sma200));
+      
+      // Calculate SMA20 for chart
+      const sma20s = [];
+      for (let i = 0; i < sampled.length; i++) {
+        if (i < 19) {
+          sma20s.push(null);
+          continue;
+        }
+        let sum = 0;
+        for (let j = i - 19; j <= i; j++) {
+          sum += prices[j] || 0;
+        }
+        sma20s.push(sum / 20);
+      }
 
-      // Build annotations for signals - TradingView style
+      // Build annotations for signals - cleaner style
       const annotations = {};
       
       // Map original data indices to sampled indices
@@ -3186,7 +3218,7 @@
         return Math.floor(filteredIdx / sampleRate);
       };
 
-      // Create signal annotations with labels and horizontal lines
+      // Create signal annotations - simpler, cleaner
       tradingState.signals.forEach((sig, idx) => {
         const chartEntryIdx = getChartIndex(sig.entryIndex);
         const chartExitIdx = getChartIndex(sig.exitIndex);
@@ -3194,71 +3226,75 @@
         if (chartEntryIdx < 0 || chartEntryIdx >= sampled.length) return;
         
         const entryPrice = sig.entryPrice;
-        const exitPrice = sig.exitPrice;
         const isLong = sig.signal === 'LONG';
         const color = isLong ? '#00d97e' : '#ef4444';
         const pnlVal = parseFloat(sig.pnl);
-        const pnlText = (pnlVal > 0 ? '+' : '') + pnlVal.toFixed(1) + '%';
 
-        // Entry arrow and label
+        // Entry point with small label
         annotations[`entry${idx}`] = {
-          type: 'label',
-          xValue: chartEntryIdx,
-          yValue: entryPrice,
-          yAdjust: isLong ? 30 : -30,
-          backgroundColor: 'transparent',
-          content: [isLong ? '▲' : '▼', isLong ? 'Long' : 'Short'],
-          color: color,
-          font: { size: 10, weight: 'bold', family: 'JetBrains Mono' },
-          textAlign: 'center'
-        };
-
-        // Entry point
-        annotations[`entryPoint${idx}`] = {
           type: 'point',
           xValue: chartEntryIdx,
           yValue: entryPrice,
           backgroundColor: color,
-          borderColor: color,
-          radius: 4
+          borderColor: '#fff',
+          borderWidth: 2,
+          radius: 6
         };
 
-        // Horizontal line from entry to exit
+        // Entry label
+        annotations[`entryLabel${idx}`] = {
+          type: 'label',
+          xValue: chartEntryIdx,
+          yValue: entryPrice,
+          yAdjust: isLong ? 20 : -20,
+          backgroundColor: color,
+          content: isLong ? '▲ L' : '▼ S',
+          color: '#fff',
+          font: { size: 8, weight: 'bold' },
+          padding: { top: 2, bottom: 2, left: 3, right: 3 },
+          borderRadius: 2
+        };
+
+        // Horizontal line and exit point
         if (chartExitIdx > chartEntryIdx && chartExitIdx < sampled.length) {
+          const exitPrice = sig.exitPrice;
+          const pnlColor = pnlVal > 0 ? '#00d97e' : '#ef4444';
+          
+          // Dashed line from entry to exit
           annotations[`line${idx}`] = {
             type: 'line',
             xMin: chartEntryIdx,
             xMax: chartExitIdx,
             yMin: entryPrice,
             yMax: entryPrice,
-            borderColor: color,
+            borderColor: color + '60',
             borderWidth: 1,
-            borderDash: [4, 4]
-          };
-
-          // P&L label at exit
-          annotations[`pnl${idx}`] = {
-            type: 'label',
-            xValue: chartExitIdx,
-            yValue: entryPrice,
-            yAdjust: isLong ? -15 : 15,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            content: pnlText,
-            color: pnlVal > 0 ? '#00d97e' : '#ef4444',
-            font: { size: 9, weight: 'bold', family: 'JetBrains Mono' },
-            padding: { top: 2, bottom: 2, left: 4, right: 4 },
-            borderRadius: 3
+            borderDash: [3, 3]
           };
 
           // Exit point
-          annotations[`exitPoint${idx}`] = {
+          annotations[`exit${idx}`] = {
             type: 'point',
             xValue: chartExitIdx,
             yValue: exitPrice,
-            backgroundColor: pnlVal > 0 ? '#00d97e' : '#ef4444',
+            backgroundColor: pnlColor,
             borderColor: '#fff',
             borderWidth: 1,
-            radius: 3
+            radius: 4
+          };
+
+          // P&L badge
+          annotations[`pnl${idx}`] = {
+            type: 'label',
+            xValue: chartExitIdx,
+            yValue: exitPrice,
+            yAdjust: -15,
+            backgroundColor: pnlColor + 'cc',
+            content: (pnlVal > 0 ? '+' : '') + pnlVal.toFixed(0) + '%',
+            color: '#fff',
+            font: { size: 7, weight: 'bold' },
+            padding: { top: 1, bottom: 1, left: 3, right: 3 },
+            borderRadius: 2
           };
         }
       });
@@ -3273,12 +3309,24 @@
             {
               label: 'BTC',
               data: prices,
-              borderColor: 'rgba(255,255,255,0.9)',
+              borderColor: '#ffffff',
               borderWidth: 2,
               pointRadius: 0,
               fill: false,
               tension: 0.1,
-              yAxisID: 'y'
+              yAxisID: 'y',
+              order: 1
+            },
+            {
+              label: 'SMA20',
+              data: sma20s,
+              borderColor: '#a855f7',
+              borderWidth: 1.2,
+              pointRadius: 0,
+              fill: false,
+              tension: 0.1,
+              yAxisID: 'y',
+              order: 2
             },
             {
               label: 'SMA50',
@@ -3288,7 +3336,8 @@
               pointRadius: 0,
               fill: false,
               tension: 0.1,
-              yAxisID: 'y'
+              yAxisID: 'y',
+              order: 3
             },
             {
               label: 'SMA200',
@@ -3298,7 +3347,8 @@
               pointRadius: 0,
               fill: false,
               tension: 0.1,
-              yAxisID: 'y'
+              yAxisID: 'y',
+              order: 4
             }
           ]
         },
@@ -3315,7 +3365,7 @@
                 color: '#9a9aa6', 
                 font: { size: 10 }, 
                 boxWidth: 12,
-                padding: 15,
+                padding: 10,
                 usePointStyle: true
               }
             },
@@ -3330,9 +3380,21 @@
               borderWidth: 1,
               callbacks: {
                 label: function(context) {
-                  if (context.dataset.label === 'BTC') return 'BTC: $' + context.raw?.toLocaleString();
-                  return context.dataset.label + ': $' + context.raw?.toLocaleString();
+                  const val = context.raw;
+                  if (!val) return null;
+                  return context.dataset.label + ': $' + val.toLocaleString('en-US', {maximumFractionDigits: 0});
                 }
+              }
+            },
+            zoom: {
+              pan: {
+                enabled: true,
+                mode: 'x'
+              },
+              zoom: {
+                wheel: { enabled: true },
+                pinch: { enabled: true },
+                mode: 'x'
               }
             }
           },
