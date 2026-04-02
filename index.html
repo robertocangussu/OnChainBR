@@ -2548,12 +2548,20 @@
         // Process RSI Weekly
         if (fetches[1].status === 'fulfilled') {
           const data = fetches[1].value;
+          console.log('[Trading] RSI Weekly raw response:', data?.slice?.(-3) || data);
           if (Array.isArray(data) && data.length) {
-            tradingState.rsiWeekly = parseFloat(data[data.length - 1].week1);
-            console.log('[Trading] RSI Weekly:', tradingState.rsiWeekly);
+            const latest = data[data.length - 1];
+            // Try different field names
+            const rsiVal = parseFloat(latest.week1 || latest.value || latest.rsi || latest.RSI || Object.values(latest).find(v => typeof v === 'number' || !isNaN(parseFloat(v))));
+            if (!isNaN(rsiVal)) {
+              tradingState.rsiWeekly = rsiVal;
+              console.log('[Trading] RSI Weekly:', tradingState.rsiWeekly);
+            } else {
+              console.warn('[Trading] RSI Weekly - could not parse value from:', latest);
+            }
           }
         } else {
-          console.warn('[Trading] RSI Weekly failed');
+          console.warn('[Trading] RSI Weekly failed:', fetches[1].reason?.message || fetches[1].status);
         }
 
         // Process SOPR
@@ -2872,76 +2880,110 @@
       if (data.length < 50) return;
       
       const signals = [];
-      let position = null; // { signal, entryPrice, entryDate, entryIndex }
-      let prevRsi = null;
-      let prevMacdHist = null;
+      let position = null;
       
       /*
-       * REFINED TRADING SYSTEM v2
-       * ========================
+       * REFINED TRADING SYSTEM v3 - FASTER SIGNALS
+       * ==========================================
        * 
-       * TREND FILTER (macro direction):
-       *   - Uptrend: SMA50 > SMA200
-       *   - Downtrend: SMA50 < SMA200
+       * Usando médias mais rápidas e RSI crossover de 50
        * 
-       * ENTRY CONDITIONS:
-       *   LONG: In uptrend AND (RSI crosses above 45 from below OR RSI < 35 oversold bounce)
-       *         AND MACD Histogram turning positive (or already positive)
-       *   
-       *   SHORT: In downtrend AND (RSI crosses below 55 from above OR RSI > 65 overbought rejection)
-       *          AND MACD Histogram turning negative (or already negative)
+       * INDICADORES:
+       *   - EMA7 vs EMA21 (trend rápido)
+       *   - Preço vs SMA50 (filtro de tendência)
+       *   - RSI(14) crossover de 50
+       *   - MACD Histogram (momentum)
        * 
-       * EXIT CONDITIONS:
-       *   - Trend reversal (SMA50 crosses SMA200)
-       *   - RSI extreme (>75 for longs, <25 for shorts)
-       *   - MACD Histogram changes sign against position
+       * ENTRY LONG:
+       *   - EMA7 > EMA21 (tendência de curto prazo bullish)
+       *   - RSI cruza acima de 50 OU já está entre 50-65
+       *   - MACD Histogram > 0 ou virando positivo
+       *   - Preço > SMA50 (confirma uptrend)
        * 
-       * FILTERS:
-       *   - Minimum 3 days between trades (avoid whipsaws)
-       *   - Price must be within 15% of SMA200 for entries (avoid chasing)
+       * ENTRY SHORT:
+       *   - EMA7 < EMA21 (tendência de curto prazo bearish)
+       *   - RSI cruza abaixo de 50 OU já está entre 35-50
+       *   - MACD Histogram < 0 ou virando negativo
+       *   - Preço < SMA50 (confirma downtrend)
+       * 
+       * EXIT:
+       *   - EMA7 cruza EMA21 na direção oposta
+       *   - RSI extremo (>70 para long, <30 para short)
+       *   - Stop: -8% do entry
        */
       
       let lastTradeIndex = 0;
-      const MIN_BARS_BETWEEN_TRADES = 5;
+      const MIN_BARS_BETWEEN_TRADES = 3;
+      const STOP_LOSS_PCT = 8;
       
-      for (let i = 50; i < data.length; i++) {
+      // Calcular EMAs manualmente se não existirem
+      const ema7 = [];
+      const ema21 = [];
+      const k7 = 2 / (7 + 1);
+      const k21 = 2 / (21 + 1);
+      
+      for (let i = 0; i < data.length; i++) {
+        const price = parseFloat(data[i].price) || parseFloat(data[i].sma50) || 0;
+        
+        // Use existing EMAs if available, otherwise calculate
+        if (data[i].ema7) {
+          ema7[i] = parseFloat(data[i].ema7);
+        } else if (i === 0) {
+          ema7[i] = price;
+        } else {
+          ema7[i] = price * k7 + ema7[i-1] * (1 - k7);
+        }
+        
+        if (data[i].ema21) {
+          ema21[i] = parseFloat(data[i].ema21);
+        } else if (i === 0) {
+          ema21[i] = price;
+        } else {
+          ema21[i] = price * k21 + ema21[i-1] * (1 - k21);
+        }
+      }
+      
+      for (let i = 30; i < data.length; i++) {
         const d = data[i];
         const prev = data[i - 1];
         
         const price = parseFloat(d.price) || 0;
-        const sma50 = parseFloat(d.sma50);
-        const sma200 = parseFloat(d.sma200);
+        const sma50 = parseFloat(d.sma50) || 0;
         const rsi = parseFloat(d.rsi);
         const macdHist = parseFloat(d.macdhist);
-        const macd = parseFloat(d.macd);
         const date = d.day || d.d;
         
-        const prevPrice = parseFloat(prev.price) || 0;
-        const prevSma50 = parseFloat(prev.sma50);
-        const prevSma200 = parseFloat(prev.sma200);
+        const prevRsi = parseFloat(prev.rsi);
+        const prevMacdHist = parseFloat(prev.macdhist);
         
-        if (isNaN(sma50) || isNaN(sma200) || price === 0) continue;
+        if (price === 0 || isNaN(rsi)) continue;
         
-        const isUptrend = sma50 > sma200;
-        const isDowntrend = sma50 < sma200;
-        const trendJustChanged = (prevSma50 > prevSma200) !== (sma50 > sma200);
+        const currentEma7 = ema7[i];
+        const currentEma21 = ema21[i];
+        const prevEma7 = ema7[i-1];
+        const prevEma21 = ema21[i-1];
         
-        // Calculate distance from SMA200
-        const distFromSma200 = ((price / sma200) - 1) * 100;
+        // Trend conditions
+        const emaUptrend = currentEma7 > currentEma21;
+        const emaDowntrend = currentEma7 < currentEma21;
+        const emaCrossUp = prevEma7 <= prevEma21 && currentEma7 > currentEma21;
+        const emaCrossDown = prevEma7 >= prevEma21 && currentEma7 < currentEma21;
+        const priceAboveSma50 = price > sma50;
+        const priceBelowSma50 = price < sma50;
         
         // RSI conditions
-        const rsiCrossUp45 = prevRsi !== null && prevRsi < 45 && rsi >= 45;
-        const rsiCrossDown55 = prevRsi !== null && prevRsi > 55 && rsi <= 55;
-        const rsiOversold = rsi < 35;
-        const rsiOverbought = rsi > 65;
-        const rsiExtremeHigh = rsi > 75;
-        const rsiExtremeLow = rsi < 25;
+        const rsiCrossUp50 = prevRsi < 50 && rsi >= 50;
+        const rsiCrossDown50 = prevRsi > 50 && rsi <= 50;
+        const rsiBullishZone = rsi >= 45 && rsi <= 70;
+        const rsiBearishZone = rsi >= 30 && rsi <= 55;
+        const rsiOverbought = rsi > 70;
+        const rsiOversold = rsi < 30;
         
         // MACD conditions
-        const macdTurningPositive = prevMacdHist !== null && prevMacdHist <= 0 && macdHist > 0;
-        const macdTurningNegative = prevMacdHist !== null && prevMacdHist >= 0 && macdHist < 0;
         const macdPositive = macdHist > 0;
         const macdNegative = macdHist < 0;
+        const macdTurningUp = prevMacdHist < macdHist && macdHist > -50;
+        const macdTurningDown = prevMacdHist > macdHist && macdHist < 50;
         
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
         
@@ -2950,29 +2992,31 @@
           let shouldExit = false;
           let exitReason = '';
           
+          // Stop loss check
+          const currentPnl = position.signal === 'LONG' 
+            ? ((price / position.entryPrice - 1) * 100)
+            : ((position.entryPrice / price - 1) * 100);
+          
+          if (currentPnl <= -STOP_LOSS_PCT) {
+            shouldExit = true;
+            exitReason = 'Stop loss';
+          }
+          
           if (position.signal === 'LONG') {
-            // Exit LONG conditions
-            if (trendJustChanged && isDowntrend) {
+            if (emaCrossDown) {
               shouldExit = true;
-              exitReason = 'Trend reversal';
-            } else if (rsiExtremeHigh) {
+              exitReason = 'EMA cross down';
+            } else if (rsiOverbought && macdTurningDown) {
               shouldExit = true;
               exitReason = 'RSI overbought';
-            } else if (macdTurningNegative && rsi > 60) {
-              shouldExit = true;
-              exitReason = 'MACD bearish';
             }
           } else if (position.signal === 'SHORT') {
-            // Exit SHORT conditions
-            if (trendJustChanged && isUptrend) {
+            if (emaCrossUp) {
               shouldExit = true;
-              exitReason = 'Trend reversal';
-            } else if (rsiExtremeLow) {
+              exitReason = 'EMA cross up';
+            } else if (rsiOversold && macdTurningUp) {
               shouldExit = true;
               exitReason = 'RSI oversold';
-            } else if (macdTurningPositive && rsi < 40) {
-              shouldExit = true;
-              exitReason = 'MACD bullish';
             }
           }
           
@@ -2984,7 +3028,7 @@
             signals.push({
               date: position.entryDate,
               exitDate: date,
-              system: 'REFINED',
+              system: 'EMA',
               signal: position.signal,
               entryPrice: position.entryPrice,
               exitPrice: price,
@@ -3002,24 +3046,9 @@
         
         // ===== ENTRY LOGIC =====
         if (!position && canTrade) {
-          let shouldEnterLong = false;
-          let shouldEnterShort = false;
           
-          // LONG entry conditions
-          if (isUptrend && Math.abs(distFromSma200) < 20) {
-            if ((rsiCrossUp45 || rsiOversold) && (macdPositive || macdTurningPositive)) {
-              shouldEnterLong = true;
-            }
-          }
-          
-          // SHORT entry conditions
-          if (isDowntrend && Math.abs(distFromSma200) < 20) {
-            if ((rsiCrossDown55 || rsiOverbought) && (macdNegative || macdTurningNegative)) {
-              shouldEnterShort = true;
-            }
-          }
-          
-          if (shouldEnterLong) {
+          // LONG: EMA7 > EMA21 + RSI bullish + MACD positive + Price > SMA50
+          if (emaUptrend && (rsiCrossUp50 || rsiBullishZone) && (macdPositive || macdTurningUp) && priceAboveSma50) {
             position = {
               signal: 'LONG',
               entryPrice: price,
@@ -3027,7 +3056,9 @@
               entryIndex: i
             };
             lastTradeIndex = i;
-          } else if (shouldEnterShort) {
+          }
+          // SHORT: EMA7 < EMA21 + RSI bearish + MACD negative + Price < SMA50
+          else if (emaDowntrend && (rsiCrossDown50 || rsiBearishZone) && (macdNegative || macdTurningDown) && priceBelowSma50) {
             position = {
               signal: 'SHORT',
               entryPrice: price,
@@ -3037,10 +3068,6 @@
             lastTradeIndex = i;
           }
         }
-        
-        // Update previous values
-        prevRsi = rsi;
-        prevMacdHist = macdHist;
       }
 
       // Add current open position
@@ -3053,7 +3080,7 @@
         signals.push({
           date: position.entryDate,
           exitDate: '--',
-          system: 'REFINED',
+          system: 'EMA',
           signal: position.signal,
           entryPrice: position.entryPrice,
           exitPrice: currentPrice,
@@ -3065,7 +3092,7 @@
       }
 
       tradingState.signals = signals;
-      console.log('[Trading] Generated', signals.length, 'signals with refined system');
+      console.log('[Trading] Generated', signals.length, 'signals with EMA system');
     }
 
     function renderTradingHistory() {
