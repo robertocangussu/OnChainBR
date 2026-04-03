@@ -2912,45 +2912,52 @@
       let position = null;
       
       /*
-       * CROSSOVER ENTRY STRATEGY v16
-       * =============================
+       * EMA CROSSOVER + TRADING SYSTEMS v17
+       * =====================================
        * 
-       * Problema do v15: entradas TARDIAS, depois que já subiu
+       * Baseado na sugestão do Roberto:
        * 
-       * SOLUÇÃO: Entrar NO cruzamento ou logo depois (max 10 dias)
+       * ENTRY (LONG):
+       *   1. EMA21 cruzou EMA50 pra cima
+       *   2. Esperar 2 dias após cruzamento (confirmação)
+       *   3. Trading Systems Score >= 2 (pelo menos 2 sinais positivos)
        * 
-       * ENTRY (LONG) quando:
-       *   1. SMA20 cruzou SMA50 pra cima nos últimos 10 dias
-       *   2. OU SMA50 cruzou SMA200 pra cima nos últimos 15 dias (golden cross)
-       *   3. Preço não muito esticado (< 15% acima SMA50)
-       *   4. RSI < 70
-       * 
-       * EXIT quando:
-       *   - SMA20 cruza abaixo SMA50
-       *   - OU SMA50 cruza abaixo SMA200 (death cross)
-       *   - OU Stop Loss -12%
+       * EXIT:
+       *   1. EMA21 cruza EMA50 pra baixo
+       *   2. OU Stop Loss -12%
        */
       
       let lastTradeIndex = 0;
-      const MIN_BARS_BETWEEN_TRADES = 30;
+      const MIN_BARS_BETWEEN_TRADES = 20;
+      const CONFIRMATION_DAYS = 2;
       
-      // Calculate SMA20
-      const sma20 = [];
+      // Calculate EMA21
+      const ema21 = [];
+      const ema21Multiplier = 2 / (21 + 1);
       for (let i = 0; i < data.length; i++) {
-        if (i < 19) {
-          sma20[i] = null;
-          continue;
+        const price = parseFloat(data[i].price) || 0;
+        if (i === 0) {
+          ema21[i] = price;
+        } else {
+          ema21[i] = (price - ema21[i-1]) * ema21Multiplier + ema21[i-1];
         }
-        let sum = 0;
-        for (let j = i - 19; j <= i; j++) {
-          sum += parseFloat(data[j].price) || 0;
-        }
-        sma20[i] = sum / 20;
       }
       
-      // Track crossovers
-      let daysSinceSma20CrossAboveSma50 = 999;
-      let daysSinceGoldenCross = 999;
+      // Calculate EMA50
+      const ema50 = [];
+      const ema50Multiplier = 2 / (50 + 1);
+      for (let i = 0; i < data.length; i++) {
+        const price = parseFloat(data[i].price) || 0;
+        if (i === 0) {
+          ema50[i] = price;
+        } else {
+          ema50[i] = (price - ema50[i-1]) * ema50Multiplier + ema50[i-1];
+        }
+      }
+      
+      // Track crossover
+      let daysSinceBullishCross = 999;
+      let crossConfirmed = false;
       
       for (let i = 60; i < data.length; i++) {
         const d = data[i];
@@ -2959,62 +2966,72 @@
         const price = parseFloat(d.price) || 0;
         const sma50 = parseFloat(d.sma50) || 0;
         const sma200 = parseFloat(d.sma200) || 0;
-        const prevSma50 = parseFloat(prev.sma50) || 0;
-        const prevSma200 = parseFloat(prev.sma200) || 0;
+        const macd = parseFloat(d.macd) || 0;
         const rsi = parseFloat(d.rsi) || 50;
         const date = d.day || d.d;
         
-        const currentSma20 = sma20[i];
-        const prevSma20 = sma20[i - 1];
+        const currentEma21 = ema21[i];
+        const currentEma50 = ema50[i];
+        const prevEma21 = ema21[i - 1];
+        const prevEma50 = ema50[i - 1];
         
-        if (price === 0 || sma50 === 0 || sma200 === 0 || !currentSma20) continue;
+        if (price === 0 || !currentEma21 || !currentEma50) continue;
         
         // ========================================
-        // DETECT CROSSOVERS
+        // DETECT EMA CROSSOVERS
         // ========================================
         
-        // SMA20 crosses above SMA50
-        if (prevSma20 <= prevSma50 && currentSma20 > sma50) {
-          daysSinceSma20CrossAboveSma50 = 0;
-          console.log('[v16] SMA20 crossed above SMA50 @', date);
+        // EMA21 crosses above EMA50 (bullish)
+        const bullishCross = prevEma21 <= prevEma50 && currentEma21 > currentEma50;
+        
+        // EMA21 crosses below EMA50 (bearish)
+        const bearishCross = prevEma21 >= prevEma50 && currentEma21 < currentEma50;
+        
+        if (bullishCross) {
+          daysSinceBullishCross = 0;
+          crossConfirmed = false;
+          console.log('[v17] EMA21 crossed above EMA50 @', date);
+        } else if (currentEma21 > currentEma50) {
+          daysSinceBullishCross++;
+          // Confirm after 2 days
+          if (daysSinceBullishCross === CONFIRMATION_DAYS) {
+            crossConfirmed = true;
+            console.log('[v17] Crossover CONFIRMED @', date);
+          }
         } else {
-          daysSinceSma20CrossAboveSma50++;
+          daysSinceBullishCross = 999;
+          crossConfirmed = false;
         }
         
-        // Golden Cross: SMA50 crosses above SMA200
-        if (prevSma50 <= prevSma200 && sma50 > sma200) {
-          daysSinceGoldenCross = 0;
-          console.log('[v16] GOLDEN CROSS @', date);
-        } else {
-          daysSinceGoldenCross++;
-        }
+        // ========================================
+        // CALCULATE TRADING SYSTEMS SCORE
+        // ========================================
+        let trendScore = 0;
         
-        // Death Cross: SMA50 crosses below SMA200
-        const deathCross = prevSma50 >= prevSma200 && sma50 < sma200;
+        // SMA50 vs SMA200
+        if (sma50 > sma200) trendScore += 1;
         
-        // SMA20 crosses below SMA50
-        const sma20CrossBelowSma50 = prevSma20 >= prevSma50 && currentSma20 < sma50;
+        // Price vs SMA200
+        if (price > sma200) trendScore += 1;
+        
+        // MACD
+        if (macd > 0) trendScore += 1;
+        
+        // RSI
+        if (rsi > 45 && rsi < 70) trendScore += 1;
+        
+        // EMA alignment
+        if (currentEma21 > currentEma50) trendScore += 1;
+        
+        // Score >= 2 means at least 2 positive signals
+        const tradingSystemsOk = trendScore >= 2;
         
         // ========================================
-        // ENTRY CONDITIONS
+        // CONDITIONS
         // ========================================
-        
-        // Recent crossover (entry window)
-        const recentSma20Cross = daysSinceSma20CrossAboveSma50 <= 10;
-        const recentGoldenCross = daysSinceGoldenCross <= 15;
-        const hasRecentCrossover = recentSma20Cross || recentGoldenCross;
-        
-        // Not too stretched
-        const distFromSma50 = ((price / sma50) - 1) * 100;
-        const notStretched = distFromSma50 < 15;
-        
-        // RSI not overbought
-        const rsiOk = rsi < 70;
-        
-        // Structure OK
-        const bullStructure = currentSma20 > sma50 || sma50 > sma200;
         
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
+        const notTooStretched = ((price / currentEma50) - 1) * 100 < 20;
         
         // ===== EXIT LOGIC =====
         if (position) {
@@ -3023,14 +3040,12 @@
           
           const currentPnl = ((price / position.entryPrice) - 1) * 100;
           
-          if (sma20CrossBelowSma50) {
+          // EMA21 crosses below EMA50
+          if (bearishCross) {
             shouldExit = true;
-            exitReason = 'SMA20<SMA50';
+            exitReason = 'EMA Cross Down';
           }
-          else if (deathCross) {
-            shouldExit = true;
-            exitReason = 'Death Cross';
-          }
+          // Stop Loss
           else if (currentPnl <= -12) {
             shouldExit = true;
             exitReason = 'Stop Loss';
@@ -3040,7 +3055,7 @@
             signals.push({
               date: position.entryDate,
               exitDate: date,
-              system: 'CROSS',
+              system: 'EMA',
               signal: 'LONG',
               entryPrice: position.entryPrice,
               exitPrice: price,
@@ -3053,6 +3068,7 @@
             
             position = null;
             lastTradeIndex = i;
+            crossConfirmed = false;
           }
         }
         
@@ -3060,30 +3076,29 @@
         if (!position && canTrade) {
           
           /*
-           * LONG ENTRY no cruzamento:
-           * 1. Cruzamento recente (SMA20>SMA50 ou Golden Cross)
-           * 2. Não muito esticado
-           * 3. RSI OK
-           * 4. Estrutura bullish
+           * LONG ENTRY:
+           * 1. EMA21 cruzou EMA50 há 2+ dias (confirmado)
+           * 2. Trading Systems Score >= 2
+           * 3. Não muito esticado
            */
-          if (hasRecentCrossover && 
-              notStretched && 
-              rsiOk && 
-              bullStructure) {
+          if (crossConfirmed && 
+              tradingSystemsOk && 
+              notTooStretched &&
+              daysSinceBullishCross >= CONFIRMATION_DAYS &&
+              daysSinceBullishCross <= 10) { // Janela de 10 dias
             
-            const crossType = recentGoldenCross ? 'Golden' : 'SMA20';
             position = {
               signal: 'LONG',
               entryPrice: price,
               entryDate: date,
               entryIndex: i,
-              crossType: crossType
+              entryScore: trendScore
             };
             lastTradeIndex = i;
-            console.log('[v16] LONG @', date, '| $' + price.toFixed(0), 
-                       '| Cross:', crossType,
-                       '| Days since:', recentGoldenCross ? daysSinceGoldenCross : daysSinceSma20CrossAboveSma50,
-                       '| RSI:', rsi.toFixed(0));
+            crossConfirmed = false; // Reset para não entrar de novo
+            console.log('[v17] LONG @', date, '| $' + price.toFixed(0), 
+                       '| Score:', trendScore,
+                       '| Days after cross:', daysSinceBullishCross);
           }
         }
       }
@@ -3096,7 +3111,7 @@
         signals.push({
           date: position.entryDate,
           exitDate: '--',
-          system: 'CROSS',
+          system: 'EMA',
           signal: 'LONG',
           entryPrice: position.entryPrice,
           exitPrice: currentPrice,
@@ -3115,8 +3130,8 @@
       const winRate = closed.length > 0 ? (wins.length / closed.length * 100).toFixed(0) : 0;
       const totalProfit = wins.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
       const totalLoss = losses.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
-      console.log('[Trading] v16 CROSSOVER:', signals.length, 'trades |', winRate + '% win |', 
-                  '+' + totalProfit.toFixed(0) + '% profit |', totalLoss.toFixed(0) + '% loss');
+      console.log('[Trading] v17 EMA:', signals.length, 'trades |', winRate + '% win |', 
+                  '+' + totalProfit.toFixed(0) + '% / ' + totalLoss.toFixed(0) + '%');
     }
 
     function renderTradingHistory() {
