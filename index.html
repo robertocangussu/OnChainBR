@@ -2912,27 +2912,27 @@
       let position = null;
       
       /*
-       * PULLBACK ENTRY STRATEGY v15
-       * ============================
+       * CROSSOVER ENTRY STRATEGY v16
+       * =============================
        * 
-       * Baseado nas marcações do Roberto - as melhores entradas são:
-       * 1. Pullbacks para perto da SMA50 ou SMA200
-       * 2. NÃO em breakouts (quando já subiu muito)
+       * Problema do v15: entradas TARDIAS, depois que já subiu
+       * 
+       * SOLUÇÃO: Entrar NO cruzamento ou logo depois (max 10 dias)
        * 
        * ENTRY (LONG) quando:
-       *   1. Preço PERTO da SMA50 (dentro de 10%) - pullback zone
-       *   2. OU preço perto da SMA200 (dentro de 5%)
-       *   3. SMA50 > SMA200 (estrutura bull) OU prestes a cruzar
-       *   4. RSI < 60 (não overbought)
-       *   5. Preço acabou de bouncer (hoje > ontem)
+       *   1. SMA20 cruzou SMA50 pra cima nos últimos 10 dias
+       *   2. OU SMA50 cruzou SMA200 pra cima nos últimos 15 dias (golden cross)
+       *   3. Preço não muito esticado (< 15% acima SMA50)
+       *   4. RSI < 70
        * 
        * EXIT quando:
-       *   - SMA50 cruza abaixo SMA20
+       *   - SMA20 cruza abaixo SMA50
+       *   - OU SMA50 cruza abaixo SMA200 (death cross)
        *   - OU Stop Loss -12%
        */
       
       let lastTradeIndex = 0;
-      const MIN_BARS_BETWEEN_TRADES = 40;
+      const MIN_BARS_BETWEEN_TRADES = 30;
       
       // Calculate SMA20
       const sma20 = [];
@@ -2948,71 +2948,71 @@
         sma20[i] = sum / 20;
       }
       
-      // Track SMA50 direction
-      const sma50Rising = [];
-      for (let i = 0; i < data.length; i++) {
-        if (i < 10) {
-          sma50Rising[i] = false;
-          continue;
-        }
-        const current = parseFloat(data[i].sma50) || 0;
-        const past = parseFloat(data[i - 10].sma50) || 0;
-        sma50Rising[i] = current > past;
-      }
+      // Track crossovers
+      let daysSinceSma20CrossAboveSma50 = 999;
+      let daysSinceGoldenCross = 999;
       
       for (let i = 60; i < data.length; i++) {
         const d = data[i];
         const prev = data[i - 1];
-        const prev2 = data[i - 2];
         
         const price = parseFloat(d.price) || 0;
-        const prevPrice = parseFloat(prev.price) || 0;
-        const prev2Price = parseFloat(prev2.price) || 0;
         const sma50 = parseFloat(d.sma50) || 0;
         const sma200 = parseFloat(d.sma200) || 0;
-        const macd = parseFloat(d.macd) || 0;
+        const prevSma50 = parseFloat(prev.sma50) || 0;
+        const prevSma200 = parseFloat(prev.sma200) || 0;
         const rsi = parseFloat(d.rsi) || 50;
         const date = d.day || d.d;
         
         const currentSma20 = sma20[i];
         const prevSma20 = sma20[i - 1];
-        const prevSma50 = parseFloat(prev.sma50) || 0;
         
         if (price === 0 || sma50 === 0 || sma200 === 0 || !currentSma20) continue;
         
         // ========================================
-        // PULLBACK DETECTION
+        // DETECT CROSSOVERS
         // ========================================
         
-        // Distância do preço às médias
+        // SMA20 crosses above SMA50
+        if (prevSma20 <= prevSma50 && currentSma20 > sma50) {
+          daysSinceSma20CrossAboveSma50 = 0;
+          console.log('[v16] SMA20 crossed above SMA50 @', date);
+        } else {
+          daysSinceSma20CrossAboveSma50++;
+        }
+        
+        // Golden Cross: SMA50 crosses above SMA200
+        if (prevSma50 <= prevSma200 && sma50 > sma200) {
+          daysSinceGoldenCross = 0;
+          console.log('[v16] GOLDEN CROSS @', date);
+        } else {
+          daysSinceGoldenCross++;
+        }
+        
+        // Death Cross: SMA50 crosses below SMA200
+        const deathCross = prevSma50 >= prevSma200 && sma50 < sma200;
+        
+        // SMA20 crosses below SMA50
+        const sma20CrossBelowSma50 = prevSma20 >= prevSma50 && currentSma20 < sma50;
+        
+        // ========================================
+        // ENTRY CONDITIONS
+        // ========================================
+        
+        // Recent crossover (entry window)
+        const recentSma20Cross = daysSinceSma20CrossAboveSma50 <= 10;
+        const recentGoldenCross = daysSinceGoldenCross <= 15;
+        const hasRecentCrossover = recentSma20Cross || recentGoldenCross;
+        
+        // Not too stretched
         const distFromSma50 = ((price / sma50) - 1) * 100;
-        const distFromSma200 = ((price / sma200) - 1) * 100;
+        const notStretched = distFromSma50 < 15;
         
-        // Pullback zone: preço perto da SMA50 (entre -5% e +10%)
-        const nearSma50 = distFromSma50 >= -5 && distFromSma50 <= 10;
+        // RSI not overbought
+        const rsiOk = rsi < 70;
         
-        // Ou perto da SMA200 (entre -3% e +8%)
-        const nearSma200 = distFromSma200 >= -3 && distFromSma200 <= 8;
-        
-        // Em zona de pullback
-        const inPullbackZone = nearSma50 || nearSma200;
-        
-        // Bounce: preço subindo após tocar a zona
-        const bouncing = price > prevPrice && prevPrice <= prev2Price;
-        
-        // Estrutura: SMA50 > SMA200 OU quase cruzando (SMA50 subindo e perto)
-        const bullStructure = sma50 > sma200;
-        const almostGoldenCross = sma50Rising[i] && ((sma50 / sma200) > 0.95);
-        const structureOk = bullStructure || almostGoldenCross;
-        
-        // RSI não muito alto
-        const rsiOk = rsi < 60;
-        
-        // MACD melhorando
-        const macdOk = macd > parseFloat(prev.macd) || macd > 0;
-        
-        // EXIT: SMA50 crosses below SMA20
-        const sma50CrossBelowSma20 = prevSma50 >= prevSma20 && sma50 < currentSma20;
+        // Structure OK
+        const bullStructure = currentSma20 > sma50 || sma50 > sma200;
         
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
         
@@ -3023,30 +3023,24 @@
           
           const currentPnl = ((price / position.entryPrice) - 1) * 100;
           
-          if (sma50CrossBelowSma20) {
+          if (sma20CrossBelowSma50) {
             shouldExit = true;
-            exitReason = 'SMA50<SMA20';
+            exitReason = 'SMA20<SMA50';
+          }
+          else if (deathCross) {
+            shouldExit = true;
+            exitReason = 'Death Cross';
           }
           else if (currentPnl <= -12) {
             shouldExit = true;
             exitReason = 'Stop Loss';
-          }
-          // Trailing stop: se subiu muito e voltou
-          else if (currentPnl < position.maxPnl - 15 && position.maxPnl > 20) {
-            shouldExit = true;
-            exitReason = 'Trailing';
-          }
-          
-          // Update max PnL
-          if (currentPnl > (position.maxPnl || 0)) {
-            position.maxPnl = currentPnl;
           }
           
           if (shouldExit) {
             signals.push({
               date: position.entryDate,
               exitDate: date,
-              system: 'PULLBACK',
+              system: 'CROSS',
               signal: 'LONG',
               entryPrice: position.entryPrice,
               exitPrice: price,
@@ -3062,33 +3056,33 @@
           }
         }
         
-        // ===== ENTRY LOGIC - PULLBACK =====
+        // ===== ENTRY LOGIC =====
         if (!position && canTrade) {
           
           /*
-           * LONG ENTRY em pullback:
-           * 1. Preço em zona de pullback (perto SMA50 ou SMA200)
-           * 2. Bounce detectado (preço subindo após cair)
-           * 3. Estrutura OK (SMA50 > SMA200 ou quase)
-           * 4. RSI < 60
-           * 5. MACD melhorando
+           * LONG ENTRY no cruzamento:
+           * 1. Cruzamento recente (SMA20>SMA50 ou Golden Cross)
+           * 2. Não muito esticado
+           * 3. RSI OK
+           * 4. Estrutura bullish
            */
-          if (inPullbackZone && 
-              bouncing && 
-              structureOk && 
+          if (hasRecentCrossover && 
+              notStretched && 
               rsiOk && 
-              macdOk) {
+              bullStructure) {
+            
+            const crossType = recentGoldenCross ? 'Golden' : 'SMA20';
             position = {
               signal: 'LONG',
               entryPrice: price,
               entryDate: date,
               entryIndex: i,
-              maxPnl: 0
+              crossType: crossType
             };
             lastTradeIndex = i;
-            console.log('[v15] PULLBACK LONG @', date, '| $' + price.toFixed(0), 
-                       '| Dist50:', distFromSma50.toFixed(1) + '%',
-                       '| Dist200:', distFromSma200.toFixed(1) + '%',
+            console.log('[v16] LONG @', date, '| $' + price.toFixed(0), 
+                       '| Cross:', crossType,
+                       '| Days since:', recentGoldenCross ? daysSinceGoldenCross : daysSinceSma20CrossAboveSma50,
                        '| RSI:', rsi.toFixed(0));
           }
         }
@@ -3102,7 +3096,7 @@
         signals.push({
           date: position.entryDate,
           exitDate: '--',
-          system: 'PULLBACK',
+          system: 'CROSS',
           signal: 'LONG',
           entryPrice: position.entryPrice,
           exitPrice: currentPrice,
@@ -3116,10 +3110,13 @@
       tradingState.signals = signals;
       
       const closed = signals.filter(s => s.status === 'CLOSED');
-      const wins = closed.filter(s => parseFloat(s.pnl) > 0).length;
-      const winRate = closed.length > 0 ? (wins / closed.length * 100).toFixed(0) : 0;
-      const totalPnl = closed.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
-      console.log('[Trading] v15 PULLBACK:', signals.length, 'trades |', winRate + '% win rate |', totalPnl.toFixed(1) + '% total');
+      const wins = closed.filter(s => parseFloat(s.pnl) > 0);
+      const losses = closed.filter(s => parseFloat(s.pnl) < 0);
+      const winRate = closed.length > 0 ? (wins.length / closed.length * 100).toFixed(0) : 0;
+      const totalProfit = wins.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
+      const totalLoss = losses.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
+      console.log('[Trading] v16 CROSSOVER:', signals.length, 'trades |', winRate + '% win |', 
+                  '+' + totalProfit.toFixed(0) + '% profit |', totalLoss.toFixed(0) + '% loss');
     }
 
     function renderTradingHistory() {
