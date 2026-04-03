@@ -655,7 +655,7 @@
           </div>
           <div class="trading-chart-legend">
             <span class="legend-item"><span class="legend-dot" style="background:#00d97e"></span> LONG</span>
-            <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> SHORT</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> EXIT</span>
             <span class="legend-item"><span class="legend-line" style="background:#3b82f6"></span> SMA50</span>
             <span class="legend-item"><span class="legend-line" style="background:#f97316"></span> SMA200</span>
           </div>
@@ -2912,21 +2912,19 @@
       let position = null;
       
       /*
-       * TREND SYSTEM BASED STRATEGY v14
-       * ================================
+       * PULLBACK ENTRY STRATEGY v15
+       * ============================
        * 
-       * v13 filtrou demais (só 2 trades!)
-       * 
-       * AJUSTE: Não exigir que score "acabou de virar"
-       * Em vez disso, entrar quando ESTRUTURA está boa:
+       * Baseado nas marcações do Roberto - as melhores entradas são:
+       * 1. Pullbacks para perto da SMA50 ou SMA200
+       * 2. NÃO em breakouts (quando já subiu muito)
        * 
        * ENTRY (LONG) quando:
-       *   1. Score >= 3 (estrutura bullish)
-       *   2. SMA50 subindo
-       *   3. SMA20 > SMA50
-       *   4. RSI entre 40-65 (não extremos)
-       *   5. Preço < 60% acima SMA200 (evita topos)
-       *   6. NÃO estava em posição recentemente
+       *   1. Preço PERTO da SMA50 (dentro de 10%) - pullback zone
+       *   2. OU preço perto da SMA200 (dentro de 5%)
+       *   3. SMA50 > SMA200 (estrutura bull) OU prestes a cruzar
+       *   4. RSI < 60 (não overbought)
+       *   5. Preço acabou de bouncer (hoje > ontem)
        * 
        * EXIT quando:
        *   - SMA50 cruza abaixo SMA20
@@ -2934,7 +2932,7 @@
        */
       
       let lastTradeIndex = 0;
-      const MIN_BARS_BETWEEN_TRADES = 30; // Mais espaço entre trades
+      const MIN_BARS_BETWEEN_TRADES = 40;
       
       // Calculate SMA20
       const sma20 = [];
@@ -2965,8 +2963,11 @@
       for (let i = 60; i < data.length; i++) {
         const d = data[i];
         const prev = data[i - 1];
+        const prev2 = data[i - 2];
         
         const price = parseFloat(d.price) || 0;
+        const prevPrice = parseFloat(prev.price) || 0;
+        const prev2Price = parseFloat(prev2.price) || 0;
         const sma50 = parseFloat(d.sma50) || 0;
         const sma200 = parseFloat(d.sma200) || 0;
         const macd = parseFloat(d.macd) || 0;
@@ -2980,34 +2981,35 @@
         if (price === 0 || sma50 === 0 || sma200 === 0 || !currentSma20) continue;
         
         // ========================================
-        // CALCULATE TREND SYSTEM SCORE
+        // PULLBACK DETECTION
         // ========================================
-        let trendScore = 0;
         
-        if (sma50 > sma200) trendScore += 1;
-        else trendScore -= 1;
-        
-        if (price > sma200) trendScore += 1;
-        else trendScore -= 1;
-        
-        if (macd > 0) trendScore += 1;
-        else trendScore -= 1;
-        
-        if (rsi > 45) trendScore += 1;
-        else trendScore -= 1;
-        
-        if (price > sma50) trendScore += 1;
-        else trendScore -= 1;
-        
-        // CONDIÇÕES
-        const isBullish = trendScore >= 3;
-        const trendRising = sma50Rising[i];
-        const smasAligned = currentSma20 > sma50;
-        
-        // Filtros anti-topo (mais relaxados)
+        // Distância do preço às médias
+        const distFromSma50 = ((price / sma50) - 1) * 100;
         const distFromSma200 = ((price / sma200) - 1) * 100;
-        const notAtTop = distFromSma200 < 60; // Relaxado de 80% para 60%
-        const rsiOk = rsi >= 40 && rsi <= 65; // RSI em zona saudável
+        
+        // Pullback zone: preço perto da SMA50 (entre -5% e +10%)
+        const nearSma50 = distFromSma50 >= -5 && distFromSma50 <= 10;
+        
+        // Ou perto da SMA200 (entre -3% e +8%)
+        const nearSma200 = distFromSma200 >= -3 && distFromSma200 <= 8;
+        
+        // Em zona de pullback
+        const inPullbackZone = nearSma50 || nearSma200;
+        
+        // Bounce: preço subindo após tocar a zona
+        const bouncing = price > prevPrice && prevPrice <= prev2Price;
+        
+        // Estrutura: SMA50 > SMA200 OU quase cruzando (SMA50 subindo e perto)
+        const bullStructure = sma50 > sma200;
+        const almostGoldenCross = sma50Rising[i] && ((sma50 / sma200) > 0.95);
+        const structureOk = bullStructure || almostGoldenCross;
+        
+        // RSI não muito alto
+        const rsiOk = rsi < 60;
+        
+        // MACD melhorando
+        const macdOk = macd > parseFloat(prev.macd) || macd > 0;
         
         // EXIT: SMA50 crosses below SMA20
         const sma50CrossBelowSma20 = prevSma50 >= prevSma20 && sma50 < currentSma20;
@@ -3025,20 +3027,26 @@
             shouldExit = true;
             exitReason = 'SMA50<SMA20';
           }
-          else if (trendScore <= -3) {
-            shouldExit = true;
-            exitReason = 'Score -3';
-          }
           else if (currentPnl <= -12) {
             shouldExit = true;
             exitReason = 'Stop Loss';
+          }
+          // Trailing stop: se subiu muito e voltou
+          else if (currentPnl < position.maxPnl - 15 && position.maxPnl > 20) {
+            shouldExit = true;
+            exitReason = 'Trailing';
+          }
+          
+          // Update max PnL
+          if (currentPnl > (position.maxPnl || 0)) {
+            position.maxPnl = currentPnl;
           }
           
           if (shouldExit) {
             signals.push({
               date: position.entryDate,
               exitDate: date,
-              system: 'TREND',
+              system: 'PULLBACK',
               signal: 'LONG',
               entryPrice: position.entryPrice,
               exitPrice: price,
@@ -3054,33 +3062,34 @@
           }
         }
         
-        // ===== ENTRY LOGIC =====
+        // ===== ENTRY LOGIC - PULLBACK =====
         if (!position && canTrade) {
           
           /*
-           * LONG ENTRY quando estrutura está boa:
-           * 1. Score >= 3
-           * 2. SMA50 subindo
-           * 3. SMA20 > SMA50
-           * 4. RSI entre 40-65
-           * 5. Preço < 60% acima SMA200
+           * LONG ENTRY em pullback:
+           * 1. Preço em zona de pullback (perto SMA50 ou SMA200)
+           * 2. Bounce detectado (preço subindo após cair)
+           * 3. Estrutura OK (SMA50 > SMA200 ou quase)
+           * 4. RSI < 60
+           * 5. MACD melhorando
            */
-          if (isBullish && 
-              trendRising && 
-              smasAligned && 
+          if (inPullbackZone && 
+              bouncing && 
+              structureOk && 
               rsiOk && 
-              notAtTop) {
+              macdOk) {
             position = {
               signal: 'LONG',
               entryPrice: price,
               entryDate: date,
               entryIndex: i,
-              entryScore: trendScore
+              maxPnl: 0
             };
             lastTradeIndex = i;
-            console.log('[v14] LONG @', date, '| $' + price.toFixed(0), 
-                       '| RSI:', rsi.toFixed(0), 
-                       '| Dist200:', distFromSma200.toFixed(0) + '%');
+            console.log('[v15] PULLBACK LONG @', date, '| $' + price.toFixed(0), 
+                       '| Dist50:', distFromSma50.toFixed(1) + '%',
+                       '| Dist200:', distFromSma200.toFixed(1) + '%',
+                       '| RSI:', rsi.toFixed(0));
           }
         }
       }
@@ -3093,7 +3102,7 @@
         signals.push({
           date: position.entryDate,
           exitDate: '--',
-          system: 'TREND',
+          system: 'PULLBACK',
           signal: 'LONG',
           entryPrice: position.entryPrice,
           exitPrice: currentPrice,
@@ -3110,7 +3119,7 @@
       const wins = closed.filter(s => parseFloat(s.pnl) > 0).length;
       const winRate = closed.length > 0 ? (wins / closed.length * 100).toFixed(0) : 0;
       const totalPnl = closed.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
-      console.log('[Trading] v14:', signals.length, 'trades |', winRate + '% win rate |', totalPnl.toFixed(1) + '% total');
+      console.log('[Trading] v15 PULLBACK:', signals.length, 'trades |', winRate + '% win rate |', totalPnl.toFixed(1) + '% total');
     }
 
     function renderTradingHistory() {
@@ -3123,11 +3132,17 @@
       }
 
       const closedSignals = tradingState.signals.filter(s => s.status === 'CLOSED');
-      const wins = closedSignals.filter(s => parseFloat(s.pnl) > 0).length;
+      const wins = closedSignals.filter(s => parseFloat(s.pnl) > 0);
+      const losses = closedSignals.filter(s => parseFloat(s.pnl) < 0);
       const total = closedSignals.length;
-      const winRate = total > 0 ? ((wins / total) * 100).toFixed(0) : '--';
-      const totalPnl = closedSignals.reduce((sum, s) => sum + parseFloat(s.pnl || 0), 0);
-      document.getElementById('tradingStats').textContent = `${total} trades · ${winRate}% win rate · ${totalPnl > 0 ? '+' : ''}${totalPnl.toFixed(1)}% total`;
+      const winRate = total > 0 ? ((wins.length / total) * 100).toFixed(0) : '--';
+      const totalProfit = wins.reduce((sum, s) => sum + parseFloat(s.pnl || 0), 0);
+      const totalLoss = losses.reduce((sum, s) => sum + parseFloat(s.pnl || 0), 0);
+      const netPnl = totalProfit + totalLoss;
+      
+      // Show: trades · win rate · profit · loss · net
+      document.getElementById('tradingStats').textContent = 
+        `${total} trades · ${winRate}% win · +${totalProfit.toFixed(0)}% profit · ${totalLoss.toFixed(0)}% loss · Net: ${netPnl > 0 ? '+' : ''}${netPnl.toFixed(0)}%`;
 
       tbody.innerHTML = displaySignals.map(s => {
         const signalColor = s.signal === 'LONG' ? '#00d97e' : '#ef4444';
