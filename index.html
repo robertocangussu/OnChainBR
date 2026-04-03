@@ -2912,23 +2912,38 @@
       let position = null;
       
       /*
-       * EMA CROSSOVER + TRADING SYSTEMS v17
-       * =====================================
+       * EMA CROSSOVER STRICT v18
+       * =========================
        * 
-       * Baseado na sugestão do Roberto:
+       * AUDITORIA DOS LOSSES identificou:
+       * 
+       * ERRO 1: Entradas em BEAR MARKET (SMA50 < SMA200)
+       *   → FIX: SMA50 > SMA200 OBRIGATÓRIO
+       * 
+       * ERRO 2: Entradas em TOPOS (price esticado)
+       *   → FIX: Price < 15% acima SMA50
+       * 
+       * ERRO 3: RSI alto
+       *   → FIX: RSI < 65
+       * 
+       * ERRO 4: Score baixo
+       *   → FIX: Score >= 3 (mais rigoroso)
        * 
        * ENTRY (LONG):
-       *   1. EMA21 cruzou EMA50 pra cima
-       *   2. Esperar 2 dias após cruzamento (confirmação)
-       *   3. Trading Systems Score >= 2 (pelo menos 2 sinais positivos)
+       *   1. EMA21 cruzou EMA50 pra cima (últimos 2-10 dias)
+       *   2. SMA50 > SMA200 (BULL MARKET - OBRIGATÓRIO!)
+       *   3. SMA50 subindo (tendência confirmada)
+       *   4. Price < 15% acima SMA50 (não esticado)
+       *   5. RSI < 65 (não overbought)
+       *   6. Score >= 3
        * 
        * EXIT:
-       *   1. EMA21 cruza EMA50 pra baixo
-       *   2. OU Stop Loss -12%
+       *   1. EMA21 cruza abaixo EMA50
+       *   2. OU Stop Loss -10%
        */
       
       let lastTradeIndex = 0;
-      const MIN_BARS_BETWEEN_TRADES = 20;
+      const MIN_BARS_BETWEEN_TRADES = 25;
       const CONFIRMATION_DAYS = 2;
       
       // Calculate EMA21
@@ -2955,6 +2970,18 @@
         }
       }
       
+      // Track SMA50 direction
+      const sma50Rising = [];
+      for (let i = 0; i < data.length; i++) {
+        if (i < 10) {
+          sma50Rising[i] = false;
+          continue;
+        }
+        const current = parseFloat(data[i].sma50) || 0;
+        const past = parseFloat(data[i - 10].sma50) || 0;
+        sma50Rising[i] = current > past;
+      }
+      
       // Track crossover
       let daysSinceBullishCross = 999;
       let crossConfirmed = false;
@@ -2975,28 +3002,22 @@
         const prevEma21 = ema21[i - 1];
         const prevEma50 = ema50[i - 1];
         
-        if (price === 0 || !currentEma21 || !currentEma50) continue;
+        if (price === 0 || !currentEma21 || !currentEma50 || sma50 === 0 || sma200 === 0) continue;
         
         // ========================================
         // DETECT EMA CROSSOVERS
         // ========================================
         
-        // EMA21 crosses above EMA50 (bullish)
         const bullishCross = prevEma21 <= prevEma50 && currentEma21 > currentEma50;
-        
-        // EMA21 crosses below EMA50 (bearish)
         const bearishCross = prevEma21 >= prevEma50 && currentEma21 < currentEma50;
         
         if (bullishCross) {
           daysSinceBullishCross = 0;
           crossConfirmed = false;
-          console.log('[v17] EMA21 crossed above EMA50 @', date);
         } else if (currentEma21 > currentEma50) {
           daysSinceBullishCross++;
-          // Confirm after 2 days
           if (daysSinceBullishCross === CONFIRMATION_DAYS) {
             crossConfirmed = true;
-            console.log('[v17] Crossover CONFIRMED @', date);
           }
         } else {
           daysSinceBullishCross = 999;
@@ -3004,34 +3025,34 @@
         }
         
         // ========================================
-        // CALCULATE TRADING SYSTEMS SCORE
+        // STRICT FILTERS (baseado na auditoria)
         // ========================================
-        let trendScore = 0;
         
-        // SMA50 vs SMA200
-        if (sma50 > sma200) trendScore += 1;
+        // FILTRO 1: BULL MARKET OBRIGATÓRIO
+        const inBullMarket = sma50 > sma200;
         
-        // Price vs SMA200
-        if (price > sma200) trendScore += 1;
+        // FILTRO 2: SMA50 subindo
+        const trendUp = sma50Rising[i];
         
-        // MACD
-        if (macd > 0) trendScore += 1;
+        // FILTRO 3: Não esticado
+        const distFromSma50 = ((price / sma50) - 1) * 100;
+        const notStretched = distFromSma50 < 15;
         
-        // RSI
-        if (rsi > 45 && rsi < 70) trendScore += 1;
+        // FILTRO 4: RSI não overbought
+        const rsiOk = rsi < 65;
         
-        // EMA alignment
-        if (currentEma21 > currentEma50) trendScore += 1;
+        // FILTRO 5: Score >= 3
+        let score = 0;
+        if (sma50 > sma200) score++;
+        if (price > sma200) score++;
+        if (macd > 0) score++;
+        if (rsi > 40 && rsi < 70) score++;
+        if (currentEma21 > currentEma50) score++;
+        if (trendUp) score++;
         
-        // Score >= 2 means at least 2 positive signals
-        const tradingSystemsOk = trendScore >= 2;
-        
-        // ========================================
-        // CONDITIONS
-        // ========================================
+        const scoreOk = score >= 3;
         
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
-        const notTooStretched = ((price / currentEma50) - 1) * 100 < 20;
         
         // ===== EXIT LOGIC =====
         if (position) {
@@ -3040,13 +3061,11 @@
           
           const currentPnl = ((price / position.entryPrice) - 1) * 100;
           
-          // EMA21 crosses below EMA50
           if (bearishCross) {
             shouldExit = true;
-            exitReason = 'EMA Cross Down';
+            exitReason = 'EMA Cross';
           }
-          // Stop Loss
-          else if (currentPnl <= -12) {
+          else if (currentPnl <= -10) {
             shouldExit = true;
             exitReason = 'Stop Loss';
           }
@@ -3076,29 +3095,36 @@
         if (!position && canTrade) {
           
           /*
-           * LONG ENTRY:
-           * 1. EMA21 cruzou EMA50 há 2+ dias (confirmado)
-           * 2. Trading Systems Score >= 2
-           * 3. Não muito esticado
+           * LONG ENTRY com TODOS os filtros da auditoria:
+           * 1. Cruzamento confirmado (2+ dias)
+           * 2. BULL MARKET (SMA50 > SMA200)
+           * 3. SMA50 subindo
+           * 4. Não esticado (< 15%)
+           * 5. RSI < 65
+           * 6. Score >= 3
            */
           if (crossConfirmed && 
-              tradingSystemsOk && 
-              notTooStretched &&
+              inBullMarket &&
+              trendUp &&
+              notStretched && 
+              rsiOk && 
+              scoreOk &&
               daysSinceBullishCross >= CONFIRMATION_DAYS &&
-              daysSinceBullishCross <= 10) { // Janela de 10 dias
+              daysSinceBullishCross <= 10) {
             
             position = {
               signal: 'LONG',
               entryPrice: price,
               entryDate: date,
               entryIndex: i,
-              entryScore: trendScore
+              entryScore: score
             };
             lastTradeIndex = i;
-            crossConfirmed = false; // Reset para não entrar de novo
-            console.log('[v17] LONG @', date, '| $' + price.toFixed(0), 
-                       '| Score:', trendScore,
-                       '| Days after cross:', daysSinceBullishCross);
+            crossConfirmed = false;
+            console.log('[v18] LONG @', date, '| $' + price.toFixed(0), 
+                       '| Score:', score,
+                       '| RSI:', rsi.toFixed(0),
+                       '| Dist:', distFromSma50.toFixed(1) + '%');
           }
         }
       }
@@ -3130,7 +3156,7 @@
       const winRate = closed.length > 0 ? (wins.length / closed.length * 100).toFixed(0) : 0;
       const totalProfit = wins.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
       const totalLoss = losses.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
-      console.log('[Trading] v17 EMA:', signals.length, 'trades |', winRate + '% win |', 
+      console.log('[Trading] v18 STRICT:', signals.length, 'trades |', winRate + '% win |', 
                   '+' + totalProfit.toFixed(0) + '% / ' + totalLoss.toFixed(0) + '%');
     }
 
