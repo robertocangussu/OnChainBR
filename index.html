@@ -2734,6 +2734,9 @@
         renderTradingChart();
         renderTradingHistory();
         
+        // Generate Report after all data is ready
+        setTimeout(() => generateReport(), 200);
+        
         console.log('[Trading] All done!');
       } catch (err) {
         console.error('[Trading] Fatal error:', err);
