@@ -3574,8 +3574,9 @@
       });
       document.getElementById('reportDate').textContent = dateStr;
       
-      // Gather all data - check multiple sources
+      // Gather all data
       const zScore = state.composite;
+      const zone = getZone(zScore);
       const rawValues = state.rawValues || {};
       const techData = tradingState.technicalData || [];
       const lastTech = techData.length > 0 ? techData[techData.length - 1] : {};
@@ -3586,32 +3587,11 @@
       const rsi = parseFloat(lastTech.rsi) || 50;
       const macd = parseFloat(lastTech.macd) || 0;
       
-      // Get raw values - try multiple sources
-      const mvrv = rawValues.mvrv || tradingState.mvrvSth || 0;
-      const nupl = rawValues.nupl || tradingState.nupl || 0;
-      const sopr = rawValues.sopr || tradingState.sopr || 1;
-      const fearGreed = rawValues.fearGreed || tradingState.fearGreed || 50;
+      const mvrv = rawValues.mvrv || 0;
+      const nupl = rawValues.nupl || 0;
+      const sopr = rawValues.sopr || 1;
+      const fearGreed = rawValues.fearGreed || 50;
       const funding = tradingState.funding || 0;
-      
-      // If Z-Score is null AND no tech data, retry later
-      if ((zScore === null || zScore === undefined) && techData.length === 0) {
-        console.log('[Report] Data not ready, retrying in 3s...');
-        setTimeout(() => generateReport(), 3000);
-        return;
-      }
-      
-      // Use a fallback Z-Score based on available data if composite isn't ready
-      let effectiveZScore = zScore;
-      if (effectiveZScore === null || effectiveZScore === undefined) {
-        // Estimate from MVRV if available
-        if (mvrv > 0) {
-          // Rough estimate: MVRV 1.0 ≈ Z=-1, MVRV 2.0 ≈ Z=0, MVRV 3.0 ≈ Z=+1
-          effectiveZScore = (mvrv - 2.0) * 1.0;
-        } else {
-          effectiveZScore = 0; // Default to fair value
-        }
-        console.log('[Report] Using estimated Z-Score:', effectiveZScore.toFixed(2));
-      }
       
       // Calculate trend
       const inBullMarket = sma50 > sma200;
@@ -3633,7 +3613,7 @@
       let capitalAllocation = '0%'; // % do capital para alocar
       let allocationDesc = 'Manter posição atual';
       
-      if (effectiveZScore <= -1.5) {
+      if (zScore <= -1.5) {
         posture = 'ACUMULAR';
         postureColor = 'var(--accent-green)';
         bias = 'BULLISH';
@@ -3642,7 +3622,7 @@
         riskColor = 'var(--accent-green)';
         capitalAllocation = '15-25%';
         allocationDesc = 'Aportar 15-25% do capital disponível';
-      } else if (effectiveZScore <= -0.5) {
+      } else if (zScore <= -0.5) {
         posture = 'ACUMULAR LEVE';
         postureColor = 'var(--accent-lime)';
         bias = 'BULLISH';
@@ -3651,7 +3631,7 @@
         riskColor = 'var(--accent-lime)';
         capitalAllocation = '5-10%';
         allocationDesc = 'Aportar 5-10% do capital disponível';
-      } else if (effectiveZScore >= 1.5) {
+      } else if (zScore >= 1.5) {
         posture = 'REALIZAR';
         postureColor = 'var(--accent-red)';
         bias = 'BEARISH';
@@ -3660,7 +3640,7 @@
         riskColor = 'var(--accent-red)';
         capitalAllocation = '-20-30%';
         allocationDesc = 'Reduzir 20-30% da posição';
-      } else if (effectiveZScore >= 0.5) {
+      } else if (zScore >= 0.5) {
         posture = 'CAUTELA';
         postureColor = 'var(--accent-orange)';
         bias = 'BEARISH';
@@ -3693,10 +3673,10 @@
       
       // Get zone name as string
       let zoneName = 'FAIR VALUE';
-      if (effectiveZScore <= -1.5) zoneName = 'ACCUMULATE';
-      else if (effectiveZScore <= -0.5) zoneName = 'UNDERVALUED';
-      else if (effectiveZScore >= 1.5) zoneName = 'OVERHEATED';
-      else if (effectiveZScore >= 0.5) zoneName = 'ELEVATED';
+      if (zScore <= -1.5) zoneName = 'ACCUMULATE';
+      else if (zScore <= -0.5) zoneName = 'UNDERVALUED';
+      else if (zScore >= 1.5) zoneName = 'OVERHEATED';
+      else if (zScore >= 0.5) zoneName = 'ELEVATED';
       
       // Update status cards
       document.getElementById('reportPosture').textContent = posture;
@@ -3724,7 +3704,7 @@
       }
       
       // Z-Score analysis
-      mainText += `<br><br>O Z-Score composto está em <strong>${effectiveZScore ? effectiveZScore.toFixed(2) : '--'}</strong>, `;
+      mainText += `<br><br>O Z-Score composto está em <strong>${zScore ? zScore.toFixed(2) : '--'}</strong>, `;
       if (zone === 'ACCUMULATE') {
         mainText += `zona de <strong style="color:var(--accent-green)">ACUMULAÇÃO</strong>. Historicamente, esses níveis precedem fortes movimentos de alta. `;
         mainText += `O mercado está em capitulação — vendedores exaustos, pouco interesse. É quando as mãos fortes compram.`;
@@ -3807,7 +3787,7 @@
       document.getElementById('reportRisks').innerHTML = risksText;
       
       // ========== DATA SUMMARY ==========
-      document.getElementById('repZscore').innerHTML = `<strong style="color:${postureColor}">${effectiveZScore ? effectiveZScore.toFixed(2) : '--'}</strong>`;
+      document.getElementById('repZscore').innerHTML = `<strong style="color:${postureColor}">${zScore ? zScore.toFixed(2) : '--'}</strong>`;
       document.getElementById('repZone').innerHTML = `<strong style="color:${postureColor}">${zoneName}</strong>`;
       document.getElementById('repMvrv').textContent = mvrv ? mvrv.toFixed(2) : '--';
       document.getElementById('repNupl').textContent = nupl ? (nupl * 100).toFixed(1) + '%' : '--';
@@ -3830,14 +3810,14 @@
       // ========== HISTORICAL CONTEXT ==========
       let contextText = '';
       
-      if (effectiveZScore !== null) {
-        if (effectiveZScore <= -1.5) {
+      if (zScore !== null) {
+        if (zScore <= -1.5) {
           contextText = `Z-Scores neste nível (≤ -1.5) ocorreram em: <strong>Dez/2018</strong> ($3.2k → $14k = +337%), <strong>Mar/2020</strong> ($5k → $64k = +1180%), <strong>Nov/2022</strong> ($16k → $73k = +356%). Historicamente, esses momentos de extremo pessimismo precederam os maiores bull runs.`;
-        } else if (effectiveZScore >= 1.5) {
+        } else if (zScore >= 1.5) {
           contextText = `Z-Scores neste nível (≥ 1.5) ocorreram em: <strong>Dez/2017</strong> ($20k → $3k = -85%), <strong>Abr/2021</strong> ($64k → $30k = -53%), <strong>Nov/2021</strong> ($69k → $16k = -77%). Historicamente, euforia extrema precede correções significativas.`;
-        } else if (effectiveZScore <= -0.5) {
+        } else if (zScore <= -0.5) {
           contextText = `O mercado está em zona de desconto moderado. Não é o fundo absoluto, mas historicamente oferece bom risco/retorno para acumulação gradual. Paciência é chave.`;
-        } else if (effectiveZScore >= 0.5) {
+        } else if (zScore >= 0.5) {
           contextText = `O mercado está precificado acima do fair value. Historicamente, esses níveis podem sustentar por algum tempo em bull markets fortes, mas o risco aumenta progressivamente.`;
         } else {
           contextText = `O mercado está em zona neutra (fair value). Pode ir para qualquer lado. Fatores macro e técnicos terão mais peso na direção de curto prazo.`;
