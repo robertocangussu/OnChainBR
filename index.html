@@ -809,7 +809,8 @@
       BGEOMETRICS_BASE: 'https://bitcoin-data.com', 
       BITVIEW_BASE: 'https://bitview.space/api',
       // CORS proxy for BGeometrics (needed for GitHub Pages)
-      CORS_PROXY: 'https://corsproxy.io/?',
+      // Using allorigins which has better rate limits
+      CORS_PROXY: 'https://api.allorigins.win/raw?url=',
       USE_CORS_PROXY: true, // Set to false if running locally or CORS is fixed
       ROLLING_WINDOW: 365, 
       MIN_DATA_POINTS: 30
