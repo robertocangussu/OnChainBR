@@ -1089,6 +1089,7 @@
         calculateCompositeHistory();
         _coreUpdateUI();
         setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSentimentData(); }, 150);
+        setTimeout(() => generateReport(), 300);
         return;
       }
       
@@ -1135,6 +1136,13 @@
       calculateCompositeHistory();
       _coreUpdateUI();
       setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSentimentData(); }, 150);
+      
+      // Call generateReport after on-chain data is loaded
+      // This ensures the report has Z-Score data even if trading data loads later
+      setTimeout(() => {
+        console.log('[fetchAllData] On-chain data ready, calling generateReport...');
+        generateReport();
+      }, 300);
     }
 
     // ========== Z-SCORE CALCULATION ==========
@@ -2737,6 +2745,8 @@
         renderTradingHistory();
         
         // Generate Report after all data is ready
+        // Reset retry count to allow fresh attempts with trading data
+        reportRetryCount = 0;
         setTimeout(() => generateReport(), 200);
         
         console.log('[Trading] All done!');
@@ -3561,8 +3571,29 @@
     }
 
     // ========== SECTION 06: REPORT GENERATION ==========
+    let reportRetryCount = 0;
+    const MAX_REPORT_RETRIES = 5;
+    
     function generateReport() {
       console.log('[Report] Generating daily analysis...');
+      console.log('[Report] state.composite:', state.composite);
+      console.log('[Report] state.rawValues:', JSON.stringify(state.rawValues));
+      console.log('[Report] tradingState.technicalData length:', tradingState.technicalData?.length || 0);
+      
+      // Check if on-chain data is ready - if not, retry with delay
+      const hasOnchainData = state.composite !== null && Object.keys(state.rawValues || {}).length > 0;
+      const hasTechData = tradingState.technicalData && tradingState.technicalData.length > 0;
+      
+      if (!hasOnchainData && reportRetryCount < MAX_REPORT_RETRIES) {
+        reportRetryCount++;
+        console.log(`[Report] On-chain data not ready, retry ${reportRetryCount}/${MAX_REPORT_RETRIES} in 500ms...`);
+        setTimeout(generateReport, 500);
+        return;
+      }
+      
+      if (!hasOnchainData) {
+        console.warn('[Report] On-chain data still missing after retries, proceeding with defaults');
+      }
       
       // Get current date
       const now = new Date();
@@ -3802,7 +3833,7 @@
         '<strong style="color:var(--accent-red)">BEAR</strong>';
       
       document.getElementById('repFearGreed').textContent = fearGreed ? fearGreed.toFixed(0) + '/100' : '--';
-      document.getElementById('repFunding').textContent = funding ? (funding > 0 ? '+' : '') + funding.toFixed(4) + '%' : '--';
+      document.getElementById('repFunding').textContent = funding ? (funding > 0 ? '+' : '') + funding.toFixed(3) + '%' : '--';
       document.getElementById('repTradeSystem').innerHTML = trendStatus === 'LONG' ?
         '<strong style="color:var(--accent-green)">LONG</strong>' :
         '<strong style="color:var(--text-muted)">CASH</strong>';
