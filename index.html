@@ -657,6 +657,8 @@
           <div class="trading-chart-legend">
             <span class="legend-item"><span class="legend-dot" style="background:#00d97e"></span> LONG</span>
             <span class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> EXIT</span>
+            <span class="legend-item"><span class="legend-line" style="background:#ec4899"></span> EMA21</span>
+            <span class="legend-item"><span class="legend-line" style="background:#06b6d4;border-style:dashed"></span> EMA50</span>
             <span class="legend-item"><span class="legend-line" style="background:#3b82f6"></span> SMA50</span>
             <span class="legend-item"><span class="legend-line" style="background:#f97316"></span> SMA200</span>
           </div>
@@ -2403,7 +2405,7 @@
 
       // ETF Flow
       if (etfR.status === 'fulfilled' && etfR.value?.success) {
-        const data = normalizeBGeometricsData(etfR.value.data, '').slice(-90);
+        const data = normalizeBGeometricsData(etfR.value.data, 'etfNetFlowBtc').slice(-90);
         if (data.length) {
           const latest = data[data.length-1].value;
           const sum7d  = data.slice(-7).reduce((a,d)=>a+(d.value||0),0);
@@ -2418,7 +2420,7 @@
 
       // Exchange Reserve
       if (resR.status === 'fulfilled' && resR.value?.success) {
-        const data = normalizeBGeometricsData(resR.value.data, '').slice(-180);
+        const data = normalizeBGeometricsData(resR.value.data, 'exchangeReserveBtc').slice(-180);
         if (data.length) {
           const latest = data[data.length-1].value;
           const prev7  = data.length > 7 ? data[data.length-8].value : latest;
@@ -2432,8 +2434,8 @@
       }
 
       // Inflow / Outflow
-      const inData  = (inR.status  === 'fulfilled' && inR.value?.success)  ? normalizeBGeometricsData(inR.value.data,  '').slice(-90)  : [];
-      const outData = (outR.status === 'fulfilled' && outR.value?.success) ? normalizeBGeometricsData(outR.value.data, '').slice(-90) : [];
+      const inData  = (inR.status  === 'fulfilled' && inR.value?.success)  ? normalizeBGeometricsData(inR.value.data,  'exchangeInflowBtc').slice(-90)  : [];
+      const outData = (outR.status === 'fulfilled' && outR.value?.success) ? normalizeBGeometricsData(outR.value.data, 'exchangeOutflowBtc').slice(-90) : [];
       if (inData.length || outData.length) renderFlowInOutChart(inData, outData);
 
       // Net Pressure
@@ -2464,7 +2466,7 @@
 
       // Netflow (replaces Whale Ratio - shows net exchange flow direction)
       if (netflowR.status === 'fulfilled' && netflowR.value?.success) {
-        const data = normalizeBGeometricsData(netflowR.value.data, '').slice(-30);
+        const data = normalizeBGeometricsData(netflowR.value.data, 'exchangeNetflowBtc').slice(-30);
         if (data.length) {
           const sum30d = data.reduce((a,d) => a + (d.value || 0), 0);
           const avgDaily = sum30d / data.length;
@@ -3263,7 +3265,7 @@
       const sma50s = sampled.map(d => parseFloat(d.sma50));
       const sma200s = sampled.map(d => parseFloat(d.sma200));
       
-      // Calculate SMA20 for chart
+      // Calculate SMA20 for chart (legacy)
       const sma20s = [];
       for (let i = 0; i < sampled.length; i++) {
         if (i < 19) {
@@ -3275,6 +3277,48 @@
           sum += prices[j] || 0;
         }
         sma20s.push(sum / 20);
+      }
+      
+      // Calculate EMA21 and EMA50 (the actual trading signals)
+      const ema21s = [];
+      const ema50s = [];
+      const ema21Mult = 2 / (21 + 1);
+      const ema50Mult = 2 / (50 + 1);
+      let ema21 = null, ema50 = null;
+      
+      for (let i = 0; i < sampled.length; i++) {
+        const price = prices[i];
+        if (price === null || price === undefined) {
+          ema21s.push(null);
+          ema50s.push(null);
+          continue;
+        }
+        
+        if (i < 21) {
+          ema21s.push(null);
+          ema50s.push(null);
+          // Initialize with SMA
+          if (i === 20) {
+            let sum = 0;
+            for (let j = 0; j <= 20; j++) sum += prices[j] || 0;
+            ema21 = sum / 21;
+          }
+        } else {
+          ema21 = (price - ema21) * ema21Mult + ema21;
+          ema21s.push(ema21);
+        }
+        
+        if (i < 50) {
+          if (ema50s.length < 50) ema50s.push(null);
+          if (i === 49) {
+            let sum = 0;
+            for (let j = 0; j <= 49; j++) sum += prices[j] || 0;
+            ema50 = sum / 50;
+          }
+        } else {
+          ema50 = (price - ema50) * ema50Mult + ema50;
+          ema50s.push(ema50);
+        }
       }
 
       // Build annotations for signals - smaller, cleaner style
@@ -3387,15 +3431,27 @@
               order: 1
             },
             {
-              label: 'SMA20',
-              data: sma20s,
-              borderColor: '#a855f7',
+              label: 'EMA21',
+              data: ema21s,
+              borderColor: '#ec4899',
               borderWidth: 1.2,
               pointRadius: 0,
               fill: false,
               tension: 0.1,
               yAxisID: 'y',
               order: 2
+            },
+            {
+              label: 'EMA50',
+              data: ema50s,
+              borderColor: '#06b6d4',
+              borderWidth: 1.2,
+              pointRadius: 0,
+              fill: false,
+              tension: 0.1,
+              yAxisID: 'y',
+              borderDash: [3, 2],
+              order: 2.5
             },
             {
               label: 'SMA50',
@@ -3529,9 +3585,8 @@
       });
       document.getElementById('reportDate').textContent = dateStr;
       
-      // Gather all data
+      // Gather all data - check multiple sources
       const zScore = state.composite;
-      const zone = getZone(zScore);
       const rawValues = state.rawValues || {};
       const techData = tradingState.technicalData || [];
       const lastTech = techData.length > 0 ? techData[techData.length - 1] : {};
@@ -3542,11 +3597,18 @@
       const rsi = parseFloat(lastTech.rsi) || 50;
       const macd = parseFloat(lastTech.macd) || 0;
       
-      const mvrv = rawValues.mvrv || 0;
-      const nupl = rawValues.nupl || 0;
-      const sopr = rawValues.sopr || 1;
-      const fearGreed = rawValues.fearGreed || 50;
+      // Get raw values - try multiple sources
+      const mvrv = rawValues.mvrv || state.zScores?.mvrv?.raw || 0;
+      const nupl = rawValues.nupl || state.zScores?.nupl?.raw || tradingState.nupl || 0;
+      const sopr = rawValues.sopr || state.zScores?.sopr?.raw || tradingState.sopr || 1;
+      const fearGreed = rawValues.fearGreed || state.zScores?.fearGreed?.raw || tradingState.fearGreed || 50;
       const funding = tradingState.funding || 0;
+      
+      // If Z-Score is null, report might be loading too early - retry
+      if (zScore === null || zScore === undefined) {
+        setTimeout(() => generateReport(), 2000);
+        return;
+      }
       
       // Calculate trend
       const inBullMarket = sma50 > sma200;
@@ -3748,9 +3810,9 @@
       document.getElementById('repNupl').textContent = nupl ? (nupl * 100).toFixed(1) + '%' : '--';
       document.getElementById('repSopr').textContent = sopr ? sopr.toFixed(3) : '--';
       
-      document.getElementById('repPrice').textContent = price ? '$' + price.toLocaleString() : '--';
-      document.getElementById('repSma50').textContent = sma50 ? '$' + sma50.toLocaleString() : '--';
-      document.getElementById('repSma200').textContent = sma200 ? '$' + sma200.toLocaleString() : '--';
+      document.getElementById('repPrice').textContent = price ? '$' + Math.round(price).toLocaleString() : '--';
+      document.getElementById('repSma50').textContent = sma50 ? '$' + Math.round(sma50).toLocaleString() : '--';
+      document.getElementById('repSma200').textContent = sma200 ? '$' + Math.round(sma200).toLocaleString() : '--';
       document.getElementById('repRsi').textContent = rsi ? rsi.toFixed(0) : '--';
       document.getElementById('repTrend').innerHTML = inBullMarket ? 
         '<strong style="color:var(--accent-green)">BULL</strong>' : 
