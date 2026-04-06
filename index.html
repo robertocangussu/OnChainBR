@@ -696,7 +696,7 @@
   <!-- ========== SECTION 06: REPORT ========== -->
   <div class="section-wrap" id="report" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
-      <span class="section-title">Análise Senior — Leitura do Mercado</span>
+      <span class="section-title">Leitura do Mercado</span>
       <span id="reportDate" style="font-size:10px;color:var(--text-muted);"></span>
     </div>
     
@@ -715,8 +715,8 @@
         <div id="reportRisk" style="font-size:18px;font-weight:700;color:var(--accent-orange);">MÉDIO</div>
       </div>
       <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
-        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Timeframe</div>
-        <div id="reportTimeframe" style="font-size:18px;font-weight:700;color:var(--accent-cyan);">SWING</div>
+        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Alocação</div>
+        <div id="reportTimeframe" style="font-size:18px;font-weight:700;color:var(--accent-cyan);">0%</div>
       </div>
     </div>
     
@@ -3565,6 +3565,8 @@
       let biasColor = 'var(--text-secondary)';
       let risk = 'MÉDIO';
       let riskColor = 'var(--accent-orange)';
+      let capitalAllocation = '0%'; // % do capital para alocar
+      let allocationDesc = 'Manter posição atual';
       
       if (zScore <= -1.5) {
         posture = 'ACUMULAR';
@@ -3573,6 +3575,8 @@
         biasColor = 'var(--accent-green)';
         risk = 'BAIXO';
         riskColor = 'var(--accent-green)';
+        capitalAllocation = '15-25%';
+        allocationDesc = 'Aportar 15-25% do capital disponível';
       } else if (zScore <= -0.5) {
         posture = 'ACUMULAR LEVE';
         postureColor = 'var(--accent-lime)';
@@ -3580,6 +3584,8 @@
         biasColor = 'var(--accent-lime)';
         risk = 'BAIXO-MÉDIO';
         riskColor = 'var(--accent-lime)';
+        capitalAllocation = '5-10%';
+        allocationDesc = 'Aportar 5-10% do capital disponível';
       } else if (zScore >= 1.5) {
         posture = 'REALIZAR';
         postureColor = 'var(--accent-red)';
@@ -3587,6 +3593,8 @@
         biasColor = 'var(--accent-red)';
         risk = 'ALTO';
         riskColor = 'var(--accent-red)';
+        capitalAllocation = '-20-30%';
+        allocationDesc = 'Reduzir 20-30% da posição';
       } else if (zScore >= 0.5) {
         posture = 'CAUTELA';
         postureColor = 'var(--accent-orange)';
@@ -3594,20 +3602,36 @@
         biasColor = 'var(--accent-orange)';
         risk = 'MÉDIO-ALTO';
         riskColor = 'var(--accent-orange)';
+        capitalAllocation = '-10%';
+        allocationDesc = 'Considerar reduzir 10% da posição';
       } else {
         // Fair value zone
         if (inBullMarket && priceAboveSma50) {
           posture = 'HOLD';
           bias = 'NEUTRO-BULLISH';
           biasColor = 'var(--accent-cyan)';
+          capitalAllocation = '0%';
+          allocationDesc = 'Manter posição atual';
         } else if (!inBullMarket) {
           posture = 'AGUARDAR';
           bias = 'NEUTRO-BEARISH';
           biasColor = 'var(--accent-orange)';
           risk = 'MÉDIO-ALTO';
           riskColor = 'var(--accent-orange)';
+          capitalAllocation = '0%';
+          allocationDesc = 'Não abrir novas posições';
+        } else {
+          capitalAllocation = '2-5%';
+          allocationDesc = 'DCA normal: 2-5% por semana';
         }
       }
+      
+      // Get zone name as string
+      let zoneName = 'FAIR VALUE';
+      if (zScore <= -1.5) zoneName = 'ACCUMULATE';
+      else if (zScore <= -0.5) zoneName = 'UNDERVALUED';
+      else if (zScore >= 1.5) zoneName = 'OVERHEATED';
+      else if (zScore >= 0.5) zoneName = 'ELEVATED';
       
       // Update status cards
       document.getElementById('reportPosture').textContent = posture;
@@ -3616,6 +3640,7 @@
       document.getElementById('reportBias').style.color = biasColor;
       document.getElementById('reportRisk').textContent = risk;
       document.getElementById('reportRisk').style.color = riskColor;
+      document.getElementById('reportTimeframe').innerHTML = capitalAllocation + '<div style="font-size:8px;color:var(--text-muted);margin-top:2px;">do capital</div>';
       
       // ========== GENERATE MAIN TEXT ==========
       let mainText = '';
@@ -3670,17 +3695,17 @@
       let actionText = '';
       
       if (posture === 'ACUMULAR') {
-        actionText = `<strong style="color:var(--accent-green)">COMPRAR:</strong> Momento favorável para aumentar posição. Dividir compras em 3-4 parcelas ao longo das próximas semanas. Aguardar confirmação de reversão técnica (EMA21 > EMA50) para entrada mais agressiva.`;
+        actionText = `<strong style="color:var(--accent-green)">COMPRAR (${capitalAllocation}):</strong> Momento favorável para aumentar posição. Dividir compras em 3-4 parcelas ao longo das próximas semanas. Aguardar confirmação de reversão técnica (EMA21 > EMA50) para entrada mais agressiva.`;
       } else if (posture === 'ACUMULAR LEVE') {
-        actionText = `<strong style="color:var(--accent-lime)">COMPRAR LEVE:</strong> Continuar DCA normal. Pode aumentar levemente a alocação. Não ir all-in ainda.`;
+        actionText = `<strong style="color:var(--accent-lime)">COMPRAR LEVE (${capitalAllocation}):</strong> Continuar DCA normal. Pode aumentar levemente a alocação. Não ir all-in ainda. ${allocationDesc}.`;
       } else if (posture === 'REALIZAR') {
-        actionText = `<strong style="color:var(--accent-red)">VENDER:</strong> Realizar lucros parciais. Reduzir exposição gradualmente. Manter stop loss apertado em posições restantes.`;
+        actionText = `<strong style="color:var(--accent-red)">VENDER (${capitalAllocation}):</strong> Realizar lucros parciais. Reduzir exposição gradualmente. Manter stop loss apertado em posições restantes.`;
       } else if (posture === 'CAUTELA') {
-        actionText = `<strong style="color:var(--accent-orange)">CAUTELA:</strong> Não aumentar posição. Considerar reduzir exposição. Ter stops definidos.`;
+        actionText = `<strong style="color:var(--accent-orange)">CAUTELA (${capitalAllocation}):</strong> Não aumentar posição. Considerar reduzir exposição. Ter stops definidos.`;
       } else if (posture === 'HOLD') {
-        actionText = `<strong style="color:var(--accent-cyan)">MANTER:</strong> Posições atuais podem ser mantidas. Aguardar movimentação mais clara para agir.`;
+        actionText = `<strong style="color:var(--accent-cyan)">MANTER (${capitalAllocation}):</strong> Posições atuais podem ser mantidas. Aguardar movimentação mais clara para agir.`;
       } else {
-        actionText = `<strong style="color:var(--accent-yellow)">AGUARDAR:</strong> Momento de observação. Não abrir novas posições. Esperar confirmação de tendência.`;
+        actionText = `<strong style="color:var(--accent-yellow)">AGUARDAR (${capitalAllocation}):</strong> Momento de observação. Não abrir novas posições. Esperar confirmação de tendência.`;
       }
       
       if (openSignal) {
@@ -3718,7 +3743,7 @@
       
       // ========== DATA SUMMARY ==========
       document.getElementById('repZscore').innerHTML = `<strong style="color:${postureColor}">${zScore ? zScore.toFixed(2) : '--'}</strong>`;
-      document.getElementById('repZone').innerHTML = `<strong style="color:${postureColor}">${zone || '--'}</strong>`;
+      document.getElementById('repZone').innerHTML = `<strong style="color:${postureColor}">${zoneName}</strong>`;
       document.getElementById('repMvrv').textContent = mvrv ? mvrv.toFixed(2) : '--';
       document.getElementById('repNupl').textContent = nupl ? (nupl * 100).toFixed(1) + '%' : '--';
       document.getElementById('repSopr').textContent = sopr ? sopr.toFixed(3) : '--';
