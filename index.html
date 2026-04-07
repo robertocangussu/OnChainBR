@@ -96,6 +96,14 @@
     @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } .top-stats { grid-template-columns: 1fr; } .stats-row { grid-template-columns: repeat(3, 1fr); } .sidebar { max-height: none; } }
     @media (max-width: 600px) { .stats-row { grid-template-columns: repeat(2, 1fr); } .metrics-grid { grid-template-columns: 1fr; } }
 
+    /* ===== WINDOW TOGGLE ===== */
+    .window-toggle { display: flex; gap: 4px; margin-top: 10px; justify-content: center; }
+    .window-btn { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); font-size: 9px; font-weight: 600; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px; transition: all 0.15s; }
+    .window-btn:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); }
+    .window-btn.active { background: rgba(249,115,22,0.15); border-color: var(--accent-orange); color: var(--accent-orange); }
+    .window-loading { position: relative; pointer-events: none; opacity: 0.6; }
+    .window-loading::after { content: ''; position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border: 2px solid transparent; border-top-color: var(--accent-orange); border-radius: 50%; animation: spin 0.6s linear infinite; }
+
     /* ===== NAV BAR ===== */
     .site-nav { position: sticky; top: 0; z-index: 200; background: rgba(10,10,11,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 2px; height: 40px; }
     .site-nav a { font-size: 9px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); text-decoration: none; padding: 6px 14px; border-radius: 4px; transition: all 0.15s; }
@@ -275,7 +283,12 @@
         <div class="zscore-label">Z-Score Composite</div>
         <div class="zscore-value" id="mainZScore">--</div>
         <div class="zscore-badge" id="mainZoneBadge">--</div>
-        <div class="zscore-sub">rolling 365d window</div>
+        <div class="window-toggle" id="windowToggle">
+          <button class="window-btn active" data-window="365">1Y</button>
+          <button class="window-btn" data-window="1460">4Y</button>
+          <button class="window-btn" data-window="all">ALL</button>
+        </div>
+        <div class="zscore-sub" id="windowLabel">rolling 365d window</div>
       </div>
       <div class="gauge-card">
         <div class="gauge-container"><canvas id="gaugeCanvas"></canvas></div>
@@ -304,11 +317,11 @@
           <div class="chart-container"><canvas id="priceChart"></canvas></div>
         </div>
         <div class="chart-section">
-          <div class="chart-header"><div class="chart-title">Z-Composite Oscillator</div><div class="chart-badges"><span class="badge badge-green">ROLLING 365D</span></div></div>
+          <div class="chart-header"><div class="chart-title">Z-Composite Oscillator</div><div class="chart-badges"><span class="badge badge-green" id="oscillatorBadge">ROLLING 365D</span></div></div>
           <div class="chart-container-sm"><canvas id="oscillatorChart"></canvas></div>
         </div>
         <div class="chart-section">
-          <div class="chart-header"><div class="chart-title">Z-Scores Heatmap — Temporal Evolution by Metric</div><div class="chart-badges"><span class="badge badge-blue">9 METRICS · 365 DAYS</span></div></div>
+          <div class="chart-header"><div class="chart-title">Z-Scores Heatmap — Temporal Evolution by Metric</div><div class="chart-badges"><span class="badge badge-blue" id="heatmapBadge">9 METRICS · 365 DAYS</span></div></div>
           <div class="heatmap-container" id="heatmapContainer"></div>
         </div>
       </div>
@@ -795,7 +808,7 @@
 
   <!-- ========== GLOBAL FOOTER ========== -->
   <footer class="footer" style="max-width:1400px;margin:0 auto;padding:12px 24px 24px;">
-    <div>@ONCHAINBR · Z-Score Model · Rolling 365d · 9 Metrics · Signals · Flow · Sentiment · Trading · Relatório</div>
+    <div>@ONCHAINBR · Z-Score Model · <span id="footerWindow">Rolling 365d</span> · 9 Metrics · Signals · Flow · Sentiment · Trading · Relatório</div>
     <div>APIs: <a href="https://bitview.space" target="_blank">Bitview</a> + <a href="https://bitcoin-data.com" target="_blank">BGeometrics</a> + <a href="https://alternative.me" target="_blank">Alternative.me</a> + <a href="https://binance.com" target="_blank">Binance</a></div>
   </footer>
 
@@ -812,7 +825,13 @@
       CORS_PROXY: 'https://bgeometrics-proxy.roberty-rockeiro.workers.dev/?url=',
       USE_CORS_PROXY: true,
       ROLLING_WINDOW: 365, 
-      MIN_DATA_POINTS: 30
+      MIN_DATA_POINTS: 30,
+      // Window options for toggle
+      WINDOW_OPTIONS: {
+        '365':  { days: 365,  label: 'Rolling 365d', short: '1Y', footerLabel: 'Rolling 365d' },
+        '1460': { days: 1460, label: 'Rolling 4Y (1 cycle)', short: '4Y', footerLabel: 'Rolling 4Y' },
+        'all':  { days: null, label: 'Cumulative (All History)', short: 'ALL', footerLabel: 'All History' }
+      }
     };
 
     // ========== METRICS CONFIG ==========
@@ -1152,7 +1171,9 @@
 
     // ========== Z-SCORE CALCULATION ==========
     function calculateRollingZScore(values, index) {
-      const start = Math.max(0, index - CONFIG.ROLLING_WINDOW + 1);
+      // If ROLLING_WINDOW is null, use cumulative (all history up to current point)
+      const windowSize = CONFIG.ROLLING_WINDOW || (index + 1);
+      const start = Math.max(0, index - windowSize + 1);
       const window = values.slice(start, index + 1);
       if (window.length < CONFIG.MIN_DATA_POINTS) return null;
       
@@ -3894,6 +3915,90 @@
         document.querySelectorAll('.zoom-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         renderTradingChart(this.dataset.range);
+      });
+    });
+    
+    // ========== WINDOW TOGGLE HANDLERS ==========
+    function updateWindowLabels(windowKey) {
+      const opt = CONFIG.WINDOW_OPTIONS[windowKey];
+      if (!opt) return;
+      
+      // Update Z-Score card label
+      const windowLabel = document.getElementById('windowLabel');
+      if (windowLabel) windowLabel.textContent = opt.label.toLowerCase();
+      
+      // Update footer
+      const footerWindow = document.getElementById('footerWindow');
+      if (footerWindow) footerWindow.textContent = opt.footerLabel;
+      
+      // Update oscillator badge
+      const oscillatorBadge = document.getElementById('oscillatorBadge');
+      if (oscillatorBadge) {
+        oscillatorBadge.textContent = windowKey === 'all' ? 'ALL HISTORY' : `ROLLING ${opt.short === '1Y' ? '365D' : '4Y'}`;
+      }
+      
+      // Update heatmap badge
+      const heatmapBadge = document.getElementById('heatmapBadge');
+      if (heatmapBadge) {
+        const daysLabel = windowKey === 'all' ? 'ALL HISTORY' : (opt.short === '1Y' ? '365 DAYS' : '4 YEARS');
+        heatmapBadge.textContent = `9 METRICS · ${daysLabel}`;
+      }
+    }
+    
+    async function switchWindow(windowKey) {
+      const opt = CONFIG.WINDOW_OPTIONS[windowKey];
+      if (!opt) return;
+      
+      console.log(`[Window] Switching to ${opt.label}...`);
+      
+      // Update CONFIG
+      CONFIG.ROLLING_WINDOW = opt.days; // null for 'all' (cumulative)
+      
+      // Show loading state on buttons
+      const toggleContainer = document.getElementById('windowToggle');
+      if (toggleContainer) toggleContainer.classList.add('window-loading');
+      
+      // Update button states
+      document.querySelectorAll('.window-btn').forEach(b => {
+        b.classList.remove('active');
+        if (b.dataset.window === windowKey) b.classList.add('active');
+      });
+      
+      // Small delay to show loading state
+      await new Promise(r => setTimeout(r, 50));
+      
+      // Recalculate everything
+      try {
+        // Recalculate Z-Scores with new window
+        calculateAllZScores();
+        calculateCompositeHistory();
+        
+        // Update labels first
+        updateWindowLabels(windowKey);
+        
+        // Full UI update (includes charts)
+        _coreUpdateUI();
+        
+        // Re-render other sections
+        setTimeout(() => {
+          try { renderSignalsSection(); } catch(e) { console.warn('[Window] Signals re-render:', e); }
+          try { generateReport(); } catch(e) { console.warn('[Window] Report re-render:', e); }
+        }, 150);
+        
+        console.log(`[Window] ✓ Switched to ${opt.label} — Z-Composite: ${safeFixed(state.composite, 2)}`);
+      } catch (e) {
+        console.error('[Window] Switch error:', e);
+      } finally {
+        if (toggleContainer) toggleContainer.classList.remove('window-loading');
+      }
+    }
+    
+    // Window toggle click handlers
+    document.querySelectorAll('.window-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const windowKey = this.dataset.window;
+        if (this.classList.contains('active')) return; // Already active
+        switchWindow(windowKey);
       });
     });
   </script>
