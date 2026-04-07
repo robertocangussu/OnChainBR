@@ -860,10 +860,12 @@
     };
     
     // Get threshold scale based on current window
+    // ALL (cumulative) is the baseline - original thresholds were designed for full history
+    // Shorter windows have smaller std, so Z-scores inflate - we expand thresholds to compensate
     function getThresholdScale() {
-      if (CONFIG.ROLLING_WINDOW === null) return 0.60;  // ALL
-      if (CONFIG.ROLLING_WINDOW === 1460) return 0.75;  // 4Y
-      return 1.0;  // 1Y (365)
+      if (CONFIG.ROLLING_WINDOW === null) return 1.0;   // ALL - baseline
+      if (CONFIG.ROLLING_WINDOW === 1460) return 1.25;  // 4Y - Z inflates ~25%
+      return 1.50;  // 1Y (365) - Z inflates ~50%
     }
     
     // Get dynamic zone thresholds
@@ -1945,16 +1947,18 @@
       // 1Y: thresholds as-is (most reactive)
       // 4Y: thresholds ~25% tighter (medium)
       // ALL: thresholds ~40% tighter (most compressed)
+      // ALL (cumulative) is the baseline - original thresholds designed for full history
+      // Shorter windows have smaller std, so Z-scores inflate - expand thresholds to compensate
       const thresholdScale = {
-        '1y':  1.0,
-        '4y':  0.75,
-        'all': 0.60
+        '1y':  1.50,  // Z inflates ~50% with 1Y window
+        '4y':  1.25,  // Z inflates ~25% with 4Y window  
+        'all': 1.00   // Baseline - original thresholds
       };
       const scale = thresholdScale[windowKey];
       
-      const ACC_TH           = -1.5 * scale;  // -1.5 for 1Y, -1.125 for 4Y, -0.9 for ALL
-      const HOT_TH           =  1.5 * scale;  // +1.5 for 1Y, +1.125 for 4Y, +0.9 for ALL
-      const DEEP_TH          = -2.0 * scale;  // -2.0 for 1Y, -1.5 for 4Y, -1.2 for ALL
+      const ACC_TH           = -1.5 * scale;  // -2.25 for 1Y, -1.875 for 4Y, -1.5 for ALL
+      const HOT_TH           =  1.5 * scale;  // +2.25 for 1Y, +1.875 for 4Y, +1.5 for ALL
+      const DEEP_TH          = -2.0 * scale;  // -3.0 for 1Y, -2.5 for 4Y, -2.0 for ALL
       const MIN_ACC_DAYS     = 10;
       const MIN_DEEP_DAYS    = 3;
       const Z_RECOVERY_DAYS  = 3;
