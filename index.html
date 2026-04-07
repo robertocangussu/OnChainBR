@@ -808,10 +808,9 @@
       BGEOMETRICS_TOKEN: 'SahfZ2aHol', 
       BGEOMETRICS_BASE: 'https://bitcoin-data.com', 
       BITVIEW_BASE: 'https://bitview.space/api',
-      // CORS proxy for BGeometrics (needed for GitHub Pages)
-      // Using allorigins which has better rate limits
-      CORS_PROXY: 'https://api.allorigins.win/raw?url=',
-      USE_CORS_PROXY: true, // Set to false if running locally or CORS is fixed
+      // Custom Cloudflare Worker proxy (no rate limits!)
+      CORS_PROXY: 'https://bgeometrics-proxy.roberty-rockeiro.workers.dev/?url=',
+      USE_CORS_PROXY: true,
       ROLLING_WINDOW: 365, 
       MIN_DATA_POINTS: 30
     };
