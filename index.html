@@ -331,13 +331,13 @@
         <div class="sidebar-section">
           <div class="sidebar-title">Conviction Scale</div>
           <div class="conviction-bar"><div class="conviction-marker" id="convictionMarker"></div></div>
-          <div class="conviction-labels"><span>-3</span><span>-1.5</span><span>0</span><span>+1.5</span><span>+3</span></div>
+          <div class="conviction-labels" id="convictionLabels"><span>-3</span><span id="convLabelAcc">-1.5</span><span>0</span><span id="convLabelHot">+1.5</span><span>+3</span></div>
           <div class="conviction-items">
-            <div class="conviction-item" data-zone="acc"><span class="conviction-dot" style="background: var(--accent-green)"></span><span class="conviction-label">ACCUMULATE</span><span class="conviction-range">Z ≤ -1.5</span></div>
-            <div class="conviction-item" data-zone="und"><span class="conviction-dot" style="background: var(--accent-lime)"></span><span class="conviction-label">UNDERVALUED</span><span class="conviction-range">-1.5 → -0.5</span></div>
-            <div class="conviction-item" data-zone="fair"><span class="conviction-dot" style="background: var(--accent-yellow)"></span><span class="conviction-label">FAIR VALUE</span><span class="conviction-range">-0.5 → +0.5</span></div>
-            <div class="conviction-item" data-zone="over"><span class="conviction-dot" style="background: var(--accent-orange)"></span><span class="conviction-label">ELEVATED</span><span class="conviction-range">+0.5 → +1.5</span></div>
-            <div class="conviction-item" data-zone="dist"><span class="conviction-dot" style="background: var(--accent-red)"></span><span class="conviction-label">OVERHEATED</span><span class="conviction-range">Z ≥ +1.5</span></div>
+            <div class="conviction-item" data-zone="acc"><span class="conviction-dot" style="background: var(--accent-green)"></span><span class="conviction-label">ACCUMULATE</span><span class="conviction-range" id="convRangeAcc">Z ≤ -1.5</span></div>
+            <div class="conviction-item" data-zone="und"><span class="conviction-dot" style="background: var(--accent-lime)"></span><span class="conviction-label">UNDERVALUED</span><span class="conviction-range" id="convRangeUnd">-1.5 → -0.5</span></div>
+            <div class="conviction-item" data-zone="fair"><span class="conviction-dot" style="background: var(--accent-yellow)"></span><span class="conviction-label">FAIR VALUE</span><span class="conviction-range" id="convRangeFair">-0.5 → +0.5</span></div>
+            <div class="conviction-item" data-zone="over"><span class="conviction-dot" style="background: var(--accent-orange)"></span><span class="conviction-label">ELEVATED</span><span class="conviction-range" id="convRangeOver">+0.5 → +1.5</span></div>
+            <div class="conviction-item" data-zone="dist"><span class="conviction-dot" style="background: var(--accent-red)"></span><span class="conviction-label">OVERHEATED</span><span class="conviction-range" id="convRangeDist">Z ≥ +1.5</span></div>
           </div>
         </div>
       </div>
@@ -405,12 +405,12 @@
         <div id="watchingBadge" style="display:none;position:absolute;top:12px;right:12px;background:rgba(20,20,22,0.95);border:1px solid rgba(234,179,8,0.6);border-radius:6px;padding:8px 14px;font-size:10px;font-family:'JetBrains Mono',monospace;color:#e8e8ed;align-items:center;gap:6px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.4);"></div>
       </div>
       <!-- Zone background legend -->
-      <div class="sig-zone-legend">
-        <span style="color:#00d97e">■ ACCUMULATE (Z≤−1.5)</span>
-        <span style="color:#84cc16">■ UNDERVALUED (−1.5 to −0.5)</span>
+      <div class="sig-zone-legend" id="sigZoneLegend">
+        <span style="color:#00d97e" id="sigLegendAcc">■ ACCUMULATE (Z≤−1.5)</span>
+        <span style="color:#84cc16" id="sigLegendUnd">■ UNDERVALUED (−1.5 to −0.5)</span>
         <span style="color:#eab308">■ FAIR VALUE</span>
-        <span style="color:#f97316">■ ELEVATED (+0.5 to +1.5)</span>
-        <span style="color:#ef4444">■ OVERHEATED (Z≥+1.5)</span>
+        <span style="color:#f97316" id="sigLegendOver">■ ELEVATED (+0.5 to +1.5)</span>
+        <span style="color:#ef4444" id="sigLegendDist">■ OVERHEATED (Z≥+1.5)</span>
       </div>
     </div>
 
@@ -850,13 +850,32 @@
     };
 
     // ========== ZONES ==========
-    const ZONES = {
-      acc: { min: -Infinity, max: -1.5, name: 'ACCUMULATE', short: 'ACC', color: '#00d97e' },
-      und: { min: -1.5, max: -0.5, name: 'UNDERVALUED', short: 'UND', color: '#84cc16' },
-      fair: { min: -0.5, max: 0.5, name: 'FAIR VALUE', short: 'FAIR', color: '#eab308' },
-      over: { min: 0.5, max: 1.5, name: 'ELEVATED', short: 'ELEV', color: '#f97316' },
-      dist: { min: 1.5, max: Infinity, name: 'OVERHEATED', short: 'HOT', color: '#ef4444' }
+    // Base zones (for 1Y window)
+    const ZONES_BASE = {
+      acc: { name: 'ACCUMULATE', short: 'ACC', color: '#00d97e' },
+      und: { name: 'UNDERVALUED', short: 'UND', color: '#84cc16' },
+      fair: { name: 'FAIR VALUE', short: 'FAIR', color: '#eab308' },
+      over: { name: 'ELEVATED', short: 'ELEV', color: '#f97316' },
+      dist: { name: 'OVERHEATED', short: 'HOT', color: '#ef4444' }
     };
+    
+    // Get threshold scale based on current window
+    function getThresholdScale() {
+      if (CONFIG.ROLLING_WINDOW === null) return 0.60;  // ALL
+      if (CONFIG.ROLLING_WINDOW === 1460) return 0.75;  // 4Y
+      return 1.0;  // 1Y (365)
+    }
+    
+    // Get dynamic zone thresholds
+    function getZoneThresholds() {
+      const scale = getThresholdScale();
+      return {
+        acc:  -1.5 * scale,  // ACCUMULATE threshold
+        und:  -0.5 * scale,  // UNDERVALUED threshold  
+        fair:  0.5 * scale,  // FAIR VALUE upper
+        over:  1.5 * scale   // ELEVATED/OVERHEATED threshold
+      };
+    }
 
     // ========== UTILITY FUNCTIONS ==========
     function safeFixed(num, digits = 2) {
@@ -875,12 +894,13 @@
     }
     
     function getZone(z) {
-      if (z === null || z === undefined || isNaN(z)) return { key: 'fair', ...ZONES.fair };
-      if (z <= -1.5) return { key: 'acc', ...ZONES.acc };
-      if (z <= -0.5) return { key: 'und', ...ZONES.und };
-      if (z <= 0.5) return { key: 'fair', ...ZONES.fair };
-      if (z <= 1.5) return { key: 'over', ...ZONES.over };
-      return { key: 'dist', ...ZONES.dist };
+      if (z === null || z === undefined || isNaN(z)) return { key: 'fair', ...ZONES_BASE.fair };
+      const th = getZoneThresholds();
+      if (z <= th.acc) return { key: 'acc', ...ZONES_BASE.acc };
+      if (z <= th.und) return { key: 'und', ...ZONES_BASE.und };
+      if (z <= th.fair) return { key: 'fair', ...ZONES_BASE.fair };
+      if (z <= th.over) return { key: 'over', ...ZONES_BASE.over };
+      return { key: 'dist', ...ZONES_BASE.dist };
     }
     
     function getZoneColor(z) { return getZone(z).color; }
@@ -1270,7 +1290,8 @@
       const last60 = state.compositeHistory.slice(-60);
       console.log('Last 60 days Z-Composite:');
       last60.forEach(d => {
-        const zone = d.value <= -2.0 ? 'DEEP-ACC' : d.value <= -1.5 ? 'ACC' : d.value <= -0.5 ? 'UND' : d.value <= 0.5 ? 'FAIR' : d.value <= 1.5 ? 'ELEV' : 'HOT';
+        const th = getZoneThresholds();
+        const zone = d.value <= th.acc*1.33 ? 'DEEP-ACC' : d.value <= th.acc ? 'ACC' : d.value <= th.und ? 'UND' : d.value <= th.fair ? 'FAIR' : d.value <= th.over ? 'ELEV' : 'HOT';
         console.log(`  ${d.date}  Z=${d.value.toFixed(3)}  [${zone}]`);
       });
 
@@ -1278,13 +1299,15 @@
       console.group('=== 2025 CYCLE (Apr-Nov) ===');
       const cycle2025 = state.compositeHistory.filter(d => d.date >= '2025-03-01' && d.date <= '2025-11-30');
       let accCount = 0, deepCount = 0;
+      const th = getZoneThresholds();
+      const deepTh = th.acc * 1.33; // DEEP_TH relative to ACC_TH
       cycle2025.forEach(d => {
-        const zone = d.value <= -2.0 ? 'DEEP-ACC' : d.value <= -1.5 ? 'ACC' : d.value <= -0.5 ? 'UND' : 'OTHER';
-        if (d.value <= -1.5) accCount++;
-        if (d.value <= -2.0) deepCount++;
-        if (d.value <= -1.3) console.log(`  ${d.date}  Z=${d.value.toFixed(3)}  [${zone}]`);
+        const zone = d.value <= deepTh ? 'DEEP-ACC' : d.value <= th.acc ? 'ACC' : d.value <= th.und ? 'UND' : 'OTHER';
+        if (d.value <= th.acc) accCount++;
+        if (d.value <= deepTh) deepCount++;
+        if (d.value <= th.acc * 0.87) console.log(`  ${d.date}  Z=${d.value.toFixed(3)}  [${zone}]`);
       });
-      console.log(`2025: ${accCount} days in ACC (≤-1.5), ${deepCount} days DEEP-ACC (≤-2.0)`);
+      console.log(`2025: ${accCount} days in ACC (≤${th.acc.toFixed(1)}), ${deepCount} days DEEP-ACC (≤${deepTh.toFixed(1)})`);
       // Find price low in Apr-Jun 2025
       const prices2025 = state.prices.filter(d => d.date >= '2025-03-01' && d.date <= '2025-07-01');
       if (prices2025.length) {
@@ -1303,18 +1326,18 @@
       console.log(`+15% trigger = $${Math.round(low90*1.15).toLocaleString()}`);
 
       // Count days in ACC
-      const accDays = state.compositeHistory.filter(d => d.value <= -1.5).length;
-      const deepDays = state.compositeHistory.filter(d => d.value <= -2.0).length;
-      console.log(`Total days in ACC (≤-1.5): ${accDays} | Deep ACC (≤-2.0): ${deepDays}`);
+      const accDays = state.compositeHistory.filter(d => d.value <= th.acc).length;
+      const deepDays = state.compositeHistory.filter(d => d.value <= deepTh).length;
+      console.log(`Total days in ACC (≤${th.acc.toFixed(1)}): ${accDays} | Deep ACC (≤${deepTh.toFixed(1)}): ${deepDays}`);
 
-      // Find last time Z crossed -1.5 upward
+      // Find last time Z crossed ACC_TH upward
       for (let i = state.compositeHistory.length-1; i > 0; i--) {
         const prev = state.compositeHistory[i-1].value;
         const curr = state.compositeHistory[i].value;
-        if (prev <= -1.5 && curr > -1.5) {
+        if (prev <= th.acc && curr > th.acc) {
           const crossDate = state.compositeHistory[i].date;
           const crossPrice = state.prices.find(p => p.date === crossDate)?.value;
-          console.log(`Last Z cross above -1.5: ${crossDate} @ $${crossPrice ? Math.round(crossPrice).toLocaleString() : '?'}`);
+          console.log(`Last Z cross above ${th.acc.toFixed(1)}: ${crossDate} @ $${crossPrice ? Math.round(crossPrice).toLocaleString() : '?'}`);
           break;
         }
       }
@@ -1397,7 +1420,16 @@
       }
       
       const threshEl = document.getElementById('statZoneThreshold');
-      if (threshEl) threshEl.textContent = `${zone.min === -Infinity ? '< -1.5' : zone.min.toFixed(1)} → ${zone.max === Infinity ? '> +1.5' : zone.max.toFixed(1)}`;
+      if (threshEl) {
+        const th = getZoneThresholds();
+        let threshText = '';
+        if (zone.key === 'acc') threshText = `< ${th.acc.toFixed(1)}`;
+        else if (zone.key === 'und') threshText = `${th.acc.toFixed(1)} → ${th.und.toFixed(1)}`;
+        else if (zone.key === 'fair') threshText = `${th.und.toFixed(1)} → ${th.fair.toFixed(1)}`;
+        else if (zone.key === 'over') threshText = `${th.fair.toFixed(1)} → ${th.over.toFixed(1)}`;
+        else threshText = `> ${th.over.toFixed(1)}`;
+        threshEl.textContent = threshText;
+      }
       
       const metricsOk = document.getElementById('statMetricsOk');
       if (metricsOk) metricsOk.textContent = Object.values(state.zScores).filter(z => z !== null).length;
@@ -1676,12 +1708,13 @@
 
       if (oscillatorChart) oscillatorChart.destroy();
 
-      // Get zone color for Z value
-      const getZoneColor = (z) => {
-        if (z <= -1.5) return '#00d97e';
-        if (z <= -0.5) return '#84cc16';
-        if (z <=  0.5) return '#eab308';
-        if (z <=  1.5) return '#f97316';
+      // Get zone color for Z value (uses dynamic thresholds)
+      const th = getZoneThresholds();
+      const getZoneColorLocal = (z) => {
+        if (z <= th.acc) return '#00d97e';
+        if (z <= th.und) return '#84cc16';
+        if (z <= th.fair) return '#eab308';
+        if (z <= th.over) return '#f97316';
         return '#ef4444';
       };
 
@@ -1727,7 +1760,7 @@
                 title: items => new Date(items[0].label).toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'}).toUpperCase(),
                 label: c => {
                   const v = c.parsed.y;
-                  const zone = v<=-1.5?'ACCUMULATE':v<=-0.5?'UNDERVALUED':v<=0.5?'FAIR VALUE':v<=1.5?'ELEVATED':'OVERHEATED';
+                  const zone = getZone(v).name;
                   return ` Z: ${v.toFixed(3)}  ·  ${zone}`;
                 }
               }
@@ -1762,10 +1795,11 @@
           beforeDraw: chart => {
             const { ctx: c, chartArea, scales } = chart;
             c.save();
-            // Zone threshold lines
+            // Zone threshold lines - use dynamic thresholds
+            const th = getZoneThresholds();
             [
-              { v: -1.5, color: '#00d97e', label: 'ACC -1.5' },
-              { v:  1.5, color: '#ef4444', label: 'HOT +1.5' }
+              { v: th.acc, color: '#00d97e', label: `ACC ${th.acc.toFixed(1)}` },
+              { v: th.over, color: '#ef4444', label: `HOT +${th.over.toFixed(1)}` }
             ].forEach(({v, color, label}) => {
               const y = scales.y.getPixelForValue(v);
               c.beginPath();
@@ -1858,13 +1892,14 @@
       html += `<span>${formatDateShort(lastDate)}</span>`;
       html += `</div>`;
       
-      // Legend
+      // Legend - uses dynamic thresholds
+      const th = getZoneThresholds();
       html += `<div class="heatmap-legend">`;
-      html += `<div class="heatmap-legend-item"><div class="heatmap-legend-color" style="background:#00d97e"></div><span>ACC (≤-1.5)</span></div>`;
+      html += `<div class="heatmap-legend-item"><div class="heatmap-legend-color" style="background:#00d97e"></div><span>ACC (≤${th.acc.toFixed(1)})</span></div>`;
       html += `<div class="heatmap-legend-item"><div class="heatmap-legend-color" style="background:#84cc16"></div><span>UND</span></div>`;
       html += `<div class="heatmap-legend-item"><div class="heatmap-legend-color" style="background:#eab308"></div><span>FAIR</span></div>`;
       html += `<div class="heatmap-legend-item"><div class="heatmap-legend-color" style="background:#f97316"></div><span>ELEV</span></div>`;
-      html += `<div class="heatmap-legend-item"><div class="heatmap-legend-color" style="background:#ef4444"></div><span>HOT (≥+1.5)</span></div>`;
+      html += `<div class="heatmap-legend-item"><div class="heatmap-legend-color" style="background:#ef4444"></div><span>HOT (≥+${th.over.toFixed(1)})</span></div>`;
       html += `</div>`;
       
       html += '</div>';
@@ -1900,15 +1935,34 @@
 
       const priceMap = new Map(priceHistory.map(d => [d.date, d.value]));
 
-      // ── PARAMETERS ──────────────────────────────────────────────
-      const ACC_TH           = -1.5;
-      const HOT_TH           =  1.5;
-      const MIN_ACC_DAYS     = 10;   // reduced: 2025 cycle was fast (was 14)
-      const MIN_DEEP_DAYS    = 3;    // reduced: fewer days needed below -2.0 (was 5)
-      const Z_RECOVERY_DAYS  = 3;    // reduced: faster recovery confirmation (was 5)
+      // ── DYNAMIC PARAMETERS BASED ON WINDOW ──────────────────────
+      // With larger windows (4Y, ALL), Z-scores compress because std grows
+      // We need to adjust thresholds proportionally
+      const windowKey = CONFIG.ROLLING_WINDOW === null ? 'all' : 
+                        CONFIG.ROLLING_WINDOW === 1460 ? '4y' : '1y';
+      
+      // Threshold scaling factors (empirically derived)
+      // 1Y: thresholds as-is (most reactive)
+      // 4Y: thresholds ~25% tighter (medium)
+      // ALL: thresholds ~40% tighter (most compressed)
+      const thresholdScale = {
+        '1y':  1.0,
+        '4y':  0.75,
+        'all': 0.60
+      };
+      const scale = thresholdScale[windowKey];
+      
+      const ACC_TH           = -1.5 * scale;  // -1.5 for 1Y, -1.125 for 4Y, -0.9 for ALL
+      const HOT_TH           =  1.5 * scale;  // +1.5 for 1Y, +1.125 for 4Y, +0.9 for ALL
+      const DEEP_TH          = -2.0 * scale;  // -2.0 for 1Y, -1.5 for 4Y, -1.2 for ALL
+      const MIN_ACC_DAYS     = 10;
+      const MIN_DEEP_DAYS    = 3;
+      const Z_RECOVERY_DAYS  = 3;
       const CONFIRM_BUY_DAYS = 5;
       const CONFIRM_SEL_DAYS = 3;
       const PRICE_CONFIRM    = 0.15;
+      
+      console.log(`[Signals] Window: ${windowKey.toUpperCase()} | Scale: ${scale} | ACC_TH: ${ACC_TH.toFixed(2)} | HOT_TH: ${HOT_TH.toFixed(2)}`);
       // ────────────────────────────────────────────────────────────
 
       // Helper: get min price in last N days before a given date (date-string based)
@@ -1944,17 +1998,17 @@
           } else {
             daysAboveBuy = 0;
             // Reset pending if Z returns to DEEP-ACC
-            if (buyPending && curr <= -2.0) {
+            if (buyPending && curr <= DEEP_TH) {
               console.log(`↩ BUY pending reset (deep ACC): ${date} Z=${curr.toFixed(2)}`);
               buyPending = null;
             }
           }
 
-          // Detect Z crossing -1.5 upward
+          // Detect Z crossing ACC_TH upward
           if (prev <= ACC_TH && curr > ACC_TH) {
             const lb = compositeHistory.slice(Math.max(0, i - MIN_ACC_DAYS - 15), i);
             const accDays  = lb.filter(d => d.value !== null && d.value <= ACC_TH).length;
-            const deepDays = lb.filter(d => d.value !== null && d.value <= -2.0).length;
+            const deepDays = lb.filter(d => d.value !== null && d.value <= DEEP_TH).length;
             const zVals    = lb.map(d => d.value).filter(v => v !== null);
             const zMin     = Math.min(...zVals);
             const zMinAge  = lb.length - 1 - lb.findLastIndex(d => d.value === zMin);
@@ -2258,7 +2312,8 @@
                   if (c.datasetIndex === 1) {
                     const z = c.parsed.y?.toFixed(2);
                     if (!z) return '';
-                    const zone = c.parsed.y <= -1.5 ? 'ACCUMULATE' : c.parsed.y <= -0.5 ? 'UNDERVALUED' : c.parsed.y <= 0.5 ? 'FAIR VALUE' : c.parsed.y <= 1.5 ? 'ELEVATED' : 'OVERHEATED';
+                    const th = getZoneThresholds();
+                    const zone = c.parsed.y <= th.acc ? 'ACCUMULATE' : c.parsed.y <= th.und ? 'UNDERVALUED' : c.parsed.y <= th.fair ? 'FAIR VALUE' : c.parsed.y <= th.over ? 'ELEVATED' : 'OVERHEATED';
                     return ` Z: ${z} · ${zone}`;
                   }
                   return '';
@@ -3919,6 +3974,40 @@
     });
     
     // ========== WINDOW TOGGLE HANDLERS ==========
+    function updateConvictionScaleLabels() {
+      const th = getZoneThresholds();
+      
+      // Update conviction labels
+      const labelAcc = document.getElementById('convLabelAcc');
+      const labelHot = document.getElementById('convLabelHot');
+      if (labelAcc) labelAcc.textContent = th.acc.toFixed(1);
+      if (labelHot) labelHot.textContent = '+' + th.over.toFixed(1);
+      
+      // Update range texts
+      const rangeAcc = document.getElementById('convRangeAcc');
+      const rangeUnd = document.getElementById('convRangeUnd');
+      const rangeFair = document.getElementById('convRangeFair');
+      const rangeOver = document.getElementById('convRangeOver');
+      const rangeDist = document.getElementById('convRangeDist');
+      
+      if (rangeAcc) rangeAcc.textContent = `Z ≤ ${th.acc.toFixed(1)}`;
+      if (rangeUnd) rangeUnd.textContent = `${th.acc.toFixed(1)} → ${th.und.toFixed(1)}`;
+      if (rangeFair) rangeFair.textContent = `${th.und.toFixed(1)} → +${th.fair.toFixed(1)}`;
+      if (rangeOver) rangeOver.textContent = `+${th.fair.toFixed(1)} → +${th.over.toFixed(1)}`;
+      if (rangeDist) rangeDist.textContent = `Z ≥ +${th.over.toFixed(1)}`;
+      
+      // Update signal chart legend
+      const sigLegendAcc = document.getElementById('sigLegendAcc');
+      const sigLegendUnd = document.getElementById('sigLegendUnd');
+      const sigLegendOver = document.getElementById('sigLegendOver');
+      const sigLegendDist = document.getElementById('sigLegendDist');
+      
+      if (sigLegendAcc) sigLegendAcc.textContent = `■ ACCUMULATE (Z≤${th.acc.toFixed(1)})`;
+      if (sigLegendUnd) sigLegendUnd.textContent = `■ UNDERVALUED (${th.acc.toFixed(1)} to ${th.und.toFixed(1)})`;
+      if (sigLegendOver) sigLegendOver.textContent = `■ ELEVATED (+${th.fair.toFixed(1)} to +${th.over.toFixed(1)})`;
+      if (sigLegendDist) sigLegendDist.textContent = `■ OVERHEATED (Z≥+${th.over.toFixed(1)})`;
+    }
+    
     function updateWindowLabels(windowKey) {
       const opt = CONFIG.WINDOW_OPTIONS[windowKey];
       if (!opt) return;
@@ -3943,6 +4032,9 @@
         const daysLabel = windowKey === 'all' ? 'ALL HISTORY' : (opt.short === '1Y' ? '365 DAYS' : '4 YEARS');
         heatmapBadge.textContent = `9 METRICS · ${daysLabel}`;
       }
+      
+      // Update conviction scale labels with new thresholds
+      updateConvictionScaleLabels();
     }
     
     async function switchWindow(windowKey) {
