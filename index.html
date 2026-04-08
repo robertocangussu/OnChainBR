@@ -1977,25 +1977,35 @@
 
     function renderPriceChart() {
       const ctx = document.getElementById('priceChart')?.getContext('2d');
-      if (!ctx || state.prices.length === 0) return;
+      if (!ctx || state.prices.length === 0 || state.compositeHistory.length === 0) return;
       
-      // Use ALL available data (not just 365 days)
-      const priceData = state.prices;
-      const compositeMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
+      // Create maps for both datasets
+      const priceMap = new Map(state.prices.map(d => [d.date, d.value]));
+      const zMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
       
-      // Sample data for performance if too many points (keep ~1000 points max)
+      // Find dates that exist in BOTH datasets (intersection) - this ensures alignment
+      const commonDates = state.compositeHistory
+        .filter(d => priceMap.has(d.date))
+        .map(d => d.date)
+        .sort((a, b) => new Date(a) - new Date(b));
+      
+      // Sample data for performance if too many points (keep ~1500 points max)
       const maxPoints = 1500;
-      const step = priceData.length > maxPoints ? Math.ceil(priceData.length / maxPoints) : 1;
-      const sampledData = step > 1 ? priceData.filter((_, i) => i % step === 0 || i === priceData.length - 1) : priceData;
+      const step = commonDates.length > maxPoints ? Math.ceil(commonDates.length / maxPoints) : 1;
+      const sampledDates = step > 1 
+        ? commonDates.filter((_, i) => i % step === 0 || i === commonDates.length - 1) 
+        : commonDates;
       
-      const labels = sampledData.map(p => p.date);
-      const priceValues = sampledData.map(p => p.value);
-      const zValues = sampledData.map(p => compositeMap.get(p.date) || null);
+      const labels = sampledDates;
+      const priceValues = sampledDates.map(d => priceMap.get(d));
+      const zValues = sampledDates.map(d => zMap.get(d));
       
       // Calculate years of data
-      const firstDate = new Date(sampledData[0]?.date);
-      const lastDate = new Date(sampledData[sampledData.length - 1]?.date);
+      const firstDate = new Date(sampledDates[0]);
+      const lastDate = new Date(sampledDates[sampledDates.length - 1]);
       const yearsOfData = ((lastDate - firstDate) / (365.25 * 24 * 60 * 60 * 1000)).toFixed(1);
+      
+      console.log(`[PriceChart] Aligned data: ${sampledDates.length} points, ${yearsOfData} years (${sampledDates[0]} to ${sampledDates[sampledDates.length-1]})`);
       
       if (priceChart) priceChart.destroy();
       
@@ -2526,21 +2536,40 @@
       const ctx = document.getElementById('signalChart')?.getContext('2d');
       if (!ctx) return;
 
-      // Slice to selected range
-      const allPrices = _sigRangeDays > 0 ? state.prices.slice(-_sigRangeDays) : state.prices;
-      const cMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
-      const labels = allPrices.map(p => p.date);
-      const priceData = allPrices.map(p => p.value);
-      const zData = labels.map(d => cMap.get(d) ?? null);
+      // Create maps for both datasets
+      const priceMap = new Map(state.prices.map(d => [d.date, d.value]));
+      const zMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
       
-      // Debug: check alignment
-      const nullCount = zData.filter(z => z === null).length;
-      const totalCount = zData.length;
-      console.log(`[SignalChart] Prices: ${totalCount}, Z nulls: ${nullCount} (${(nullCount/totalCount*100).toFixed(1)}% missing)`);
-      if (nullCount > 0) {
-        console.log(`[SignalChart] First 5 price dates: ${labels.slice(0,5).join(', ')}`);
-        console.log(`[SignalChart] First 5 composite dates: ${state.compositeHistory.slice(0,5).map(d=>d.date).join(', ')}`);
+      // Find dates that exist in BOTH datasets (intersection)
+      const commonDates = state.compositeHistory
+        .filter(d => priceMap.has(d.date))
+        .map(d => d.date)
+        .sort((a, b) => new Date(a) - new Date(b));
+      
+      // Apply range filter
+      const filteredDates = _sigRangeDays > 0 ? commonDates.slice(-_sigRangeDays) : commonDates;
+      
+      // Build aligned data arrays
+      const labels = filteredDates;
+      const priceData = filteredDates.map(d => priceMap.get(d));
+      const zData = filteredDates.map(d => zMap.get(d));
+      
+      // Debug: verify alignment
+      console.log(`[SignalChart] Aligned data: ${labels.length} points (price range: ${state.prices.length}, z range: ${state.compositeHistory.length})`);
+      console.log(`[SignalChart] Date range: ${labels[0]} to ${labels[labels.length-1]}`);
+      
+      // Verify correlation at a few points
+      if (labels.length > 100) {
+        const mid = Math.floor(labels.length / 2);
+        console.log(`[SignalChart] Sample alignment check:`);
+        console.log(`  Start: ${labels[0]} - Price: $${Math.round(priceData[0])}, Z: ${zData[0]?.toFixed(2)}`);
+        console.log(`  Mid: ${labels[mid]} - Price: $${Math.round(priceData[mid])}, Z: ${zData[mid]?.toFixed(2)}`);
+        console.log(`  End: ${labels[labels.length-1]} - Price: $${Math.round(priceData[priceData.length-1])}, Z: ${zData[zData.length-1]?.toFixed(2)}`);
       }
+      
+      // Create Z-Score lookup map for segment coloring
+      const cMap = new Map(filteredDates.map((d, i) => [d, zData[i]]));
+
 
       // Build background zone boxes (colored bands on BTC price area)
       const annotations = {};
