@@ -446,8 +446,17 @@
     <div class="main-grid">
       <div class="main-content">
         <div class="chart-section">
-          <div class="chart-header"><div class="chart-title">BTC/USD — Full History · Colored by Z-Composite Zone</div><div class="chart-badges"><span class="badge badge-blue">ALL DATA · LOG SCALE</span></div></div>
-          <div class="chart-container"><canvas id="priceChart"></canvas></div>
+          <div class="chart-header">
+            <div class="chart-title">BTC/USD — Full History · Colored by Z-Composite Zone</div>
+            <div class="chart-badges">
+              <span class="badge badge-blue">ALL DATA · LOG SCALE</span>
+              <button onclick="if(priceChart)priceChart.resetZoom()" style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.4);color:#a855f7;font-size:8px;font-weight:600;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:'JetBrains Mono',monospace;margin-left:8px;">⟲ Reset</button>
+            </div>
+          </div>
+          <div class="chart-container" style="position:relative;">
+            <canvas id="priceChart"></canvas>
+            <div style="position:absolute;bottom:6px;left:10px;font-size:7px;color:var(--text-muted);opacity:0.6;pointer-events:none;">🖱️ Scroll=Zoom · Drag=Pan · Click+Drag=Select</div>
+          </div>
         </div>
         <div class="chart-section">
           <div class="chart-header"><div class="chart-title">Z-Composite Oscillator</div><div class="chart-badges"><span class="badge badge-green">ROLLING 365D</span></div></div>
@@ -530,11 +539,13 @@
             <button onclick="setSigRange(730)"  class="sig-range-btn" id="sigBtn2Y">2Y</button>
             <button onclick="setSigRange(1825)" class="sig-range-btn" id="sigBtn5Y">5Y</button>
             <button onclick="setSigRange(0)"    class="sig-range-btn active" id="sigBtnALL">ALL</button>
+            <button onclick="resetSignalZoom()" class="sig-range-btn" style="margin-left:8px;background:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.4);color:#a855f7;" title="Reset zoom">⟲ Reset</button>
           </div>
         </div>
       </div>
-      <div class="sig-chart-body">
+      <div class="sig-chart-body" style="position:relative;">
         <canvas id="signalChart"></canvas>
+        <div style="position:absolute;bottom:8px;left:12px;font-size:8px;color:var(--text-muted);opacity:0.7;pointer-events:none;">🖱️ Scroll para zoom · Arraste para navegar · Clique+arraste para selecionar área</div>
         <div id="watchingBadge" style="display:none;position:absolute;top:12px;right:12px;background:rgba(20,20,22,0.95);border:1px solid rgba(234,179,8,0.6);border-radius:6px;padding:8px 14px;font-size:10px;font-family:'JetBrains Mono',monospace;color:#e8e8ed;align-items:center;gap:6px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.4);"></div>
       </div>
       <!-- Zone background legend -->
@@ -2041,6 +2052,16 @@
           interaction: { intersect: false, mode: 'index' },
           plugins: { 
             legend: { display: false },
+            zoom: {
+              pan: { enabled: true, mode: 'x' },
+              zoom: {
+                wheel: { enabled: true },
+                pinch: { enabled: true },
+                drag: { enabled: true, backgroundColor: 'rgba(249,115,22,0.1)', borderColor: 'rgba(249,115,22,0.5)', borderWidth: 1 },
+                mode: 'x'
+              },
+              limits: { x: { minRange: 30 } }
+            },
             tooltip: {
               callbacks: {
                 label: ctx => {
@@ -2531,6 +2552,12 @@
         renderSignalChart(signals);
       }
     }
+    
+    function resetSignalZoom() {
+      if (signalChart) {
+        signalChart.resetZoom();
+      }
+    }
 
     function renderSignalChart(signals) {
       const ctx = document.getElementById('signalChart')?.getContext('2d');
@@ -2667,6 +2694,22 @@
           plugins: {
             legend: { display: false },
             annotation: { annotations },
+            zoom: {
+              pan: {
+                enabled: true,
+                mode: 'x',
+                modifierKey: null
+              },
+              zoom: {
+                wheel: { enabled: true, modifierKey: null },
+                pinch: { enabled: true },
+                drag: { enabled: true, backgroundColor: 'rgba(249,115,22,0.1)', borderColor: 'rgba(249,115,22,0.5)', borderWidth: 1 },
+                mode: 'x'
+              },
+              limits: {
+                x: { minRange: 30 }
+              }
+            },
             tooltip: {
               backgroundColor: 'rgba(10,10,11,0.95)',
               borderColor: 'rgba(255,255,255,0.1)',
