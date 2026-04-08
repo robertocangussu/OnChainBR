@@ -717,8 +717,33 @@
   <!-- ========== SECTION 06: REPORT ========== -->
   <div class="section-wrap" id="report" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
-      <span class="section-title">Leitura do Mercado</span>
+      <span class="section-title">🔍 Analista Senior — Leitura do Mercado</span>
       <span id="reportDate" style="font-size:10px;color:var(--text-muted);"></span>
+    </div>
+    
+    <!-- DIREÇÃO - Main Analysis Card (like professor) -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <span style="font-size:11px;color:var(--accent-orange);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Direção:</span>
+        <span id="reportDirecao" style="font-size:13px;font-weight:600;color:var(--text-primary);">bearish tilt 60/40 nas próximas 48-72h.</span>
+      </div>
+      <div id="reportMainAnalysis" style="font-size:12px;line-height:1.8;color:var(--text-secondary);">
+        Carregando análise detalhada...
+      </div>
+      
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--accent-cyan);font-weight:600;margin-bottom:10px;">Contra-argumento (não ignore):</div>
+        <div id="reportContraArgumento" style="font-size:11px;line-height:1.7;color:var(--text-muted);">
+          Carregando...
+        </div>
+      </div>
+      
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--accent-green);font-weight:600;margin-bottom:10px;">Tese morre se:</div>
+        <div id="reportTeseMorre" style="font-size:11px;line-height:1.7;color:var(--text-muted);">
+          Carregando...
+        </div>
+      </div>
     </div>
     
     <!-- Report Status Cards -->
@@ -2238,29 +2263,8 @@
       const sellSignals = signals.filter(s => s.type === 'SELL');
       const pending = signals.find(s => s.type === 'PENDING');
 
-      // PENDING: horizontal trigger line only
-      if (pending) {
-        annotations['pending_line'] = {
-          type: 'line',
-          yMin: pending.needed, yMax: pending.needed, yScaleID: 'yPrice',
-          borderColor: 'rgba(234,179,8,0.7)', borderWidth: 2, borderDash: [8, 4],
-          label: {
-            display: true,
-            content: '▶ BUY trigger $' + Math.round(pending.needed/1000) + 'k  |  now $' + Math.round(pending.price/1000) + 'k  |  need +' + Math.round((pending.needed/pending.price - 1)*100) + '%',
-            position: 'start', color: '#eab308',
-            font: { size: 10, weight: 'bold', family: "'JetBrains Mono', monospace" },
-            backgroundColor: 'rgba(10,10,11,0.9)',
-            padding: { top: 5, bottom: 5, left: 10, right: 10 },
-            borderRadius: 4
-          }
-        };
-        // No floating badge - removed for cleaner look
-        const watchBadge = document.getElementById('watchingBadge');
-        if (watchBadge) watchBadge.style.display = 'none';
-      } else {
-        const watchBadge = document.getElementById('watchingBadge');
-        if (watchBadge) watchBadge.style.display = 'none';
-      }
+      // PENDING signal - no visual indicator, signals appear automatically when confirmed
+      // (removed trigger line for cleaner look)
 
       // Get the date range for filtering signals
       const startDate = labels[0];
@@ -3859,6 +3863,80 @@
       
       // ========== GENERATE MAIN TEXT ==========
       let mainText = '';
+      
+      // ========== DIREÇÃO (Professor Style) ==========
+      let direccao = '';
+      let direccaoText = '';
+      let contraArgumento = '';
+      let teseMorre = '';
+      let macroOverride = '';
+      
+      // Determine direction
+      const isBearish = zScore > 0.5 || !inBullMarket || (sopr > 1.02 && zScore > 0);
+      const isBullish = zScore <= -0.5 && inBullMarket;
+      const isNeutral = !isBearish && !isBullish;
+      
+      if (isBearish) {
+        const bearPct = zScore >= 1.0 ? '70/30' : zScore >= 0.5 ? '60/40' : '55/45';
+        direccao = `<strong style="color:var(--accent-red)">bearish tilt ${bearPct}</strong> nas próximas 48-72h.`;
+        
+        // Main analysis
+        direccaoText = `MVRV em ${mvrv.toFixed(2)} ${mvrv > 2.0 ? 'acima da média histórica' : mvrv < 1.5 ? 'em zona de desconto' : 'em região neutra'}. `;
+        direccaoText += `NUPL ${nupl > 0.5 ? 'em euforia' : nupl > 0.25 ? 'em otimismo' : nupl < 0 ? 'em capitulação' : 'neutro'} (${(nupl*100).toFixed(1)}%). `;
+        direccaoText += `SOPR ${sopr.toFixed(3)} — ${sopr < 1 ? 'holders vendendo no prejuízo = capitulação' : sopr > 1.05 ? 'profit-taking em andamento' : 'equilíbrio entre lucro/prejuízo'}. `;
+        if (fearGreed < 25) direccaoText += `Fear & Greed em ${fearGreed.toFixed(0)} (Extreme Fear). `;
+        else if (fearGreed > 75) direccaoText += `Fear & Greed em ${fearGreed.toFixed(0)} (Extreme Greed) — risco de correção. `;
+        
+        // Contra-argumento
+        contraArgumento = `Funding ${funding > 0 ? '+' : ''}${(funding*100).toFixed(4)}% — ${funding < 0 ? 'shorts pagando longs, potencial squeeze se preço subir' : 'longs pagando shorts, normal'}. `;
+        contraArgumento += `Se Z-Score cair abaixo de -1.5 = zona de acumulação confirmada. `;
+        contraArgumento += `RSI semanal em ${rsi.toFixed(0)} ${rsi < 40 ? '— oversold, pode bounçar' : ''}. `;
+        
+        // Tese morre
+        teseMorre = `Funding reverter para ${funding > 0 ? 'negativo' : 'positivo'} com força. `;
+        teseMorre += `Z-Score cruzar ${zScore > 0 ? 'abaixo de 0' : 'acima de +1.0'} com volume. `;
+        teseMorre += `Preço romper $${Math.round(sma50/1000)}k (SMA50) com convicção.`;
+        
+      } else if (isBullish) {
+        const bullPct = zScore <= -1.5 ? '75/25' : zScore <= -1.0 ? '65/35' : '60/40';
+        direccao = `<strong style="color:var(--accent-green)">bullish tilt ${bullPct}</strong> nas próximas 48-72h.`;
+        
+        // Main analysis
+        direccaoText = `Z-Score em ${zScore.toFixed(2)} = <strong style="color:var(--accent-green)">${zoneName}</strong>. `;
+        direccaoText += `MVRV ${mvrv.toFixed(2)} ${mvrv < 1.5 ? '— mercado subvalorizado vs realized price' : ''}. `;
+        direccaoText += `NUPL ${(nupl*100).toFixed(1)}% ${nupl < 0.25 ? '— sentimento pessimista = oportunidade' : ''}. `;
+        direccaoText += `SOPR ${sopr.toFixed(3)} ${sopr < 1 ? '— holders realizando prejuízo, capitulação típica de fundos' : ''}. `;
+        direccaoText += `Supply in Profit ${state.rawValues.supplyProfit ? (state.rawValues.supplyProfit*100).toFixed(0) + '%' : '--'} — ${state.rawValues.supplyProfit < 0.6 ? 'muitos underwater = potencial de recuperação' : 'maioria em lucro'}.`;
+        
+        // Contra-argumento
+        contraArgumento = `Estrutura técnica ${inBullMarket ? 'ainda bullish' : '<strong style="color:var(--accent-red)">bearish (SMA50 < SMA200)</strong>'}. `;
+        contraArgumento += `Mesmo em zona de acumulação, bear markets podem estender. `;
+        contraArgumento += `Funding ${(funding*100).toFixed(4)}% ${funding < -0.01 ? '— shorts dominando, pode ter mais downside antes de reverter' : ''}.`;
+        
+        // Tese morre
+        teseMorre = `Z-Score voltar acima de 0 sem price follow-through. `;
+        teseMorre += `SMA50 cruzar abaixo de SMA200 (death cross). `;
+        teseMorre += `SOPR sustentar acima de 1.03 = profit-taking dominando.`;
+        
+      } else {
+        direccao = `<strong style="color:var(--accent-yellow)">neutro 50/50</strong> — aguardando definição.`;
+        
+        direccaoText = `Mercado em consolidação. Z-Score ${zScore?.toFixed(2) || '--'} em fair value. `;
+        direccaoText += `MVRV ${mvrv.toFixed(2)}, NUPL ${(nupl*100).toFixed(1)}%, SOPR ${sopr.toFixed(3)}. `;
+        direccaoText += `Não há edge claro em nenhuma direção. Aguardar breakout com volume.`;
+        
+        contraArgumento = `Range pode romper para qualquer lado. Ficar leve é a melhor estratégia.`;
+        
+        teseMorre = `N/A — estamos neutros. Qualquer movimento forte com volume define a direção.`;
+      }
+      
+      // Update direction elements
+      document.getElementById('reportDirecao').innerHTML = direccao;
+      document.getElementById('reportMainAnalysis').innerHTML = direccaoText;
+      document.getElementById('reportContraArgumento').innerHTML = contraArgumento;
+      document.getElementById('reportTeseMorre').innerHTML = teseMorre;
+      
+      // ========== ORIGINAL ANALYSIS (keep for lower section) ==========
       
       // Market structure analysis
       if (!inBullMarket) {
