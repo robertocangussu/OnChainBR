@@ -1170,20 +1170,29 @@
     }
 
     // ========== Z-SCORE CALCULATION ==========
-    function calculateRollingZScore(values, index) {
-      const start = Math.max(0, index - CONFIG.ROLLING_WINDOW + 1);
-      const window = values.slice(start, index + 1);
-      if (window.length < CONFIG.MIN_DATA_POINTS) return null;
+    function calculateRollingZScore(history, index) {
+      // Use date-based window, not array position
+      // CONFIG.ROLLING_WINDOW is in days (365 = 1 year)
+      const currentDate = history[index]?.date;
+      if (!currentDate) return null;
       
-      const nums = window.filter(v => typeof v === 'number' && !isNaN(v) && isFinite(v));
-      if (nums.length < CONFIG.MIN_DATA_POINTS) return null;
+      const cutoffDate = new Date(new Date(currentDate).getTime() - CONFIG.ROLLING_WINDOW * 24 * 60 * 60 * 1000)
+        .toISOString().split('T')[0];
       
-      const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
-      const variance = nums.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / nums.length;
+      // Filter to only include data within the rolling window
+      const windowData = history.slice(0, index + 1).filter(d => d.date >= cutoffDate);
+      if (windowData.length < CONFIG.MIN_DATA_POINTS) return null;
+      
+      const values = windowData.map(d => d.value).filter(v => typeof v === 'number' && !isNaN(v) && isFinite(v));
+      if (values.length < CONFIG.MIN_DATA_POINTS) return null;
+      
+      const currentValue = history[index].value;
+      const mean = values.reduce((a, b) => a + b, 0) / values.length;
+      const variance = values.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / values.length;
       const std = Math.sqrt(variance);
       
       if (std === 0 || !isFinite(std)) return 0;
-      return Math.max(-5, Math.min(5, (values[index] - mean) / std));
+      return Math.max(-5, Math.min(5, (currentValue - mean) / std));
     }
 
     // Calculate Z-score with a specific window size (for comparison display)
@@ -1294,11 +1303,10 @@
         
         state.rawValues[key] = history[history.length - 1]?.value;
         
-        const values = history.map(d => d.value);
         const zHistory = [];
         
         for (let i = 0; i < history.length; i++) {
-          const z = calculateRollingZScore(values, i);
+          const z = calculateRollingZScore(history, i);
           if (z !== null) {
             zHistory.push({ date: history[i].date, value: z });
           }
