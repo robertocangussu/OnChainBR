@@ -703,98 +703,116 @@
   <!-- ========== SECTION 06: REPORT ========== -->
   <div class="section-wrap" id="report" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
-      <span class="section-title">🔍 Analista Senior — Leitura do Mercado</span>
+      <span class="section-title">📋 Relatório Diário — Análise Integrada</span>
       <span id="reportDate" style="font-size:10px;color:var(--text-muted);"></span>
     </div>
     
-    <!-- Report Status Cards -->
-    <div class="report-status-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
-      <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
-        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Postura</div>
-        <div id="reportPosture" style="font-size:18px;font-weight:700;color:var(--accent-yellow);">AGUARDAR</div>
+    <!-- Top Summary Bar -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;">
+      <div style="background:linear-gradient(135deg,rgba(0,217,126,0.15),rgba(0,217,126,0.05));border:1px solid rgba(0,217,126,0.3);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Z-Score</div>
+        <div id="repZscore" style="font-size:20px;font-weight:700;color:var(--accent-green);">--</div>
       </div>
-      <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
-        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Viés</div>
-        <div id="reportBias" style="font-size:18px;font-weight:700;color:var(--text-secondary);">NEUTRO</div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Zona</div>
+        <div id="repZone" style="font-size:14px;font-weight:700;color:var(--text-primary);">--</div>
       </div>
-      <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
-        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Risco</div>
-        <div id="reportRisk" style="font-size:18px;font-weight:700;color:var(--accent-orange);">MÉDIO</div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Postura</div>
+        <div id="reportPosture" style="font-size:14px;font-weight:700;color:var(--accent-yellow);">AGUARDAR</div>
       </div>
-      <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
-        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Alocação</div>
-        <div id="reportTimeframe" style="font-size:18px;font-weight:700;color:var(--accent-cyan);">0%</div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Viés</div>
+        <div id="reportBias" style="font-size:14px;font-weight:700;color:var(--text-secondary);">NEUTRO</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Risco</div>
+        <div id="reportRisk" style="font-size:14px;font-weight:700;color:var(--accent-orange);">MÉDIO</div>
       </div>
     </div>
     
-    <!-- Main Report Content -->
-    <div class="report-grid" style="display:grid;grid-template-columns:2fr 1fr;gap:16px;">
-      <!-- Left: Analysis Text -->
-      <div class="report-analysis" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;">
-        <div style="font-size:11px;color:var(--accent-orange);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">📊 Leitura do Dia</div>
-        <div id="reportMainText" style="font-size:12px;line-height:1.7;color:var(--text-secondary);">
-          Carregando análise...
-        </div>
+    <!-- Main Content Grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      
+      <!-- Card 1: Z-Score & On-Chain -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-size:10px;color:var(--accent-cyan);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">📊 Z-Score Composite</div>
+        <div id="reportZScoreText" style="font-size:11px;line-height:1.7;color:var(--text-secondary);">Carregando...</div>
         
-        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-          <div style="font-size:11px;color:var(--accent-cyan);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">🎯 Ação Recomendada</div>
-          <div id="reportAction" style="font-size:12px;line-height:1.6;color:var(--text-primary);">
-            Carregando...
-          </div>
-        </div>
-        
-        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-          <div style="font-size:11px;color:var(--accent-purple);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">⚠️ Riscos da Semana</div>
-          <div id="reportRisks" style="font-size:11px;line-height:1.6;color:var(--text-muted);">
-            Carregando...
-          </div>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:10px;">
+          <div><span style="color:var(--text-muted);">MVRV</span><br><span id="repMvrv" style="font-weight:600;">--</span></div>
+          <div><span style="color:var(--text-muted);">NUPL</span><br><span id="repNupl" style="font-weight:600;">--</span></div>
+          <div><span style="color:var(--text-muted);">SOPR</span><br><span id="repSopr" style="font-weight:600;">--</span></div>
         </div>
       </div>
       
-      <!-- Right: Data Summary -->
-      <div class="report-data" style="display:flex;flex-direction:column;gap:12px;">
-        <!-- On-Chain Summary -->
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
-          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">On-Chain</div>
-          <div id="reportOnChain" style="font-size:11px;line-height:1.8;color:var(--text-secondary);">
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Z-Score:</span><span id="repZscore">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Zona:</span><span id="repZone">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>MVRV:</span><span id="repMvrv">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>NUPL:</span><span id="repNupl">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>SOPR:</span><span id="repSopr">--</span></div>
-          </div>
-        </div>
+      <!-- Card 2: Flow Analysis -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-size:10px;color:var(--accent-purple);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">💰 Flow Analysis</div>
+        <div id="reportFlowText" style="font-size:11px;line-height:1.7;color:var(--text-secondary);">Carregando...</div>
         
-        <!-- Technical Summary -->
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
-          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">Técnico</div>
-          <div id="reportTechnical" style="font-size:11px;line-height:1.8;color:var(--text-secondary);">
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Preço:</span><span id="repPrice">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>SMA50:</span><span id="repSma50">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>SMA200:</span><span id="repSma200">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>RSI:</span><span id="repRsi">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Tendência:</span><span id="repTrend">--</span></div>
-          </div>
-        </div>
-        
-        <!-- Sentiment Summary -->
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
-          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">Sentimento</div>
-          <div id="reportSentiment" style="font-size:11px;line-height:1.8;color:var(--text-secondary);">
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Fear & Greed:</span><span id="repFearGreed">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Funding:</span><span id="repFunding">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Trade System:</span><span id="repTradeSystem">--</span></div>
-          </div>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:10px;">
+          <div><span style="color:var(--text-muted);">Netflow 30d</span><br><span id="repNetflow" style="font-weight:600;">--</span></div>
+          <div><span style="color:var(--text-muted);">Reserve</span><br><span id="repReserve" style="font-weight:600;">--</span></div>
         </div>
       </div>
+      
+      <!-- Card 3: Sentiment -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-size:10px;color:var(--accent-yellow);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">😱 Sentimento</div>
+        <div id="reportSentimentText" style="font-size:11px;line-height:1.7;color:var(--text-secondary);">Carregando...</div>
+        
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:10px;">
+          <div><span style="color:var(--text-muted);">Fear & Greed</span><br><span id="repFearGreed" style="font-weight:600;">--</span></div>
+          <div><span style="color:var(--text-muted);">Funding</span><br><span id="repFunding" style="font-weight:600;">--</span></div>
+        </div>
+      </div>
+      
+      <!-- Card 4: Technical Structure -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-size:10px;color:var(--accent-lime);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">📈 Estrutura Técnica</div>
+        <div id="reportTechText" style="font-size:11px;line-height:1.7;color:var(--text-secondary);">Carregando...</div>
+        
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:10px;">
+          <div><span style="color:var(--text-muted);">Preço</span><br><span id="repPrice" style="font-weight:600;">--</span></div>
+          <div><span style="color:var(--text-muted);">SMA50</span><br><span id="repSma50" style="font-weight:600;">--</span></div>
+          <div><span style="color:var(--text-muted);">SMA200</span><br><span id="repSma200" style="font-weight:600;">--</span></div>
+          <div><span style="color:var(--text-muted);">Trend</span><br><span id="repTrend" style="font-weight:600;">--</span></div>
+        </div>
+      </div>
+      
+      <!-- Card 5: Trade Signals (full width) -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;grid-column:span 2;">
+        <div style="font-size:10px;color:var(--accent-green);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">🎯 Sistema de Sinais</div>
+        <div id="reportSignalsText" style="font-size:11px;line-height:1.7;color:var(--text-secondary);">Carregando...</div>
+      </div>
+      
     </div>
     
-    <!-- Historical Context -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;">
-      <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">📈 Contexto Histórico</div>
-      <div id="reportContext" style="font-size:11px;line-height:1.6;color:var(--text-muted);">
-        Carregando contexto...
+    <!-- Action & Risks Row -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-top:12px;">
+      
+      <!-- Action Recommendation -->
+      <div style="background:linear-gradient(135deg,rgba(0,217,126,0.1),rgba(20,184,166,0.05));border:1px solid rgba(0,217,126,0.3);border-radius:8px;padding:16px;">
+        <div style="font-size:10px;color:var(--accent-green);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">✅ AÇÃO RECOMENDADA</div>
+        <div id="reportAction" style="font-size:12px;line-height:1.6;color:var(--text-primary);">Carregando...</div>
       </div>
+      
+      <!-- Risks -->
+      <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:16px;">
+        <div style="font-size:10px;color:var(--accent-red);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">⚠️ RISCOS</div>
+        <div id="reportRisks" style="font-size:10px;line-height:1.6;color:var(--text-muted);">Carregando...</div>
+      </div>
+      
+    </div>
+    
+    <!-- Hidden elements for compatibility -->
+    <div style="display:none;">
+      <span id="reportTimeframe"></span>
+      <span id="repRsi"></span>
+      <span id="repTradeSystem"></span>
+      <span id="reportContext"></span>
+      <span id="reportMainText"></span>
     </div>
   </div>
 
@@ -3666,362 +3684,280 @@
     const MAX_REPORT_RETRIES = 5;
     
     function generateReport() {
-      console.log('[Report] Generating daily analysis...');
-      console.log('[Report] state.composite:', state.composite);
-      console.log('[Report] state.rawValues:', JSON.stringify(state.rawValues));
-      console.log('[Report] tradingState.technicalData length:', tradingState.technicalData?.length || 0);
+      console.log('[Report] Generating integrated analysis...');
       
       // Check if on-chain data is ready - if not, retry with delay
       const hasOnchainData = state.composite !== null && Object.keys(state.rawValues || {}).length > 0;
-      const hasTechData = tradingState.technicalData && tradingState.technicalData.length > 0;
       
       if (!hasOnchainData && reportRetryCount < MAX_REPORT_RETRIES) {
         reportRetryCount++;
-        console.log(`[Report] On-chain data not ready, retry ${reportRetryCount}/${MAX_REPORT_RETRIES} in 500ms...`);
         setTimeout(generateReport, 500);
         return;
       }
       
-      if (!hasOnchainData) {
-        console.warn('[Report] On-chain data still missing after retries, proceeding with defaults');
-      }
-      
       // Get current date
       const now = new Date();
-      const dateStr = now.toLocaleDateString('pt-BR', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
+      const dateStr = now.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       document.getElementById('reportDate').textContent = dateStr;
       
-      // Gather all data
+      // ========== GATHER ALL DATA ==========
       const zScore = state.composite;
-      const zone = getZone(zScore);
       const rawValues = state.rawValues || {};
       const techData = tradingState.technicalData || [];
       const lastTech = techData.length > 0 ? techData[techData.length - 1] : {};
       
+      // Price & Technical
       const price = tradingState.currentPrice || parseFloat(lastTech.price) || 0;
       const sma50 = parseFloat(lastTech.sma50) || 0;
       const sma200 = parseFloat(lastTech.sma200) || 0;
       const rsi = parseFloat(lastTech.rsi) || 50;
-      const macd = parseFloat(lastTech.macd) || 0;
       
+      // On-Chain
       const mvrv = rawValues.mvrv || 0;
       const nupl = rawValues.nupl || 0;
       const sopr = rawValues.sopr || 1;
       const fearGreed = rawValues.fearGreed || 50;
+      const supplyProfit = rawValues.supplyProfit || 0;
+      
+      // Sentiment
       const funding = tradingState.funding || 0;
       
-      // Calculate trend
+      // Technical structure
       const inBullMarket = sma50 > sma200;
       const priceAboveSma50 = price > sma50;
-      const priceAboveSma200 = price > sma200;
       
-      // Trading system status
-      const trendStatus = tradingState.trendStatus || 'CASH';
+      // Flow data from DOM
+      const netflowEl = document.getElementById('flowWhaleRatio');
+      const netflowText = netflowEl ? netflowEl.textContent : '--';
+      const reserveEl = document.getElementById('flowReserve');
+      const reserveText = reserveEl ? reserveEl.textContent : '--';
+      
+      // Trade signals
       const signals = tradingState.signals || [];
       const openSignal = signals.find(s => s.status === 'OPEN');
+      const lastBuy = signals.filter(s => s.signal === 'BUY').slice(-1)[0];
+      const lastSell = signals.filter(s => s.signal === 'SELL').slice(-1)[0];
       
       // ========== DETERMINE POSTURE ==========
-      let posture = 'AGUARDAR';
-      let postureColor = 'var(--accent-yellow)';
-      let bias = 'NEUTRO';
-      let biasColor = 'var(--text-secondary)';
-      let risk = 'MÉDIO';
-      let riskColor = 'var(--accent-orange)';
-      let capitalAllocation = '0%'; // % do capital para alocar
-      let allocationDesc = 'Manter posição atual';
+      let posture = 'AGUARDAR', postureColor = 'var(--accent-yellow)';
+      let bias = 'NEUTRO', biasColor = 'var(--text-secondary)';
+      let risk = 'MÉDIO', riskColor = 'var(--accent-orange)';
+      let allocation = '0%';
       
       if (zScore <= -1.5) {
-        posture = 'ACUMULAR';
-        postureColor = 'var(--accent-green)';
-        bias = 'BULLISH';
-        biasColor = 'var(--accent-green)';
-        risk = 'BAIXO';
-        riskColor = 'var(--accent-green)';
-        capitalAllocation = '15-25%';
-        allocationDesc = 'Aportar 15-25% do capital disponível';
+        posture = 'ACUMULAR'; postureColor = 'var(--accent-green)';
+        bias = 'BULLISH'; biasColor = 'var(--accent-green)';
+        risk = 'BAIXO'; riskColor = 'var(--accent-green)';
+        allocation = '15-25%';
       } else if (zScore <= -0.5) {
-        posture = 'ACUMULAR LEVE';
-        postureColor = 'var(--accent-lime)';
-        bias = 'BULLISH';
-        biasColor = 'var(--accent-lime)';
-        risk = 'BAIXO-MÉDIO';
-        riskColor = 'var(--accent-lime)';
-        capitalAllocation = '5-10%';
-        allocationDesc = 'Aportar 5-10% do capital disponível';
+        posture = 'ACUMULAR LEVE'; postureColor = 'var(--accent-lime)';
+        bias = 'BULLISH'; biasColor = 'var(--accent-lime)';
+        risk = 'BAIXO-MÉDIO'; riskColor = 'var(--accent-lime)';
+        allocation = '5-10%';
       } else if (zScore >= 1.5) {
-        posture = 'REALIZAR';
-        postureColor = 'var(--accent-red)';
-        bias = 'BEARISH';
-        biasColor = 'var(--accent-red)';
-        risk = 'ALTO';
-        riskColor = 'var(--accent-red)';
-        capitalAllocation = '-20-30%';
-        allocationDesc = 'Reduzir 20-30% da posição';
+        posture = 'REALIZAR'; postureColor = 'var(--accent-red)';
+        bias = 'BEARISH'; biasColor = 'var(--accent-red)';
+        risk = 'ALTO'; riskColor = 'var(--accent-red)';
+        allocation = '-20-30%';
       } else if (zScore >= 0.5) {
-        posture = 'CAUTELA';
-        postureColor = 'var(--accent-orange)';
-        bias = 'BEARISH';
-        biasColor = 'var(--accent-orange)';
-        risk = 'MÉDIO-ALTO';
-        riskColor = 'var(--accent-orange)';
-        capitalAllocation = '-10%';
-        allocationDesc = 'Considerar reduzir 10% da posição';
-      } else {
-        // Fair value zone
-        if (inBullMarket && priceAboveSma50) {
-          posture = 'HOLD';
-          bias = 'NEUTRO-BULLISH';
-          biasColor = 'var(--accent-cyan)';
-          capitalAllocation = '0%';
-          allocationDesc = 'Manter posição atual';
-        } else if (!inBullMarket) {
-          posture = 'AGUARDAR';
-          bias = 'NEUTRO-BEARISH';
-          biasColor = 'var(--accent-orange)';
-          risk = 'MÉDIO-ALTO';
-          riskColor = 'var(--accent-orange)';
-          capitalAllocation = '0%';
-          allocationDesc = 'Não abrir novas posições';
-        } else {
-          capitalAllocation = '2-5%';
-          allocationDesc = 'DCA normal: 2-5% por semana';
-        }
+        posture = 'CAUTELA'; postureColor = 'var(--accent-orange)';
+        bias = 'BEARISH'; biasColor = 'var(--accent-orange)';
+        risk = 'MÉDIO-ALTO'; riskColor = 'var(--accent-orange)';
+        allocation = '-10%';
+      } else if (!inBullMarket) {
+        bias = 'NEUTRO-BEARISH'; biasColor = 'var(--accent-orange)';
+        risk = 'MÉDIO-ALTO'; riskColor = 'var(--accent-orange)';
       }
       
-      // Get zone name as string
-      let zoneName = 'FAIR VALUE';
-      if (zScore <= -1.5) zoneName = 'ACCUMULATE';
-      else if (zScore <= -0.5) zoneName = 'UNDERVALUED';
-      else if (zScore >= 1.5) zoneName = 'OVERHEATED';
-      else if (zScore >= 0.5) zoneName = 'ELEVATED';
+      // Zone name
+      let zoneName = 'FAIR VALUE', zoneColor = 'var(--accent-yellow)';
+      if (zScore <= -1.5) { zoneName = 'ACCUMULATE'; zoneColor = 'var(--accent-green)'; }
+      else if (zScore <= -0.5) { zoneName = 'UNDERVALUED'; zoneColor = 'var(--accent-lime)'; }
+      else if (zScore >= 1.5) { zoneName = 'OVERHEATED'; zoneColor = 'var(--accent-red)'; }
+      else if (zScore >= 0.5) { zoneName = 'ELEVATED'; zoneColor = 'var(--accent-orange)'; }
       
-      // Update status cards
+      // ========== UPDATE TOP BAR ==========
+      document.getElementById('repZscore').textContent = zScore ? zScore.toFixed(2) : '--';
+      document.getElementById('repZscore').style.color = zoneColor;
+      document.getElementById('repZone').textContent = zoneName;
+      document.getElementById('repZone').style.color = zoneColor;
       document.getElementById('reportPosture').textContent = posture;
       document.getElementById('reportPosture').style.color = postureColor;
       document.getElementById('reportBias').textContent = bias;
       document.getElementById('reportBias').style.color = biasColor;
       document.getElementById('reportRisk').textContent = risk;
       document.getElementById('reportRisk').style.color = riskColor;
-      document.getElementById('reportTimeframe').innerHTML = capitalAllocation + '<div style="font-size:8px;color:var(--text-muted);margin-top:2px;">do capital</div>';
       
-      // ========== GENERATE MAIN TEXT ==========
-      let mainText = '';
-      
-      // Update direction elements (removed - keeping original structure)
-      
-      // ========== ORIGINAL ANALYSIS - IMPROVED ==========
-      
-      // Determine direction for text
-      const isBearish = zScore > 0.5 || !inBullMarket || (sopr > 1.02 && zScore > 0);
-      const isBullish = zScore <= -0.5 && priceAboveSma50;
-      const bearPct = zScore >= 1.0 ? '70/30' : zScore >= 0.5 ? '60/40' : !inBullMarket ? '55/45' : '50/50';
-      const bullPct = zScore <= -1.5 ? '75/25' : zScore <= -1.0 ? '65/35' : '60/40';
-      
-      // Build direction intro
-      if (isBearish) {
-        mainText = `<strong style="color:var(--accent-orange)">Direção: bearish tilt ${bearPct} nas próximas 48-72h.</strong> `;
-      } else if (isBullish) {
-        mainText = `<strong style="color:var(--accent-green)">Direção: bullish tilt ${bullPct} nas próximas 48-72h.</strong> `;
+      // ========== CARD 1: Z-SCORE & ON-CHAIN ==========
+      let zText = '';
+      if (zScore <= -1.5) {
+        zText = `<strong style="color:var(--accent-green)">Capitulação extrema.</strong> Historicamente, Z ≤ -1.5 precedeu os maiores bull runs. Momento ideal para acumulação agressiva. O mercado está com desconto significativo em relação à média histórica.`;
+      } else if (zScore <= -0.5) {
+        zText = `<strong style="color:var(--accent-lime)">Mercado subvalorizado.</strong> Bom momento para acumulação gradual via DCA. Não é o fundo absoluto, mas oferece risco/retorno favorável.`;
+      } else if (zScore >= 1.5) {
+        zText = `<strong style="color:var(--accent-red)">Superaquecimento.</strong> Euforia elevada. Historicamente, Z ≥ 1.5 precedeu correções significativas. Momento de realizar lucros.`;
+      } else if (zScore >= 0.5) {
+        zText = `<strong style="color:var(--accent-orange)">Zona elevada.</strong> Mercado caro. Pode haver mais upside, mas o risco aumenta progressivamente. Cautela.`;
       } else {
-        mainText = `<strong style="color:var(--accent-yellow)">Direção: neutro 50/50 — aguardando definição.</strong> `;
+        zText = `<strong style="color:var(--accent-yellow)">Fair value.</strong> Mercado precificado de forma justa. Sem urgência para comprar ou vender. Aguardar definição.`;
       }
       
-      // MVRV analysis
-      mainText += `MVRV em ${mvrv.toFixed(2)} ${mvrv > 2.5 ? '(overextended)' : mvrv < 1.5 ? '(zona de desconto)' : '(neutro)'}. `;
+      // Add metrics context
+      const mvrvSignal = mvrv < 1.0 ? '🟢 abaixo do realized' : mvrv < 1.5 ? '🟢 desconto' : mvrv > 3.0 ? '🔴 overextended' : '🟡 neutro';
+      const nuplSignal = nupl < 0 ? '🟢 capitulação' : nupl < 0.25 ? '🟢 pessimismo' : nupl > 0.75 ? '🔴 euforia' : '🟡 neutro';
+      const soprSignal = sopr < 0.98 ? '🟢 capitulação forte' : sopr < 1 ? '🟢 leve capitul.' : sopr > 1.05 ? '🔴 profit-taking' : '🟡 equilíbrio';
       
-      // NUPL analysis
-      mainText += `NUPL ${(nupl*100).toFixed(1)}% ${nupl > 0.5 ? '(euforia)' : nupl < 0.1 ? '(capitulação)' : nupl < 0.25 ? '(pessimismo)' : '(neutro)'}. `;
+      zText += `<br><br><span style="font-size:10px;color:var(--text-muted);">MVRV ${mvrv.toFixed(2)} ${mvrvSignal} · NUPL ${(nupl*100).toFixed(0)}% ${nuplSignal} · SOPR ${sopr.toFixed(3)} ${soprSignal}</span>`;
       
-      // SOPR analysis
-      mainText += `SOPR ${sopr.toFixed(3)} — ${sopr < 0.98 ? 'holders vendendo no prejuízo = capitulação' : sopr < 1 ? 'leve capitulação' : sopr > 1.03 ? 'profit-taking event em andamento' : 'equilíbrio'}. `;
+      document.getElementById('reportZScoreText').innerHTML = zText;
+      document.getElementById('repMvrv').textContent = mvrv.toFixed(2);
+      document.getElementById('repNupl').textContent = (nupl*100).toFixed(1) + '%';
+      document.getElementById('repSopr').textContent = sopr.toFixed(3);
       
-      // Fear & Greed
-      if (fearGreed < 25) {
-        mainText += `Fear & Greed em ${fearGreed.toFixed(0)} (Extreme Fear). `;
-      } else if (fearGreed < 40) {
-        mainText += `Fear & Greed em ${fearGreed.toFixed(0)} (Fear). `;
-      } else if (fearGreed > 75) {
-        mainText += `Fear & Greed em ${fearGreed.toFixed(0)} (Extreme Greed) — risco de correção. `;
-      } else if (fearGreed > 60) {
-        mainText += `Fear & Greed em ${fearGreed.toFixed(0)} (Greed). `;
-      }
+      // ========== CARD 2: FLOW ANALYSIS ==========
+      let flowText = '';
+      const isOutflow = netflowText.includes('-');
+      const isInflow = netflowText.includes('+') && !netflowText.includes('-');
       
-      // Supply in Profit
-      const supplyProfit = state.rawValues.supplyProfit;
-      if (supplyProfit) {
-        mainText += `Supply in Profit ${(supplyProfit*100).toFixed(0)}% ${supplyProfit < 0.55 ? '— muitos underwater = potencial reversão' : supplyProfit > 0.85 ? '— maioria em lucro = risco de distribuição' : ''}. `;
-      }
-      
-      // Contra-argumento section
-      mainText += `<br><br><strong style="color:var(--accent-cyan)">Contra-argumento (não ignore):</strong> `;
-      mainText += `Funding ${funding > 0 ? '+' : ''}${(funding*100).toFixed(4)}% — ${funding < -0.01 ? 'shorts pagando longs, potencial squeeze' : funding > 0.03 ? 'longs over-leveraged, risco de flush' : 'neutro'}. `;
-      
-      if (zScore > -1.5 && zScore < 0) {
-        mainText += `Se Z-Score cair abaixo de -1.5 = zona de acumulação confirmada. `;
-      }
-      if (rsi < 40) {
-        mainText += `RSI semanal em ${rsi.toFixed(0)} — oversold, pode bounçar. `;
-      } else if (rsi > 65) {
-        mainText += `RSI semanal em ${rsi.toFixed(0)} — overbought, cautela. `;
-      }
-      
-      // Tese morre se
-      mainText += `<br><br><strong style="color:var(--accent-green)">Tese morre se:</strong> `;
-      if (isBearish) {
-        mainText += `Z-Score cruzar abaixo de -0.5 com volume. Funding virar negativo. Preço romper $${Math.round(sma50/1000)}k (SMA50) com convicção.`;
-      } else if (isBullish) {
-        mainText += `Z-Score voltar acima de 0 sem price follow-through. Death cross (SMA50 < SMA200). SOPR sustentar acima de 1.03.`;
+      if (isOutflow) {
+        flowText = `<strong style="color:var(--accent-green)">Saída líquida de BTC das exchanges.</strong> Investidores movendo para cold storage = sinal de acumulação. Oferta nas exchanges diminuindo pode criar pressão de alta.`;
+      } else if (isInflow) {
+        flowText = `<strong style="color:var(--accent-red)">Entrada líquida de BTC nas exchanges.</strong> Potencial pressão vendedora. Investidores preparando para vender = sinal de distribuição.`;
       } else {
-        mainText += `Qualquer movimento forte com volume define a direção. Range-bound por enquanto.`;
+        flowText = `<strong style="color:var(--accent-yellow)">Fluxo equilibrado.</strong> Sem pressão forte em nenhuma direção. Aguardar definição do fluxo.`;
       }
       
-      // Market structure analysis
-      if (!inBullMarket) {
-        mainText += `O mercado está em <strong style="color:var(--accent-red)">estrutura de baixa</strong> (SMA50 < SMA200). `;
-        mainText += `Isso significa que estamos tecnicamente em bear market e qualquer rally pode ser apenas um "bear market rally". `;
+      // Reserve context
+      if (reserveText !== '--') {
+        flowText += `<br><br><span style="font-size:10px;color:var(--text-muted);">Exchange Reserve: ${reserveText}. Reservas em queda = bullish. Reservas em alta = bearish.</span>`;
+      }
+      
+      document.getElementById('reportFlowText').innerHTML = flowText;
+      document.getElementById('repNetflow').textContent = netflowText;
+      document.getElementById('repNetflow').style.color = isOutflow ? 'var(--accent-green)' : isInflow ? 'var(--accent-red)' : 'var(--text-secondary)';
+      document.getElementById('repReserve').textContent = reserveText;
+      
+      // ========== CARD 3: SENTIMENT ==========
+      let sentText = '';
+      
+      // Fear & Greed interpretation
+      if (fearGreed <= 25) {
+        sentText = `<strong style="color:var(--accent-green)">Extreme Fear (${fearGreed.toFixed(0)}).</strong> Historicamente, medo extremo = oportunidade de compra. "Be greedy when others are fearful."`;
+      } else if (fearGreed <= 40) {
+        sentText = `<strong style="color:var(--accent-lime)">Fear (${fearGreed.toFixed(0)}).</strong> Sentimento negativo. Pode ser oportunidade se outros indicadores confirmarem.`;
+      } else if (fearGreed >= 75) {
+        sentText = `<strong style="color:var(--accent-red)">Extreme Greed (${fearGreed.toFixed(0)}).</strong> Euforia máxima. Risco de correção elevado. "Be fearful when others are greedy."`;
+      } else if (fearGreed >= 60) {
+        sentText = `<strong style="color:var(--accent-orange)">Greed (${fearGreed.toFixed(0)}).</strong> Otimismo elevado. Não é hora de FOMO.`;
       } else {
-        mainText += `O mercado mantém <strong style="color:var(--accent-green)">estrutura de alta</strong> (SMA50 > SMA200). `;
+        sentText = `<strong style="color:var(--accent-yellow)">Neutro (${fearGreed.toFixed(0)}).</strong> Sentimento equilibrado. Sem extremos.`;
+      }
+      
+      // Funding interpretation
+      const fundingPct = (funding * 100).toFixed(4);
+      if (funding > 0.05) {
+        sentText += `<br><br><strong style="color:var(--accent-red)">Funding ${fundingPct}%</strong> — longs over-leveraged. Risco de long squeeze/flush.`;
+      } else if (funding < -0.02) {
+        sentText += `<br><br><strong style="color:var(--accent-green)">Funding ${fundingPct}%</strong> — shorts pagando longs. Potencial short squeeze.`;
+      } else {
+        sentText += `<br><br><strong style="color:var(--accent-yellow)">Funding ${fundingPct}%</strong> — equilibrado. Sem pressão de alavancagem.`;
+      }
+      
+      document.getElementById('reportSentimentText').innerHTML = sentText;
+      document.getElementById('repFearGreed').textContent = fearGreed.toFixed(0) + '/100';
+      document.getElementById('repFearGreed').style.color = fearGreed <= 25 ? 'var(--accent-green)' : fearGreed >= 75 ? 'var(--accent-red)' : 'var(--text-secondary)';
+      document.getElementById('repFunding').textContent = (funding >= 0 ? '+' : '') + fundingPct + '%';
+      document.getElementById('repFunding').style.color = funding > 0.03 ? 'var(--accent-red)' : funding < -0.01 ? 'var(--accent-green)' : 'var(--text-secondary)';
+      
+      // ========== CARD 4: TECHNICAL ==========
+      let techText = '';
+      
+      if (inBullMarket) {
+        techText = `<strong style="color:var(--accent-green)">Bull Market estrutural</strong> (SMA50 > SMA200). `;
         if (priceAboveSma50) {
-          mainText += `O preço está acima das médias principais, indicando força na tendência. `;
+          techText += `Preço acima da SMA50 = tendência saudável. Momentum a favor.`;
         } else {
-          mainText += `Porém, o preço está abaixo da SMA50, sugerindo uma correção em andamento. `;
+          techText += `Preço abaixo da SMA50 = correção em andamento. Estrutura ainda bullish, mas atenção.`;
         }
+      } else {
+        techText = `<strong style="color:var(--accent-red)">Bear Market estrutural</strong> (SMA50 < SMA200). `;
+        techText += `Qualquer rally pode ser apenas um "bear market rally". Cautela máxima com longs.`;
       }
       
-      // Z-Score analysis
-      mainText += `<br><br>O Z-Score composto está em <strong>${zScore ? zScore.toFixed(2) : '--'}</strong>, `;
-      if (zone === 'ACCUMULATE') {
-        mainText += `zona de <strong style="color:var(--accent-green)">ACUMULAÇÃO</strong>. Historicamente, esses níveis precedem fortes movimentos de alta. `;
-        mainText += `O mercado está em capitulação — vendedores exaustos, pouco interesse. É quando as mãos fortes compram.`;
-      } else if (zone === 'UNDERVALUED') {
-        mainText += `zona de <strong style="color:var(--accent-lime)">SUBVALORIZADO</strong>. Ainda há desconto, mas não é extremo. `;
-        mainText += `Boa região para acumulação gradual.`;
-      } else if (zone === 'FAIR VALUE') {
-        mainText += `zona de <strong style="color:var(--accent-yellow)">FAIR VALUE</strong>. O mercado está precificado de forma justa. `;
-        mainText += `Sem pressa para comprar ou vender.`;
-      } else if (zone === 'ELEVATED') {
-        mainText += `zona <strong style="color:var(--accent-orange)">ELEVADA</strong>. O mercado está caro em relação ao histórico. `;
-        mainText += `Cautela é necessária.`;
-      } else if (zone === 'OVERHEATED') {
-        mainText += `zona de <strong style="color:var(--accent-red)">SUPERAQUECIMENTO</strong>. Euforia máxima. `;
-        mainText += `Historicamente, esses níveis precedem correções significativas.`;
+      // RSI context
+      if (rsi > 70) {
+        techText += `<br><br><strong style="color:var(--accent-red)">RSI ${rsi.toFixed(0)}</strong> — sobrecomprado. Risco de correção técnica.`;
+      } else if (rsi < 30) {
+        techText += `<br><br><strong style="color:var(--accent-green)">RSI ${rsi.toFixed(0)}</strong> — sobrevendido. Pode haver bounce.`;
+      } else {
+        techText += `<br><br>RSI ${rsi.toFixed(0)} — neutro.`;
       }
       
-      // SOPR analysis
-      if (sopr > 0) {
-        mainText += `<br><br>O SOPR está em <strong>${sopr.toFixed(3)}</strong>. `;
-        if (sopr < 1) {
-          mainText += `Abaixo de 1.0 indica que investidores estão realizando perdas — sinal de capitulação. `;
-        } else if (sopr > 1.05) {
-          mainText += `Acima de 1.05 indica que investidores estão realizando lucros significativos. `;
-        } else {
-          mainText += `Próximo de 1.0 indica equilíbrio entre lucro e prejuízo nas transações. `;
-        }
+      document.getElementById('reportTechText').innerHTML = techText;
+      document.getElementById('repPrice').textContent = price ? '$' + Math.round(price).toLocaleString() : '--';
+      document.getElementById('repSma50').textContent = sma50 ? '$' + Math.round(sma50).toLocaleString() : '--';
+      document.getElementById('repSma200').textContent = sma200 ? '$' + Math.round(sma200).toLocaleString() : '--';
+      document.getElementById('repTrend').innerHTML = inBullMarket ? 
+        '<span style="color:var(--accent-green)">BULL</span>' : 
+        '<span style="color:var(--accent-red)">BEAR</span>';
+      
+      // ========== CARD 5: TRADE SIGNALS ==========
+      let signalsText = '';
+      
+      if (openSignal) {
+        const pnlColor = parseFloat(openSignal.pnl || 0) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+        signalsText = `<strong style="color:var(--accent-green)">📍 POSIÇÃO ABERTA:</strong> ${openSignal.signal} desde ${openSignal.date} @ $${openSignal.entryPrice?.toLocaleString() || '--'}. `;
+        signalsText += `P&L: <strong style="color:${pnlColor}">${openSignal.pnl || '--'}%</strong>`;
+      } else {
+        signalsText = `<strong style="color:var(--text-muted)">📍 SEM POSIÇÃO ABERTA</strong> — Sistema em modo CASH, aguardando setup.`;
       }
       
-      document.getElementById('reportMainText').innerHTML = mainText;
+      // Waiting conditions
+      if (zScore > -1.5 && zScore <= -0.5) {
+        signalsText += `<br><br><span style="color:var(--accent-yellow)">⏳ WATCHING:</span> Z-Score precisa cair para ≤ -1.5 e permanecer por 10+ dias para trigger de BUY. Atual: ${zScore?.toFixed(2) || '--'}`;
+      } else if (zScore <= -1.5) {
+        signalsText += `<br><br><span style="color:var(--accent-lime)">✓ Z em ACCUMULATE ZONE.</span> Aguardando confirmação de capitulação profunda (Z ≤ -2.0) + price recovery para sinal de BUY.`;
+      } else if (zScore >= 1.0) {
+        signalsText += `<br><br><span style="color:var(--accent-orange)">⚠️ ZONA DE RISCO:</span> Z-Score elevado. Se Z ≥ 1.5 por 3+ dias consecutivos = trigger de SELL.`;
+      }
+      
+      // Historical signals
+      if (lastBuy || lastSell) {
+        signalsText += `<br><br><span style="font-size:10px;color:var(--text-muted);">`;
+        if (lastBuy) signalsText += `Último BUY: ${lastBuy.date} @ $${lastBuy.price?.toLocaleString() || '--'}. `;
+        if (lastSell) signalsText += `Último SELL: ${lastSell.date} @ $${lastSell.price?.toLocaleString() || '--'}.`;
+        signalsText += `</span>`;
+      }
+      
+      document.getElementById('reportSignalsText').innerHTML = signalsText;
       
       // ========== ACTION RECOMMENDATION ==========
       let actionText = '';
       
       if (posture === 'ACUMULAR') {
-        actionText = `<strong style="color:var(--accent-green)">COMPRAR (${capitalAllocation}):</strong> Momento favorável para aumentar posição. Dividir compras em 3-4 parcelas ao longo das próximas semanas. Aguardar confirmação de reversão técnica (EMA21 > EMA50) para entrada mais agressiva.`;
+        actionText = `<strong>COMPRAR (${allocation} do capital):</strong> Momento favorável. Dividir em 3-4 parcelas. Aguardar confirmação técnica para entrada mais agressiva.`;
       } else if (posture === 'ACUMULAR LEVE') {
-        actionText = `<strong style="color:var(--accent-lime)">COMPRAR LEVE (${capitalAllocation}):</strong> Continuar DCA normal. Pode aumentar levemente a alocação. Não ir all-in ainda. ${allocationDesc}.`;
+        actionText = `<strong>COMPRAR LEVE (${allocation}):</strong> Continuar DCA normal. Pode aumentar levemente a alocação. Não ir all-in ainda.`;
       } else if (posture === 'REALIZAR') {
-        actionText = `<strong style="color:var(--accent-red)">VENDER (${capitalAllocation}):</strong> Realizar lucros parciais. Reduzir exposição gradualmente. Manter stop loss apertado em posições restantes.`;
+        actionText = `<strong>VENDER (${allocation}):</strong> Realizar lucros parciais. Reduzir exposição gradualmente. Proteger capital.`;
       } else if (posture === 'CAUTELA') {
-        actionText = `<strong style="color:var(--accent-orange)">CAUTELA (${capitalAllocation}):</strong> Não aumentar posição. Considerar reduzir exposição. Ter stops definidos.`;
-      } else if (posture === 'HOLD') {
-        actionText = `<strong style="color:var(--accent-cyan)">MANTER (${capitalAllocation}):</strong> Posições atuais podem ser mantidas. Aguardar movimentação mais clara para agir.`;
+        actionText = `<strong>CAUTELA:</strong> Não aumentar posição. Considerar reduzir exposição. Ter stops definidos.`;
       } else {
-        actionText = `<strong style="color:var(--accent-yellow)">AGUARDAR (${capitalAllocation}):</strong> Momento de observação. Não abrir novas posições. Esperar confirmação de tendência.`;
-      }
-      
-      if (openSignal) {
-        actionText += `<br><br><strong>Trade System:</strong> Posição ${openSignal.signal} aberta desde ${openSignal.date} @ $${openSignal.entryPrice.toLocaleString()}. P&L atual: ${openSignal.pnl}%`;
+        actionText = `<strong>AGUARDAR:</strong> Momento de observação. Não abrir novas posições. Esperar confirmação de tendência.`;
       }
       
       document.getElementById('reportAction').innerHTML = actionText;
       
       // ========== RISKS ==========
-      let risksText = '';
+      let risksArr = [];
+      if (!inBullMarket) risksArr.push('Bear market estrutural');
+      if (rsi > 70) risksArr.push('RSI sobrecomprado');
+      if (zScore >= 1.0) risksArr.push('Z-Score elevado');
+      if (funding > 0.03) risksArr.push('Funding alto (longs alavancados)');
+      if (isInflow) risksArr.push('Netflow positivo');
+      risksArr.push('Eventos macro imprevisíveis');
       
-      if (!inBullMarket) {
-        risksText += '• Bear market estrutural — rallies podem ser armadilhas<br>';
-      }
-      if (rsi > 70) {
-        risksText += '• RSI sobrecomprado — risco de correção técnica<br>';
-      }
-      if (rsi < 30) {
-        risksText += '• RSI sobrevendido — pode haver mais queda antes de reversão<br>';
-      }
-      if (zScore >= 1.0) {
-        risksText += '• Métricas on-chain em zona de risco — distribuição em andamento<br>';
-      }
-      if (funding > 0.03) {
-        risksText += '• Funding rate elevado — mercado alavancado pro lado long<br>';
-      }
-      if (funding < -0.02) {
-        risksText += '• Funding rate negativo — shorts pagando longs<br>';
-      }
-      
-      risksText += '• Risco macro: dados de inflação, decisões de juros, eventos geopolíticos<br>';
-      risksText += '• Fica de olho no netflow: se voltar negativo pode sinalizar mais pressão vendedora';
-      
-      document.getElementById('reportRisks').innerHTML = risksText;
-      
-      // ========== DATA SUMMARY ==========
-      document.getElementById('repZscore').innerHTML = `<strong style="color:${postureColor}">${zScore ? zScore.toFixed(2) : '--'}</strong>`;
-      document.getElementById('repZone').innerHTML = `<strong style="color:${postureColor}">${zoneName}</strong>`;
-      document.getElementById('repMvrv').textContent = mvrv ? mvrv.toFixed(2) : '--';
-      document.getElementById('repNupl').textContent = nupl ? (nupl * 100).toFixed(1) + '%' : '--';
-      document.getElementById('repSopr').textContent = sopr ? sopr.toFixed(3) : '--';
-      
-      document.getElementById('repPrice').textContent = price ? '$' + Math.round(price).toLocaleString() : '--';
-      document.getElementById('repSma50').textContent = sma50 ? '$' + Math.round(sma50).toLocaleString() : '--';
-      document.getElementById('repSma200').textContent = sma200 ? '$' + Math.round(sma200).toLocaleString() : '--';
-      document.getElementById('repRsi').textContent = rsi ? rsi.toFixed(0) : '--';
-      document.getElementById('repTrend').innerHTML = inBullMarket ? 
-        '<strong style="color:var(--accent-green)">BULL</strong>' : 
-        '<strong style="color:var(--accent-red)">BEAR</strong>';
-      
-      document.getElementById('repFearGreed').textContent = fearGreed ? fearGreed.toFixed(0) + '/100' : '--';
-      document.getElementById('repFunding').textContent = funding ? (funding > 0 ? '+' : '') + funding.toFixed(3) + '%' : '--';
-      document.getElementById('repTradeSystem').innerHTML = trendStatus === 'LONG' ?
-        '<strong style="color:var(--accent-green)">LONG</strong>' :
-        '<strong style="color:var(--text-muted)">CASH</strong>';
-      
-      // ========== HISTORICAL CONTEXT ==========
-      let contextText = '';
-      
-      if (zScore !== null) {
-        if (zScore <= -1.5) {
-          contextText = `Z-Scores neste nível (≤ -1.5) ocorreram em: <strong>Dez/2018</strong> ($3.2k → $14k = +337%), <strong>Mar/2020</strong> ($5k → $64k = +1180%), <strong>Nov/2022</strong> ($16k → $73k = +356%). Historicamente, esses momentos de extremo pessimismo precederam os maiores bull runs.`;
-        } else if (zScore >= 1.5) {
-          contextText = `Z-Scores neste nível (≥ 1.5) ocorreram em: <strong>Dez/2017</strong> ($20k → $3k = -85%), <strong>Abr/2021</strong> ($64k → $30k = -53%), <strong>Nov/2021</strong> ($69k → $16k = -77%). Historicamente, euforia extrema precede correções significativas.`;
-        } else if (zScore <= -0.5) {
-          contextText = `O mercado está em zona de desconto moderado. Não é o fundo absoluto, mas historicamente oferece bom risco/retorno para acumulação gradual. Paciência é chave.`;
-        } else if (zScore >= 0.5) {
-          contextText = `O mercado está precificado acima do fair value. Historicamente, esses níveis podem sustentar por algum tempo em bull markets fortes, mas o risco aumenta progressivamente.`;
-        } else {
-          contextText = `O mercado está em zona neutra (fair value). Pode ir para qualquer lado. Fatores macro e técnicos terão mais peso na direção de curto prazo.`;
-        }
-      }
-      
-      // Add current cycle context
-      if (inBullMarket) {
-        contextText += `<br><br>Ciclo atual: Estamos em estrutura de alta desde que SMA50 cruzou SMA200 pra cima. `;
-      } else {
-        contextText += `<br><br>Ciclo atual: Estamos em estrutura de baixa. Aguardar Golden Cross (SMA50 > SMA200) para confirmar novo bull market. `;
-      }
-      
-      document.getElementById('reportContext').innerHTML = contextText;
+      document.getElementById('reportRisks').innerHTML = risksArr.map(r => '• ' + r).join('<br>');
       
       console.log('[Report] Analysis generated successfully');
     }
