@@ -3816,7 +3816,6 @@
       
       // ========== CARD 2: FLOW ANALYSIS ==========
       let flowText = '';
-      const isOutflow = netflowText.includes('-');
       const isOutflow = netflowText.includes('-') && netflowText !== '--';
       const isInflow = netflowText.includes('+') && !netflowText.includes('-');
       const hasFlowData = netflowText !== '--' && netflowText !== '';
