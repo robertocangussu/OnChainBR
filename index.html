@@ -3729,7 +3729,7 @@
       // Flow data from DOM
       const netflowEl = document.getElementById('flowWhaleRatio');
       const netflowText = netflowEl ? netflowEl.textContent : '--';
-      const reserveEl = document.getElementById('flowReserve');
+      const reserveEl = document.getElementById('flowReserveLatest');
       const reserveText = reserveEl ? reserveEl.textContent : '--';
       
       // Trade signals
@@ -3817,9 +3817,13 @@
       // ========== CARD 2: FLOW ANALYSIS ==========
       let flowText = '';
       const isOutflow = netflowText.includes('-');
+      const isOutflow = netflowText.includes('-') && netflowText !== '--';
       const isInflow = netflowText.includes('+') && !netflowText.includes('-');
+      const hasFlowData = netflowText !== '--' && netflowText !== '';
       
-      if (isOutflow) {
+      if (!hasFlowData) {
+        flowText = `<strong style="color:var(--text-muted)">Dados de fluxo não disponíveis.</strong> Aguardando carregamento da API de Exchange Netflow.`;
+      } else if (isOutflow) {
         flowText = `<strong style="color:var(--accent-green)">Saída líquida de BTC das exchanges.</strong> Investidores movendo para cold storage = sinal de acumulação. Oferta nas exchanges diminuindo pode criar pressão de alta.`;
       } else if (isInflow) {
         flowText = `<strong style="color:var(--accent-red)">Entrada líquida de BTC nas exchanges.</strong> Potencial pressão vendedora. Investidores preparando para vender = sinal de distribuição.`;
@@ -3828,13 +3832,13 @@
       }
       
       // Reserve context
-      if (reserveText !== '--') {
+      if (reserveText !== '--' && reserveText !== '') {
         flowText += `<br><br><span style="font-size:10px;color:var(--text-muted);">Exchange Reserve: ${reserveText}. Reservas em queda = bullish. Reservas em alta = bearish.</span>`;
       }
       
       document.getElementById('reportFlowText').innerHTML = flowText;
       document.getElementById('repNetflow').textContent = netflowText;
-      document.getElementById('repNetflow').style.color = isOutflow ? 'var(--accent-green)' : isInflow ? 'var(--accent-red)' : 'var(--text-secondary)';
+      document.getElementById('repNetflow').style.color = isOutflow ? 'var(--accent-green)' : isInflow ? 'var(--accent-red)' : 'var(--text-muted)';
       document.getElementById('repReserve').textContent = reserveText;
       
       // ========== CARD 3: SENTIMENT ==========
