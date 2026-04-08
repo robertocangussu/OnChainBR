@@ -2532,6 +2532,15 @@
       const labels = allPrices.map(p => p.date);
       const priceData = allPrices.map(p => p.value);
       const zData = labels.map(d => cMap.get(d) ?? null);
+      
+      // Debug: check alignment
+      const nullCount = zData.filter(z => z === null).length;
+      const totalCount = zData.length;
+      console.log(`[SignalChart] Prices: ${totalCount}, Z nulls: ${nullCount} (${(nullCount/totalCount*100).toFixed(1)}% missing)`);
+      if (nullCount > 0) {
+        console.log(`[SignalChart] First 5 price dates: ${labels.slice(0,5).join(', ')}`);
+        console.log(`[SignalChart] First 5 composite dates: ${state.compositeHistory.slice(0,5).map(d=>d.date).join(', ')}`);
+      }
 
       // Build background zone boxes (colored bands on BTC price area)
       const annotations = {};
