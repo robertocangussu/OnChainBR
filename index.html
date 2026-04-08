@@ -27,6 +27,11 @@
     .zscore-value { font-family: 'Space Grotesk', sans-serif; font-size: 48px; font-weight: 700; }
     .zscore-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-top: 10px; }
     .zscore-sub { font-size: 9px; color: var(--text-muted); margin-top: 8px; }
+    .zscore-compare { display: flex; justify-content: center; gap: 16px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+    .zscore-compare-item { text-align: center; }
+    .zscore-compare-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .zscore-compare-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; }
+    .zscore-compare-value.active { color: var(--accent-orange); }
     .gauge-card { display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .gauge-container { position: relative; width: 200px; height: 110px; }
     .gauge-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 8px; }
@@ -276,6 +281,20 @@
         <div class="zscore-value" id="mainZScore">--</div>
         <div class="zscore-badge" id="mainZoneBadge">--</div>
         <div class="zscore-sub">rolling 365d window</div>
+        <div class="zscore-compare">
+          <div class="zscore-compare-item">
+            <div class="zscore-compare-label">1Y</div>
+            <div class="zscore-compare-value active" id="zCompare1Y">--</div>
+          </div>
+          <div class="zscore-compare-item">
+            <div class="zscore-compare-label">4Y</div>
+            <div class="zscore-compare-value" id="zCompare4Y">--</div>
+          </div>
+          <div class="zscore-compare-item">
+            <div class="zscore-compare-label">ALL</div>
+            <div class="zscore-compare-value" id="zCompareAll">--</div>
+          </div>
+        </div>
       </div>
       <div class="gauge-card">
         <div class="gauge-container"><canvas id="gaugeCanvas"></canvas></div>
@@ -1167,6 +1186,98 @@
       return Math.max(-5, Math.min(5, (values[index] - mean) / std));
     }
 
+    // Calculate Z-score with a specific window size (for comparison display)
+    function calculateZScoreWithWindow(values, index, windowSize) {
+      // windowSize = null means cumulative (ALL history)
+      const actualWindow = windowSize || (index + 1);
+      const start = Math.max(0, index - actualWindow + 1);
+      const window = values.slice(start, index + 1);
+      if (window.length < CONFIG.MIN_DATA_POINTS) return null;
+      
+      const nums = window.filter(v => typeof v === 'number' && !isNaN(v) && isFinite(v));
+      if (nums.length < CONFIG.MIN_DATA_POINTS) return null;
+      
+      const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+      const variance = nums.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / nums.length;
+      const std = Math.sqrt(variance);
+      
+      if (std === 0 || !isFinite(std)) return 0;
+      return Math.max(-5, Math.min(5, (values[index] - mean) / std));
+    }
+
+    // Update Z-Score comparison display (1Y, 4Y, ALL)
+    function updateZScoreComparison() {
+      // Calculate Z-scores using different HISTORICAL WINDOWS (by date, not array position)
+      // 1Y: only last 365 days of data for mean/std
+      // 4Y: only last 4 years of data for mean/std
+      // ALL: entire history for mean/std
+      const windowDays = { '1Y': 365, '4Y': 1460, 'ALL': null };
+      const composites = { '1Y': [], '4Y': [], 'ALL': [] };
+      
+      // Get cutoff dates
+      const today = new Date();
+      const cutoffs = {
+        '1Y': new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        '4Y': new Date(today.getTime() - 1460 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        'ALL': '1900-01-01'
+      };
+      
+      console.log('[Z-Compare] Cutoff dates:', cutoffs);
+      
+      for (const [key, metric] of Object.entries(METRICS)) {
+        const history = state.metricHistory[key] || [];
+        if (history.length < CONFIG.MIN_DATA_POINTS) continue;
+        
+        // Get latest value (what we're scoring)
+        const latestValue = history[history.length - 1]?.value;
+        if (latestValue === undefined || latestValue === null) continue;
+        
+        for (const [label, cutoffDate] of Object.entries(cutoffs)) {
+          // Filter history by date to get only the relevant window
+          const windowData = history.filter(d => d.date >= cutoffDate);
+          if (windowData.length < CONFIG.MIN_DATA_POINTS) continue;
+          
+          // Calculate mean and std from the filtered window
+          const values = windowData.map(d => d.value).filter(v => typeof v === 'number' && !isNaN(v) && isFinite(v));
+          if (values.length < CONFIG.MIN_DATA_POINTS) continue;
+          
+          const mean = values.reduce((a, b) => a + b, 0) / values.length;
+          const variance = values.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / values.length;
+          const std = Math.sqrt(variance);
+          
+          if (std === 0 || !isFinite(std)) continue;
+          
+          // Z-score of latest value vs this window's distribution
+          const z = Math.max(-5, Math.min(5, (latestValue - mean) / std));
+          composites[label].push(z);
+        }
+      }
+      
+      console.log('[Z-Compare] Metrics per window:', {
+        '1Y': composites['1Y'].length,
+        '4Y': composites['4Y'].length,
+        'ALL': composites['ALL'].length
+      });
+      
+      // Calculate composite for each window and update display
+      for (const [label, zScores] of Object.entries(composites)) {
+        const elId = label === '1Y' ? 'zCompare1Y' : label === '4Y' ? 'zCompare4Y' : 'zCompareAll';
+        const el = document.getElementById(elId);
+        if (!el) continue;
+        
+        if (zScores.length > 0) {
+          const composite = zScores.reduce((a, b) => a + b, 0) / zScores.length;
+          const zone = getZone(composite);
+          el.textContent = composite.toFixed(2);
+          el.style.color = zone.color;
+          console.log(`[Z-Compare] ${label}: ${composite.toFixed(2)} (${zone.name}) from ${zScores.length} metrics`);
+        } else {
+          el.textContent = '--';
+          el.style.color = 'var(--text-muted)';
+        }
+      }
+    }
+
     function calculateAllZScores() {
       state.zScores = {}; 
       state.zScoreHistory = {}; 
@@ -1340,6 +1451,9 @@
         badge.style.background = zone.color + '25'; 
         badge.style.color = zone.color; 
       }
+      
+      // Calculate and display Z-scores for different windows (1Y, 4Y, ALL)
+      updateZScoreComparison();
       
       // Update price card
       if (state.prices.length > 0) {
