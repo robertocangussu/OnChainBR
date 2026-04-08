@@ -281,20 +281,6 @@
         <div class="zscore-value" id="mainZScore">--</div>
         <div class="zscore-badge" id="mainZoneBadge">--</div>
         <div class="zscore-sub">rolling 365d window</div>
-        <div class="zscore-compare">
-          <div class="zscore-compare-item">
-            <div class="zscore-compare-label">1Y</div>
-            <div class="zscore-compare-value active" id="zCompare1Y">--</div>
-          </div>
-          <div class="zscore-compare-item">
-            <div class="zscore-compare-label">4Y</div>
-            <div class="zscore-compare-value" id="zCompare4Y">--</div>
-          </div>
-          <div class="zscore-compare-item">
-            <div class="zscore-compare-label">ALL</div>
-            <div class="zscore-compare-value" id="zCompareAll">--</div>
-          </div>
-        </div>
       </div>
       <div class="gauge-card">
         <div class="gauge-container"><canvas id="gaugeCanvas"></canvas></div>
@@ -719,31 +705,6 @@
     <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
       <span class="section-title">🔍 Analista Senior — Leitura do Mercado</span>
       <span id="reportDate" style="font-size:10px;color:var(--text-muted);"></span>
-    </div>
-    
-    <!-- DIREÇÃO - Main Analysis Card (like professor) -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-        <span style="font-size:11px;color:var(--accent-orange);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Direção:</span>
-        <span id="reportDirecao" style="font-size:13px;font-weight:600;color:var(--text-primary);">bearish tilt 60/40 nas próximas 48-72h.</span>
-      </div>
-      <div id="reportMainAnalysis" style="font-size:12px;line-height:1.8;color:var(--text-secondary);">
-        Carregando análise detalhada...
-      </div>
-      
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-        <div style="font-size:11px;color:var(--accent-cyan);font-weight:600;margin-bottom:10px;">Contra-argumento (não ignore):</div>
-        <div id="reportContraArgumento" style="font-size:11px;line-height:1.7;color:var(--text-muted);">
-          Carregando...
-        </div>
-      </div>
-      
-      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-        <div style="font-size:11px;color:var(--accent-green);font-weight:600;margin-bottom:10px;">Tese morre se:</div>
-        <div id="reportTeseMorre" style="font-size:11px;line-height:1.7;color:var(--text-muted);">
-          Carregando...
-        </div>
-      </div>
     </div>
     
     <!-- Report Status Cards -->
@@ -1195,34 +1156,20 @@
     }
 
     // ========== Z-SCORE CALCULATION ==========
-    function calculateRollingZScore(history, index) {
-      // CONFIG.ROLLING_WINDOW: null = ALL history, number = days
-      const currentDate = history[index]?.date;
-      if (!currentDate) return null;
+    function calculateRollingZScore(values, index) {
+      const start = Math.max(0, index - CONFIG.ROLLING_WINDOW + 1);
+      const window = values.slice(start, index + 1);
+      if (window.length < CONFIG.MIN_DATA_POINTS) return null;
       
-      let windowData;
-      if (CONFIG.ROLLING_WINDOW === null) {
-        // ALL history - use everything up to current index
-        windowData = history.slice(0, index + 1);
-      } else {
-        // Use date-based window
-        const cutoffDate = new Date(new Date(currentDate).getTime() - CONFIG.ROLLING_WINDOW * 24 * 60 * 60 * 1000)
-          .toISOString().split('T')[0];
-        windowData = history.slice(0, index + 1).filter(d => d.date >= cutoffDate);
-      }
+      const nums = window.filter(v => typeof v === 'number' && !isNaN(v) && isFinite(v));
+      if (nums.length < CONFIG.MIN_DATA_POINTS) return null;
       
-      if (windowData.length < CONFIG.MIN_DATA_POINTS) return null;
-      
-      const values = windowData.map(d => d.value).filter(v => typeof v === 'number' && !isNaN(v) && isFinite(v));
-      if (values.length < CONFIG.MIN_DATA_POINTS) return null;
-      
-      const currentValue = history[index].value;
-      const mean = values.reduce((a, b) => a + b, 0) / values.length;
-      const variance = values.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / values.length;
+      const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+      const variance = nums.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / nums.length;
       const std = Math.sqrt(variance);
       
       if (std === 0 || !isFinite(std)) return 0;
-      return Math.max(-5, Math.min(5, (currentValue - mean) / std));
+      return Math.max(-5, Math.min(5, (values[index] - mean) / std));
     }
 
     // Calculate Z-score with a specific window size (for comparison display)
@@ -1333,10 +1280,11 @@
         
         state.rawValues[key] = history[history.length - 1]?.value;
         
+        const values = history.map(d => d.value);
         const zHistory = [];
         
         for (let i = 0; i < history.length; i++) {
-          const z = calculateRollingZScore(history, i);
+          const z = calculateRollingZScore(values, i);
           if (z !== null) {
             zHistory.push({ date: history[i].date, value: z });
           }
@@ -1491,7 +1439,7 @@
       }
       
       // Calculate and display Z-scores for different windows (1Y, 4Y, ALL)
-      updateZScoreComparison();
+      // Z-Score comparison removed - keeping single rolling 365d
       
       // Update price card
       if (state.prices.length > 0) {
@@ -3864,79 +3812,73 @@
       // ========== GENERATE MAIN TEXT ==========
       let mainText = '';
       
-      // ========== DIREÇÃO (Professor Style) ==========
-      let direccao = '';
-      let direccaoText = '';
-      let contraArgumento = '';
-      let teseMorre = '';
-      let macroOverride = '';
+      // Update direction elements (removed - keeping original structure)
       
-      // Determine direction
+      // ========== ORIGINAL ANALYSIS - IMPROVED ==========
+      
+      // Determine direction for text
       const isBearish = zScore > 0.5 || !inBullMarket || (sopr > 1.02 && zScore > 0);
-      const isBullish = zScore <= -0.5 && inBullMarket;
-      const isNeutral = !isBearish && !isBullish;
+      const isBullish = zScore <= -0.5 && priceAboveSma50;
+      const bearPct = zScore >= 1.0 ? '70/30' : zScore >= 0.5 ? '60/40' : !inBullMarket ? '55/45' : '50/50';
+      const bullPct = zScore <= -1.5 ? '75/25' : zScore <= -1.0 ? '65/35' : '60/40';
       
+      // Build direction intro
       if (isBearish) {
-        const bearPct = zScore >= 1.0 ? '70/30' : zScore >= 0.5 ? '60/40' : '55/45';
-        direccao = `<strong style="color:var(--accent-red)">bearish tilt ${bearPct}</strong> nas próximas 48-72h.`;
-        
-        // Main analysis
-        direccaoText = `MVRV em ${mvrv.toFixed(2)} ${mvrv > 2.0 ? 'acima da média histórica' : mvrv < 1.5 ? 'em zona de desconto' : 'em região neutra'}. `;
-        direccaoText += `NUPL ${nupl > 0.5 ? 'em euforia' : nupl > 0.25 ? 'em otimismo' : nupl < 0 ? 'em capitulação' : 'neutro'} (${(nupl*100).toFixed(1)}%). `;
-        direccaoText += `SOPR ${sopr.toFixed(3)} — ${sopr < 1 ? 'holders vendendo no prejuízo = capitulação' : sopr > 1.05 ? 'profit-taking em andamento' : 'equilíbrio entre lucro/prejuízo'}. `;
-        if (fearGreed < 25) direccaoText += `Fear & Greed em ${fearGreed.toFixed(0)} (Extreme Fear). `;
-        else if (fearGreed > 75) direccaoText += `Fear & Greed em ${fearGreed.toFixed(0)} (Extreme Greed) — risco de correção. `;
-        
-        // Contra-argumento
-        contraArgumento = `Funding ${funding > 0 ? '+' : ''}${(funding*100).toFixed(4)}% — ${funding < 0 ? 'shorts pagando longs, potencial squeeze se preço subir' : 'longs pagando shorts, normal'}. `;
-        contraArgumento += `Se Z-Score cair abaixo de -1.5 = zona de acumulação confirmada. `;
-        contraArgumento += `RSI semanal em ${rsi.toFixed(0)} ${rsi < 40 ? '— oversold, pode bounçar' : ''}. `;
-        
-        // Tese morre
-        teseMorre = `Funding reverter para ${funding > 0 ? 'negativo' : 'positivo'} com força. `;
-        teseMorre += `Z-Score cruzar ${zScore > 0 ? 'abaixo de 0' : 'acima de +1.0'} com volume. `;
-        teseMorre += `Preço romper $${Math.round(sma50/1000)}k (SMA50) com convicção.`;
-        
+        mainText = `<strong style="color:var(--accent-orange)">Direção: bearish tilt ${bearPct} nas próximas 48-72h.</strong> `;
       } else if (isBullish) {
-        const bullPct = zScore <= -1.5 ? '75/25' : zScore <= -1.0 ? '65/35' : '60/40';
-        direccao = `<strong style="color:var(--accent-green)">bullish tilt ${bullPct}</strong> nas próximas 48-72h.`;
-        
-        // Main analysis
-        direccaoText = `Z-Score em ${zScore.toFixed(2)} = <strong style="color:var(--accent-green)">${zoneName}</strong>. `;
-        direccaoText += `MVRV ${mvrv.toFixed(2)} ${mvrv < 1.5 ? '— mercado subvalorizado vs realized price' : ''}. `;
-        direccaoText += `NUPL ${(nupl*100).toFixed(1)}% ${nupl < 0.25 ? '— sentimento pessimista = oportunidade' : ''}. `;
-        direccaoText += `SOPR ${sopr.toFixed(3)} ${sopr < 1 ? '— holders realizando prejuízo, capitulação típica de fundos' : ''}. `;
-        direccaoText += `Supply in Profit ${state.rawValues.supplyProfit ? (state.rawValues.supplyProfit*100).toFixed(0) + '%' : '--'} — ${state.rawValues.supplyProfit < 0.6 ? 'muitos underwater = potencial de recuperação' : 'maioria em lucro'}.`;
-        
-        // Contra-argumento
-        contraArgumento = `Estrutura técnica ${inBullMarket ? 'ainda bullish' : '<strong style="color:var(--accent-red)">bearish (SMA50 < SMA200)</strong>'}. `;
-        contraArgumento += `Mesmo em zona de acumulação, bear markets podem estender. `;
-        contraArgumento += `Funding ${(funding*100).toFixed(4)}% ${funding < -0.01 ? '— shorts dominando, pode ter mais downside antes de reverter' : ''}.`;
-        
-        // Tese morre
-        teseMorre = `Z-Score voltar acima de 0 sem price follow-through. `;
-        teseMorre += `SMA50 cruzar abaixo de SMA200 (death cross). `;
-        teseMorre += `SOPR sustentar acima de 1.03 = profit-taking dominando.`;
-        
+        mainText = `<strong style="color:var(--accent-green)">Direção: bullish tilt ${bullPct} nas próximas 48-72h.</strong> `;
       } else {
-        direccao = `<strong style="color:var(--accent-yellow)">neutro 50/50</strong> — aguardando definição.`;
-        
-        direccaoText = `Mercado em consolidação. Z-Score ${zScore?.toFixed(2) || '--'} em fair value. `;
-        direccaoText += `MVRV ${mvrv.toFixed(2)}, NUPL ${(nupl*100).toFixed(1)}%, SOPR ${sopr.toFixed(3)}. `;
-        direccaoText += `Não há edge claro em nenhuma direção. Aguardar breakout com volume.`;
-        
-        contraArgumento = `Range pode romper para qualquer lado. Ficar leve é a melhor estratégia.`;
-        
-        teseMorre = `N/A — estamos neutros. Qualquer movimento forte com volume define a direção.`;
+        mainText = `<strong style="color:var(--accent-yellow)">Direção: neutro 50/50 — aguardando definição.</strong> `;
       }
       
-      // Update direction elements
-      document.getElementById('reportDirecao').innerHTML = direccao;
-      document.getElementById('reportMainAnalysis').innerHTML = direccaoText;
-      document.getElementById('reportContraArgumento').innerHTML = contraArgumento;
-      document.getElementById('reportTeseMorre').innerHTML = teseMorre;
+      // MVRV analysis
+      mainText += `MVRV em ${mvrv.toFixed(2)} ${mvrv > 2.5 ? '(overextended)' : mvrv < 1.5 ? '(zona de desconto)' : '(neutro)'}. `;
       
-      // ========== ORIGINAL ANALYSIS (keep for lower section) ==========
+      // NUPL analysis
+      mainText += `NUPL ${(nupl*100).toFixed(1)}% ${nupl > 0.5 ? '(euforia)' : nupl < 0.1 ? '(capitulação)' : nupl < 0.25 ? '(pessimismo)' : '(neutro)'}. `;
+      
+      // SOPR analysis
+      mainText += `SOPR ${sopr.toFixed(3)} — ${sopr < 0.98 ? 'holders vendendo no prejuízo = capitulação' : sopr < 1 ? 'leve capitulação' : sopr > 1.03 ? 'profit-taking event em andamento' : 'equilíbrio'}. `;
+      
+      // Fear & Greed
+      if (fearGreed < 25) {
+        mainText += `Fear & Greed em ${fearGreed.toFixed(0)} (Extreme Fear). `;
+      } else if (fearGreed < 40) {
+        mainText += `Fear & Greed em ${fearGreed.toFixed(0)} (Fear). `;
+      } else if (fearGreed > 75) {
+        mainText += `Fear & Greed em ${fearGreed.toFixed(0)} (Extreme Greed) — risco de correção. `;
+      } else if (fearGreed > 60) {
+        mainText += `Fear & Greed em ${fearGreed.toFixed(0)} (Greed). `;
+      }
+      
+      // Supply in Profit
+      const supplyProfit = state.rawValues.supplyProfit;
+      if (supplyProfit) {
+        mainText += `Supply in Profit ${(supplyProfit*100).toFixed(0)}% ${supplyProfit < 0.55 ? '— muitos underwater = potencial reversão' : supplyProfit > 0.85 ? '— maioria em lucro = risco de distribuição' : ''}. `;
+      }
+      
+      // Contra-argumento section
+      mainText += `<br><br><strong style="color:var(--accent-cyan)">Contra-argumento (não ignore):</strong> `;
+      mainText += `Funding ${funding > 0 ? '+' : ''}${(funding*100).toFixed(4)}% — ${funding < -0.01 ? 'shorts pagando longs, potencial squeeze' : funding > 0.03 ? 'longs over-leveraged, risco de flush' : 'neutro'}. `;
+      
+      if (zScore > -1.5 && zScore < 0) {
+        mainText += `Se Z-Score cair abaixo de -1.5 = zona de acumulação confirmada. `;
+      }
+      if (rsi < 40) {
+        mainText += `RSI semanal em ${rsi.toFixed(0)} — oversold, pode bounçar. `;
+      } else if (rsi > 65) {
+        mainText += `RSI semanal em ${rsi.toFixed(0)} — overbought, cautela. `;
+      }
+      
+      // Tese morre se
+      mainText += `<br><br><strong style="color:var(--accent-green)">Tese morre se:</strong> `;
+      if (isBearish) {
+        mainText += `Z-Score cruzar abaixo de -0.5 com volume. Funding virar negativo. Preço romper $${Math.round(sma50/1000)}k (SMA50) com convicção.`;
+      } else if (isBullish) {
+        mainText += `Z-Score voltar acima de 0 sem price follow-through. Death cross (SMA50 < SMA200). SOPR sustentar acima de 1.03.`;
+      } else {
+        mainText += `Qualquer movimento forte com volume define a direção. Range-bound por enquanto.`;
+      }
       
       // Market structure analysis
       if (!inBullMarket) {
