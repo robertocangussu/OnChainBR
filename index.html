@@ -330,28 +330,36 @@
         <div class="zscore-sub">rolling 365d window</div>
       </div>
       
-      <!-- Risk Gauge Circular (0-1) -->
+      <!-- Risk Gauge Circular (0-1) - Professor Style -->
       <div class="risk-gauge-card">
-        <div class="risk-gauge-title">On-Chain Risk</div>
-        <div class="risk-gauge-wrap">
-          <svg class="risk-gauge-svg" viewBox="0 0 140 85">
+        <div class="risk-gauge-title">ON-CHAIN RISK</div>
+        <div class="risk-gauge-wrap" style="width:160px;height:100px;position:relative;">
+          <svg viewBox="0 0 160 100" style="width:100%;height:100%;">
+            <defs>
+              <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#00d97e"/>
+                <stop offset="25%" stop-color="#84cc16"/>
+                <stop offset="50%" stop-color="#eab308"/>
+                <stop offset="75%" stop-color="#f97316"/>
+                <stop offset="100%" stop-color="#ef4444"/>
+              </linearGradient>
+            </defs>
             <!-- Background arc -->
-            <path d="M 10 75 A 60 60 0 0 1 130 75" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="10" stroke-linecap="round"/>
-            <!-- Colored segments -->
-            <path d="M 10 75 A 60 60 0 0 1 34 31" fill="none" stroke="#00d97e" stroke-width="10" stroke-linecap="round"/>
-            <path d="M 34 31 A 60 60 0 0 1 70 15" fill="none" stroke="#84cc16" stroke-width="10"/>
-            <path d="M 70 15 A 60 60 0 0 1 106 31" fill="none" stroke="#eab308" stroke-width="10"/>
-            <path d="M 106 31 A 60 60 0 0 1 130 75" fill="none" stroke="#ef4444" stroke-width="10" stroke-linecap="round"/>
+            <path d="M 15 85 A 65 65 0 0 1 145 85" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="12" stroke-linecap="round"/>
+            <!-- Colored arc -->
+            <path d="M 15 85 A 65 65 0 0 1 145 85" fill="none" stroke="url(#gaugeGradient)" stroke-width="12" stroke-linecap="round"/>
             <!-- Needle -->
-            <g id="riskGaugeNeedle" transform="rotate(-90, 70, 75)">
-              <line x1="70" y1="75" x2="70" y2="25" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="70" cy="75" r="6" fill="#fff"/>
+            <g id="riskGaugeNeedle" style="transform-origin:80px 85px;transition:transform 0.5s ease-out;">
+              <line x1="80" y1="85" x2="80" y2="30" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="80" cy="85" r="8" fill="#1a1a1c" stroke="#fff" stroke-width="2"/>
             </g>
           </svg>
-          <div class="risk-gauge-value" id="riskGaugeValue">--</div>
+          <div style="position:absolute;bottom:5px;left:50%;transform:translateX(-50%);text-align:center;">
+            <div id="riskGaugeValue" style="font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;color:#00d97e;">0.28</div>
+          </div>
         </div>
-        <div class="risk-gauge-label" id="riskGaugeLabel">--</div>
-        <div class="risk-gauge-sub">0 = Accumulation · 1 = Distribution</div>
+        <div class="risk-gauge-label" id="riskGaugeLabel" style="font-size:13px;font-weight:600;color:#00d97e;margin-top:4px;">Opportunity</div>
+        <div class="risk-gauge-sub" style="font-size:8px;color:var(--text-muted);margin-top:4px;">0 = Accumulation · 1 = Distribution</div>
       </div>
       
       <!-- Price Card -->
@@ -1744,22 +1752,25 @@
       const risk = Math.max(0, Math.min(1, (z + 3) / 6));
       
       // Update needle rotation (-90deg = 0, +90deg = 1)
+      // Needle points up at center, rotates from -90 (left) to +90 (right)
       const angle = -90 + (risk * 180);
       const needle = document.getElementById('riskGaugeNeedle');
-      if (needle) needle.setAttribute('transform', `rotate(${angle}, 70, 75)`);
+      if (needle) needle.style.transform = `rotate(${angle}deg)`;
       
       // Update value
       const valueEl = document.getElementById('riskGaugeValue');
-      if (valueEl) valueEl.textContent = risk.toFixed(2);
+      if (valueEl) {
+        valueEl.textContent = risk.toFixed(2);
+      }
       
-      // Update label
+      // Update label and colors
       const labelEl = document.getElementById('riskGaugeLabel');
       if (labelEl) {
         let label, color;
-        if (risk <= 0.25) { label = 'Accumulation'; color = '#00d97e'; }
-        else if (risk <= 0.42) { label = 'Opportunity'; color = '#84cc16'; }
-        else if (risk <= 0.58) { label = 'Neutral'; color = '#eab308'; }
-        else if (risk <= 0.75) { label = 'Elevated Risk'; color = '#f97316'; }
+        if (risk <= 0.20) { label = 'Accumulation'; color = '#00d97e'; }
+        else if (risk <= 0.35) { label = 'Opportunity'; color = '#84cc16'; }
+        else if (risk <= 0.50) { label = 'Neutral'; color = '#eab308'; }
+        else if (risk <= 0.70) { label = 'Elevated Risk'; color = '#f97316'; }
         else { label = 'Distribution'; color = '#ef4444'; }
         labelEl.textContent = label;
         labelEl.style.color = color;
@@ -2702,39 +2713,22 @@
           }
         },
         plugins: [{
-          // Draw zone background bands and threshold lines
+          // Draw zone threshold lines and labels - clean professor style
           id: 'signalZoneLines',
           beforeDraw: chart => {
             const { ctx: c, chartArea, scales } = chart;
             if (!scales.yZ) return;
             c.save();
             
-            // Draw zone background bands (subtle)
-            const zones = [
-              { min: -3.5, max: -1.5, color: 'rgba(0,217,126,0.08)' },   // ACCUMULATE
-              { min: -1.5, max: -0.5, color: 'rgba(132,204,22,0.05)' },  // UNDERVALUED
-              { min: -0.5, max: 0.5, color: 'rgba(234,179,8,0.03)' },    // FAIR VALUE
-              { min: 0.5, max: 1.5, color: 'rgba(249,115,22,0.05)' },    // ELEVATED
-              { min: 1.5, max: 3.5, color: 'rgba(239,68,68,0.08)' }      // OVERHEATED
-            ];
-            
-            zones.forEach(zone => {
-              const yTop = scales.yZ.getPixelForValue(zone.max);
-              const yBottom = scales.yZ.getPixelForValue(zone.min);
-              c.fillStyle = zone.color;
-              c.fillRect(chartArea.left, yTop, chartArea.width, yBottom - yTop);
-            });
-            
-            // Draw threshold lines
+            // Draw threshold lines only (no background bands)
             [
-              { v: -1.5, color: '#00d97e', dash: [6, 3] },
-              { v: -0.5, color: '#84cc16', dash: [3, 3] },
-              { v: 0.5, color: '#f97316', dash: [3, 3] },
-              { v: 1.5, color: '#ef4444', dash: [6, 3] }
+              { v: -1.5, color: '#00d97e', dash: [4, 4] },
+              { v: 0, color: '#666', dash: [2, 4] },
+              { v: 1.5, color: '#ef4444', dash: [4, 4] }
             ].forEach(({v, color, dash}) => {
               const y = scales.yZ.getPixelForValue(v);
               c.beginPath();
-              c.strokeStyle = color + '50';
+              c.strokeStyle = color + '40';
               c.lineWidth = 1;
               c.setLineDash(dash);
               c.moveTo(chartArea.left, y);
@@ -2742,20 +2736,20 @@
               c.stroke();
             });
             
-            // Draw zone labels on right side
-            c.font = '8px JetBrains Mono';
+            // Draw zone labels on right edge (smaller, subtle)
+            c.font = '7px JetBrains Mono';
             c.textAlign = 'right';
-            const labelX = chartArea.right - 4;
+            const labelX = chartArea.right - 2;
             
             [
-              { v: -2.5, label: 'ACCUMULATE', color: '#00d97e' },
+              { v: -2.2, label: 'ACCUMULATE', color: '#00d97e' },
               { v: -1.0, label: 'UNDERVALUED', color: '#84cc16' },
               { v: 0, label: 'FAIR VALUE', color: '#eab308' },
               { v: 1.0, label: 'ELEVATED', color: '#f97316' },
-              { v: 2.5, label: 'OVERHEATED', color: '#ef4444' }
+              { v: 2.2, label: 'OVERHEATED', color: '#ef4444' }
             ].forEach(({v, label, color}) => {
               const y = scales.yZ.getPixelForValue(v);
-              c.fillStyle = color + '60';
+              c.fillStyle = color + '80';
               c.fillText(label, labelX, y + 3);
             });
             
