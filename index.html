@@ -3183,99 +3183,31 @@
         }
       } catch(e) { console.warn('F&G fetch failed:', e.message); }
 
-      // Funding Rates — BGeometrics (aggregated from multiple exchanges)
-      let fundingLoaded = false;
-      
-      // BGeometrics endpoint - use /last/1 to get just the most recent entry
-      const fundingUrl = `${CONFIG.BGEOMETRICS_BASE}/v1/funding-rate?token=${CONFIG.BGEOMETRICS_TOKEN}`;
-      const proxyUrl = `${CONFIG.CORS_PROXY}${encodeURIComponent(fundingUrl)}`;
-      
-      console.log('[Funding] Fetching BGeometrics via proxy...');
-      console.log('[Funding] Proxy URL:', proxyUrl.substring(0, 100) + '...');
-      
+      // Funding Rates — Binance Futures API (reliable, no CORS issues)
+      // BGeometrics funding-rate endpoint has CORS issues via proxy
       try {
-        const response = await fetch(proxyUrl);
-        console.log('[Funding] Response status:', response.status, response.statusText);
-        
+        const response = await fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1');
         if (response.ok) {
-          const text = await response.text();
-          console.log('[Funding] Raw response length:', text.length);
-          
-          // Check if it's an error message from proxy
-          if (text.startsWith('{') && text.includes('error')) {
-            console.log('[Funding] Proxy error:', text.substring(0, 200));
-          } else {
-            const data = JSON.parse(text);
-            const items = Array.isArray(data) ? data : [data];
-            console.log('[Funding] Parsed items:', items.length);
+          const data = await response.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const rate = parseFloat(data[0].fundingRate) * 100;
+            _renderFundingCard('fundingBtcBig', 'fundingBtcBar', 'fundingBtcDesc', 'sentFundingBtc', rate);
             
-            if (items.length > 0) {
-              // Get the LAST item (most recent)
-              const latest = items[items.length - 1];
-              console.log('[Funding] Latest entry:', JSON.stringify(latest).substring(0, 100));
-              
-              const rawRate = parseFloat(latest.fundingRate);
-              console.log('[Funding] Parsed rate:', rawRate);
-              
-              if (!isNaN(rawRate)) {
-                const rate = rawRate * 100; // Convert to percentage
-                _renderFundingCard('fundingBtcBig', 'fundingBtcBar', 'fundingBtcDesc', 'sentFundingBtc', rate);
-                
-                const descEl = document.getElementById('fundingBtcDesc');
-                if (descEl) descEl.textContent = rate > 0.01 ? 'Longs paying' : rate < -0.01 ? 'Shorts paying' : 'Balanced';
-                
-                const subEl = document.getElementById('sentFundingBtcSub');
-                if (subEl) subEl.textContent = 'BGeometrics Aggregated';
-                
-                console.log('✓ Funding Rate via BGeometrics:', rate.toFixed(4) + '%');
-                fundingLoaded = true;
-              }
-            }
+            const descEl = document.getElementById('fundingBtcDesc');
+            if (descEl) descEl.textContent = rate > 0.01 ? 'Longs paying' : rate < -0.01 ? 'Shorts paying' : 'Balanced';
+            
+            const subEl = document.getElementById('sentFundingBtcSub');
+            if (subEl) subEl.textContent = 'Binance BTCUSDT Perp';
+            
+            console.log('✓ Funding Rate:', rate.toFixed(4) + '%');
           }
-        } else {
-          console.log('[Funding] HTTP error:', response.status);
-          // Try to read error body
-          const errText = await response.text();
-          console.log('[Funding] Error body:', errText.substring(0, 200));
         }
-      } catch(e) { 
-        console.error('[Funding] Fetch error:', e.message);
-      }
-      
-      // Fallback to Binance if BGeometrics fails
-      if (!fundingLoaded) {
-        console.log('[Funding] Trying Binance fallback...');
-        try {
-          const response = await fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1');
-          if (response.ok) {
-            const data = await response.json();
-            if (Array.isArray(data) && data.length > 0) {
-              const rate = parseFloat(data[0].fundingRate) * 100;
-              _renderFundingCard('fundingBtcBig', 'fundingBtcBar', 'fundingBtcDesc', 'sentFundingBtc', rate);
-              
-              const descEl = document.getElementById('fundingBtcDesc');
-              if (descEl) descEl.textContent = 'Binance BTCUSDT Perp';
-              
-              const subEl = document.getElementById('sentFundingBtcSub');
-              if (subEl) subEl.textContent = 'Binance Perp';
-              
-              console.log('✓ Funding Rate via Binance:', rate.toFixed(4) + '%');
-              fundingLoaded = true;
-            }
-          }
-        } catch(e) {
-          console.warn('[Funding] Binance failed:', e.message);
-        }
-      }
-      
-      // If all failed, show N/A
-      if (!fundingLoaded) {
+      } catch(e) {
+        console.warn('[Funding] Error:', e.message);
         const el = document.getElementById('fundingBtcBig');
         const el2 = document.getElementById('sentFundingBtc');
         if (el) { el.textContent = 'N/A'; el.style.color = 'var(--text-muted)'; }
         if (el2) { el2.textContent = 'N/A'; el2.style.color = 'var(--text-muted)'; }
-        const descEl = document.getElementById('fundingBtcDesc');
-        if (descEl) descEl.textContent = 'API unavailable';
       }
       
       // Update signal strength cards after sentiment data loads
