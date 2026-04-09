@@ -975,6 +975,13 @@
   </footer>
 
   <script>
+    // ========== POLYFILLS ==========
+    // Fix for browsers that don't support console.group
+    if (typeof console.group !== 'function') {
+      console.group = function(label) { console.log('▼ ' + label); };
+      console.groupEnd = function() { console.log('▲ ---'); };
+    }
+    
     // ========== STATE ==========
     const state = { prices: [], metricHistory: {}, zScoreHistory: {}, zScores: {}, rawValues: {}, composite: null, compositeHistory: [], apiStatus: {}, endpointsLoaded: 0, totalEndpoints: 10, errors: [] };
     
@@ -2060,8 +2067,8 @@
                 mode: 'xy'
               },
               limits: {
-                x: { min: -Infinity, max: Infinity },
-                y: { min: -Infinity, max: Infinity }
+                x: { min: -1e15, max: 1e15 },
+                y: { min: -1e10, max: 1e10 }
               }
             },
             tooltip: {
@@ -2708,8 +2715,8 @@
                 mode: 'xy'
               },
               limits: {
-                x: { min: -Infinity, max: Infinity },
-                y: { min: -Infinity, max: Infinity }
+                x: { min: -1e15, max: 1e15 },
+                y: { min: -1e10, max: 1e10 }
               }
             },
             tooltip: {
@@ -2934,11 +2941,15 @@
       console.log('Inflow result:', inR.status, inR.value?.success);
       console.log('Outflow result:', outR.status, outR.value?.success);
       console.log('Netflow result:', netflowR.status, netflowR.value?.success);
+      
+      // Track how many data sources loaded
+      let loadedCount = 0;
 
       // ETF Flow
       if (etfR.status === 'fulfilled' && etfR.value?.success) {
         const data = normalizeBGeometricsData(etfR.value.data, 'etfNetFlowBtc').slice(-90);
         if (data.length) {
+          loadedCount++;
           const latest = data[data.length-1].value;
           const sum7d  = data.slice(-7).reduce((a,d)=>a+(d.value||0),0);
           document.getElementById('flowEtfLatest').textContent = (latest>=0?'+':'') + Math.round(latest).toLocaleString() + ' BTC';
@@ -2948,12 +2959,20 @@
           document.getElementById('flowEtf7dSub').textContent = 'BTC net · 7 days';
           renderFlowLineChart('flowEtfChart', data, 'ETF Flow', '#3b82f6', true);
         }
+      } else {
+        // Show "unavailable" state for ETF
+        document.getElementById('flowEtfLatest').textContent = 'N/A';
+        document.getElementById('flowEtfLatest').style.color = 'var(--text-muted)';
+        document.getElementById('flowEtf7d').textContent = 'N/A';
+        document.getElementById('flowEtf7d').style.color = 'var(--text-muted)';
+        document.getElementById('flowEtf7dSub').textContent = 'API unavailable';
       }
 
       // Exchange Reserve
       if (resR.status === 'fulfilled' && resR.value?.success) {
         const data = normalizeBGeometricsData(resR.value.data, 'exchangeReserveBtc').slice(-180);
         if (data.length) {
+          loadedCount++;
           const latest = data[data.length-1].value;
           const prev7  = data.length > 7 ? data[data.length-8].value : latest;
           const delta  = latest - prev7;
@@ -2963,12 +2982,22 @@
           document.getElementById('flowExReserveSub').textContent = delta < 0 ? '▼ coins leaving exchanges' : '▲ coins entering exchanges';
           renderFlowLineChart('flowReserveChart', data, 'Reserve', '#a855f7', false);
         }
+      } else {
+        // Show "unavailable" state for Reserve
+        document.getElementById('flowReserveLatest').textContent = 'N/A';
+        document.getElementById('flowReserveLatest').style.color = 'var(--text-muted)';
+        document.getElementById('flowExReserve').textContent = 'N/A';
+        document.getElementById('flowExReserve').style.color = 'var(--text-muted)';
+        document.getElementById('flowExReserveSub').textContent = 'API unavailable';
       }
 
       // Inflow / Outflow
       const inData  = (inR.status  === 'fulfilled' && inR.value?.success)  ? normalizeBGeometricsData(inR.value.data,  'exchangeInflowBtc').slice(-90)  : [];
       const outData = (outR.status === 'fulfilled' && outR.value?.success) ? normalizeBGeometricsData(outR.value.data, 'exchangeOutflowBtc').slice(-90) : [];
-      if (inData.length || outData.length) renderFlowInOutChart(inData, outData);
+      if (inData.length || outData.length) {
+        loadedCount++;
+        renderFlowInOutChart(inData, outData);
+      }
 
       // Net Pressure
       if (inData.length && outData.length) {
@@ -2994,12 +3023,21 @@
           fEl.style.cssText='background:var(--accent-yellow);width:50%';
           dEl.textContent='Exchange flows are balanced. No strong directional signal from flow data.';
         }
+      } else {
+        // Show "unavailable" state for pressure
+        const pEl = document.getElementById('flowPressureValue');
+        const lEl = document.getElementById('flowPressureLabel');
+        const dEl = document.getElementById('flowPressureDesc');
+        if (pEl) { pEl.textContent = 'N/A'; pEl.style.color = 'var(--text-muted)'; }
+        if (lEl) { lEl.textContent = 'DATA UNAVAILABLE'; lEl.style.color = 'var(--text-muted)'; }
+        if (dEl) { dEl.textContent = 'Exchange flow APIs did not return data. This may be temporary.'; }
       }
 
       // Netflow (replaces Whale Ratio - shows net exchange flow direction)
       if (netflowR.status === 'fulfilled' && netflowR.value?.success) {
         const data = normalizeBGeometricsData(netflowR.value.data, 'exchangeNetflowBtc').slice(-30);
         if (data.length) {
+          loadedCount++;
           const sum30d = data.reduce((a,d) => a + (d.value || 0), 0);
           const avgDaily = sum30d / data.length;
           const label = avgDaily < -500 ? 'Strong Outflow' : avgDaily < 0 ? 'Net Outflow' : avgDaily < 500 ? 'Net Inflow' : 'Strong Inflow';
@@ -3008,7 +3046,14 @@
           document.getElementById('flowWhaleRatio').style.color = color;
           document.getElementById('flowWhaleRatioSub').textContent = label + ' (30d avg)';
         }
+      } else {
+        // Show "unavailable" state for netflow
+        document.getElementById('flowWhaleRatio').textContent = 'N/A';
+        document.getElementById('flowWhaleRatio').style.color = 'var(--text-muted)';
+        document.getElementById('flowWhaleRatioSub').textContent = 'API unavailable';
       }
+      
+      console.log(`📊 Flow Analysis: ${loadedCount}/5 data sources loaded`);
       
       // Update report Flow section after data loads
       updateReportFlowSection();
@@ -3138,13 +3183,34 @@
         }
       } catch(e) { console.warn('F&G fetch failed:', e.message); }
 
-      // Funding Rates — Binance Futures API (free, no auth)
+      // Funding Rates — BGeometrics API (more accurate, matches their charts)
       try {
-        const [btcR] = await Promise.allSettled([
-          fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1').then(r=>r.json())
-        ]);
-        if (btcR.status==='fulfilled' && btcR.value?.length) _renderFundingCard('fundingBtcBig','fundingBtcBar','fundingBtcDesc','sentFundingBtc', parseFloat(btcR.value[0].fundingRate)*100);
-      } catch(e) { console.warn('Funding fetch failed:', e.message); }
+        const fundingUrl = `${CONFIG.BGEOMETRICS_BASE}/v1/funding-rate?token=${CONFIG.BGEOMETRICS_TOKEN}`;
+        const url = CONFIG.USE_CORS_PROXY ? `${CONFIG.CORS_PROXY}${encodeURIComponent(fundingUrl)}` : fundingUrl;
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data) && data.length > 0) {
+            // Get most recent funding rate
+            const latest = data[data.length - 1];
+            const rate = (latest.fundingRate || latest.value || 0) * 100; // Convert to percentage
+            _renderFundingCard('fundingBtcBig', 'fundingBtcBar', 'fundingBtcDesc', 'sentFundingBtc', rate);
+            console.log('✓ Funding Rate via BGeometrics:', rate.toFixed(4) + '%');
+          }
+        }
+      } catch(e) { 
+        console.warn('BGeometrics Funding fetch failed, trying Binance fallback:', e.message);
+        // Fallback to Binance if BGeometrics fails
+        try {
+          const [btcR] = await Promise.allSettled([
+            fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1').then(r=>r.json())
+          ]);
+          if (btcR.status==='fulfilled' && btcR.value?.length) {
+            _renderFundingCard('fundingBtcBig','fundingBtcBar','fundingBtcDesc','sentFundingBtc', parseFloat(btcR.value[0].fundingRate)*100);
+            console.log('✓ Funding Rate via Binance fallback');
+          }
+        } catch(e2) { console.warn('Funding fetch failed:', e2.message); }
+      }
       
       // Update signal strength cards after sentiment data loads
       updateSignalStrength();
@@ -3814,7 +3880,38 @@
       const ctx = document.getElementById('tradingChart')?.getContext('2d');
       if (!ctx) return;
 
-      const data = tradingState.technicalData;
+      let data = tradingState.technicalData;
+      
+      // Fallback to Demo Mode data if no trading data
+      if (!data.length && state.prices && state.prices.length) {
+        console.warn('[Trading] No API data, using price data as fallback');
+        // Generate synthetic technical data from price data
+        data = state.prices.map((p, i, arr) => {
+          const price = p.price;
+          // Calculate simple moving averages
+          const getSMA = (period) => {
+            if (i < period - 1) return price;
+            const slice = arr.slice(i - period + 1, i + 1);
+            return slice.reduce((sum, x) => sum + x.price, 0) / period;
+          };
+          const getEMA = (period, prevEma) => {
+            const k = 2 / (period + 1);
+            return price * k + (prevEma || price) * (1 - k);
+          };
+          
+          return {
+            day: p.date,
+            d: p.date,
+            price: price,
+            sma50: getSMA(50),
+            sma200: getSMA(200),
+            ema21: i > 0 ? getEMA(21, data[i-1]?.ema21 || price) : price,
+            ema50: i > 0 ? getEMA(50, data[i-1]?.ema50 || price) : price
+          };
+        });
+        tradingState.technicalData = data;
+      }
+      
       if (!data.length) {
         console.warn('[Trading] No data for chart');
         return;
@@ -4115,8 +4212,8 @@
                 mode: 'xy'
               },
               limits: {
-                x: { min: -Infinity, max: Infinity },
-                y: { min: -Infinity, max: Infinity }
+                x: { min: -1e15, max: 1e15 },
+                y: { min: -1e10, max: 1e10 }
               }
             }
           },
