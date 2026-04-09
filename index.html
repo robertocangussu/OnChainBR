@@ -27,11 +27,6 @@
     .zscore-value { font-family: 'Space Grotesk', sans-serif; font-size: 48px; font-weight: 700; }
     .zscore-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-top: 10px; }
     .zscore-sub { font-size: 9px; color: var(--text-muted); margin-top: 8px; }
-    .zscore-compare { display: flex; justify-content: center; gap: 16px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
-    .zscore-compare-item { text-align: center; }
-    .zscore-compare-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-    .zscore-compare-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; }
-    .zscore-compare-value.active { color: var(--accent-orange); }
     .gauge-card { display: flex; flex-direction: column; align-items: center; justify-content: center; }
     .gauge-container { position: relative; width: 200px; height: 110px; }
     .gauge-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-top: 8px; }
@@ -239,54 +234,51 @@
     .trading-history-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); }
     .trading-history-table tr:hover { background: rgba(255,255,255,0.02); }
 
-    /* ===== NEW: Risk Gauge Circular ===== */
-    .risk-gauge-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; min-width: 180px; }
-    .risk-gauge-title { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
-    .risk-gauge-wrap { position: relative; width: 140px; height: 85px; margin: 0 auto; }
-    .risk-gauge-svg { width: 100%; height: 100%; }
-    .risk-gauge-value { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; }
-    .risk-gauge-label { font-size: 11px; font-weight: 600; margin-top: 8px; }
-    .risk-gauge-sub { font-size: 8px; color: var(--text-muted); margin-top: 4px; }
-
-    /* ===== NEW: Consensus Bar ===== */
-    .consensus-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
-    .consensus-title { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-    .consensus-bar-wrap { position: relative; height: 24px; background: rgba(239,68,68,0.3); border-radius: 4px; overflow: hidden; }
-    .consensus-bar-fill { height: 100%; background: linear-gradient(90deg, #00d97e, #84cc16); border-radius: 4px 0 0 4px; transition: width 0.5s; }
-    .consensus-stats { display: flex; justify-content: space-between; margin-top: 8px; font-size: 10px; }
-    .consensus-bullish { color: var(--accent-green); font-weight: 600; }
-    .consensus-bearish { color: var(--accent-red); font-weight: 600; }
-    .consensus-neutral { color: var(--text-muted); }
-
-    /* ===== NEW: Cycle Timeline ===== */
-    .cycle-timeline-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
-    .cycle-timeline-title { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-    .cycle-timeline-bar { position: relative; height: 8px; background: linear-gradient(90deg, #00d97e 0%, #84cc16 20%, #eab308 40%, #f97316 60%, #ef4444 80%, #dc2626 100%); border-radius: 4px; }
-    .cycle-timeline-marker { position: absolute; top: -4px; width: 4px; height: 16px; background: #fff; border-radius: 2px; transform: translateX(-50%); box-shadow: 0 0 8px rgba(255,255,255,0.5); transition: left 0.5s; }
-    .cycle-timeline-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 7px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .cycle-timeline-current { text-align: center; margin-top: 10px; font-size: 11px; font-weight: 600; }
-
-    /* ===== NEW: Signal Strength Cards ===== */
-    .signal-strength-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
-    .signal-strength-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 12px; text-align: center; }
-    .signal-strength-icon { font-size: 16px; margin-bottom: 4px; }
-    .signal-strength-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-    .signal-strength-checks { font-size: 12px; letter-spacing: 2px; }
-    .check-green { color: var(--accent-green); }
-    .check-yellow { color: var(--accent-yellow); }
-    .check-red { color: var(--accent-red); }
-    .check-gray { color: var(--text-muted); opacity: 0.3; }
-
-    /* ===== NEW: Sparklines in Metrics ===== */
-    .metric-sparkline { width: 60px; height: 20px; margin-left: auto; }
-    .metric-card-enhanced { display: flex; align-items: center; gap: 8px; }
-    .metric-info { flex: 1; }
+    /* ===== SECTION 04: SMART MONEY TRACKER ===== */
+    .smart-money-top { display: grid; grid-template-columns: 240px 1fr; gap: 16px; margin-bottom: 16px; }
+    .sm-gauge-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .sm-gauge-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+    .sm-gauge-status { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .sm-gauge-value { font-family: 'Space Grotesk', sans-serif; font-size: 42px; font-weight: 700; line-height: 1; }
+    .sm-gauge-unit { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+    .sm-gauge-bar { width: 100%; height: 6px; background: var(--border); border-radius: 3px; margin-top: 16px; overflow: hidden; }
+    .sm-gauge-fill { height: 100%; border-radius: 3px; transition: width 0.5s, background 0.5s; }
+    .sm-gauge-legends { display: flex; justify-content: space-between; width: 100%; margin-top: 8px; font-size: 7px; color: var(--text-muted); }
+    .sm-chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+    .sm-chart-title { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .sm-chart-container { height: 180px; }
     
-    /* ===== NEW: Enhanced Top Stats Row ===== */
-    .top-stats-enhanced { display: grid; grid-template-columns: 200px 180px 1fr 280px; gap: 16px; margin-bottom: 20px; }
+    .sm-stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px; }
+    .sm-stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+    .sm-stat-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .sm-stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; }
+    .sm-stat-status { font-size: 9px; font-weight: 600; margin-top: 4px; }
+    .sm-stat-raw { font-size: 7px; color: var(--text-muted); margin-top: 3px; }
     
-    @media (max-width: 1200px) { .signals-grid { grid-template-columns: 1fr; } .flow-grid { grid-template-columns: 1fr; } .sentiment-grid { grid-template-columns: 1fr; } .sig-stats-row { grid-template-columns: repeat(3,1fr); } .trading-grid { grid-template-columns: 1fr; } .trading-status-row { grid-template-columns: 1fr; } .top-stats-enhanced { grid-template-columns: 1fr 1fr; } .signal-strength-row { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 700px) { .sig-stats-row { grid-template-columns: repeat(2,1fr); } .top-stats-enhanced { grid-template-columns: 1fr; } }
+    .sm-checklist-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+    .sm-checklist-title { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+    .sm-checklist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; margin-bottom: 20px; }
+    .sm-check-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 5px; font-size: 10px; }
+    .sm-check-icon { font-size: 14px; flex-shrink: 0; }
+    .sm-check-text { color: var(--text-secondary); }
+    .sm-check-item.pass { background: rgba(0,217,126,0.08); }
+    .sm-check-item.pass .sm-check-icon { color: var(--accent-green); }
+    .sm-check-item.pass .sm-check-text { color: var(--text-primary); }
+    .sm-check-item.fail { background: rgba(239,68,68,0.08); }
+    .sm-check-item.fail .sm-check-icon { color: var(--accent-red); }
+    .sm-check-item.neutral { background: rgba(234,179,8,0.08); }
+    .sm-check-item.neutral .sm-check-icon { color: var(--accent-yellow); }
+    
+    .sm-confidence-section { border-top: 1px solid var(--border); padding-top: 16px; }
+    .sm-confidence-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .sm-confidence-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .sm-confidence-value { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; }
+    .sm-confidence-bar { height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; }
+    .sm-confidence-fill { height: 100%; border-radius: 5px; transition: width 0.5s, background 0.5s; }
+    .sm-confidence-desc { font-size: 9px; color: var(--text-muted); margin-top: 10px; line-height: 1.5; }
+
+    @media (max-width: 1200px) { .signals-grid { grid-template-columns: 1fr; } .flow-grid { grid-template-columns: 1fr; } .sentiment-grid { grid-template-columns: 1fr; } .sig-stats-row { grid-template-columns: repeat(3,1fr); } .trading-grid { grid-template-columns: 1fr; } .trading-status-row { grid-template-columns: 1fr; } .smart-money-top { grid-template-columns: 1fr; } .sm-stats-row { grid-template-columns: repeat(3, 1fr); } .sm-checklist-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 700px) { .sig-stats-row { grid-template-columns: repeat(2,1fr); } .sm-stats-row { grid-template-columns: repeat(2, 1fr); } }
   </style>
 </head>
 <body>
@@ -296,9 +288,10 @@
     <a href="#dashboard" class="active" onclick="setActiveNav(this)">01 · Dashboard</a>
     <a href="#signals" onclick="setActiveNav(this)">02 · Trade Signals</a>
     <a href="#flow" onclick="setActiveNav(this)">03 · Flow Analysis</a>
-    <a href="#sentiment" onclick="setActiveNav(this)">04 · Sentiment</a>
-    <a href="#trading" onclick="setActiveNav(this)">05 · Trading</a>
-    <a href="#report" onclick="setActiveNav(this)">06 · Relatório</a>
+    <a href="#smartmoney" onclick="setActiveNav(this)">04 · Smart Money</a>
+    <a href="#sentiment" onclick="setActiveNav(this)">05 · Sentiment</a>
+    <a href="#trading" onclick="setActiveNav(this)">06 · Trading</a>
+    <a href="#report" onclick="setActiveNav(this)">07 · Relatório</a>
   </nav>
   <div id="dashboard">
   <div class="loading-overlay" id="loadingOverlay">
@@ -312,7 +305,7 @@
       <div>
         <div class="brand-name">@ONCHAINBR</div>
         <div class="brand-title">BTC Valuation Index</div>
-        <div class="brand-sub">Composite Z-Score · Rolling 365d · 9 Metrics · Hybrid API · v3.2</div>
+        <div class="brand-sub">Composite Z-Score · Rolling 365d · 9 Metrics · Hybrid API · v3.1</div>
       </div>
       <div class="header-right">
         <div class="status-ok" id="statusEndpoints">● 0/10 ENDPOINTS</div>
@@ -321,117 +314,22 @@
       </div>
     </header>
     
-    <div class="top-stats-enhanced">
-      <!-- Z-Score Card -->
+    <div class="top-stats">
       <div class="zscore-card">
         <div class="zscore-label">Z-Score Composite</div>
         <div class="zscore-value" id="mainZScore">--</div>
         <div class="zscore-badge" id="mainZoneBadge">--</div>
         <div class="zscore-sub">rolling 365d window</div>
       </div>
-      
-      <!-- Risk Gauge Circular (0-1) - Professor Style -->
-      <div class="risk-gauge-card">
-        <div class="risk-gauge-title">ON-CHAIN RISK</div>
-        <div class="risk-gauge-wrap" style="width:160px;height:100px;position:relative;">
-          <svg viewBox="0 0 160 100" style="width:100%;height:100%;">
-            <defs>
-              <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#00d97e"/>
-                <stop offset="25%" stop-color="#84cc16"/>
-                <stop offset="50%" stop-color="#eab308"/>
-                <stop offset="75%" stop-color="#f97316"/>
-                <stop offset="100%" stop-color="#ef4444"/>
-              </linearGradient>
-            </defs>
-            <!-- Background arc -->
-            <path d="M 15 85 A 65 65 0 0 1 145 85" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="12" stroke-linecap="round"/>
-            <!-- Colored arc -->
-            <path d="M 15 85 A 65 65 0 0 1 145 85" fill="none" stroke="url(#gaugeGradient)" stroke-width="12" stroke-linecap="round"/>
-            <!-- Needle -->
-            <g id="riskGaugeNeedle" style="transform-origin:80px 85px;transition:transform 0.5s ease-out;">
-              <line x1="80" y1="85" x2="80" y2="30" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-              <circle cx="80" cy="85" r="8" fill="#1a1a1c" stroke="#fff" stroke-width="2"/>
-            </g>
-          </svg>
-          <div style="position:absolute;bottom:5px;left:50%;transform:translateX(-50%);text-align:center;">
-            <div id="riskGaugeValue" style="font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;color:#00d97e;">0.28</div>
-          </div>
-        </div>
-        <div class="risk-gauge-label" id="riskGaugeLabel" style="font-size:13px;font-weight:600;color:#00d97e;margin-top:4px;">Opportunity</div>
-        <div class="risk-gauge-sub" style="font-size:8px;color:var(--text-muted);margin-top:4px;">0 = Accumulation · 1 = Distribution</div>
+      <div class="gauge-card">
+        <div class="gauge-container"><canvas id="gaugeCanvas"></canvas></div>
+        <div class="gauge-label">Conviction Signal</div>
       </div>
-      
-      <!-- Price Card -->
       <div class="price-card">
         <div class="price-label">BTC / USD</div>
         <div class="price-value" id="btcPrice">--</div>
         <div class="price-change" id="priceChange">--</div>
         <div class="price-date" id="priceDate">--</div>
-      </div>
-      
-      <!-- Consensus + Timeline + Signal Strength -->
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <!-- Consensus Bar -->
-        <div class="consensus-card">
-          <div class="consensus-title">Metrics Consensus</div>
-          <div class="consensus-bar-wrap">
-            <div class="consensus-bar-fill" id="consensusBarFill" style="width:50%"></div>
-          </div>
-          <div class="consensus-stats">
-            <span class="consensus-bullish" id="consensusBullish">-- Bullish</span>
-            <span class="consensus-neutral" id="consensusNeutral">-- Neutral</span>
-            <span class="consensus-bearish" id="consensusBearish">-- Bearish</span>
-          </div>
-        </div>
-        
-        <!-- Cycle Timeline -->
-        <div class="cycle-timeline-card">
-          <div class="cycle-timeline-title">Market Cycle Position</div>
-          <div class="cycle-timeline-bar">
-            <div class="cycle-timeline-marker" id="cycleTimelineMarker" style="left:25%"></div>
-          </div>
-          <div class="cycle-timeline-labels">
-            <span>Accumulation</span>
-            <span>Early Bull</span>
-            <span>Bull</span>
-            <span>Distribution</span>
-            <span>Bear</span>
-          </div>
-          <div class="cycle-timeline-current" id="cycleTimelineCurrent">--</div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Signal Strength Row -->
-    <div class="signal-strength-row">
-      <div class="signal-strength-card">
-        <div class="signal-strength-icon">📊</div>
-        <div class="signal-strength-label">On-Chain</div>
-        <div class="signal-strength-checks" id="strengthOnChain">
-          <span class="check-gray">✓</span><span class="check-gray">✓</span><span class="check-gray">✓</span>
-        </div>
-      </div>
-      <div class="signal-strength-card">
-        <div class="signal-strength-icon">💰</div>
-        <div class="signal-strength-label">Flow</div>
-        <div class="signal-strength-checks" id="strengthFlow">
-          <span class="check-gray">✓</span><span class="check-gray">✓</span><span class="check-gray">✓</span>
-        </div>
-      </div>
-      <div class="signal-strength-card">
-        <div class="signal-strength-icon">😱</div>
-        <div class="signal-strength-label">Sentiment</div>
-        <div class="signal-strength-checks" id="strengthSentiment">
-          <span class="check-gray">✓</span><span class="check-gray">✓</span><span class="check-gray">✓</span>
-        </div>
-      </div>
-      <div class="signal-strength-card">
-        <div class="signal-strength-icon">📈</div>
-        <div class="signal-strength-label">Technical</div>
-        <div class="signal-strength-checks" id="strengthTechnical">
-          <span class="check-gray">✓</span><span class="check-gray">✓</span><span class="check-gray">✓</span>
-        </div>
       </div>
     </div>
     
@@ -446,17 +344,8 @@
     <div class="main-grid">
       <div class="main-content">
         <div class="chart-section">
-          <div class="chart-header">
-            <div class="chart-title">BTC/USD — Full History · Colored by Z-Composite Zone</div>
-            <div class="chart-badges">
-              <span class="badge badge-blue">ALL DATA · LOG SCALE</span>
-              <button onclick="if(priceChart)priceChart.resetZoom()" style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.4);color:#a855f7;font-size:8px;font-weight:600;padding:3px 8px;border-radius:4px;cursor:pointer;font-family:'JetBrains Mono',monospace;margin-left:8px;">⟲ Reset</button>
-            </div>
-          </div>
-          <div class="chart-container" style="position:relative;">
-            <canvas id="priceChart"></canvas>
-            <div style="position:absolute;bottom:6px;left:10px;font-size:7px;color:var(--text-muted);opacity:0.6;pointer-events:none;">🖱️ Scroll=Zoom · Arrastar=Navegar</div>
-          </div>
+          <div class="chart-header"><div class="chart-title">BTC/USD — Full History · Colored by Z-Composite Zone</div><div class="chart-badges"><span class="badge badge-blue">ALL DATA · LOG SCALE</span></div></div>
+          <div class="chart-container"><canvas id="priceChart"></canvas></div>
         </div>
         <div class="chart-section">
           <div class="chart-header"><div class="chart-title">Z-Composite Oscillator</div><div class="chart-badges"><span class="badge badge-green">ROLLING 365D</span></div></div>
@@ -539,13 +428,11 @@
             <button onclick="setSigRange(730)"  class="sig-range-btn" id="sigBtn2Y">2Y</button>
             <button onclick="setSigRange(1825)" class="sig-range-btn" id="sigBtn5Y">5Y</button>
             <button onclick="setSigRange(0)"    class="sig-range-btn active" id="sigBtnALL">ALL</button>
-            <button onclick="resetSignalZoom()" class="sig-range-btn" style="margin-left:8px;background:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.4);color:#a855f7;" title="Reset zoom">⟲ Reset</button>
           </div>
         </div>
       </div>
-      <div class="sig-chart-body" style="position:relative;">
+      <div class="sig-chart-body">
         <canvas id="signalChart"></canvas>
-        <div style="position:absolute;bottom:8px;left:12px;font-size:8px;color:var(--text-muted);opacity:0.7;pointer-events:none;">🖱️ Scroll=Zoom · Arrastar=Navegar</div>
         <div id="watchingBadge" style="display:none;position:absolute;top:12px;right:12px;background:rgba(20,20,22,0.95);border:1px solid rgba(234,179,8,0.6);border-radius:6px;padding:8px 14px;font-size:10px;font-family:'JetBrains Mono',monospace;color:#e8e8ed;align-items:center;gap:6px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.4);"></div>
       </div>
       <!-- Zone background legend -->
@@ -634,10 +521,122 @@
     </div>
   </div>
 
-  <!-- ========== SECTION 4: SENTIMENT INDEX ========== -->
-  <div class="section-wrap" id="sentiment" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+  <!-- ========== SECTION 4: SMART MONEY TRACKER ========== -->
+  <div class="section-wrap" id="smartmoney" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">04</span>
+      <span class="section-title">Smart Money Tracker</span>
+      <span class="section-sub">LTH/STH BEHAVIOR · ACCUMULATION · CONVICTION</span>
+    </div>
+    
+    <!-- Top Row: Gauge + Chart -->
+    <div class="smart-money-top">
+      <div class="sm-gauge-card">
+        <div class="sm-gauge-label">Smart Money Behavior</div>
+        <div class="sm-gauge-status" id="smGaugeStatus">ANALYZING...</div>
+        <div class="sm-gauge-value" id="smGaugeValue">--</div>
+        <div class="sm-gauge-unit" id="smGaugeUnit">BTC / 30d</div>
+        <div class="sm-gauge-bar">
+          <div class="sm-gauge-fill" id="smGaugeFill" style="width:50%;background:var(--accent-yellow)"></div>
+        </div>
+        <div class="sm-gauge-legends">
+          <span>DISTRIBUTING</span>
+          <span>NEUTRAL</span>
+          <span>ACCUMULATING</span>
+        </div>
+      </div>
+      <div class="sm-chart-card">
+        <div class="sm-chart-title">LTH Net Position Change — 90 Day History</div>
+        <div class="sm-chart-container"><canvas id="smLthChart"></canvas></div>
+      </div>
+    </div>
+    
+    <!-- Stats Row -->
+    <div class="sm-stats-row">
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">LTH 30d Change</div>
+        <div class="sm-stat-value" id="smLth30d">--</div>
+        <div class="sm-stat-status" id="smLth30dStatus">--</div>
+        <div class="sm-stat-raw" id="smLth30dRaw">BTC net position</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">STH 30d Change</div>
+        <div class="sm-stat-value" id="smSth30d">--</div>
+        <div class="sm-stat-status" id="smSth30dStatus">--</div>
+        <div class="sm-stat-raw" id="smSth30dRaw">BTC net position</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">STH/LTH Ratio</div>
+        <div class="sm-stat-value" id="smRatio">--</div>
+        <div class="sm-stat-status" id="smRatioStatus">--</div>
+        <div class="sm-stat-raw">supply distribution</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">1Y+ HODL Supply</div>
+        <div class="sm-stat-value" id="smHodl1y">--</div>
+        <div class="sm-stat-status" id="smHodl1yStatus">--</div>
+        <div class="sm-stat-raw">% of total supply</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">LTH SOPR</div>
+        <div class="sm-stat-value" id="smLthSopr">--</div>
+        <div class="sm-stat-status" id="smLthSoprStatus">--</div>
+        <div class="sm-stat-raw">profit/loss ratio</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Reserve Risk</div>
+        <div class="sm-stat-value" id="smReserveRisk">--</div>
+        <div class="sm-stat-status" id="smReserveRiskStatus">--</div>
+        <div class="sm-stat-raw">risk/reward</div>
+      </div>
+    </div>
+    
+    <!-- Checklist Card -->
+    <div class="sm-checklist-card">
+      <div class="sm-checklist-title">Smart Money Accumulation Checklist</div>
+      <div class="sm-checklist-grid" id="smChecklistGrid">
+        <div class="sm-check-item neutral" id="smCheck1">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">LTH accumulating (net positive 30d)</span>
+        </div>
+        <div class="sm-check-item neutral" id="smCheck2">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">STH/LTH ratio below 0.5 (accumulation zone)</span>
+        </div>
+        <div class="sm-check-item neutral" id="smCheck3">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">1Y+ HODL supply above 65% (high conviction)</span>
+        </div>
+        <div class="sm-check-item neutral" id="smCheck4">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">LTH SOPR below 1.0 (capitulation signal)</span>
+        </div>
+        <div class="sm-check-item neutral" id="smCheck5">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">Reserve Risk below 0.005 (good entry zone)</span>
+        </div>
+        <div class="sm-check-item neutral" id="smCheck6">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">STH distributing (net negative 30d)</span>
+        </div>
+      </div>
+      <div class="sm-confidence-section">
+        <div class="sm-confidence-header">
+          <span class="sm-confidence-label">Accumulation Confidence Score</span>
+          <span class="sm-confidence-value" id="smConfidenceValue">--%</span>
+        </div>
+        <div class="sm-confidence-bar">
+          <div class="sm-confidence-fill" id="smConfidenceFill" style="width:0%;background:var(--accent-yellow)"></div>
+        </div>
+        <div class="sm-confidence-desc" id="smConfidenceDesc">Analyzing on-chain data to determine smart money positioning...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SECTION 5: SENTIMENT INDEX ========== -->
+  <div class="section-wrap" id="sentiment" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">05</span>
       <span class="section-title">Sentiment Index</span>
       <span class="section-sub">FEAR &amp; GREED · FUNDING RATES · COMPOSITE MOOD</span>
     </div>
@@ -660,7 +659,7 @@
     <div class="sentiment-stats-row">
       <div class="sentiment-stat"><div class="stat-label">7d Avg F&amp;G</div><div class="stat-value" id="sentFg7d">--</div><div class="stat-sub" id="sentFg7dLabel">--</div></div>
       <div class="sentiment-stat"><div class="stat-label">30d Avg F&amp;G</div><div class="stat-value" id="sentFg30d">--</div><div class="stat-sub" id="sentFg30dLabel">--</div></div>
-      <div class="sentiment-stat"><div class="stat-label">BTC Funding Rate</div><div class="stat-value" id="sentFundingBtc">--</div><div class="stat-sub" id="sentFundingBtcSub">Loading...</div></div>
+      <div class="sentiment-stat"><div class="stat-label">BTC Funding Rate</div><div class="stat-value" id="sentFundingBtc">--</div><div class="stat-sub">Binance BTCUSDT Perp</div></div>
 
     </div>
     <div class="sentiment-funding-row">
@@ -688,10 +687,10 @@
     </div>
   </div>
 
-  <!-- ========== SECTION 5: TRADING SYSTEMS ========== -->
+  <!-- ========== SECTION 6: TRADING SYSTEMS ========== -->
   <div class="section-wrap" id="trading" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">05</span>
+      <span class="section-num">06</span>
       <span class="section-title">Trading Systems</span>
       <span class="section-sub">TREND FOLLOWING · REVERSAL DETECTION · MOMENTUM</span>
     </div>
@@ -852,119 +851,102 @@
     </div>
   </div>
 
-  <!-- ========== SECTION 06: REPORT ========== -->
+  <!-- ========== SECTION 07: REPORT ========== -->
   <div class="section-wrap" id="report" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
-      <span class="section-title">📋 Relatório Diário — Análise Integrada</span>
+      <span class="section-num">07</span>
+      <span class="section-title">Leitura do Mercado</span>
       <span id="reportDate" style="font-size:10px;color:var(--text-muted);"></span>
     </div>
     
-    <!-- Top Summary Bar -->
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px;">
-      <div style="background:linear-gradient(135deg,rgba(0,217,126,0.15),rgba(0,217,126,0.05));border:1px solid rgba(0,217,126,0.3);border-radius:8px;padding:12px;text-align:center;">
-        <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Z-Score</div>
-        <div id="repZscore" style="font-size:20px;font-weight:700;color:var(--accent-green);">--</div>
+    <!-- Report Status Cards -->
+    <div class="report-status-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+      <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
+        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Postura</div>
+        <div id="reportPosture" style="font-size:18px;font-weight:700;color:var(--accent-yellow);">AGUARDAR</div>
       </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
-        <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Zona</div>
-        <div id="repZone" style="font-size:14px;font-weight:700;color:var(--text-primary);">--</div>
+      <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
+        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Viés</div>
+        <div id="reportBias" style="font-size:18px;font-weight:700;color:var(--text-secondary);">NEUTRO</div>
       </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
-        <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Postura</div>
-        <div id="reportPosture" style="font-size:14px;font-weight:700;color:var(--accent-yellow);">AGUARDAR</div>
+      <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
+        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Risco</div>
+        <div id="reportRisk" style="font-size:18px;font-weight:700;color:var(--accent-orange);">MÉDIO</div>
       </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
-        <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Viés</div>
-        <div id="reportBias" style="font-size:14px;font-weight:700;color:var(--text-secondary);">NEUTRO</div>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
-        <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;">Risco</div>
-        <div id="reportRisk" style="font-size:14px;font-weight:700;color:var(--accent-orange);">MÉDIO</div>
+      <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
+        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Alocação</div>
+        <div id="reportTimeframe" style="font-size:18px;font-weight:700;color:var(--accent-cyan);">0%</div>
       </div>
     </div>
     
-    <!-- Main Content Grid -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      
-      <!-- Card 1: Z-Score & On-Chain -->
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
-        <div style="font-size:10px;color:var(--accent-cyan);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">📊 Z-Score Composite</div>
-        <div id="reportZScoreText" style="font-size:11px;line-height:1.7;color:var(--text-secondary);">Carregando...</div>
+    <!-- Main Report Content -->
+    <div class="report-grid" style="display:grid;grid-template-columns:2fr 1fr;gap:16px;">
+      <!-- Left: Analysis Text -->
+      <div class="report-analysis" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;">
+        <div style="font-size:11px;color:var(--accent-orange);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">📊 Leitura do Dia</div>
+        <div id="reportMainText" style="font-size:12px;line-height:1.7;color:var(--text-secondary);">
+          Carregando análise...
+        </div>
         
-        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:10px;">
-          <div><span style="color:var(--text-muted);">MVRV</span><br><span id="repMvrv" style="font-weight:600;">--</span></div>
-          <div><span style="color:var(--text-muted);">NUPL</span><br><span id="repNupl" style="font-weight:600;">--</span></div>
-          <div><span style="color:var(--text-muted);">SOPR</span><br><span id="repSopr" style="font-weight:600;">--</span></div>
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--accent-cyan);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">🎯 Ação Recomendada</div>
+          <div id="reportAction" style="font-size:12px;line-height:1.6;color:var(--text-primary);">
+            Carregando...
+          </div>
+        </div>
+        
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--accent-purple);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">⚠️ Riscos da Semana</div>
+          <div id="reportRisks" style="font-size:11px;line-height:1.6;color:var(--text-muted);">
+            Carregando...
+          </div>
         </div>
       </div>
       
-      <!-- Card 2: Flow Analysis -->
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
-        <div style="font-size:10px;color:var(--accent-purple);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">💰 Flow Analysis</div>
-        <div id="reportFlowText" style="font-size:11px;line-height:1.7;color:var(--text-secondary);">Carregando...</div>
+      <!-- Right: Data Summary -->
+      <div class="report-data" style="display:flex;flex-direction:column;gap:12px;">
+        <!-- On-Chain Summary -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">On-Chain</div>
+          <div id="reportOnChain" style="font-size:11px;line-height:1.8;color:var(--text-secondary);">
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Z-Score:</span><span id="repZscore">--</span></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Zona:</span><span id="repZone">--</span></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>MVRV:</span><span id="repMvrv">--</span></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>NUPL:</span><span id="repNupl">--</span></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>SOPR:</span><span id="repSopr">--</span></div>
+          </div>
+        </div>
         
-        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:10px;">
-          <div><span style="color:var(--text-muted);">Netflow 30d</span><br><span id="repNetflow" style="font-weight:600;">--</span></div>
-          <div><span style="color:var(--text-muted);">Reserve</span><br><span id="repReserve" style="font-weight:600;">--</span></div>
+        <!-- Technical Summary -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">Técnico</div>
+          <div id="reportTechnical" style="font-size:11px;line-height:1.8;color:var(--text-secondary);">
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Preço:</span><span id="repPrice">--</span></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>SMA50:</span><span id="repSma50">--</span></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>SMA200:</span><span id="repSma200">--</span></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>RSI:</span><span id="repRsi">--</span></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Tendência:</span><span id="repTrend">--</span></div>
+          </div>
+        </div>
+        
+        <!-- Sentiment Summary -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
+          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">Sentimento</div>
+          <div id="reportSentiment" style="font-size:11px;line-height:1.8;color:var(--text-secondary);">
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Fear & Greed:</span><span id="repFearGreed">--</span></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Funding:</span><span id="repFunding">--</span></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Trade System:</span><span id="repTradeSystem">--</span></div>
+          </div>
         </div>
       </div>
-      
-      <!-- Card 3: Sentiment -->
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
-        <div style="font-size:10px;color:var(--accent-yellow);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">😱 Sentimento</div>
-        <div id="reportSentimentText" style="font-size:11px;line-height:1.7;color:var(--text-secondary);">Carregando...</div>
-        
-        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(2,1fr);gap:8px;font-size:10px;">
-          <div><span style="color:var(--text-muted);">Fear & Greed</span><br><span id="repFearGreed" style="font-weight:600;">--</span></div>
-          <div><span style="color:var(--text-muted);">Funding</span><br><span id="repFunding" style="font-weight:600;">--</span></div>
-        </div>
-      </div>
-      
-      <!-- Card 4: Technical Structure -->
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
-        <div style="font-size:10px;color:var(--accent-lime);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">📈 Estrutura Técnica</div>
-        <div id="reportTechText" style="font-size:11px;line-height:1.7;color:var(--text-secondary);">Carregando...</div>
-        
-        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:10px;">
-          <div><span style="color:var(--text-muted);">Preço</span><br><span id="repPrice" style="font-weight:600;">--</span></div>
-          <div><span style="color:var(--text-muted);">SMA50</span><br><span id="repSma50" style="font-weight:600;">--</span></div>
-          <div><span style="color:var(--text-muted);">SMA200</span><br><span id="repSma200" style="font-weight:600;">--</span></div>
-          <div><span style="color:var(--text-muted);">Trend</span><br><span id="repTrend" style="font-weight:600;">--</span></div>
-        </div>
-      </div>
-      
-      <!-- Card 5: Trade Signals (full width) -->
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;grid-column:span 2;">
-        <div style="font-size:10px;color:var(--accent-green);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">🎯 Sistema de Sinais</div>
-        <div id="reportSignalsText" style="font-size:11px;line-height:1.7;color:var(--text-secondary);">Carregando...</div>
-      </div>
-      
     </div>
     
-    <!-- Action & Risks Row -->
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-top:12px;">
-      
-      <!-- Action Recommendation -->
-      <div style="background:linear-gradient(135deg,rgba(0,217,126,0.1),rgba(20,184,166,0.05));border:1px solid rgba(0,217,126,0.3);border-radius:8px;padding:16px;">
-        <div style="font-size:10px;color:var(--accent-green);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">✅ AÇÃO RECOMENDADA</div>
-        <div id="reportAction" style="font-size:12px;line-height:1.6;color:var(--text-primary);">Carregando...</div>
+    <!-- Historical Context -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;">
+      <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">📈 Contexto Histórico</div>
+      <div id="reportContext" style="font-size:11px;line-height:1.6;color:var(--text-muted);">
+        Carregando contexto...
       </div>
-      
-      <!-- Risks -->
-      <div style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:16px;">
-        <div style="font-size:10px;color:var(--accent-red);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">⚠️ RISCOS</div>
-        <div id="reportRisks" style="font-size:10px;line-height:1.6;color:var(--text-muted);">Carregando...</div>
-      </div>
-      
-    </div>
-    
-    <!-- Hidden elements for compatibility -->
-    <div style="display:none;">
-      <span id="reportTimeframe"></span>
-      <span id="repRsi"></span>
-      <span id="repTradeSystem"></span>
-      <span id="reportContext"></span>
-      <span id="reportMainText"></span>
     </div>
   </div>
 
@@ -975,13 +957,6 @@
   </footer>
 
   <script>
-    // ========== POLYFILLS ==========
-    // Fix for browsers that don't support console.group
-    if (typeof console.group !== 'function') {
-      console.group = function(label) { console.log('▼ ' + label); };
-      console.groupEnd = function() { console.log('▲ ---'); };
-    }
-    
     // ========== STATE ==========
     const state = { prices: [], metricHistory: {}, zScoreHistory: {}, zScores: {}, rawValues: {}, composite: null, compositeHistory: [], apiStatus: {}, endpointsLoaded: 0, totalEndpoints: 10, errors: [] };
     
@@ -993,7 +968,7 @@
       // Custom Cloudflare Worker proxy (no rate limits!)
       CORS_PROXY: 'https://bgeometrics-proxy.roberty-rockeiro.workers.dev/?url=',
       USE_CORS_PROXY: true,
-      ROLLING_WINDOW: 365,  // 365 days rolling window
+      ROLLING_WINDOW: 365, 
       MIN_DATA_POINTS: 30
     };
 
@@ -1275,7 +1250,7 @@
         calculateAllZScores();
         calculateCompositeHistory();
         _coreUpdateUI();
-        setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSentimentData(); }, 150);
+        setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSmartMoneyData(); fetchSentimentData(); }, 150);
         setTimeout(() => generateReport(), 300);
         return;
       }
@@ -1322,7 +1297,7 @@
       calculateAllZScores();
       calculateCompositeHistory();
       _coreUpdateUI();
-      setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSentimentData(); }, 150);
+      setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSmartMoneyData(); fetchSentimentData(); }, 150);
       
       // Call generateReport after on-chain data is loaded
       // This ensures the report has Z-Score data even if trading data loads later
@@ -1347,98 +1322,6 @@
       
       if (std === 0 || !isFinite(std)) return 0;
       return Math.max(-5, Math.min(5, (values[index] - mean) / std));
-    }
-
-    // Calculate Z-score with a specific window size (for comparison display)
-    function calculateZScoreWithWindow(values, index, windowSize) {
-      // windowSize = null means cumulative (ALL history)
-      const actualWindow = windowSize || (index + 1);
-      const start = Math.max(0, index - actualWindow + 1);
-      const window = values.slice(start, index + 1);
-      if (window.length < CONFIG.MIN_DATA_POINTS) return null;
-      
-      const nums = window.filter(v => typeof v === 'number' && !isNaN(v) && isFinite(v));
-      if (nums.length < CONFIG.MIN_DATA_POINTS) return null;
-      
-      const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
-      const variance = nums.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / nums.length;
-      const std = Math.sqrt(variance);
-      
-      if (std === 0 || !isFinite(std)) return 0;
-      return Math.max(-5, Math.min(5, (values[index] - mean) / std));
-    }
-
-    // Update Z-Score comparison display (1Y, 4Y, ALL)
-    function updateZScoreComparison() {
-      // Calculate Z-scores using different HISTORICAL WINDOWS (by date, not array position)
-      // 1Y: only last 365 days of data for mean/std
-      // 4Y: only last 4 years of data for mean/std
-      // ALL: entire history for mean/std
-      const windowDays = { '1Y': 365, '4Y': 1460, 'ALL': null };
-      const composites = { '1Y': [], '4Y': [], 'ALL': [] };
-      
-      // Get cutoff dates
-      const today = new Date();
-      const cutoffs = {
-        '1Y': new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        '4Y': new Date(today.getTime() - 1460 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        'ALL': '1900-01-01'
-      };
-      
-      console.log('[Z-Compare] Cutoff dates:', cutoffs);
-      
-      for (const [key, metric] of Object.entries(METRICS)) {
-        const history = state.metricHistory[key] || [];
-        if (history.length < CONFIG.MIN_DATA_POINTS) continue;
-        
-        // Get latest value (what we're scoring)
-        const latestValue = history[history.length - 1]?.value;
-        if (latestValue === undefined || latestValue === null) continue;
-        
-        for (const [label, cutoffDate] of Object.entries(cutoffs)) {
-          // Filter history by date to get only the relevant window
-          const windowData = history.filter(d => d.date >= cutoffDate);
-          if (windowData.length < CONFIG.MIN_DATA_POINTS) continue;
-          
-          // Calculate mean and std from the filtered window
-          const values = windowData.map(d => d.value).filter(v => typeof v === 'number' && !isNaN(v) && isFinite(v));
-          if (values.length < CONFIG.MIN_DATA_POINTS) continue;
-          
-          const mean = values.reduce((a, b) => a + b, 0) / values.length;
-          const variance = values.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / values.length;
-          const std = Math.sqrt(variance);
-          
-          if (std === 0 || !isFinite(std)) continue;
-          
-          // Z-score of latest value vs this window's distribution
-          const z = Math.max(-5, Math.min(5, (latestValue - mean) / std));
-          composites[label].push(z);
-        }
-      }
-      
-      console.log('[Z-Compare] Metrics per window:', {
-        '1Y': composites['1Y'].length,
-        '4Y': composites['4Y'].length,
-        'ALL': composites['ALL'].length
-      });
-      
-      // Calculate composite for each window and update display
-      for (const [label, zScores] of Object.entries(composites)) {
-        const elId = label === '1Y' ? 'zCompare1Y' : label === '4Y' ? 'zCompare4Y' : 'zCompareAll';
-        const el = document.getElementById(elId);
-        if (!el) continue;
-        
-        if (zScores.length > 0) {
-          const composite = zScores.reduce((a, b) => a + b, 0) / zScores.length;
-          const zone = getZone(composite);
-          el.textContent = composite.toFixed(2);
-          el.style.color = zone.color;
-          console.log(`[Z-Compare] ${label}: ${composite.toFixed(2)} (${zone.name}) from ${zScores.length} metrics`);
-        } else {
-          el.textContent = '--';
-          el.style.color = 'var(--text-muted)';
-        }
-      }
     }
 
     function calculateAllZScores() {
@@ -1615,9 +1498,6 @@
         badge.style.color = zone.color; 
       }
       
-      // Calculate and display Z-scores for different windows (1Y, 4Y, ALL)
-      // Z-Score comparison removed - keeping single rolling 365d
-      
       // Update price card
       if (state.prices.length > 0) {
         const latest = state.prices[state.prices.length - 1];
@@ -1698,10 +1578,6 @@
       
       // Render charts and cards
       renderGauge();
-      updateRiskGauge();
-      updateConsensusBar();
-      updateCycleTimeline();
-      updateSignalStrength();
       renderMetricCards();
       renderPriceChart();
       renderOscillatorChart();
@@ -1758,173 +1634,6 @@
       ctx.fillStyle = '#ffffff'; 
       ctx.arc(centerX, centerY, 6, 0, 2 * Math.PI); 
       ctx.fill();
-    }
-
-    // ========== NEW: RISK GAUGE (0-1) ==========
-    function updateRiskGauge() {
-      const z = state.composite;
-      if (z === null || isNaN(z)) return;
-      
-      // Convert Z-Score (-3 to +3) to Risk (0 to 1)
-      // -3 = 0 (max accumulation), +3 = 1 (max distribution)
-      const risk = Math.max(0, Math.min(1, (z + 3) / 6));
-      
-      // Update needle rotation (-90deg = 0, +90deg = 1)
-      // Needle points up at center, rotates from -90 (left) to +90 (right)
-      const angle = -90 + (risk * 180);
-      const needle = document.getElementById('riskGaugeNeedle');
-      if (needle) needle.style.transform = `rotate(${angle}deg)`;
-      
-      // Update value
-      const valueEl = document.getElementById('riskGaugeValue');
-      if (valueEl) {
-        valueEl.textContent = risk.toFixed(2);
-      }
-      
-      // Update label and colors
-      const labelEl = document.getElementById('riskGaugeLabel');
-      if (labelEl) {
-        let label, color;
-        if (risk <= 0.20) { label = 'Accumulation'; color = '#00d97e'; }
-        else if (risk <= 0.35) { label = 'Opportunity'; color = '#84cc16'; }
-        else if (risk <= 0.50) { label = 'Neutral'; color = '#eab308'; }
-        else if (risk <= 0.70) { label = 'Elevated Risk'; color = '#f97316'; }
-        else { label = 'Distribution'; color = '#ef4444'; }
-        labelEl.textContent = label;
-        labelEl.style.color = color;
-        if (valueEl) valueEl.style.color = color;
-      }
-    }
-
-    // ========== NEW: CONSENSUS BAR ==========
-    function updateConsensusBar() {
-      const zScores = state.zScores;
-      let bullish = 0, bearish = 0, neutral = 0;
-      
-      Object.values(zScores).forEach(z => {
-        if (z === null || isNaN(z)) return;
-        if (z <= -0.5) bullish++;
-        else if (z >= 0.5) bearish++;
-        else neutral++;
-      });
-      
-      const total = bullish + bearish + neutral;
-      if (total === 0) return;
-      
-      const bullishPct = (bullish / total) * 100;
-      
-      const fill = document.getElementById('consensusBarFill');
-      if (fill) fill.style.width = bullishPct + '%';
-      
-      const bullEl = document.getElementById('consensusBullish');
-      if (bullEl) bullEl.textContent = `${bullish} Bullish`;
-      
-      const neutEl = document.getElementById('consensusNeutral');
-      if (neutEl) neutEl.textContent = `${neutral} Neutral`;
-      
-      const bearEl = document.getElementById('consensusBearish');
-      if (bearEl) bearEl.textContent = `${bearish} Bearish`;
-    }
-
-    // ========== NEW: CYCLE TIMELINE ==========
-    function updateCycleTimeline() {
-      const z = state.composite;
-      if (z === null || isNaN(z)) return;
-      
-      // Map Z-Score to cycle position (0-100%)
-      // -3 = 0% (Accumulation), +3 = 100% (Bear ending)
-      const position = Math.max(0, Math.min(100, ((z + 3) / 6) * 100));
-      
-      const marker = document.getElementById('cycleTimelineMarker');
-      if (marker) marker.style.left = position + '%';
-      
-      const currentEl = document.getElementById('cycleTimelineCurrent');
-      if (currentEl) {
-        let phase, color;
-        if (z <= -1.5) { phase = '🟢 Accumulation Zone'; color = '#00d97e'; }
-        else if (z <= -0.5) { phase = '🟢 Early Bull'; color = '#84cc16'; }
-        else if (z <= 0.5) { phase = '🟡 Mid Cycle'; color = '#eab308'; }
-        else if (z <= 1.5) { phase = '🟠 Late Bull / Distribution'; color = '#f97316'; }
-        else { phase = '🔴 Overheated / Bear'; color = '#ef4444'; }
-        currentEl.textContent = phase;
-        currentEl.style.color = color;
-      }
-    }
-
-    // ========== NEW: SIGNAL STRENGTH CARDS ==========
-    function updateSignalStrength() {
-      const z = state.composite;
-      const zScores = state.zScores;
-      
-      // Helper to create check marks
-      const makeChecks = (strength, bullish = true) => {
-        // strength: 0-3
-        const colorClass = bullish ? 'check-green' : 'check-red';
-        let html = '';
-        for (let i = 0; i < 3; i++) {
-          if (i < strength) {
-            html += `<span class="${colorClass}">✓</span>`;
-          } else {
-            html += `<span class="check-gray">✓</span>`;
-          }
-        }
-        return html;
-      };
-      
-      // On-Chain strength (based on composite Z)
-      const onChainEl = document.getElementById('strengthOnChain');
-      if (onChainEl && z !== null) {
-        let strength = 0, bullish = true;
-        if (z <= -2) { strength = 3; bullish = true; }
-        else if (z <= -1) { strength = 2; bullish = true; }
-        else if (z <= 0) { strength = 1; bullish = true; }
-        else if (z >= 2) { strength = 3; bullish = false; }
-        else if (z >= 1) { strength = 2; bullish = false; }
-        else if (z > 0) { strength = 1; bullish = false; }
-        onChainEl.innerHTML = makeChecks(strength, bullish);
-      }
-      
-      // Flow strength (from DOM values)
-      const flowEl = document.getElementById('strengthFlow');
-      if (flowEl) {
-        const netflowText = document.getElementById('flowWhaleRatio')?.textContent || '--';
-        const hasData = netflowText !== '--';
-        const isOutflow = hasData && netflowText.includes('-');
-        // Outflow = bullish (coins leaving exchanges)
-        const strength = hasData ? (isOutflow ? 2 : 1) : 0;
-        flowEl.innerHTML = makeChecks(strength, isOutflow);
-      }
-      
-      // Sentiment strength (Fear & Greed)
-      const sentimentEl = document.getElementById('strengthSentiment');
-      if (sentimentEl) {
-        const fg = state.rawValues?.fearGreed || 50;
-        let strength = 0, bullish = true;
-        if (fg <= 25) { strength = 3; bullish = true; } // Extreme Fear = bullish
-        else if (fg <= 40) { strength = 2; bullish = true; }
-        else if (fg >= 75) { strength = 3; bullish = false; } // Extreme Greed = bearish
-        else if (fg >= 60) { strength = 2; bullish = false; }
-        else { strength = 1; bullish = fg < 50; }
-        sentimentEl.innerHTML = makeChecks(strength, bullish);
-      }
-      
-      // Technical strength (price vs MAs)
-      const techEl = document.getElementById('strengthTechnical');
-      if (techEl && tradingState.technicalData?.length > 0) {
-        const lastTech = tradingState.technicalData[tradingState.technicalData.length - 1];
-        const price = parseFloat(lastTech.price) || 0;
-        const sma50 = parseFloat(lastTech.sma50) || 0;
-        const sma200 = parseFloat(lastTech.sma200) || 0;
-        
-        let strength = 0, bullish = true;
-        if (price > sma50 && sma50 > sma200) { strength = 3; bullish = true; } // Golden cross + above
-        else if (price > sma50) { strength = 2; bullish = true; }
-        else if (price > sma200) { strength = 1; bullish = true; }
-        else if (price < sma50 && sma50 < sma200) { strength = 3; bullish = false; } // Death cross + below
-        else if (price < sma50) { strength = 2; bullish = false; }
-        else { strength = 1; bullish = false; }
-        techEl.innerHTML = makeChecks(strength, bullish);
-      }
     }
 
     // ========== METRIC CARDS ==========
@@ -1995,35 +1704,25 @@
 
     function renderPriceChart() {
       const ctx = document.getElementById('priceChart')?.getContext('2d');
-      if (!ctx || state.prices.length === 0 || state.compositeHistory.length === 0) return;
+      if (!ctx || state.prices.length === 0) return;
       
-      // Create maps for both datasets
-      const priceMap = new Map(state.prices.map(d => [d.date, d.value]));
-      const zMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
+      // Use ALL available data (not just 365 days)
+      const priceData = state.prices;
+      const compositeMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
       
-      // Find dates that exist in BOTH datasets (intersection) - this ensures alignment
-      const commonDates = state.compositeHistory
-        .filter(d => priceMap.has(d.date))
-        .map(d => d.date)
-        .sort((a, b) => new Date(a) - new Date(b));
-      
-      // Sample data for performance if too many points (keep ~1500 points max)
+      // Sample data for performance if too many points (keep ~1000 points max)
       const maxPoints = 1500;
-      const step = commonDates.length > maxPoints ? Math.ceil(commonDates.length / maxPoints) : 1;
-      const sampledDates = step > 1 
-        ? commonDates.filter((_, i) => i % step === 0 || i === commonDates.length - 1) 
-        : commonDates;
+      const step = priceData.length > maxPoints ? Math.ceil(priceData.length / maxPoints) : 1;
+      const sampledData = step > 1 ? priceData.filter((_, i) => i % step === 0 || i === priceData.length - 1) : priceData;
       
-      const labels = sampledDates;
-      const priceValues = sampledDates.map(d => priceMap.get(d));
-      const zValues = sampledDates.map(d => zMap.get(d));
+      const labels = sampledData.map(p => p.date);
+      const priceValues = sampledData.map(p => p.value);
+      const zValues = sampledData.map(p => compositeMap.get(p.date) || null);
       
       // Calculate years of data
-      const firstDate = new Date(sampledDates[0]);
-      const lastDate = new Date(sampledDates[sampledDates.length - 1]);
+      const firstDate = new Date(sampledData[0]?.date);
+      const lastDate = new Date(sampledData[sampledData.length - 1]?.date);
       const yearsOfData = ((lastDate - firstDate) / (365.25 * 24 * 60 * 60 * 1000)).toFixed(1);
-      
-      console.log(`[PriceChart] Aligned data: ${sampledDates.length} points, ${yearsOfData} years (${sampledDates[0]} to ${sampledDates[sampledDates.length-1]})`);
       
       if (priceChart) priceChart.destroy();
       
@@ -2059,18 +1758,6 @@
           interaction: { intersect: false, mode: 'index' },
           plugins: { 
             legend: { display: false },
-            zoom: {
-              pan: { enabled: true, mode: 'xy', threshold: 5 },
-              zoom: {
-                wheel: { enabled: true, speed: 0.1 },
-                pinch: { enabled: true },
-                mode: 'xy'
-              },
-              limits: {
-                x: { min: -1e15, max: 1e15 },
-                y: { min: -1e10, max: 1e10 }
-              }
-            },
             tooltip: {
               callbacks: {
                 label: ctx => {
@@ -2561,51 +2248,17 @@
         renderSignalChart(signals);
       }
     }
-    
-    function resetSignalZoom() {
-      if (_signalChart) {
-        _signalChart.resetZoom();
-      }
-    }
 
     function renderSignalChart(signals) {
       const ctx = document.getElementById('signalChart')?.getContext('2d');
       if (!ctx) return;
 
-      // Create maps for both datasets
-      const priceMap = new Map(state.prices.map(d => [d.date, d.value]));
-      const zMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
-      
-      // Find dates that exist in BOTH datasets (intersection)
-      const commonDates = state.compositeHistory
-        .filter(d => priceMap.has(d.date))
-        .map(d => d.date)
-        .sort((a, b) => new Date(a) - new Date(b));
-      
-      // Apply range filter
-      const filteredDates = _sigRangeDays > 0 ? commonDates.slice(-_sigRangeDays) : commonDates;
-      
-      // Build aligned data arrays
-      const labels = filteredDates;
-      const priceData = filteredDates.map(d => priceMap.get(d));
-      const zData = filteredDates.map(d => zMap.get(d));
-      
-      // Debug: verify alignment
-      console.log(`[SignalChart] Aligned data: ${labels.length} points (price range: ${state.prices.length}, z range: ${state.compositeHistory.length})`);
-      console.log(`[SignalChart] Date range: ${labels[0]} to ${labels[labels.length-1]}`);
-      
-      // Verify correlation at a few points
-      if (labels.length > 100) {
-        const mid = Math.floor(labels.length / 2);
-        console.log(`[SignalChart] Sample alignment check:`);
-        console.log(`  Start: ${labels[0]} - Price: $${Math.round(priceData[0])}, Z: ${zData[0]?.toFixed(2)}`);
-        console.log(`  Mid: ${labels[mid]} - Price: $${Math.round(priceData[mid])}, Z: ${zData[mid]?.toFixed(2)}`);
-        console.log(`  End: ${labels[labels.length-1]} - Price: $${Math.round(priceData[priceData.length-1])}, Z: ${zData[zData.length-1]?.toFixed(2)}`);
-      }
-      
-      // Create Z-Score lookup map for segment coloring
-      const cMap = new Map(filteredDates.map((d, i) => [d, zData[i]]));
-
+      // Slice to selected range
+      const allPrices = _sigRangeDays > 0 ? state.prices.slice(-_sigRangeDays) : state.prices;
+      const cMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
+      const labels = allPrices.map(p => p.date);
+      const priceData = allPrices.map(p => p.value);
+      const zData = labels.map(d => cMap.get(d) ?? null);
 
       // Build background zone boxes (colored bands on BTC price area)
       const annotations = {};
@@ -2615,8 +2268,29 @@
       const sellSignals = signals.filter(s => s.type === 'SELL');
       const pending = signals.find(s => s.type === 'PENDING');
 
-      // PENDING signal - no visual indicator, signals appear automatically when confirmed
-      // (removed trigger line for cleaner look)
+      // PENDING: horizontal trigger line only
+      if (pending) {
+        annotations['pending_line'] = {
+          type: 'line',
+          yMin: pending.needed, yMax: pending.needed, yScaleID: 'yPrice',
+          borderColor: 'rgba(234,179,8,0.7)', borderWidth: 2, borderDash: [8, 4],
+          label: {
+            display: true,
+            content: '▶ BUY trigger $' + Math.round(pending.needed/1000) + 'k  |  now $' + Math.round(pending.price/1000) + 'k  |  need +' + Math.round((pending.needed/pending.price - 1)*100) + '%',
+            position: 'start', color: '#eab308',
+            font: { size: 10, weight: 'bold', family: "'JetBrains Mono', monospace" },
+            backgroundColor: 'rgba(10,10,11,0.9)',
+            padding: { top: 5, bottom: 5, left: 10, right: 10 },
+            borderRadius: 4
+          }
+        };
+        // No floating badge - removed for cleaner look
+        const watchBadge = document.getElementById('watchingBadge');
+        if (watchBadge) watchBadge.style.display = 'none';
+      } else {
+        const watchBadge = document.getElementById('watchingBadge');
+        if (watchBadge) watchBadge.style.display = 'none';
+      }
 
       // Get the date range for filtering signals
       const startDate = labels[0];
@@ -2683,14 +2357,14 @@
               }
             },
             {
-              // Z-Composite line on right axis - more visible like professor's style
+              // Z-Composite line on right axis - thin and subtle
               label: 'Z-Composite',
               data: zData,
               yAxisID: 'yZ',
-              borderColor: 'rgba(147,112,219,0.8)',
-              borderWidth: 1.5,
+              borderColor: 'rgba(168,85,247,0.35)',
+              borderWidth: 1,
               pointRadius: 0,
-              tension: 0.2,
+              tension: 0.3,
               fill: false
             }
           ]
@@ -2703,22 +2377,6 @@
           plugins: {
             legend: { display: false },
             annotation: { annotations },
-            zoom: {
-              pan: {
-                enabled: true,
-                mode: 'xy',
-                threshold: 5
-              },
-              zoom: {
-                wheel: { enabled: true, speed: 0.1 },
-                pinch: { enabled: true },
-                mode: 'xy'
-              },
-              limits: {
-                x: { min: -1e15, max: 1e15 },
-                y: { min: -1e10, max: 1e10 }
-              }
-            },
             tooltip: {
               backgroundColor: 'rgba(10,10,11,0.95)',
               borderColor: 'rgba(255,255,255,0.1)',
@@ -2787,62 +2445,35 @@
               max: 3.5,
               grid: { display: false },
               ticks: {
-                color: 'rgba(147,112,219,0.7)',
-                font: { size: 8, family: "'JetBrains Mono', monospace" },
-                stepSize: 0.5,
-                callback: v => {
-                  if (v === 1.5) return '+1.5';
-                  if (v === -1.5) return '-1.5';
-                  if (v === 0) return '0';
-                  if (v === 3) return '+3';
-                  if (v === -3) return '-3';
-                  return '';
-                }
+                color: 'rgba(168,85,247,0.5)',
+                font: { size: 8 },
+                stepSize: 1,
+                callback: v => v === 0 ? '0' : (v > 0 ? '+' + v : v)
               }
             }
           }
         },
         plugins: [{
-          // Draw zone threshold lines and labels - clean professor style
+          // Draw zone threshold lines
           id: 'signalZoneLines',
           beforeDraw: chart => {
             const { ctx: c, chartArea, scales } = chart;
             if (!scales.yZ) return;
             c.save();
-            
-            // Draw threshold lines only (no background bands)
+            // ACC and HOT thresholds on Z axis
             [
-              { v: -1.5, color: '#00d97e', dash: [4, 4] },
-              { v: 0, color: '#666', dash: [2, 4] },
-              { v: 1.5, color: '#ef4444', dash: [4, 4] }
-            ].forEach(({v, color, dash}) => {
+              { v: -1.5, color: '#00d97e', label: 'ACC' },
+              { v:  1.5, color: '#ef4444', label: 'HOT' }
+            ].forEach(({v, color, label}) => {
               const y = scales.yZ.getPixelForValue(v);
               c.beginPath();
               c.strokeStyle = color + '40';
               c.lineWidth = 1;
-              c.setLineDash(dash);
+              c.setLineDash([4, 4]);
               c.moveTo(chartArea.left, y);
               c.lineTo(chartArea.right, y);
               c.stroke();
             });
-            
-            // Draw zone labels on right edge (smaller, subtle)
-            c.font = '7px JetBrains Mono';
-            c.textAlign = 'right';
-            const labelX = chartArea.right - 2;
-            
-            [
-              { v: -2.2, label: 'ACCUMULATE', color: '#00d97e' },
-              { v: -1.0, label: 'UNDERVALUED', color: '#84cc16' },
-              { v: 0, label: 'FAIR VALUE', color: '#eab308' },
-              { v: 1.0, label: 'ELEVATED', color: '#f97316' },
-              { v: 2.2, label: 'OVERHEATED', color: '#ef4444' }
-            ].forEach(({v, label, color}) => {
-              const y = scales.yZ.getPixelForValue(v);
-              c.fillStyle = color + '80';
-              c.fillText(label, labelX, y + 3);
-            });
-            
             c.restore();
           }
         }]
@@ -2941,15 +2572,11 @@
       console.log('Inflow result:', inR.status, inR.value?.success);
       console.log('Outflow result:', outR.status, outR.value?.success);
       console.log('Netflow result:', netflowR.status, netflowR.value?.success);
-      
-      // Track how many data sources loaded
-      let loadedCount = 0;
 
       // ETF Flow
       if (etfR.status === 'fulfilled' && etfR.value?.success) {
         const data = normalizeBGeometricsData(etfR.value.data, 'etfNetFlowBtc').slice(-90);
         if (data.length) {
-          loadedCount++;
           const latest = data[data.length-1].value;
           const sum7d  = data.slice(-7).reduce((a,d)=>a+(d.value||0),0);
           document.getElementById('flowEtfLatest').textContent = (latest>=0?'+':'') + Math.round(latest).toLocaleString() + ' BTC';
@@ -2959,20 +2586,12 @@
           document.getElementById('flowEtf7dSub').textContent = 'BTC net · 7 days';
           renderFlowLineChart('flowEtfChart', data, 'ETF Flow', '#3b82f6', true);
         }
-      } else {
-        // Show "unavailable" state for ETF
-        document.getElementById('flowEtfLatest').textContent = 'N/A';
-        document.getElementById('flowEtfLatest').style.color = 'var(--text-muted)';
-        document.getElementById('flowEtf7d').textContent = 'N/A';
-        document.getElementById('flowEtf7d').style.color = 'var(--text-muted)';
-        document.getElementById('flowEtf7dSub').textContent = 'API unavailable';
       }
 
       // Exchange Reserve
       if (resR.status === 'fulfilled' && resR.value?.success) {
         const data = normalizeBGeometricsData(resR.value.data, 'exchangeReserveBtc').slice(-180);
         if (data.length) {
-          loadedCount++;
           const latest = data[data.length-1].value;
           const prev7  = data.length > 7 ? data[data.length-8].value : latest;
           const delta  = latest - prev7;
@@ -2982,22 +2601,12 @@
           document.getElementById('flowExReserveSub').textContent = delta < 0 ? '▼ coins leaving exchanges' : '▲ coins entering exchanges';
           renderFlowLineChart('flowReserveChart', data, 'Reserve', '#a855f7', false);
         }
-      } else {
-        // Show "unavailable" state for Reserve
-        document.getElementById('flowReserveLatest').textContent = 'N/A';
-        document.getElementById('flowReserveLatest').style.color = 'var(--text-muted)';
-        document.getElementById('flowExReserve').textContent = 'N/A';
-        document.getElementById('flowExReserve').style.color = 'var(--text-muted)';
-        document.getElementById('flowExReserveSub').textContent = 'API unavailable';
       }
 
       // Inflow / Outflow
       const inData  = (inR.status  === 'fulfilled' && inR.value?.success)  ? normalizeBGeometricsData(inR.value.data,  'exchangeInflowBtc').slice(-90)  : [];
       const outData = (outR.status === 'fulfilled' && outR.value?.success) ? normalizeBGeometricsData(outR.value.data, 'exchangeOutflowBtc').slice(-90) : [];
-      if (inData.length || outData.length) {
-        loadedCount++;
-        renderFlowInOutChart(inData, outData);
-      }
+      if (inData.length || outData.length) renderFlowInOutChart(inData, outData);
 
       // Net Pressure
       if (inData.length && outData.length) {
@@ -3023,21 +2632,12 @@
           fEl.style.cssText='background:var(--accent-yellow);width:50%';
           dEl.textContent='Exchange flows are balanced. No strong directional signal from flow data.';
         }
-      } else {
-        // Show "unavailable" state for pressure
-        const pEl = document.getElementById('flowPressureValue');
-        const lEl = document.getElementById('flowPressureLabel');
-        const dEl = document.getElementById('flowPressureDesc');
-        if (pEl) { pEl.textContent = 'N/A'; pEl.style.color = 'var(--text-muted)'; }
-        if (lEl) { lEl.textContent = 'DATA UNAVAILABLE'; lEl.style.color = 'var(--text-muted)'; }
-        if (dEl) { dEl.textContent = 'Exchange flow APIs did not return data. This may be temporary.'; }
       }
 
       // Netflow (replaces Whale Ratio - shows net exchange flow direction)
       if (netflowR.status === 'fulfilled' && netflowR.value?.success) {
         const data = normalizeBGeometricsData(netflowR.value.data, 'exchangeNetflowBtc').slice(-30);
         if (data.length) {
-          loadedCount++;
           const sum30d = data.reduce((a,d) => a + (d.value || 0), 0);
           const avgDaily = sum30d / data.length;
           const label = avgDaily < -500 ? 'Strong Outflow' : avgDaily < 0 ? 'Net Outflow' : avgDaily < 500 ? 'Net Inflow' : 'Strong Inflow';
@@ -3046,59 +2646,343 @@
           document.getElementById('flowWhaleRatio').style.color = color;
           document.getElementById('flowWhaleRatioSub').textContent = label + ' (30d avg)';
         }
-      } else {
-        // Show "unavailable" state for netflow
-        document.getElementById('flowWhaleRatio').textContent = 'N/A';
-        document.getElementById('flowWhaleRatio').style.color = 'var(--text-muted)';
-        document.getElementById('flowWhaleRatioSub').textContent = 'API unavailable';
       }
+    }
+
+    // ========== SMART MONEY TRACKER SECTION ==========
+    let _smLthChart = null;
+    
+    async function fetchSmartMoneyData() {
+      console.log('📊 Fetching Smart Money data...');
       
-      console.log(`📊 Flow Analysis: ${loadedCount}/5 data sources loaded`);
+      // Store results for checklist evaluation
+      const smData = {
+        lth30d: null,
+        sth30d: null,
+        sthLthRatio: null,
+        hodl1y: null,
+        lthSopr: null,
+        reserveRisk: null,
+        lthHistory: []
+      };
       
-      // Update report Flow section after data loads
-      updateReportFlowSection();
+      // 1. LTH Net Position Change 30d
+      try {
+        const data = await fetchBGeometrics('/v1/lth-net-position-change-30d-btc/90', 'LTH Position 30d');
+        if (data && data.length) {
+          smData.lthHistory = data.map(d => ({ date: d.day || d.date, value: d.value || d.lthNetPositionChange30dBtc || 0 }));
+          const latest = data[data.length - 1];
+          smData.lth30d = latest.value || latest.lthNetPositionChange30dBtc || 0;
+        }
+      } catch(e) { console.warn('LTH 30d fetch error:', e); }
       
-      // Update signal strength cards
-      updateSignalStrength();
+      // 2. STH Net Position Change 30d
+      try {
+        const data = await fetchBGeometrics('/v1/sth-net-position-change-30d-btc/1', 'STH Position 30d');
+        if (data && data.length) {
+          const latest = data[data.length - 1];
+          smData.sth30d = latest.value || latest.sthNetPositionChange30dBtc || 0;
+        }
+      } catch(e) { console.warn('STH 30d fetch error:', e); }
+      
+      // 3. STH/LTH Ratio
+      try {
+        const data = await fetchBGeometrics('/v1/sth-lth-ratio/1', 'STH/LTH Ratio');
+        if (data && data.length) {
+          const latest = data[data.length - 1];
+          smData.sthLthRatio = latest.value || latest.sthLthRatio || latest.ratio || 0;
+        }
+      } catch(e) { console.warn('STH/LTH Ratio fetch error:', e); }
+      
+      // 4. HODL 1 Year+
+      try {
+        const data = await fetchBGeometrics('/v1/hodl-one-year/1', 'HODL 1Y+');
+        if (data && data.length) {
+          const latest = data[data.length - 1];
+          smData.hodl1y = (latest.value || latest.hodlOneYear || latest.oneYearHodl || 0) * 100; // Convert to %
+        }
+      } catch(e) { console.warn('HODL 1Y fetch error:', e); }
+      
+      // 5. LTH SOPR
+      try {
+        const data = await fetchBGeometrics('/v1/lth-sopr/1', 'LTH SOPR');
+        if (data && data.length) {
+          const latest = data[data.length - 1];
+          smData.lthSopr = latest.value || latest.lthSopr || latest.sopr || 0;
+        }
+      } catch(e) { console.warn('LTH SOPR fetch error:', e); }
+      
+      // 6. Reserve Risk
+      try {
+        const data = await fetchBGeometrics('/v1/reserve-risk/1', 'Reserve Risk');
+        if (data && data.length) {
+          const latest = data[data.length - 1];
+          smData.reserveRisk = latest.value || latest.reserveRisk || 0;
+        }
+      } catch(e) { console.warn('Reserve Risk fetch error:', e); }
+      
+      // Render data to UI
+      renderSmartMoneyUI(smData);
     }
     
-    // Update just the Flow section of the report (called after Flow data loads)
-    function updateReportFlowSection() {
-      const netflowEl = document.getElementById('flowWhaleRatio');
-      const netflowText = netflowEl ? netflowEl.textContent : '--';
-      const reserveEl = document.getElementById('flowReserveLatest');
-      const reserveText = reserveEl ? reserveEl.textContent : '--';
+    function renderSmartMoneyUI(smData) {
+      // --- LTH 30d ---
+      const lth30dEl = document.getElementById('smLth30d');
+      const lth30dStatusEl = document.getElementById('smLth30dStatus');
+      if (smData.lth30d !== null) {
+        const val = smData.lth30d;
+        const formatted = (val >= 0 ? '+' : '') + (val / 1000).toFixed(1) + 'K';
+        lth30dEl.textContent = formatted;
+        const color = val > 0 ? 'var(--accent-green)' : val < -10000 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = val > 0 ? 'ACCUMULATING' : val < -10000 ? 'DISTRIBUTING' : 'NEUTRAL';
+        lth30dEl.style.color = color;
+        lth30dStatusEl.textContent = status;
+        lth30dStatusEl.style.color = color;
+      }
       
-      const isOutflow = netflowText.includes('-') && netflowText !== '--';
-      const isInflow = netflowText.includes('+') && !netflowText.includes('-');
-      const hasFlowData = netflowText !== '--' && netflowText !== '';
+      // --- STH 30d ---
+      const sth30dEl = document.getElementById('smSth30d');
+      const sth30dStatusEl = document.getElementById('smSth30dStatus');
+      if (smData.sth30d !== null) {
+        const val = smData.sth30d;
+        const formatted = (val >= 0 ? '+' : '') + (val / 1000).toFixed(1) + 'K';
+        sth30dEl.textContent = formatted;
+        // STH selling = bullish for LTH accumulation thesis
+        const color = val < 0 ? 'var(--accent-green)' : val > 10000 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = val < 0 ? 'SELLING' : val > 10000 ? 'BUYING' : 'NEUTRAL';
+        sth30dEl.style.color = color;
+        sth30dStatusEl.textContent = status;
+        sth30dStatusEl.style.color = color;
+      }
       
-      let flowText = '';
-      if (!hasFlowData) {
-        flowText = `<strong style="color:var(--text-muted)">Dados de fluxo não disponíveis.</strong> API de Exchange Netflow não retornou dados.`;
-      } else if (isOutflow) {
-        flowText = `<strong style="color:var(--accent-green)">Saída líquida de BTC das exchanges.</strong> Investidores movendo para cold storage = sinal de acumulação. Oferta nas exchanges diminuindo pode criar pressão de alta.`;
-      } else if (isInflow) {
-        flowText = `<strong style="color:var(--accent-red)">Entrada líquida de BTC nas exchanges.</strong> Potencial pressão vendedora. Investidores preparando para vender = sinal de distribuição.`;
+      // --- STH/LTH Ratio ---
+      const ratioEl = document.getElementById('smRatio');
+      const ratioStatusEl = document.getElementById('smRatioStatus');
+      if (smData.sthLthRatio !== null) {
+        const val = smData.sthLthRatio;
+        ratioEl.textContent = val.toFixed(3);
+        const color = val < 0.4 ? 'var(--accent-green)' : val > 0.6 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = val < 0.4 ? 'BOTTOM ZONE' : val > 0.6 ? 'TOP ZONE' : 'NEUTRAL';
+        ratioEl.style.color = color;
+        ratioStatusEl.textContent = status;
+        ratioStatusEl.style.color = color;
+      }
+      
+      // --- HODL 1Y+ ---
+      const hodl1yEl = document.getElementById('smHodl1y');
+      const hodl1yStatusEl = document.getElementById('smHodl1yStatus');
+      if (smData.hodl1y !== null) {
+        const val = smData.hodl1y;
+        hodl1yEl.textContent = val.toFixed(1) + '%';
+        const color = val > 65 ? 'var(--accent-green)' : val < 55 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = val > 65 ? 'HIGH CONVICTION' : val < 55 ? 'DISTRIBUTION' : 'NEUTRAL';
+        hodl1yEl.style.color = color;
+        hodl1yStatusEl.textContent = status;
+        hodl1yStatusEl.style.color = color;
+      }
+      
+      // --- LTH SOPR ---
+      const lthSoprEl = document.getElementById('smLthSopr');
+      const lthSoprStatusEl = document.getElementById('smLthSoprStatus');
+      if (smData.lthSopr !== null) {
+        const val = smData.lthSopr;
+        lthSoprEl.textContent = val.toFixed(3);
+        // SOPR < 1 = LTH selling at loss = capitulation = bullish signal
+        const color = val < 0.9 ? 'var(--accent-green)' : val > 1.1 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = val < 0.9 ? 'CAPITULATION' : val > 1.1 ? 'PROFIT TAKING' : 'BREAKEVEN';
+        lthSoprEl.style.color = color;
+        lthSoprStatusEl.textContent = status;
+        lthSoprStatusEl.style.color = color;
+      }
+      
+      // --- Reserve Risk ---
+      const rrEl = document.getElementById('smReserveRisk');
+      const rrStatusEl = document.getElementById('smReserveRiskStatus');
+      if (smData.reserveRisk !== null) {
+        const val = smData.reserveRisk;
+        rrEl.textContent = val.toFixed(5);
+        const color = val < 0.003 ? 'var(--accent-green)' : val > 0.01 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = val < 0.003 ? 'BUY ZONE' : val > 0.01 ? 'RISKY' : 'NEUTRAL';
+        rrEl.style.color = color;
+        rrStatusEl.textContent = status;
+        rrStatusEl.style.color = color;
+      }
+      
+      // --- Main Gauge ---
+      const gaugeStatusEl = document.getElementById('smGaugeStatus');
+      const gaugeValueEl = document.getElementById('smGaugeValue');
+      const gaugeFillEl = document.getElementById('smGaugeFill');
+      
+      if (smData.lth30d !== null) {
+        const val = smData.lth30d;
+        const formatted = (val >= 0 ? '+' : '') + (val / 1000).toFixed(1) + 'K';
+        gaugeValueEl.textContent = formatted;
+        
+        // Determine status
+        let status, color, barPct;
+        if (val > 10000) {
+          status = 'STRONG ACCUMULATION';
+          color = 'var(--accent-green)';
+          barPct = 85;
+        } else if (val > 0) {
+          status = 'ACCUMULATING';
+          color = 'var(--accent-lime)';
+          barPct = 70;
+        } else if (val > -10000) {
+          status = 'NEUTRAL';
+          color = 'var(--accent-yellow)';
+          barPct = 50;
+        } else if (val > -30000) {
+          status = 'DISTRIBUTING';
+          color = 'var(--accent-orange)';
+          barPct = 30;
+        } else {
+          status = 'HEAVY DISTRIBUTION';
+          color = 'var(--accent-red)';
+          barPct = 15;
+        }
+        
+        gaugeStatusEl.textContent = status;
+        gaugeStatusEl.style.color = color;
+        gaugeValueEl.style.color = color;
+        gaugeFillEl.style.width = barPct + '%';
+        gaugeFillEl.style.background = color;
+      }
+      
+      // --- Checklist Evaluation ---
+      const checks = [
+        { id: 'smCheck1', pass: smData.lth30d !== null && smData.lth30d > 0, label: 'LTH accumulating (net positive 30d)' },
+        { id: 'smCheck2', pass: smData.sthLthRatio !== null && smData.sthLthRatio < 0.5, label: 'STH/LTH ratio below 0.5 (accumulation zone)' },
+        { id: 'smCheck3', pass: smData.hodl1y !== null && smData.hodl1y > 65, label: '1Y+ HODL supply above 65% (high conviction)' },
+        { id: 'smCheck4', pass: smData.lthSopr !== null && smData.lthSopr < 1.0, label: 'LTH SOPR below 1.0 (capitulation signal)' },
+        { id: 'smCheck5', pass: smData.reserveRisk !== null && smData.reserveRisk < 0.005, label: 'Reserve Risk below 0.005 (good entry zone)' },
+        { id: 'smCheck6', pass: smData.sth30d !== null && smData.sth30d < 0, label: 'STH distributing (net negative 30d)' }
+      ];
+      
+      let passCount = 0;
+      checks.forEach(c => {
+        const el = document.getElementById(c.id);
+        if (el) {
+          const icon = el.querySelector('.sm-check-icon');
+          const text = el.querySelector('.sm-check-text');
+          if (c.pass === null || (typeof c.pass === 'undefined')) {
+            el.className = 'sm-check-item neutral';
+            if (icon) icon.textContent = '○';
+          } else if (c.pass) {
+            el.className = 'sm-check-item pass';
+            if (icon) icon.textContent = '✓';
+            passCount++;
+          } else {
+            el.className = 'sm-check-item fail';
+            if (icon) icon.textContent = '✗';
+          }
+        }
+      });
+      
+      // --- Confidence Score ---
+      const validChecks = checks.filter(c => c.pass !== null && typeof c.pass !== 'undefined').length;
+      const confidence = validChecks > 0 ? Math.round((passCount / validChecks) * 100) : 0;
+      
+      const confValueEl = document.getElementById('smConfidenceValue');
+      const confFillEl = document.getElementById('smConfidenceFill');
+      const confDescEl = document.getElementById('smConfidenceDesc');
+      
+      confValueEl.textContent = confidence + '%';
+      confFillEl.style.width = confidence + '%';
+      
+      let confColor, confDesc;
+      if (confidence >= 80) {
+        confColor = 'var(--accent-green)';
+        confDesc = 'Strong accumulation signals detected. On-chain data suggests smart money is actively positioning. This historically precedes significant price appreciation.';
+      } else if (confidence >= 60) {
+        confColor = 'var(--accent-lime)';
+        confDesc = 'Moderate accumulation signals. Some smart money indicators are positive, but not all conditions are met. Consider scaling in positions.';
+      } else if (confidence >= 40) {
+        confColor = 'var(--accent-yellow)';
+        confDesc = 'Mixed signals from smart money indicators. Market is in a transitional phase. Exercise caution and wait for clearer confirmation.';
+      } else if (confidence >= 20) {
+        confColor = 'var(--accent-orange)';
+        confDesc = 'Distribution signals detected. Smart money may be reducing exposure. Not an ideal accumulation zone.';
       } else {
-        flowText = `<strong style="color:var(--accent-yellow)">Fluxo equilibrado.</strong> Sem pressão forte em nenhuma direção.`;
+        confColor = 'var(--accent-red)';
+        confDesc = 'Heavy distribution signals. On-chain data suggests smart money is actively selling. Exercise extreme caution.';
       }
       
-      if (reserveText !== '--' && reserveText !== '') {
-        flowText += `<br><br><span style="font-size:10px;color:var(--text-muted);">Exchange Reserve: ${reserveText}. Reservas em queda = bullish. Reservas em alta = bearish.</span>`;
+      confValueEl.style.color = confColor;
+      confFillEl.style.background = confColor;
+      confDescEl.textContent = confDesc;
+      
+      // --- Render LTH History Chart ---
+      if (smData.lthHistory.length > 0) {
+        renderSmLthChart(smData.lthHistory);
       }
       
-      const flowTextEl = document.getElementById('reportFlowText');
-      if (flowTextEl) flowTextEl.innerHTML = flowText;
+      console.log('✅ Smart Money UI rendered');
+    }
+    
+    function renderSmLthChart(data) {
+      const ctx = document.getElementById('smLthChart');
+      if (!ctx) return;
       
-      const repNetflowEl = document.getElementById('repNetflow');
-      if (repNetflowEl) {
-        repNetflowEl.textContent = netflowText;
-        repNetflowEl.style.color = isOutflow ? 'var(--accent-green)' : isInflow ? 'var(--accent-red)' : 'var(--text-muted)';
+      if (_smLthChart) {
+        _smLthChart.destroy();
+        _smLthChart = null;
       }
       
-      const repReserveEl = document.getElementById('repReserve');
-      if (repReserveEl) repReserveEl.textContent = reserveText;
+      const labels = data.map(d => d.date);
+      const values = data.map(d => d.value / 1000); // Convert to K
+      
+      // Color each point based on value
+      const pointColors = values.map(v => v > 0 ? 'rgba(0,217,126,0.8)' : 'rgba(239,68,68,0.8)');
+      const bgColors = values.map(v => v > 0 ? 'rgba(0,217,126,0.3)' : 'rgba(239,68,68,0.3)');
+      
+      _smLthChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'LTH Position Change',
+            data: values,
+            backgroundColor: bgColors,
+            borderColor: pointColors,
+            borderWidth: 1,
+            borderRadius: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => (ctx.raw >= 0 ? '+' : '') + ctx.raw.toFixed(1) + 'K BTC'
+              }
+            }
+          },
+          scales: {
+            x: {
+              display: true,
+              grid: { display: false },
+              ticks: { 
+                display: true, 
+                maxTicksLimit: 6, 
+                color: '#666',
+                font: { size: 8 }
+              }
+            },
+            y: {
+              display: true,
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { 
+                color: '#666',
+                font: { size: 9 },
+                callback: v => (v >= 0 ? '+' : '') + v + 'K'
+              }
+            }
+          }
+        }
+      });
     }
 
     // ========== SENTIMENT SECTION ==========
@@ -3183,35 +3067,13 @@
         }
       } catch(e) { console.warn('F&G fetch failed:', e.message); }
 
-      // Funding Rates — Binance Futures API (reliable, no CORS issues)
-      // BGeometrics funding-rate endpoint has CORS issues via proxy
+      // Funding Rates — Binance Futures API (free, no auth)
       try {
-        const response = await fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1');
-        if (response.ok) {
-          const data = await response.json();
-          if (Array.isArray(data) && data.length > 0) {
-            const rate = parseFloat(data[0].fundingRate) * 100;
-            _renderFundingCard('fundingBtcBig', 'fundingBtcBar', 'fundingBtcDesc', 'sentFundingBtc', rate);
-            
-            const descEl = document.getElementById('fundingBtcDesc');
-            if (descEl) descEl.textContent = rate > 0.01 ? 'Longs paying' : rate < -0.01 ? 'Shorts paying' : 'Balanced';
-            
-            const subEl = document.getElementById('sentFundingBtcSub');
-            if (subEl) subEl.textContent = 'Binance BTCUSDT Perp';
-            
-            console.log('✓ Funding Rate:', rate.toFixed(4) + '%');
-          }
-        }
-      } catch(e) {
-        console.warn('[Funding] Error:', e.message);
-        const el = document.getElementById('fundingBtcBig');
-        const el2 = document.getElementById('sentFundingBtc');
-        if (el) { el.textContent = 'N/A'; el.style.color = 'var(--text-muted)'; }
-        if (el2) { el2.textContent = 'N/A'; el2.style.color = 'var(--text-muted)'; }
-      }
-      
-      // Update signal strength cards after sentiment data loads
-      updateSignalStrength();
+        const [btcR] = await Promise.allSettled([
+          fetch('https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1').then(r=>r.json())
+        ]);
+        if (btcR.status==='fulfilled' && btcR.value?.length) _renderFundingCard('fundingBtcBig','fundingBtcBar','fundingBtcDesc','sentFundingBtc', parseFloat(btcR.value[0].fundingRate)*100);
+      } catch(e) { console.warn('Funding fetch failed:', e.message); }
     }
 
     // ========== SECTION 05: TRADING SYSTEMS ==========
@@ -3878,38 +3740,7 @@
       const ctx = document.getElementById('tradingChart')?.getContext('2d');
       if (!ctx) return;
 
-      let data = tradingState.technicalData;
-      
-      // Fallback to Demo Mode data if no trading data
-      if (!data.length && state.prices && state.prices.length) {
-        console.warn('[Trading] No API data, using price data as fallback');
-        // Generate synthetic technical data from price data
-        data = state.prices.map((p, i, arr) => {
-          const price = p.price;
-          // Calculate simple moving averages
-          const getSMA = (period) => {
-            if (i < period - 1) return price;
-            const slice = arr.slice(i - period + 1, i + 1);
-            return slice.reduce((sum, x) => sum + x.price, 0) / period;
-          };
-          const getEMA = (period, prevEma) => {
-            const k = 2 / (period + 1);
-            return price * k + (prevEma || price) * (1 - k);
-          };
-          
-          return {
-            day: p.date,
-            d: p.date,
-            price: price,
-            sma50: getSMA(50),
-            sma200: getSMA(200),
-            ema21: i > 0 ? getEMA(21, data[i-1]?.ema21 || price) : price,
-            ema50: i > 0 ? getEMA(50, data[i-1]?.ema50 || price) : price
-          };
-        });
-        tradingState.technicalData = data;
-      }
-      
+      const data = tradingState.technicalData;
       if (!data.length) {
         console.warn('[Trading] No data for chart');
         return;
@@ -4201,17 +4032,12 @@
             zoom: {
               pan: {
                 enabled: true,
-                mode: 'xy',
-                threshold: 5
+                mode: 'x'
               },
               zoom: {
-                wheel: { enabled: true, speed: 0.1 },
+                wheel: { enabled: true },
                 pinch: { enabled: true },
-                mode: 'xy'
-              },
-              limits: {
-                x: { min: -1e15, max: 1e15 },
-                y: { min: -1e10, max: 1e10 }
+                mode: 'x'
               }
             }
           },
@@ -4243,6 +4069,7 @@
       setTimeout(() => { 
         renderSignalsSection(); 
         fetchFlowData(); 
+        fetchSmartMoneyData();
         fetchSentimentData(); 
         try { fetchTradingData(); } catch(e) { console.error('[Trading] Error:', e); }
         setTimeout(() => generateReport(), 500);
@@ -4254,283 +4081,294 @@
     const MAX_REPORT_RETRIES = 5;
     
     function generateReport() {
-      console.log('[Report] Generating integrated analysis...');
+      console.log('[Report] Generating daily analysis...');
+      console.log('[Report] state.composite:', state.composite);
+      console.log('[Report] state.rawValues:', JSON.stringify(state.rawValues));
+      console.log('[Report] tradingState.technicalData length:', tradingState.technicalData?.length || 0);
       
       // Check if on-chain data is ready - if not, retry with delay
       const hasOnchainData = state.composite !== null && Object.keys(state.rawValues || {}).length > 0;
+      const hasTechData = tradingState.technicalData && tradingState.technicalData.length > 0;
       
       if (!hasOnchainData && reportRetryCount < MAX_REPORT_RETRIES) {
         reportRetryCount++;
+        console.log(`[Report] On-chain data not ready, retry ${reportRetryCount}/${MAX_REPORT_RETRIES} in 500ms...`);
         setTimeout(generateReport, 500);
         return;
       }
       
+      if (!hasOnchainData) {
+        console.warn('[Report] On-chain data still missing after retries, proceeding with defaults');
+      }
+      
       // Get current date
       const now = new Date();
-      const dateStr = now.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const dateStr = now.toLocaleDateString('pt-BR', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
       document.getElementById('reportDate').textContent = dateStr;
       
-      // ========== GATHER ALL DATA ==========
+      // Gather all data
       const zScore = state.composite;
+      const zone = getZone(zScore);
       const rawValues = state.rawValues || {};
       const techData = tradingState.technicalData || [];
       const lastTech = techData.length > 0 ? techData[techData.length - 1] : {};
       
-      // Price & Technical
       const price = tradingState.currentPrice || parseFloat(lastTech.price) || 0;
       const sma50 = parseFloat(lastTech.sma50) || 0;
       const sma200 = parseFloat(lastTech.sma200) || 0;
       const rsi = parseFloat(lastTech.rsi) || 50;
+      const macd = parseFloat(lastTech.macd) || 0;
       
-      // On-Chain
       const mvrv = rawValues.mvrv || 0;
       const nupl = rawValues.nupl || 0;
       const sopr = rawValues.sopr || 1;
       const fearGreed = rawValues.fearGreed || 50;
-      const supplyProfit = rawValues.supplyProfit || 0;
-      
-      // Sentiment
       const funding = tradingState.funding || 0;
       
-      // Technical structure
+      // Calculate trend
       const inBullMarket = sma50 > sma200;
       const priceAboveSma50 = price > sma50;
+      const priceAboveSma200 = price > sma200;
       
-      // Flow data from DOM
-      const netflowEl = document.getElementById('flowWhaleRatio');
-      const netflowText = netflowEl ? netflowEl.textContent : '--';
-      const reserveEl = document.getElementById('flowReserveLatest');
-      const reserveText = reserveEl ? reserveEl.textContent : '--';
-      
-      // Trade signals
+      // Trading system status
+      const trendStatus = tradingState.trendStatus || 'CASH';
       const signals = tradingState.signals || [];
       const openSignal = signals.find(s => s.status === 'OPEN');
-      const lastBuy = signals.filter(s => s.signal === 'BUY').slice(-1)[0];
-      const lastSell = signals.filter(s => s.signal === 'SELL').slice(-1)[0];
       
       // ========== DETERMINE POSTURE ==========
-      let posture = 'AGUARDAR', postureColor = 'var(--accent-yellow)';
-      let bias = 'NEUTRO', biasColor = 'var(--text-secondary)';
-      let risk = 'MÉDIO', riskColor = 'var(--accent-orange)';
-      let allocation = '0%';
+      let posture = 'AGUARDAR';
+      let postureColor = 'var(--accent-yellow)';
+      let bias = 'NEUTRO';
+      let biasColor = 'var(--text-secondary)';
+      let risk = 'MÉDIO';
+      let riskColor = 'var(--accent-orange)';
+      let capitalAllocation = '0%'; // % do capital para alocar
+      let allocationDesc = 'Manter posição atual';
       
       if (zScore <= -1.5) {
-        posture = 'ACUMULAR'; postureColor = 'var(--accent-green)';
-        bias = 'BULLISH'; biasColor = 'var(--accent-green)';
-        risk = 'BAIXO'; riskColor = 'var(--accent-green)';
-        allocation = '15-25%';
+        posture = 'ACUMULAR';
+        postureColor = 'var(--accent-green)';
+        bias = 'BULLISH';
+        biasColor = 'var(--accent-green)';
+        risk = 'BAIXO';
+        riskColor = 'var(--accent-green)';
+        capitalAllocation = '15-25%';
+        allocationDesc = 'Aportar 15-25% do capital disponível';
       } else if (zScore <= -0.5) {
-        posture = 'ACUMULAR LEVE'; postureColor = 'var(--accent-lime)';
-        bias = 'BULLISH'; biasColor = 'var(--accent-lime)';
-        risk = 'BAIXO-MÉDIO'; riskColor = 'var(--accent-lime)';
-        allocation = '5-10%';
+        posture = 'ACUMULAR LEVE';
+        postureColor = 'var(--accent-lime)';
+        bias = 'BULLISH';
+        biasColor = 'var(--accent-lime)';
+        risk = 'BAIXO-MÉDIO';
+        riskColor = 'var(--accent-lime)';
+        capitalAllocation = '5-10%';
+        allocationDesc = 'Aportar 5-10% do capital disponível';
       } else if (zScore >= 1.5) {
-        posture = 'REALIZAR'; postureColor = 'var(--accent-red)';
-        bias = 'BEARISH'; biasColor = 'var(--accent-red)';
-        risk = 'ALTO'; riskColor = 'var(--accent-red)';
-        allocation = '-20-30%';
+        posture = 'REALIZAR';
+        postureColor = 'var(--accent-red)';
+        bias = 'BEARISH';
+        biasColor = 'var(--accent-red)';
+        risk = 'ALTO';
+        riskColor = 'var(--accent-red)';
+        capitalAllocation = '-20-30%';
+        allocationDesc = 'Reduzir 20-30% da posição';
       } else if (zScore >= 0.5) {
-        posture = 'CAUTELA'; postureColor = 'var(--accent-orange)';
-        bias = 'BEARISH'; biasColor = 'var(--accent-orange)';
-        risk = 'MÉDIO-ALTO'; riskColor = 'var(--accent-orange)';
-        allocation = '-10%';
-      } else if (!inBullMarket) {
-        bias = 'NEUTRO-BEARISH'; biasColor = 'var(--accent-orange)';
-        risk = 'MÉDIO-ALTO'; riskColor = 'var(--accent-orange)';
+        posture = 'CAUTELA';
+        postureColor = 'var(--accent-orange)';
+        bias = 'BEARISH';
+        biasColor = 'var(--accent-orange)';
+        risk = 'MÉDIO-ALTO';
+        riskColor = 'var(--accent-orange)';
+        capitalAllocation = '-10%';
+        allocationDesc = 'Considerar reduzir 10% da posição';
+      } else {
+        // Fair value zone
+        if (inBullMarket && priceAboveSma50) {
+          posture = 'HOLD';
+          bias = 'NEUTRO-BULLISH';
+          biasColor = 'var(--accent-cyan)';
+          capitalAllocation = '0%';
+          allocationDesc = 'Manter posição atual';
+        } else if (!inBullMarket) {
+          posture = 'AGUARDAR';
+          bias = 'NEUTRO-BEARISH';
+          biasColor = 'var(--accent-orange)';
+          risk = 'MÉDIO-ALTO';
+          riskColor = 'var(--accent-orange)';
+          capitalAllocation = '0%';
+          allocationDesc = 'Não abrir novas posições';
+        } else {
+          capitalAllocation = '2-5%';
+          allocationDesc = 'DCA normal: 2-5% por semana';
+        }
       }
       
-      // Zone name
-      let zoneName = 'FAIR VALUE', zoneColor = 'var(--accent-yellow)';
-      if (zScore <= -1.5) { zoneName = 'ACCUMULATE'; zoneColor = 'var(--accent-green)'; }
-      else if (zScore <= -0.5) { zoneName = 'UNDERVALUED'; zoneColor = 'var(--accent-lime)'; }
-      else if (zScore >= 1.5) { zoneName = 'OVERHEATED'; zoneColor = 'var(--accent-red)'; }
-      else if (zScore >= 0.5) { zoneName = 'ELEVATED'; zoneColor = 'var(--accent-orange)'; }
+      // Get zone name as string
+      let zoneName = 'FAIR VALUE';
+      if (zScore <= -1.5) zoneName = 'ACCUMULATE';
+      else if (zScore <= -0.5) zoneName = 'UNDERVALUED';
+      else if (zScore >= 1.5) zoneName = 'OVERHEATED';
+      else if (zScore >= 0.5) zoneName = 'ELEVATED';
       
-      // ========== UPDATE TOP BAR ==========
-      document.getElementById('repZscore').textContent = zScore ? zScore.toFixed(2) : '--';
-      document.getElementById('repZscore').style.color = zoneColor;
-      document.getElementById('repZone').textContent = zoneName;
-      document.getElementById('repZone').style.color = zoneColor;
+      // Update status cards
       document.getElementById('reportPosture').textContent = posture;
       document.getElementById('reportPosture').style.color = postureColor;
       document.getElementById('reportBias').textContent = bias;
       document.getElementById('reportBias').style.color = biasColor;
       document.getElementById('reportRisk').textContent = risk;
       document.getElementById('reportRisk').style.color = riskColor;
+      document.getElementById('reportTimeframe').innerHTML = capitalAllocation + '<div style="font-size:8px;color:var(--text-muted);margin-top:2px;">do capital</div>';
       
-      // ========== CARD 1: Z-SCORE & ON-CHAIN ==========
-      let zText = '';
-      if (zScore <= -1.5) {
-        zText = `<strong style="color:var(--accent-green)">Capitulação extrema.</strong> Historicamente, Z ≤ -1.5 precedeu os maiores bull runs. Momento ideal para acumulação agressiva. O mercado está com desconto significativo em relação à média histórica.`;
-      } else if (zScore <= -0.5) {
-        zText = `<strong style="color:var(--accent-lime)">Mercado subvalorizado.</strong> Bom momento para acumulação gradual via DCA. Não é o fundo absoluto, mas oferece risco/retorno favorável.`;
-      } else if (zScore >= 1.5) {
-        zText = `<strong style="color:var(--accent-red)">Superaquecimento.</strong> Euforia elevada. Historicamente, Z ≥ 1.5 precedeu correções significativas. Momento de realizar lucros.`;
-      } else if (zScore >= 0.5) {
-        zText = `<strong style="color:var(--accent-orange)">Zona elevada.</strong> Mercado caro. Pode haver mais upside, mas o risco aumenta progressivamente. Cautela.`;
+      // ========== GENERATE MAIN TEXT ==========
+      let mainText = '';
+      
+      // Market structure analysis
+      if (!inBullMarket) {
+        mainText += `O mercado está em <strong style="color:var(--accent-red)">estrutura de baixa</strong> (SMA50 < SMA200). `;
+        mainText += `Isso significa que estamos tecnicamente em bear market e qualquer rally pode ser apenas um "bear market rally". `;
       } else {
-        zText = `<strong style="color:var(--accent-yellow)">Fair value.</strong> Mercado precificado de forma justa. Sem urgência para comprar ou vender. Aguardar definição.`;
-      }
-      
-      // Add metrics context
-      const mvrvSignal = mvrv < 1.0 ? '🟢 abaixo do realized' : mvrv < 1.5 ? '🟢 desconto' : mvrv > 3.0 ? '🔴 overextended' : '🟡 neutro';
-      const nuplSignal = nupl < 0 ? '🟢 capitulação' : nupl < 0.25 ? '🟢 pessimismo' : nupl > 0.75 ? '🔴 euforia' : '🟡 neutro';
-      const soprSignal = sopr < 0.98 ? '🟢 capitulação forte' : sopr < 1 ? '🟢 leve capitul.' : sopr > 1.05 ? '🔴 profit-taking' : '🟡 equilíbrio';
-      
-      zText += `<br><br><span style="font-size:10px;color:var(--text-muted);">MVRV ${mvrv.toFixed(2)} ${mvrvSignal} · NUPL ${(nupl*100).toFixed(0)}% ${nuplSignal} · SOPR ${sopr.toFixed(3)} ${soprSignal}</span>`;
-      
-      document.getElementById('reportZScoreText').innerHTML = zText;
-      document.getElementById('repMvrv').textContent = mvrv.toFixed(2);
-      document.getElementById('repNupl').textContent = (nupl*100).toFixed(1) + '%';
-      document.getElementById('repSopr').textContent = sopr.toFixed(3);
-      
-      // ========== CARD 2: FLOW ANALYSIS ==========
-      let flowText = '';
-      const isOutflow = netflowText.includes('-') && netflowText !== '--';
-      const isInflow = netflowText.includes('+') && !netflowText.includes('-');
-      const hasFlowData = netflowText !== '--' && netflowText !== '';
-      
-      if (!hasFlowData) {
-        flowText = `<strong style="color:var(--text-muted)">Dados de fluxo não disponíveis.</strong> Aguardando carregamento da API de Exchange Netflow.`;
-      } else if (isOutflow) {
-        flowText = `<strong style="color:var(--accent-green)">Saída líquida de BTC das exchanges.</strong> Investidores movendo para cold storage = sinal de acumulação. Oferta nas exchanges diminuindo pode criar pressão de alta.`;
-      } else if (isInflow) {
-        flowText = `<strong style="color:var(--accent-red)">Entrada líquida de BTC nas exchanges.</strong> Potencial pressão vendedora. Investidores preparando para vender = sinal de distribuição.`;
-      } else {
-        flowText = `<strong style="color:var(--accent-yellow)">Fluxo equilibrado.</strong> Sem pressão forte em nenhuma direção. Aguardar definição do fluxo.`;
-      }
-      
-      // Reserve context
-      if (reserveText !== '--' && reserveText !== '') {
-        flowText += `<br><br><span style="font-size:10px;color:var(--text-muted);">Exchange Reserve: ${reserveText}. Reservas em queda = bullish. Reservas em alta = bearish.</span>`;
-      }
-      
-      document.getElementById('reportFlowText').innerHTML = flowText;
-      document.getElementById('repNetflow').textContent = netflowText;
-      document.getElementById('repNetflow').style.color = isOutflow ? 'var(--accent-green)' : isInflow ? 'var(--accent-red)' : 'var(--text-muted)';
-      document.getElementById('repReserve').textContent = reserveText;
-      
-      // ========== CARD 3: SENTIMENT ==========
-      let sentText = '';
-      
-      // Fear & Greed interpretation
-      if (fearGreed <= 25) {
-        sentText = `<strong style="color:var(--accent-green)">Extreme Fear (${fearGreed.toFixed(0)}).</strong> Historicamente, medo extremo = oportunidade de compra. "Be greedy when others are fearful."`;
-      } else if (fearGreed <= 40) {
-        sentText = `<strong style="color:var(--accent-lime)">Fear (${fearGreed.toFixed(0)}).</strong> Sentimento negativo. Pode ser oportunidade se outros indicadores confirmarem.`;
-      } else if (fearGreed >= 75) {
-        sentText = `<strong style="color:var(--accent-red)">Extreme Greed (${fearGreed.toFixed(0)}).</strong> Euforia máxima. Risco de correção elevado. "Be fearful when others are greedy."`;
-      } else if (fearGreed >= 60) {
-        sentText = `<strong style="color:var(--accent-orange)">Greed (${fearGreed.toFixed(0)}).</strong> Otimismo elevado. Não é hora de FOMO.`;
-      } else {
-        sentText = `<strong style="color:var(--accent-yellow)">Neutro (${fearGreed.toFixed(0)}).</strong> Sentimento equilibrado. Sem extremos.`;
-      }
-      
-      // Funding interpretation
-      const fundingPct = (funding * 100).toFixed(4);
-      if (funding > 0.05) {
-        sentText += `<br><br><strong style="color:var(--accent-red)">Funding ${fundingPct}%</strong> — longs over-leveraged. Risco de long squeeze/flush.`;
-      } else if (funding < -0.02) {
-        sentText += `<br><br><strong style="color:var(--accent-green)">Funding ${fundingPct}%</strong> — shorts pagando longs. Potencial short squeeze.`;
-      } else {
-        sentText += `<br><br><strong style="color:var(--accent-yellow)">Funding ${fundingPct}%</strong> — equilibrado. Sem pressão de alavancagem.`;
-      }
-      
-      document.getElementById('reportSentimentText').innerHTML = sentText;
-      document.getElementById('repFearGreed').textContent = fearGreed.toFixed(0) + '/100';
-      document.getElementById('repFearGreed').style.color = fearGreed <= 25 ? 'var(--accent-green)' : fearGreed >= 75 ? 'var(--accent-red)' : 'var(--text-secondary)';
-      document.getElementById('repFunding').textContent = (funding >= 0 ? '+' : '') + fundingPct + '%';
-      document.getElementById('repFunding').style.color = funding > 0.03 ? 'var(--accent-red)' : funding < -0.01 ? 'var(--accent-green)' : 'var(--text-secondary)';
-      
-      // ========== CARD 4: TECHNICAL ==========
-      let techText = '';
-      
-      if (inBullMarket) {
-        techText = `<strong style="color:var(--accent-green)">Bull Market estrutural</strong> (SMA50 > SMA200). `;
+        mainText += `O mercado mantém <strong style="color:var(--accent-green)">estrutura de alta</strong> (SMA50 > SMA200). `;
         if (priceAboveSma50) {
-          techText += `Preço acima da SMA50 = tendência saudável. Momentum a favor.`;
+          mainText += `O preço está acima das médias principais, indicando força na tendência. `;
         } else {
-          techText += `Preço abaixo da SMA50 = correção em andamento. Estrutura ainda bullish, mas atenção.`;
+          mainText += `Porém, o preço está abaixo da SMA50, sugerindo uma correção em andamento. `;
         }
-      } else {
-        techText = `<strong style="color:var(--accent-red)">Bear Market estrutural</strong> (SMA50 < SMA200). `;
-        techText += `Qualquer rally pode ser apenas um "bear market rally". Cautela máxima com longs.`;
       }
       
-      // RSI context
-      if (rsi > 70) {
-        techText += `<br><br><strong style="color:var(--accent-red)">RSI ${rsi.toFixed(0)}</strong> — sobrecomprado. Risco de correção técnica.`;
-      } else if (rsi < 30) {
-        techText += `<br><br><strong style="color:var(--accent-green)">RSI ${rsi.toFixed(0)}</strong> — sobrevendido. Pode haver bounce.`;
-      } else {
-        techText += `<br><br>RSI ${rsi.toFixed(0)} — neutro.`;
+      // Z-Score analysis
+      mainText += `<br><br>O Z-Score composto está em <strong>${zScore ? zScore.toFixed(2) : '--'}</strong>, `;
+      if (zone === 'ACCUMULATE') {
+        mainText += `zona de <strong style="color:var(--accent-green)">ACUMULAÇÃO</strong>. Historicamente, esses níveis precedem fortes movimentos de alta. `;
+        mainText += `O mercado está em capitulação — vendedores exaustos, pouco interesse. É quando as mãos fortes compram.`;
+      } else if (zone === 'UNDERVALUED') {
+        mainText += `zona de <strong style="color:var(--accent-lime)">SUBVALORIZADO</strong>. Ainda há desconto, mas não é extremo. `;
+        mainText += `Boa região para acumulação gradual.`;
+      } else if (zone === 'FAIR VALUE') {
+        mainText += `zona de <strong style="color:var(--accent-yellow)">FAIR VALUE</strong>. O mercado está precificado de forma justa. `;
+        mainText += `Sem pressa para comprar ou vender.`;
+      } else if (zone === 'ELEVATED') {
+        mainText += `zona <strong style="color:var(--accent-orange)">ELEVADA</strong>. O mercado está caro em relação ao histórico. `;
+        mainText += `Cautela é necessária.`;
+      } else if (zone === 'OVERHEATED') {
+        mainText += `zona de <strong style="color:var(--accent-red)">SUPERAQUECIMENTO</strong>. Euforia máxima. `;
+        mainText += `Historicamente, esses níveis precedem correções significativas.`;
       }
       
-      document.getElementById('reportTechText').innerHTML = techText;
-      document.getElementById('repPrice').textContent = price ? '$' + Math.round(price).toLocaleString() : '--';
-      document.getElementById('repSma50').textContent = sma50 ? '$' + Math.round(sma50).toLocaleString() : '--';
-      document.getElementById('repSma200').textContent = sma200 ? '$' + Math.round(sma200).toLocaleString() : '--';
-      document.getElementById('repTrend').innerHTML = inBullMarket ? 
-        '<span style="color:var(--accent-green)">BULL</span>' : 
-        '<span style="color:var(--accent-red)">BEAR</span>';
-      
-      // ========== CARD 5: TRADE SIGNALS ==========
-      let signalsText = '';
-      
-      if (openSignal) {
-        const pnlColor = parseFloat(openSignal.pnl || 0) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-        signalsText = `<strong style="color:var(--accent-green)">📍 POSIÇÃO ABERTA:</strong> ${openSignal.signal} desde ${openSignal.date} @ $${openSignal.entryPrice?.toLocaleString() || '--'}. `;
-        signalsText += `P&L: <strong style="color:${pnlColor}">${openSignal.pnl || '--'}%</strong>`;
-      } else {
-        signalsText = `<strong style="color:var(--text-muted)">📍 SEM POSIÇÃO ABERTA</strong> — Sistema em modo CASH, aguardando setup.`;
+      // SOPR analysis
+      if (sopr > 0) {
+        mainText += `<br><br>O SOPR está em <strong>${sopr.toFixed(3)}</strong>. `;
+        if (sopr < 1) {
+          mainText += `Abaixo de 1.0 indica que investidores estão realizando perdas — sinal de capitulação. `;
+        } else if (sopr > 1.05) {
+          mainText += `Acima de 1.05 indica que investidores estão realizando lucros significativos. `;
+        } else {
+          mainText += `Próximo de 1.0 indica equilíbrio entre lucro e prejuízo nas transações. `;
+        }
       }
       
-      // Waiting conditions
-      if (zScore > -1.5 && zScore <= -0.5) {
-        signalsText += `<br><br><span style="color:var(--accent-yellow)">⏳ WATCHING:</span> Z-Score precisa cair para ≤ -1.5 e permanecer por 10+ dias para trigger de BUY. Atual: ${zScore?.toFixed(2) || '--'}`;
-      } else if (zScore <= -1.5) {
-        signalsText += `<br><br><span style="color:var(--accent-lime)">✓ Z em ACCUMULATE ZONE.</span> Aguardando confirmação de capitulação profunda (Z ≤ -2.0) + price recovery para sinal de BUY.`;
-      } else if (zScore >= 1.0) {
-        signalsText += `<br><br><span style="color:var(--accent-orange)">⚠️ ZONA DE RISCO:</span> Z-Score elevado. Se Z ≥ 1.5 por 3+ dias consecutivos = trigger de SELL.`;
-      }
-      
-      // Historical signals
-      if (lastBuy || lastSell) {
-        signalsText += `<br><br><span style="font-size:10px;color:var(--text-muted);">`;
-        if (lastBuy) signalsText += `Último BUY: ${lastBuy.date} @ $${lastBuy.price?.toLocaleString() || '--'}. `;
-        if (lastSell) signalsText += `Último SELL: ${lastSell.date} @ $${lastSell.price?.toLocaleString() || '--'}.`;
-        signalsText += `</span>`;
-      }
-      
-      document.getElementById('reportSignalsText').innerHTML = signalsText;
+      document.getElementById('reportMainText').innerHTML = mainText;
       
       // ========== ACTION RECOMMENDATION ==========
       let actionText = '';
       
       if (posture === 'ACUMULAR') {
-        actionText = `<strong>COMPRAR (${allocation} do capital):</strong> Momento favorável. Dividir em 3-4 parcelas. Aguardar confirmação técnica para entrada mais agressiva.`;
+        actionText = `<strong style="color:var(--accent-green)">COMPRAR (${capitalAllocation}):</strong> Momento favorável para aumentar posição. Dividir compras em 3-4 parcelas ao longo das próximas semanas. Aguardar confirmação de reversão técnica (EMA21 > EMA50) para entrada mais agressiva.`;
       } else if (posture === 'ACUMULAR LEVE') {
-        actionText = `<strong>COMPRAR LEVE (${allocation}):</strong> Continuar DCA normal. Pode aumentar levemente a alocação. Não ir all-in ainda.`;
+        actionText = `<strong style="color:var(--accent-lime)">COMPRAR LEVE (${capitalAllocation}):</strong> Continuar DCA normal. Pode aumentar levemente a alocação. Não ir all-in ainda. ${allocationDesc}.`;
       } else if (posture === 'REALIZAR') {
-        actionText = `<strong>VENDER (${allocation}):</strong> Realizar lucros parciais. Reduzir exposição gradualmente. Proteger capital.`;
+        actionText = `<strong style="color:var(--accent-red)">VENDER (${capitalAllocation}):</strong> Realizar lucros parciais. Reduzir exposição gradualmente. Manter stop loss apertado em posições restantes.`;
       } else if (posture === 'CAUTELA') {
-        actionText = `<strong>CAUTELA:</strong> Não aumentar posição. Considerar reduzir exposição. Ter stops definidos.`;
+        actionText = `<strong style="color:var(--accent-orange)">CAUTELA (${capitalAllocation}):</strong> Não aumentar posição. Considerar reduzir exposição. Ter stops definidos.`;
+      } else if (posture === 'HOLD') {
+        actionText = `<strong style="color:var(--accent-cyan)">MANTER (${capitalAllocation}):</strong> Posições atuais podem ser mantidas. Aguardar movimentação mais clara para agir.`;
       } else {
-        actionText = `<strong>AGUARDAR:</strong> Momento de observação. Não abrir novas posições. Esperar confirmação de tendência.`;
+        actionText = `<strong style="color:var(--accent-yellow)">AGUARDAR (${capitalAllocation}):</strong> Momento de observação. Não abrir novas posições. Esperar confirmação de tendência.`;
+      }
+      
+      if (openSignal) {
+        actionText += `<br><br><strong>Trade System:</strong> Posição ${openSignal.signal} aberta desde ${openSignal.date} @ $${openSignal.entryPrice.toLocaleString()}. P&L atual: ${openSignal.pnl}%`;
       }
       
       document.getElementById('reportAction').innerHTML = actionText;
       
       // ========== RISKS ==========
-      let risksArr = [];
-      if (!inBullMarket) risksArr.push('Bear market estrutural');
-      if (rsi > 70) risksArr.push('RSI sobrecomprado');
-      if (zScore >= 1.0) risksArr.push('Z-Score elevado');
-      if (funding > 0.03) risksArr.push('Funding alto (longs alavancados)');
-      if (isInflow) risksArr.push('Netflow positivo');
-      risksArr.push('Eventos macro imprevisíveis');
+      let risksText = '';
       
-      document.getElementById('reportRisks').innerHTML = risksArr.map(r => '• ' + r).join('<br>');
+      if (!inBullMarket) {
+        risksText += '• Bear market estrutural — rallies podem ser armadilhas<br>';
+      }
+      if (rsi > 70) {
+        risksText += '• RSI sobrecomprado — risco de correção técnica<br>';
+      }
+      if (rsi < 30) {
+        risksText += '• RSI sobrevendido — pode haver mais queda antes de reversão<br>';
+      }
+      if (zScore >= 1.0) {
+        risksText += '• Métricas on-chain em zona de risco — distribuição em andamento<br>';
+      }
+      if (funding > 0.03) {
+        risksText += '• Funding rate elevado — mercado alavancado pro lado long<br>';
+      }
+      if (funding < -0.02) {
+        risksText += '• Funding rate negativo — shorts pagando longs<br>';
+      }
+      
+      risksText += '• Risco macro: dados de inflação, decisões de juros, eventos geopolíticos<br>';
+      risksText += '• Fica de olho no netflow: se voltar negativo pode sinalizar mais pressão vendedora';
+      
+      document.getElementById('reportRisks').innerHTML = risksText;
+      
+      // ========== DATA SUMMARY ==========
+      document.getElementById('repZscore').innerHTML = `<strong style="color:${postureColor}">${zScore ? zScore.toFixed(2) : '--'}</strong>`;
+      document.getElementById('repZone').innerHTML = `<strong style="color:${postureColor}">${zoneName}</strong>`;
+      document.getElementById('repMvrv').textContent = mvrv ? mvrv.toFixed(2) : '--';
+      document.getElementById('repNupl').textContent = nupl ? (nupl * 100).toFixed(1) + '%' : '--';
+      document.getElementById('repSopr').textContent = sopr ? sopr.toFixed(3) : '--';
+      
+      document.getElementById('repPrice').textContent = price ? '$' + Math.round(price).toLocaleString() : '--';
+      document.getElementById('repSma50').textContent = sma50 ? '$' + Math.round(sma50).toLocaleString() : '--';
+      document.getElementById('repSma200').textContent = sma200 ? '$' + Math.round(sma200).toLocaleString() : '--';
+      document.getElementById('repRsi').textContent = rsi ? rsi.toFixed(0) : '--';
+      document.getElementById('repTrend').innerHTML = inBullMarket ? 
+        '<strong style="color:var(--accent-green)">BULL</strong>' : 
+        '<strong style="color:var(--accent-red)">BEAR</strong>';
+      
+      document.getElementById('repFearGreed').textContent = fearGreed ? fearGreed.toFixed(0) + '/100' : '--';
+      document.getElementById('repFunding').textContent = funding ? (funding > 0 ? '+' : '') + funding.toFixed(3) + '%' : '--';
+      document.getElementById('repTradeSystem').innerHTML = trendStatus === 'LONG' ?
+        '<strong style="color:var(--accent-green)">LONG</strong>' :
+        '<strong style="color:var(--text-muted)">CASH</strong>';
+      
+      // ========== HISTORICAL CONTEXT ==========
+      let contextText = '';
+      
+      if (zScore !== null) {
+        if (zScore <= -1.5) {
+          contextText = `Z-Scores neste nível (≤ -1.5) ocorreram em: <strong>Dez/2018</strong> ($3.2k → $14k = +337%), <strong>Mar/2020</strong> ($5k → $64k = +1180%), <strong>Nov/2022</strong> ($16k → $73k = +356%). Historicamente, esses momentos de extremo pessimismo precederam os maiores bull runs.`;
+        } else if (zScore >= 1.5) {
+          contextText = `Z-Scores neste nível (≥ 1.5) ocorreram em: <strong>Dez/2017</strong> ($20k → $3k = -85%), <strong>Abr/2021</strong> ($64k → $30k = -53%), <strong>Nov/2021</strong> ($69k → $16k = -77%). Historicamente, euforia extrema precede correções significativas.`;
+        } else if (zScore <= -0.5) {
+          contextText = `O mercado está em zona de desconto moderado. Não é o fundo absoluto, mas historicamente oferece bom risco/retorno para acumulação gradual. Paciência é chave.`;
+        } else if (zScore >= 0.5) {
+          contextText = `O mercado está precificado acima do fair value. Historicamente, esses níveis podem sustentar por algum tempo em bull markets fortes, mas o risco aumenta progressivamente.`;
+        } else {
+          contextText = `O mercado está em zona neutra (fair value). Pode ir para qualquer lado. Fatores macro e técnicos terão mais peso na direção de curto prazo.`;
+        }
+      }
+      
+      // Add current cycle context
+      if (inBullMarket) {
+        contextText += `<br><br>Ciclo atual: Estamos em estrutura de alta desde que SMA50 cruzou SMA200 pra cima. `;
+      } else {
+        contextText += `<br><br>Ciclo atual: Estamos em estrutura de baixa. Aguardar Golden Cross (SMA50 > SMA200) para confirmar novo bull market. `;
+      }
+      
+      document.getElementById('reportContext').innerHTML = contextText;
       
       console.log('[Report] Analysis generated successfully');
     }
