@@ -2053,11 +2053,15 @@
           plugins: { 
             legend: { display: false },
             zoom: {
-              pan: { enabled: true, mode: 'xy' },
+              pan: { enabled: true, mode: 'xy', threshold: 5 },
               zoom: {
-                wheel: { enabled: true },
+                wheel: { enabled: true, speed: 0.1 },
                 pinch: { enabled: true },
                 mode: 'xy'
+              },
+              limits: {
+                x: { min: -Infinity, max: Infinity },
+                y: { min: -Infinity, max: Infinity }
               }
             },
             tooltip: {
@@ -2695,12 +2699,17 @@
             zoom: {
               pan: {
                 enabled: true,
-                mode: 'xy'
+                mode: 'xy',
+                threshold: 5
               },
               zoom: {
-                wheel: { enabled: true },
+                wheel: { enabled: true, speed: 0.1 },
                 pinch: { enabled: true },
                 mode: 'xy'
+              },
+              limits: {
+                x: { min: -Infinity, max: Infinity },
+                y: { min: -Infinity, max: Infinity }
               }
             },
             tooltip: {
@@ -4097,12 +4106,17 @@
             zoom: {
               pan: {
                 enabled: true,
-                mode: 'xy'
+                mode: 'xy',
+                threshold: 5
               },
               zoom: {
-                wheel: { enabled: true },
+                wheel: { enabled: true, speed: 0.1 },
                 pinch: { enabled: true },
                 mode: 'xy'
+              },
+              limits: {
+                x: { min: -Infinity, max: Infinity },
+                y: { min: -Infinity, max: Infinity }
               }
             }
           },
