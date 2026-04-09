@@ -3184,40 +3184,48 @@
       } catch(e) { console.warn('F&G fetch failed:', e.message); }
 
       // Funding Rates — BGeometrics API (aggregated from multiple exchanges)
-      // Try multiple possible endpoint names
-      const fundingEndpoints = ['/v1/funding-rates', '/v1/funding-rate', '/v1/btc-funding-rate'];
+      // Endpoint: /v1/funding-rate, field: fundingRate (string)
       let fundingLoaded = false;
       
-      for (const endpoint of fundingEndpoints) {
-        if (fundingLoaded) break;
-        try {
-          const fundingUrl = `${CONFIG.BGEOMETRICS_BASE}${endpoint}?token=${CONFIG.BGEOMETRICS_TOKEN}`;
-          const url = CONFIG.USE_CORS_PROXY ? `${CONFIG.CORS_PROXY}${encodeURIComponent(fundingUrl)}` : fundingUrl;
-          const response = await fetch(url);
-          if (response.ok) {
-            const data = await response.json();
-            if (Array.isArray(data) && data.length > 0) {
-              const latest = data[data.length - 1];
-              // Try multiple field names
-              let rawRate = latest.fundingRate ?? latest.fundingRates ?? latest.value ?? latest.rate ?? 0;
-              // BGeometrics returns raw rate (e.g., -0.000001), multiply by 100 for percentage
-              const rate = rawRate * 100;
-              _renderFundingCard('fundingBtcBig', 'fundingBtcBar', 'fundingBtcDesc', 'sentFundingBtc', rate);
-              // Update the subtitle to show it's from BGeometrics
-              const descEl = document.getElementById('fundingBtcDesc');
-              if (descEl) descEl.textContent = rate > 0.01 ? 'Longs paying (aggregated)' : rate < -0.01 ? 'Shorts paying (aggregated)' : 'Balanced (aggregated)';
-              console.log('✓ Funding Rate via BGeometrics:', rate.toFixed(6) + '%', 'raw:', rawRate);
-              fundingLoaded = true;
-            }
+      try {
+        const fundingUrl = `${CONFIG.BGEOMETRICS_BASE}/v1/funding-rate?token=${CONFIG.BGEOMETRICS_TOKEN}`;
+        const url = CONFIG.USE_CORS_PROXY ? `${CONFIG.CORS_PROXY}${encodeURIComponent(fundingUrl)}` : fundingUrl;
+        console.log('[Funding] Fetching from:', url);
+        const response = await fetch(url);
+        console.log('[Funding] Response status:', response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('[Funding] Data received, length:', Array.isArray(data) ? data.length : 'not array');
+          
+          if (Array.isArray(data) && data.length > 0) {
+            const latest = data[data.length - 1];
+            console.log('[Funding] Latest entry:', JSON.stringify(latest));
+            
+            // fundingRate is a STRING in the API, need to parseFloat
+            let rawRate = parseFloat(latest.fundingRate);
+            if (isNaN(rawRate)) rawRate = 0;
+            
+            // BGeometrics returns raw rate (e.g., -0.000001), multiply by 100 for percentage
+            const rate = rawRate * 100;
+            _renderFundingCard('fundingBtcBig', 'fundingBtcBar', 'fundingBtcDesc', 'sentFundingBtc', rate);
+            
+            // Update the subtitle to show it's from BGeometrics
+            const descEl = document.getElementById('fundingBtcDesc');
+            if (descEl) descEl.textContent = rate > 0.01 ? 'Longs paying (aggregated)' : rate < -0.01 ? 'Shorts paying (aggregated)' : 'Balanced (aggregated)';
+            console.log('✓ Funding Rate via BGeometrics:', rate.toFixed(6) + '%', 'raw:', rawRate);
+            fundingLoaded = true;
           }
-        } catch(e) { 
-          console.warn(`BGeometrics ${endpoint} failed:`, e.message);
+        } else {
+          console.warn('[Funding] HTTP error:', response.status);
         }
+      } catch(e) { 
+        console.warn('[Funding] BGeometrics fetch failed:', e.message);
       }
       
       // If BGeometrics failed, show as unavailable (don't fallback to Binance since it's different methodology)
       if (!fundingLoaded) {
-        console.warn('All BGeometrics funding endpoints failed');
+        console.warn('[Funding] BGeometrics unavailable');
         const el = document.getElementById('fundingBtcBig');
         const el2 = document.getElementById('sentFundingBtc');
         if (el) { el.textContent = 'N/A'; el.style.color = 'var(--text-muted)'; }
