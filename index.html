@@ -601,19 +601,19 @@
         </div>
         <div class="sm-check-item neutral" id="smCheck2">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">STH/LTH ratio below 0.5 (accumulation zone)</span>
+          <span class="sm-check-text">STH/LTH ratio below 0.5</span>
         </div>
         <div class="sm-check-item neutral" id="smCheck3">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">1Y+ HODL supply above 65% (high conviction)</span>
+          <span class="sm-check-text">1Y+ HODL supply above 65%</span>
         </div>
         <div class="sm-check-item neutral" id="smCheck4">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">LTH SOPR below 1.0 (capitulation signal)</span>
+          <span class="sm-check-text">LTH SOPR below 1.0</span>
         </div>
         <div class="sm-check-item neutral" id="smCheck5">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">Reserve Risk below 0.005 (good entry zone)</span>
+          <span class="sm-check-text">Reserve Risk below 0.005</span>
         </div>
         <div class="sm-check-item neutral" id="smCheck6">
           <span class="sm-check-icon">○</span>
@@ -2666,60 +2666,80 @@
         lthHistory: []
       };
       
+      // Helper to get latest value from array
+      const getLatest = (arr, ...keys) => {
+        if (!arr || !arr.length) return null;
+        const item = arr[arr.length - 1];
+        for (const key of keys) {
+          if (item[key] !== undefined && item[key] !== null) return item[key];
+        }
+        return null;
+      };
+      
       // 1. LTH Net Position Change 30d
       try {
-        const data = await fetchBGeometrics('/v1/lth-net-position-change-30d-btc/90', 'LTH Position 30d');
-        if (data && data.length) {
-          smData.lthHistory = data.map(d => ({ date: d.day || d.date, value: d.value || d.lthNetPositionChange30dBtc || 0 }));
-          const latest = data[data.length - 1];
-          smData.lth30d = latest.value || latest.lthNetPositionChange30dBtc || 0;
+        const result = await fetchBGeometrics('/v1/lth-net-position-change-30d-btc', 'LTH Position 30d');
+        if (result.success && result.data && result.data.length) {
+          const data = result.data;
+          // Get last 90 days for chart
+          const last90 = data.slice(-90);
+          smData.lthHistory = last90.map(d => ({ 
+            date: d.d || d.day || d.date || d.t, 
+            value: d.lthNetPositionChange30dBtc || d.value || d.v || 0 
+          }));
+          smData.lth30d = getLatest(data, 'lthNetPositionChange30dBtc', 'value', 'v');
+          console.log('✓ LTH 30d:', smData.lth30d);
         }
       } catch(e) { console.warn('LTH 30d fetch error:', e); }
       
       // 2. STH Net Position Change 30d
       try {
-        const data = await fetchBGeometrics('/v1/sth-net-position-change-30d-btc/1', 'STH Position 30d');
-        if (data && data.length) {
-          const latest = data[data.length - 1];
-          smData.sth30d = latest.value || latest.sthNetPositionChange30dBtc || 0;
+        const result = await fetchBGeometrics('/v1/sth-net-position-change-30d-btc', 'STH Position 30d');
+        if (result.success && result.data && result.data.length) {
+          smData.sth30d = getLatest(result.data, 'sthNetPositionChange30dBtc', 'value', 'v');
+          console.log('✓ STH 30d:', smData.sth30d);
         }
       } catch(e) { console.warn('STH 30d fetch error:', e); }
       
       // 3. STH/LTH Ratio
       try {
-        const data = await fetchBGeometrics('/v1/sth-lth-ratio/1', 'STH/LTH Ratio');
-        if (data && data.length) {
-          const latest = data[data.length - 1];
-          smData.sthLthRatio = latest.value || latest.sthLthRatio || latest.ratio || 0;
+        const result = await fetchBGeometrics('/v1/sth-lth-ratio', 'STH/LTH Ratio');
+        if (result.success && result.data && result.data.length) {
+          smData.sthLthRatio = getLatest(result.data, 'sthLthRatio', 'value', 'ratio', 'v');
+          console.log('✓ STH/LTH Ratio:', smData.sthLthRatio);
         }
       } catch(e) { console.warn('STH/LTH Ratio fetch error:', e); }
       
       // 4. HODL 1 Year+
       try {
-        const data = await fetchBGeometrics('/v1/hodl-one-year/1', 'HODL 1Y+');
-        if (data && data.length) {
-          const latest = data[data.length - 1];
-          smData.hodl1y = (latest.value || latest.hodlOneYear || latest.oneYearHodl || 0) * 100; // Convert to %
+        const result = await fetchBGeometrics('/v1/hodl-one-year', 'HODL 1Y+');
+        if (result.success && result.data && result.data.length) {
+          const val = getLatest(result.data, 'hodlOneYear', 'value', 'v');
+          // Value might be a fraction (0.65) or percentage (65) - normalize to %
+          smData.hodl1y = val !== null ? (val > 1 ? val : val * 100) : null;
+          console.log('✓ HODL 1Y:', smData.hodl1y);
         }
       } catch(e) { console.warn('HODL 1Y fetch error:', e); }
       
       // 5. LTH SOPR
       try {
-        const data = await fetchBGeometrics('/v1/lth-sopr/1', 'LTH SOPR');
-        if (data && data.length) {
-          const latest = data[data.length - 1];
-          smData.lthSopr = latest.value || latest.lthSopr || latest.sopr || 0;
+        const result = await fetchBGeometrics('/v1/lth-sopr', 'LTH SOPR');
+        if (result.success && result.data && result.data.length) {
+          smData.lthSopr = getLatest(result.data, 'lthSopr', 'value', 'v');
+          console.log('✓ LTH SOPR:', smData.lthSopr);
         }
       } catch(e) { console.warn('LTH SOPR fetch error:', e); }
       
       // 6. Reserve Risk
       try {
-        const data = await fetchBGeometrics('/v1/reserve-risk/1', 'Reserve Risk');
-        if (data && data.length) {
-          const latest = data[data.length - 1];
-          smData.reserveRisk = latest.value || latest.reserveRisk || 0;
+        const result = await fetchBGeometrics('/v1/reserve-risk', 'Reserve Risk');
+        if (result.success && result.data && result.data.length) {
+          smData.reserveRisk = getLatest(result.data, 'reserveRisk', 'value', 'v');
+          console.log('✓ Reserve Risk:', smData.reserveRisk);
         }
       } catch(e) { console.warn('Reserve Risk fetch error:', e); }
+      
+      console.log('📊 Smart Money data collected:', smData);
       
       // Render data to UI
       renderSmartMoneyUI(smData);
@@ -2852,10 +2872,10 @@
       // --- Checklist Evaluation ---
       const checks = [
         { id: 'smCheck1', pass: smData.lth30d !== null && smData.lth30d > 0, label: 'LTH accumulating (net positive 30d)' },
-        { id: 'smCheck2', pass: smData.sthLthRatio !== null && smData.sthLthRatio < 0.5, label: 'STH/LTH ratio below 0.5 (accumulation zone)' },
-        { id: 'smCheck3', pass: smData.hodl1y !== null && smData.hodl1y > 65, label: '1Y+ HODL supply above 65% (high conviction)' },
-        { id: 'smCheck4', pass: smData.lthSopr !== null && smData.lthSopr < 1.0, label: 'LTH SOPR below 1.0 (capitulation signal)' },
-        { id: 'smCheck5', pass: smData.reserveRisk !== null && smData.reserveRisk < 0.005, label: 'Reserve Risk below 0.005 (good entry zone)' },
+        { id: 'smCheck2', pass: smData.sthLthRatio !== null && smData.sthLthRatio < 0.5, label: 'STH/LTH ratio below 0.5' },
+        { id: 'smCheck3', pass: smData.hodl1y !== null && smData.hodl1y > 65, label: '1Y+ HODL supply above 65%' },
+        { id: 'smCheck4', pass: smData.lthSopr !== null && smData.lthSopr < 1.0, label: 'LTH SOPR below 1.0' },
+        { id: 'smCheck5', pass: smData.reserveRisk !== null && smData.reserveRisk < 0.005, label: 'Reserve Risk below 0.005' },
         { id: 'smCheck6', pass: smData.sth30d !== null && smData.sth30d < 0, label: 'STH distributing (net negative 30d)' }
       ];
       
@@ -2865,6 +2885,9 @@
         if (el) {
           const icon = el.querySelector('.sm-check-icon');
           const text = el.querySelector('.sm-check-text');
+          // Update text to match criteria
+          if (text) text.textContent = c.label;
+          
           if (c.pass === null || (typeof c.pass === 'undefined')) {
             el.className = 'sm-check-item neutral';
             if (icon) icon.textContent = '○';
@@ -2893,19 +2916,19 @@
       let confColor, confDesc;
       if (confidence >= 80) {
         confColor = 'var(--accent-green)';
-        confDesc = 'Strong accumulation signals detected. On-chain data suggests smart money is actively positioning. This historically precedes significant price appreciation.';
+        confDesc = 'Strong accumulation signals. LTH adding, STH distributing, low reserve risk. Historically favorable entry conditions.';
       } else if (confidence >= 60) {
         confColor = 'var(--accent-lime)';
-        confDesc = 'Moderate accumulation signals. Some smart money indicators are positive, but not all conditions are met. Consider scaling in positions.';
+        confDesc = 'Moderate accumulation signals. Some smart money indicators positive. Consider scaling in.';
       } else if (confidence >= 40) {
         confColor = 'var(--accent-yellow)';
-        confDesc = 'Mixed signals from smart money indicators. Market is in a transitional phase. Exercise caution and wait for clearer confirmation.';
+        confDesc = 'Mixed signals. Market in transition. Neither clear accumulation nor distribution.';
       } else if (confidence >= 20) {
         confColor = 'var(--accent-orange)';
-        confDesc = 'Distribution signals detected. Smart money may be reducing exposure. Not an ideal accumulation zone.';
+        confDesc = 'Distribution signals present. LTH taking profits. Exercise caution.';
       } else {
         confColor = 'var(--accent-red)';
-        confDesc = 'Heavy distribution signals. On-chain data suggests smart money is actively selling. Exercise extreme caution.';
+        confDesc = 'Heavy distribution. LTH selling aggressively. Risk elevated.';
       }
       
       confValueEl.style.color = confColor;
@@ -2913,7 +2936,7 @@
       confDescEl.textContent = confDesc;
       
       // --- Render LTH History Chart ---
-      if (smData.lthHistory.length > 0) {
+      if (smData.lthHistory && smData.lthHistory.length > 0) {
         renderSmLthChart(smData.lthHistory);
       }
       
