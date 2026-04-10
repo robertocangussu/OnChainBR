@@ -3317,7 +3317,7 @@
         return getAnyNumericValue(item);
       };
       
-      // 1. Open Interest - try both endpoints
+      // 1. Open Interest - use correct field names
       try {
         let result = await fetchBGeometrics('/v1/open-interest-1h', 'Open Interest 1h');
         if (!result.success || !result.data || !result.data.length) {
@@ -3329,20 +3329,20 @@
           const last30 = data.slice(-30);
           levData.oiHistory = last30.map(d => ({
             date: d.d || d.day || d.date || d.t,
-            value: toNum(d.openInterest || d.openInterestFutures || d.oi || d.value) || 0
+            value: toNum(d.sumOpenInterestValue || d.sumOpenInterest || d.openInterest || d.value) || 0
           }));
-          levData.openInterest = getLatest(data, 'openInterest', 'openInterestFutures', 'oi', 'value');
+          levData.openInterest = getLatest(data, 'sumOpenInterestValue', 'sumOpenInterest', 'openInterest', 'value');
           console.log('✓ Open Interest:', levData.openInterest);
         }
       } catch(e) { console.warn('OI fetch error:', e); }
       
-      // 2. Liquidations 24h
+      // 2. Liquidations 24h - use totalLiquidationsUsd
       try {
         const result = await fetchBGeometrics('/v1/btc-liquidations-1d', 'Liquidations 1d');
         if (result.success && result.data && result.data.length) {
           const latest = result.data[result.data.length - 1];
           console.log('[Leverage] Liq sample:', JSON.stringify(latest));
-          levData.liquidations24h = toNum(latest.usdValue || latest.value || latest.liquidations || latest.total);
+          levData.liquidations24h = toNum(latest.totalLiquidationsUsd || latest.longLiquidationsUsd + latest.shortLiquidationsUsd || latest.value);
           console.log('✓ Liquidations 24h:', levData.liquidations24h);
         }
       } catch(e) { console.warn('Liquidations fetch error:', e); }
@@ -3358,16 +3358,16 @@
         }
       } catch(e) { console.warn('Funding Rate fetch error:', e); }
       
-      // 4. Long/Short Ratio (futures-global-1h)
+      // 4. Long/Short Ratio (futures-global-1h) - use correct field names
       try {
         const result = await fetchBGeometrics('/v1/futures-global-1h', 'Futures Global');
         if (result.success && result.data && result.data.length) {
           const latest = result.data[result.data.length - 1];
           console.log('[Leverage] Futures Global sample:', JSON.stringify(latest));
-          levData.longShortRatio = toNum(latest.longShortRatio || latest.globalLongShortAccountRatio || latest.ratio || latest.value);
-          levData.longPct = toNum(latest.longAccount || latest.longPct || latest.long);
-          levData.shortPct = toNum(latest.shortAccount || latest.shortPct || latest.short);
-          // If we have long/short pct, calculate ratio
+          levData.longShortRatio = toNum(latest.futuresGlobalLongShortRatio || latest.longShortRatio || latest.ratio);
+          levData.longPct = toNum(latest.futuresGlobalLongAccount || latest.longAccount || latest.long);
+          levData.shortPct = toNum(latest.futuresGlobalShortAccount || latest.shortAccount || latest.short);
+          // If we have long/short pct, calculate ratio if needed
           if (!levData.longShortRatio && levData.longPct && levData.shortPct) {
             levData.longShortRatio = levData.longPct / levData.shortPct;
           }
@@ -3386,29 +3386,52 @@
         return isNaN(n) ? null : n;
       };
       
-      // Open Interest
+      // Open Interest - auto-detect scale
       const oiEl = document.getElementById('levOi');
       const oiStatusEl = document.getElementById('levOiStatus');
       const oiVal = num(levData.openInterest);
       if (oiVal !== null) {
-        const formatted = '$' + (oiVal / 1e9).toFixed(2) + 'B';
+        let formatted, displayVal = oiVal;
+        // Values come as scientific notation strings sometimes, parse them
+        if (displayVal > 1e12) {
+          formatted = '$' + (displayVal / 1e12).toFixed(2) + 'T';
+        } else if (displayVal > 1e9) {
+          formatted = '$' + (displayVal / 1e9).toFixed(1) + 'B';
+        } else if (displayVal > 1e6) {
+          formatted = '$' + (displayVal / 1e6).toFixed(0) + 'M';
+        } else {
+          formatted = '$' + displayVal.toFixed(0);
+        }
         oiEl.textContent = formatted;
-        const color = oiVal > 35e9 ? 'var(--accent-red)' : oiVal < 20e9 ? 'var(--accent-green)' : 'var(--accent-yellow)';
-        const status = oiVal > 35e9 ? 'HIGH RISK' : oiVal < 20e9 ? 'LOW' : 'MODERATE';
+        // Thresholds: >40B = high risk, <25B = low
+        const thresholdHigh = 40e9, thresholdLow = 25e9;
+        const color = displayVal > thresholdHigh ? 'var(--accent-red)' : displayVal < thresholdLow ? 'var(--accent-green)' : 'var(--accent-yellow)';
+        const status = displayVal > thresholdHigh ? 'HIGH RISK' : displayVal < thresholdLow ? 'LOW' : 'MODERATE';
         oiEl.style.color = color;
         oiStatusEl.textContent = status;
         oiStatusEl.style.color = color;
       }
       
-      // Liquidations 24h
+      // Liquidations 24h - values come in scientific notation
       const liqEl = document.getElementById('levLiq24h');
       const liqStatusEl = document.getElementById('levLiq24hStatus');
       const liqVal = num(levData.liquidations24h);
       if (liqVal !== null) {
-        const formatted = '$' + (liqVal / 1e6).toFixed(1) + 'M';
+        let formatted;
+        if (liqVal > 1e9) {
+          formatted = '$' + (liqVal / 1e9).toFixed(2) + 'B';
+        } else if (liqVal > 1e6) {
+          formatted = '$' + (liqVal / 1e6).toFixed(1) + 'M';
+        } else if (liqVal > 1e3) {
+          formatted = '$' + (liqVal / 1e3).toFixed(0) + 'K';
+        } else {
+          formatted = '$' + liqVal.toFixed(0);
+        }
         liqEl.textContent = formatted;
-        const color = liqVal > 500e6 ? 'var(--accent-red)' : liqVal < 100e6 ? 'var(--accent-green)' : 'var(--accent-yellow)';
-        const status = liqVal > 500e6 ? 'FLUSH' : liqVal < 100e6 ? 'CALM' : 'MODERATE';
+        // Thresholds based on screenshot data (~1.25e9 = $1.25B total)
+        const thresholdHigh = 2e9, thresholdLow = 500e6;
+        const color = liqVal > thresholdHigh ? 'var(--accent-red)' : liqVal < thresholdLow ? 'var(--accent-green)' : 'var(--accent-yellow)';
+        const status = liqVal > thresholdHigh ? 'FLUSH' : liqVal < thresholdLow ? 'CALM' : 'MODERATE';
         liqEl.style.color = color;
         liqStatusEl.textContent = status;
         liqStatusEl.style.color = color;
@@ -3461,12 +3484,12 @@
         statusEl.style.color = el.style.color;
       }
       
-      // Risk Checklist
+      // Risk Checklist - adjusted thresholds
       const checks = [
-        { id: 'levCheck1', pass: oiVal !== null && oiVal > 30e9 },
-        { id: 'levCheck2', pass: fundingVal !== null && Math.abs(fundingVal) > 0.0005 },
-        { id: 'levCheck3', pass: lsVal !== null && (lsVal > 1.5 || lsVal < 0.7) },
-        { id: 'levCheck4', pass: liqVal !== null && liqVal > 200e6 }
+        { id: 'levCheck1', pass: oiVal !== null && oiVal > 40e9 },  // >$40B = high leverage
+        { id: 'levCheck2', pass: fundingVal !== null && Math.abs(fundingVal) > 0.0005 },  // extreme funding
+        { id: 'levCheck3', pass: lsVal !== null && (lsVal > 1.5 || lsVal < 0.7) },  // extreme ratio
+        { id: 'levCheck4', pass: liqVal !== null && liqVal > 2e9 }  // >$2B liquidations
       ];
       
       let riskCount = 0;
@@ -3618,9 +3641,9 @@
           const last90 = data.slice(-90);
           minerData.reserveHistory = last90.map(d => ({
             date: d.d || d.day || d.date || d.t,
-            value: toNum(d.minerReserve || d.reserve || d.value) || 0
+            value: toNum(d.minerReserveBtc || d.minerReserve || d.reserve || d.value) || 0
           }));
-          minerData.reserve = getLatest(data, 'minerReserve', 'reserve', 'value');
+          minerData.reserve = getLatest(data, 'minerReserveBtc', 'minerReserve', 'reserve', 'value');
           console.log('✓ Miner Reserve:', minerData.reserve);
         }
       } catch(e) { console.warn('Miner Reserve fetch error:', e); }
@@ -3731,32 +3754,31 @@
         puellStatusEl.style.color = color;
       }
       
-      // Hashrate - detect scale automatically
+      // Hashrate - data shows values like 850 for recent dates (EH/s)
       const hashEl = document.getElementById('minerHashrate');
       const hashStatusEl = document.getElementById('minerHashrateStatus');
       const hashVal = num(minerData.hashrate);
       if (hashVal !== null) {
         let formatted;
-        // Determine the scale - hashrate could come in H/s, EH/s, or already formatted
-        if (hashVal > 1e18) {
-          formatted = (hashVal / 1e18).toFixed(0) + ' EH/s';
-        } else if (hashVal > 1e15) {
-          formatted = (hashVal / 1e15).toFixed(0) + ' PH/s';
-        } else if (hashVal > 1e12) {
-          formatted = (hashVal / 1e12).toFixed(0) + ' TH/s';
-        } else if (hashVal > 1000) {
-          // Likely already in EH/s (e.g., 750 = 750 EH/s)
+        // Recent Bitcoin hashrate is ~800-900 EH/s
+        // API returns values like 850 for EH/s
+        if (hashVal > 10000) {
+          // Might be in PH/s
+          formatted = (hashVal / 1000).toFixed(0) + ' EH/s';
+        } else if (hashVal > 100) {
+          // Already in EH/s
           formatted = hashVal.toFixed(0) + ' EH/s';
         } else if (hashVal > 1) {
-          // Small number, probably EH/s
+          // Could be in ZH/s or some other unit
           formatted = hashVal.toFixed(1) + ' EH/s';
         } else {
-          formatted = (hashVal * 1000).toFixed(0) + ' EH/s';
+          // Historical small values
+          formatted = (hashVal * 1000).toFixed(2) + ' PH/s';
         }
         hashEl.textContent = formatted;
-        hashEl.style.color = 'var(--accent-green)';
-        hashStatusEl.textContent = 'HEALTHY';
-        hashStatusEl.style.color = 'var(--accent-green)';
+        hashEl.style.color = hashVal > 100 ? 'var(--accent-green)' : 'var(--accent-yellow)';
+        hashStatusEl.textContent = hashVal > 100 ? 'HEALTHY' : 'LOW';
+        hashStatusEl.style.color = hashEl.style.color;
       }
       
       // Difficulty
