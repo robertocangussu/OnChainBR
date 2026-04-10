@@ -1239,16 +1239,34 @@
     // ========== API FUNCTIONS ==========
     async function fetchBGeometrics(endpoint, label) {
       const baseUrl = `${CONFIG.BGEOMETRICS_BASE}${endpoint}?token=${CONFIG.BGEOMETRICS_TOKEN}`;
-      // Use CORS proxy if enabled (needed for GitHub Pages)
-      const url = CONFIG.USE_CORS_PROXY ? `${CONFIG.CORS_PROXY}${encodeURIComponent(baseUrl)}` : baseUrl;
+      
+      // Try with CORS proxy first (needed for GitHub Pages)
+      if (CONFIG.USE_CORS_PROXY) {
+        try {
+          const proxyUrl = `${CONFIG.CORS_PROXY}${encodeURIComponent(baseUrl)}`;
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 12000);
+          const response = await fetch(proxyUrl, { signal: ctrl.signal });
+          clearTimeout(timer);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          console.log(`✓ ${label} via BGeometrics (proxy)`);
+          updateLoadingProgress(label);
+          return { success: true, data };
+        } catch (proxyError) {
+          console.warn(`[${label}] Proxy failed (${proxyError.message}), trying direct...`);
+        }
+      }
+      
+      // Try direct connection as fallback
       try {
         const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 10000); // Increased timeout for proxy
-        const response = await fetch(url, { signal: ctrl.signal });
+        const timer = setTimeout(() => ctrl.abort(), 8000);
+        const response = await fetch(baseUrl, { signal: ctrl.signal });
         clearTimeout(timer);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        console.log(`✓ ${label} via BGeometrics`);
+        console.log(`✓ ${label} via BGeometrics (direct)`);
         updateLoadingProgress(label);
         return { success: true, data };
       } catch (e) {
