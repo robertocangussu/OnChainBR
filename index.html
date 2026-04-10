@@ -546,7 +546,7 @@
         </div>
       </div>
       <div class="sm-chart-card">
-        <div class="sm-chart-title">LTH Net Position Change — 90 Day History</div>
+        <div class="sm-chart-title">NUPL (Net Unrealized Profit/Loss) — 90 Day History</div>
         <div class="sm-chart-container"><canvas id="smLthChart"></canvas></div>
       </div>
     </div>
@@ -2663,7 +2663,15 @@
         hodl1y: null,
         lthSopr: null,
         reserveRisk: null,
+        nupl: null,
         lthHistory: []
+      };
+      
+      // Helper to convert to number (handles strings)
+      const toNum = (v) => {
+        if (v === null || v === undefined) return null;
+        const n = typeof v === 'string' ? parseFloat(v) : v;
+        return isNaN(n) ? null : n;
       };
       
       // Helper to get latest value from array
@@ -2671,37 +2679,28 @@
         if (!arr || !arr.length) return null;
         const item = arr[arr.length - 1];
         for (const key of keys) {
-          if (item[key] !== undefined && item[key] !== null) return item[key];
+          if (item[key] !== undefined && item[key] !== null) return toNum(item[key]);
         }
         return null;
       };
       
-      // 1. LTH Net Position Change 30d
+      // 1. NUPL (works well, use for LTH behavior proxy and chart)
       try {
-        const result = await fetchBGeometrics('/v1/lth-net-position-change-30d-btc', 'LTH Position 30d');
+        const result = await fetchBGeometrics('/v1/nupl', 'NUPL');
         if (result.success && result.data && result.data.length) {
           const data = result.data;
           // Get last 90 days for chart
           const last90 = data.slice(-90);
           smData.lthHistory = last90.map(d => ({ 
             date: d.d || d.day || d.date || d.t, 
-            value: d.lthNetPositionChange30dBtc || d.value || d.v || 0 
+            value: toNum(d.nupl || d.value || d.v) || 0 
           }));
-          smData.lth30d = getLatest(data, 'lthNetPositionChange30dBtc', 'value', 'v');
-          console.log('✓ LTH 30d:', smData.lth30d);
+          smData.nupl = getLatest(data, 'nupl', 'value', 'v');
+          console.log('✓ NUPL:', smData.nupl);
         }
-      } catch(e) { console.warn('LTH 30d fetch error:', e); }
+      } catch(e) { console.warn('NUPL fetch error:', e); }
       
-      // 2. STH Net Position Change 30d
-      try {
-        const result = await fetchBGeometrics('/v1/sth-net-position-change-30d-btc', 'STH Position 30d');
-        if (result.success && result.data && result.data.length) {
-          smData.sth30d = getLatest(result.data, 'sthNetPositionChange30dBtc', 'value', 'v');
-          console.log('✓ STH 30d:', smData.sth30d);
-        }
-      } catch(e) { console.warn('STH 30d fetch error:', e); }
-      
-      // 3. STH/LTH Ratio
+      // 2. STH/LTH Ratio (WORKS!)
       try {
         const result = await fetchBGeometrics('/v1/sth-lth-ratio', 'STH/LTH Ratio');
         if (result.success && result.data && result.data.length) {
@@ -2710,7 +2709,7 @@
         }
       } catch(e) { console.warn('STH/LTH Ratio fetch error:', e); }
       
-      // 4. HODL 1 Year+
+      // 3. HODL 1 Year+ (WORKS!)
       try {
         const result = await fetchBGeometrics('/v1/hodl-one-year', 'HODL 1Y+');
         if (result.success && result.data && result.data.length) {
@@ -2721,16 +2720,16 @@
         }
       } catch(e) { console.warn('HODL 1Y fetch error:', e); }
       
-      // 5. LTH SOPR
+      // 4. SOPR (general - should work)
       try {
-        const result = await fetchBGeometrics('/v1/lth-sopr', 'LTH SOPR');
+        const result = await fetchBGeometrics('/v1/sopr', 'SOPR');
         if (result.success && result.data && result.data.length) {
-          smData.lthSopr = getLatest(result.data, 'lthSopr', 'value', 'v');
-          console.log('✓ LTH SOPR:', smData.lthSopr);
+          smData.lthSopr = getLatest(result.data, 'sopr', 'value', 'v');
+          console.log('✓ SOPR:', smData.lthSopr);
         }
-      } catch(e) { console.warn('LTH SOPR fetch error:', e); }
+      } catch(e) { console.warn('SOPR fetch error:', e); }
       
-      // 6. Reserve Risk
+      // 5. Reserve Risk
       try {
         const result = await fetchBGeometrics('/v1/reserve-risk', 'Reserve Risk');
         if (result.success && result.data && result.data.length) {
@@ -2739,6 +2738,40 @@
         }
       } catch(e) { console.warn('Reserve Risk fetch error:', e); }
       
+      // 6. LTH Supply (alternative to position change)
+      try {
+        const result = await fetchBGeometrics('/v1/long-term-hodler-supply-btc', 'LTH Supply');
+        if (result.success && result.data && result.data.length) {
+          const latest = getLatest(result.data, 'longTermHodlerSupplyBtc', 'value', 'v');
+          // Also try to get previous value for delta
+          if (result.data.length >= 30) {
+            const prev = toNum(result.data[result.data.length - 30].longTermHodlerSupplyBtc || 
+                               result.data[result.data.length - 30].value);
+            if (latest && prev) {
+              smData.lth30d = latest - prev; // Delta over ~30 days
+              console.log('✓ LTH 30d Delta:', smData.lth30d);
+            }
+          }
+        }
+      } catch(e) { console.warn('LTH Supply fetch error:', e); }
+      
+      // 7. STH Supply (alternative to position change)
+      try {
+        const result = await fetchBGeometrics('/v1/short-term-hodler-supply-btc', 'STH Supply');
+        if (result.success && result.data && result.data.length) {
+          const latest = getLatest(result.data, 'shortTermHodlerSupplyBtc', 'value', 'v');
+          // Also try to get previous value for delta
+          if (result.data.length >= 30) {
+            const prev = toNum(result.data[result.data.length - 30].shortTermHodlerSupplyBtc || 
+                               result.data[result.data.length - 30].value);
+            if (latest && prev) {
+              smData.sth30d = latest - prev; // Delta over ~30 days
+              console.log('✓ STH 30d Delta:', smData.sth30d);
+            }
+          }
+        }
+      } catch(e) { console.warn('STH Supply fetch error:', e); }
+      
       console.log('📊 Smart Money data collected:', smData);
       
       // Render data to UI
@@ -2746,15 +2779,22 @@
     }
     
     function renderSmartMoneyUI(smData) {
+      // Helper to safely convert to number
+      const num = (v) => {
+        if (v === null || v === undefined) return null;
+        const n = typeof v === 'string' ? parseFloat(v) : v;
+        return isNaN(n) ? null : n;
+      };
+      
       // --- LTH 30d ---
       const lth30dEl = document.getElementById('smLth30d');
       const lth30dStatusEl = document.getElementById('smLth30dStatus');
-      if (smData.lth30d !== null) {
-        const val = smData.lth30d;
-        const formatted = (val >= 0 ? '+' : '') + (val / 1000).toFixed(1) + 'K';
+      const lth30dVal = num(smData.lth30d);
+      if (lth30dVal !== null) {
+        const formatted = (lth30dVal >= 0 ? '+' : '') + (lth30dVal / 1000).toFixed(1) + 'K';
         lth30dEl.textContent = formatted;
-        const color = val > 0 ? 'var(--accent-green)' : val < -10000 ? 'var(--accent-red)' : 'var(--accent-yellow)';
-        const status = val > 0 ? 'ACCUMULATING' : val < -10000 ? 'DISTRIBUTING' : 'NEUTRAL';
+        const color = lth30dVal > 0 ? 'var(--accent-green)' : lth30dVal < -10000 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = lth30dVal > 0 ? 'ACCUMULATING' : lth30dVal < -10000 ? 'DISTRIBUTING' : 'NEUTRAL';
         lth30dEl.style.color = color;
         lth30dStatusEl.textContent = status;
         lth30dStatusEl.style.color = color;
@@ -2763,13 +2803,13 @@
       // --- STH 30d ---
       const sth30dEl = document.getElementById('smSth30d');
       const sth30dStatusEl = document.getElementById('smSth30dStatus');
-      if (smData.sth30d !== null) {
-        const val = smData.sth30d;
-        const formatted = (val >= 0 ? '+' : '') + (val / 1000).toFixed(1) + 'K';
+      const sth30dVal = num(smData.sth30d);
+      if (sth30dVal !== null) {
+        const formatted = (sth30dVal >= 0 ? '+' : '') + (sth30dVal / 1000).toFixed(1) + 'K';
         sth30dEl.textContent = formatted;
         // STH selling = bullish for LTH accumulation thesis
-        const color = val < 0 ? 'var(--accent-green)' : val > 10000 ? 'var(--accent-red)' : 'var(--accent-yellow)';
-        const status = val < 0 ? 'SELLING' : val > 10000 ? 'BUYING' : 'NEUTRAL';
+        const color = sth30dVal < 0 ? 'var(--accent-green)' : sth30dVal > 10000 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = sth30dVal < 0 ? 'SELLING' : sth30dVal > 10000 ? 'BUYING' : 'NEUTRAL';
         sth30dEl.style.color = color;
         sth30dStatusEl.textContent = status;
         sth30dStatusEl.style.color = color;
@@ -2778,11 +2818,11 @@
       // --- STH/LTH Ratio ---
       const ratioEl = document.getElementById('smRatio');
       const ratioStatusEl = document.getElementById('smRatioStatus');
-      if (smData.sthLthRatio !== null) {
-        const val = smData.sthLthRatio;
-        ratioEl.textContent = val.toFixed(3);
-        const color = val < 0.4 ? 'var(--accent-green)' : val > 0.6 ? 'var(--accent-red)' : 'var(--accent-yellow)';
-        const status = val < 0.4 ? 'BOTTOM ZONE' : val > 0.6 ? 'TOP ZONE' : 'NEUTRAL';
+      const ratioVal = num(smData.sthLthRatio);
+      if (ratioVal !== null) {
+        ratioEl.textContent = ratioVal.toFixed(3);
+        const color = ratioVal < 0.4 ? 'var(--accent-green)' : ratioVal > 0.6 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = ratioVal < 0.4 ? 'BOTTOM ZONE' : ratioVal > 0.6 ? 'TOP ZONE' : 'NEUTRAL';
         ratioEl.style.color = color;
         ratioStatusEl.textContent = status;
         ratioStatusEl.style.color = color;
@@ -2791,11 +2831,11 @@
       // --- HODL 1Y+ ---
       const hodl1yEl = document.getElementById('smHodl1y');
       const hodl1yStatusEl = document.getElementById('smHodl1yStatus');
-      if (smData.hodl1y !== null) {
-        const val = smData.hodl1y;
-        hodl1yEl.textContent = val.toFixed(1) + '%';
-        const color = val > 65 ? 'var(--accent-green)' : val < 55 ? 'var(--accent-red)' : 'var(--accent-yellow)';
-        const status = val > 65 ? 'HIGH CONVICTION' : val < 55 ? 'DISTRIBUTION' : 'NEUTRAL';
+      const hodl1yVal = num(smData.hodl1y);
+      if (hodl1yVal !== null) {
+        hodl1yEl.textContent = hodl1yVal.toFixed(1) + '%';
+        const color = hodl1yVal > 65 ? 'var(--accent-green)' : hodl1yVal < 55 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = hodl1yVal > 65 ? 'HIGH CONVICTION' : hodl1yVal < 55 ? 'DISTRIBUTION' : 'NEUTRAL';
         hodl1yEl.style.color = color;
         hodl1yStatusEl.textContent = status;
         hodl1yStatusEl.style.color = color;
@@ -2804,12 +2844,12 @@
       // --- LTH SOPR ---
       const lthSoprEl = document.getElementById('smLthSopr');
       const lthSoprStatusEl = document.getElementById('smLthSoprStatus');
-      if (smData.lthSopr !== null) {
-        const val = smData.lthSopr;
-        lthSoprEl.textContent = val.toFixed(3);
+      const lthSoprVal = num(smData.lthSopr);
+      if (lthSoprVal !== null) {
+        lthSoprEl.textContent = lthSoprVal.toFixed(3);
         // SOPR < 1 = LTH selling at loss = capitulation = bullish signal
-        const color = val < 0.9 ? 'var(--accent-green)' : val > 1.1 ? 'var(--accent-red)' : 'var(--accent-yellow)';
-        const status = val < 0.9 ? 'CAPITULATION' : val > 1.1 ? 'PROFIT TAKING' : 'BREAKEVEN';
+        const color = lthSoprVal < 0.9 ? 'var(--accent-green)' : lthSoprVal > 1.1 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = lthSoprVal < 0.9 ? 'CAPITULATION' : lthSoprVal > 1.1 ? 'PROFIT TAKING' : 'BREAKEVEN';
         lthSoprEl.style.color = color;
         lthSoprStatusEl.textContent = status;
         lthSoprStatusEl.style.color = color;
@@ -2818,11 +2858,11 @@
       // --- Reserve Risk ---
       const rrEl = document.getElementById('smReserveRisk');
       const rrStatusEl = document.getElementById('smReserveRiskStatus');
-      if (smData.reserveRisk !== null) {
-        const val = smData.reserveRisk;
-        rrEl.textContent = val.toFixed(5);
-        const color = val < 0.003 ? 'var(--accent-green)' : val > 0.01 ? 'var(--accent-red)' : 'var(--accent-yellow)';
-        const status = val < 0.003 ? 'BUY ZONE' : val > 0.01 ? 'RISKY' : 'NEUTRAL';
+      const rrVal = num(smData.reserveRisk);
+      if (rrVal !== null) {
+        rrEl.textContent = rrVal.toFixed(5);
+        const color = rrVal < 0.003 ? 'var(--accent-green)' : rrVal > 0.01 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = rrVal < 0.003 ? 'BUY ZONE' : rrVal > 0.01 ? 'RISKY' : 'NEUTRAL';
         rrEl.style.color = color;
         rrStatusEl.textContent = status;
         rrStatusEl.style.color = color;
@@ -2833,26 +2873,26 @@
       const gaugeValueEl = document.getElementById('smGaugeValue');
       const gaugeFillEl = document.getElementById('smGaugeFill');
       
-      if (smData.lth30d !== null) {
-        const val = smData.lth30d;
-        const formatted = (val >= 0 ? '+' : '') + (val / 1000).toFixed(1) + 'K';
+      const gaugeVal = num(smData.lth30d);
+      if (gaugeVal !== null) {
+        const formatted = (gaugeVal >= 0 ? '+' : '') + (gaugeVal / 1000).toFixed(1) + 'K';
         gaugeValueEl.textContent = formatted;
         
         // Determine status
         let status, color, barPct;
-        if (val > 10000) {
+        if (gaugeVal > 10000) {
           status = 'STRONG ACCUMULATION';
           color = 'var(--accent-green)';
           barPct = 85;
-        } else if (val > 0) {
+        } else if (gaugeVal > 0) {
           status = 'ACCUMULATING';
           color = 'var(--accent-lime)';
           barPct = 70;
-        } else if (val > -10000) {
+        } else if (gaugeVal > -10000) {
           status = 'NEUTRAL';
           color = 'var(--accent-yellow)';
           barPct = 50;
-        } else if (val > -30000) {
+        } else if (gaugeVal > -30000) {
           status = 'DISTRIBUTING';
           color = 'var(--accent-orange)';
           barPct = 30;
@@ -2871,40 +2911,41 @@
       
       // --- Checklist Evaluation ---
       const checks = [
-        { id: 'smCheck1', pass: smData.lth30d !== null && smData.lth30d > 0, label: 'LTH accumulating (net positive 30d)' },
-        { id: 'smCheck2', pass: smData.sthLthRatio !== null && smData.sthLthRatio < 0.5, label: 'STH/LTH ratio below 0.5' },
-        { id: 'smCheck3', pass: smData.hodl1y !== null && smData.hodl1y > 65, label: '1Y+ HODL supply above 65%' },
-        { id: 'smCheck4', pass: smData.lthSopr !== null && smData.lthSopr < 1.0, label: 'LTH SOPR below 1.0' },
-        { id: 'smCheck5', pass: smData.reserveRisk !== null && smData.reserveRisk < 0.005, label: 'Reserve Risk below 0.005' },
-        { id: 'smCheck6', pass: smData.sth30d !== null && smData.sth30d < 0, label: 'STH distributing (net negative 30d)' }
+        { id: 'smCheck1', pass: num(smData.lth30d) !== null && num(smData.lth30d) > 0 },
+        { id: 'smCheck2', pass: num(smData.sthLthRatio) !== null && num(smData.sthLthRatio) < 0.5 },
+        { id: 'smCheck3', pass: num(smData.hodl1y) !== null && num(smData.hodl1y) > 65 },
+        { id: 'smCheck4', pass: num(smData.lthSopr) !== null && num(smData.lthSopr) < 1.0 },
+        { id: 'smCheck5', pass: num(smData.reserveRisk) !== null && num(smData.reserveRisk) < 0.005 },
+        { id: 'smCheck6', pass: num(smData.sth30d) !== null && num(smData.sth30d) < 0 }
       ];
       
       let passCount = 0;
+      let validCount = 0;
       checks.forEach(c => {
         const el = document.getElementById(c.id);
         if (el) {
           const icon = el.querySelector('.sm-check-icon');
-          const text = el.querySelector('.sm-check-text');
-          // Update text to match criteria
-          if (text) text.textContent = c.label;
+          // Check if we have data for this check
+          const hasData = c.pass !== null && typeof c.pass === 'boolean';
           
-          if (c.pass === null || (typeof c.pass === 'undefined')) {
+          if (!hasData) {
             el.className = 'sm-check-item neutral';
             if (icon) icon.textContent = '○';
           } else if (c.pass) {
             el.className = 'sm-check-item pass';
             if (icon) icon.textContent = '✓';
             passCount++;
+            validCount++;
           } else {
             el.className = 'sm-check-item fail';
             if (icon) icon.textContent = '✗';
+            validCount++;
           }
         }
       });
       
       // --- Confidence Score ---
-      const validChecks = checks.filter(c => c.pass !== null && typeof c.pass !== 'undefined').length;
-      const confidence = validChecks > 0 ? Math.round((passCount / validChecks) * 100) : 0;
+      const confidence = validCount > 0 ? Math.round((passCount / validCount) * 100) : 0;
       
       const confValueEl = document.getElementById('smConfidenceValue');
       const confFillEl = document.getElementById('smConfidenceFill');
