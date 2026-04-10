@@ -3278,26 +3278,42 @@
         return isNaN(n) ? null : n;
       };
       
+      const getAnyNumericValue = (obj) => {
+        if (!obj) return null;
+        // Try to get any numeric value from the object
+        for (const key of Object.keys(obj)) {
+          if (key === 'd' || key === 'day' || key === 'date' || key === 't' || key === 'time') continue;
+          const v = toNum(obj[key]);
+          if (v !== null && v !== 0) return v;
+        }
+        return null;
+      };
+      
       const getLatest = (arr, ...keys) => {
         if (!arr || !arr.length) return null;
         const item = arr[arr.length - 1];
         for (const key of keys) {
           if (item[key] !== undefined && item[key] !== null) return toNum(item[key]);
         }
-        return null;
+        // Fallback: try any numeric value
+        return getAnyNumericValue(item);
       };
       
-      // 1. Open Interest
+      // 1. Open Interest - try both endpoints
       try {
-        const result = await fetchBGeometrics('/v1/open-interest-futures', 'Open Interest');
+        let result = await fetchBGeometrics('/v1/open-interest-1h', 'Open Interest 1h');
+        if (!result.success || !result.data || !result.data.length) {
+          result = await fetchBGeometrics('/v1/open-interest-futures', 'Open Interest Futures');
+        }
         if (result.success && result.data && result.data.length) {
           const data = result.data;
+          console.log('[Leverage] OI sample:', JSON.stringify(data[data.length-1]));
           const last30 = data.slice(-30);
           levData.oiHistory = last30.map(d => ({
-            date: d.d || d.day || d.date,
-            value: toNum(d.openInterestFutures || d.openInterest || d.value || d.oi) || 0
+            date: d.d || d.day || d.date || d.t,
+            value: toNum(d.openInterest || d.openInterestFutures || d.oi || d.value) || 0
           }));
-          levData.openInterest = getLatest(data, 'openInterestFutures', 'openInterest', 'value', 'oi');
+          levData.openInterest = getLatest(data, 'openInterest', 'openInterestFutures', 'oi', 'value');
           console.log('✓ Open Interest:', levData.openInterest);
         }
       } catch(e) { console.warn('OI fetch error:', e); }
@@ -3307,7 +3323,8 @@
         const result = await fetchBGeometrics('/v1/btc-liquidations-1d', 'Liquidations 1d');
         if (result.success && result.data && result.data.length) {
           const latest = result.data[result.data.length - 1];
-          levData.liquidations24h = toNum(latest.usdValue || latest.value || latest.liquidations);
+          console.log('[Leverage] Liq sample:', JSON.stringify(latest));
+          levData.liquidations24h = toNum(latest.usdValue || latest.value || latest.liquidations || latest.total);
           console.log('✓ Liquidations 24h:', levData.liquidations24h);
         }
       } catch(e) { console.warn('Liquidations fetch error:', e); }
@@ -3316,6 +3333,8 @@
       try {
         const result = await fetchBGeometrics('/v1/funding-rate', 'Funding Rate');
         if (result.success && result.data && result.data.length) {
+          const latest = result.data[result.data.length - 1];
+          console.log('[Leverage] Funding sample:', JSON.stringify(latest));
           levData.fundingRate = getLatest(result.data, 'fundingRate', 'rate', 'value');
           console.log('✓ Funding Rate:', levData.fundingRate);
         }
@@ -3326,7 +3345,8 @@
         const result = await fetchBGeometrics('/v1/futures-global-1h', 'Futures Global');
         if (result.success && result.data && result.data.length) {
           const latest = result.data[result.data.length - 1];
-          levData.longShortRatio = toNum(latest.longShortRatio || latest.ratio || latest.value);
+          console.log('[Leverage] Futures Global sample:', JSON.stringify(latest));
+          levData.longShortRatio = toNum(latest.longShortRatio || latest.globalLongShortAccountRatio || latest.ratio || latest.value);
           levData.longPct = toNum(latest.longAccount || latest.longPct || latest.long);
           levData.shortPct = toNum(latest.shortAccount || latest.shortPct || latest.short);
           // If we have long/short pct, calculate ratio
@@ -3542,20 +3562,31 @@
         return isNaN(n) ? null : n;
       };
       
+      const getAnyNumericValue = (obj) => {
+        if (!obj) return null;
+        for (const key of Object.keys(obj)) {
+          if (key === 'd' || key === 'day' || key === 'date' || key === 't' || key === 'time') continue;
+          const v = toNum(obj[key]);
+          if (v !== null && v !== 0) return v;
+        }
+        return null;
+      };
+      
       const getLatest = (arr, ...keys) => {
         if (!arr || !arr.length) return null;
         const item = arr[arr.length - 1];
         for (const key of keys) {
           if (item[key] !== undefined && item[key] !== null) return toNum(item[key]);
         }
-        return null;
+        return getAnyNumericValue(item);
       };
       
       // 1. Miner Position Index
       try {
         const result = await fetchBGeometrics('/v1/miner-position-index', 'Miner Position Index');
         if (result.success && result.data && result.data.length) {
-          minerData.positionIndex = getLatest(result.data, 'minerPositionIndex', 'value', 'mpi');
+          console.log('[Miner] MPI sample:', JSON.stringify(result.data[result.data.length-1]));
+          minerData.positionIndex = getLatest(result.data, 'minerPositionIndex', 'mpi', 'value');
           console.log('✓ Miner Position Index:', minerData.positionIndex);
         }
       } catch(e) { console.warn('MPI fetch error:', e); }
@@ -3565,21 +3596,26 @@
         const result = await fetchBGeometrics('/v1/miner-reserve', 'Miner Reserve');
         if (result.success && result.data && result.data.length) {
           const data = result.data;
+          console.log('[Miner] Reserve sample:', JSON.stringify(data[data.length-1]));
           const last90 = data.slice(-90);
           minerData.reserveHistory = last90.map(d => ({
-            date: d.d || d.day || d.date,
-            value: toNum(d.minerReserve || d.value || d.reserve) || 0
+            date: d.d || d.day || d.date || d.t,
+            value: toNum(d.minerReserve || d.reserve || d.value) || 0
           }));
-          minerData.reserve = getLatest(data, 'minerReserve', 'value', 'reserve');
+          minerData.reserve = getLatest(data, 'minerReserve', 'reserve', 'value');
           console.log('✓ Miner Reserve:', minerData.reserve);
         }
       } catch(e) { console.warn('Miner Reserve fetch error:', e); }
       
-      // 3. Miner Reserve Change 30d
+      // 3. Miner Reserve Change 30d - try alternate endpoint if needed
       try {
-        const result = await fetchBGeometrics('/v1/miner-reserve-change-30d-pct', 'Miner Reserve Change');
+        let result = await fetchBGeometrics('/v1/miner-reserve-change-30d-pct', 'Miner Reserve Change 30d');
+        if (!result.success || !result.data || !result.data.length) {
+          result = await fetchBGeometrics('/v1/miner-reserve-change-pct', 'Miner Reserve Change');
+        }
         if (result.success && result.data && result.data.length) {
-          minerData.reserveChange30d = getLatest(result.data, 'minerReserveChange30dPct', 'value', 'change');
+          console.log('[Miner] Reserve Change sample:', JSON.stringify(result.data[result.data.length-1]));
+          minerData.reserveChange30d = getLatest(result.data, 'minerReserveChange30dPct', 'minerReserveChangePct', 'change', 'value');
           console.log('✓ Miner Reserve Change 30d:', minerData.reserveChange30d);
         }
       } catch(e) { console.warn('Miner Reserve Change fetch error:', e); }
@@ -3588,7 +3624,8 @@
       try {
         const result = await fetchBGeometrics('/v1/puell-multiple', 'Puell Multiple');
         if (result.success && result.data && result.data.length) {
-          minerData.puellMultiple = getLatest(result.data, 'puellMultiple', 'value', 'puell');
+          console.log('[Miner] Puell sample:', JSON.stringify(result.data[result.data.length-1]));
+          minerData.puellMultiple = getLatest(result.data, 'puellMultiple', 'puell', 'value');
           console.log('✓ Puell Multiple:', minerData.puellMultiple);
         }
       } catch(e) { console.warn('Puell fetch error:', e); }
@@ -3597,7 +3634,8 @@
       try {
         const result = await fetchBGeometrics('/v1/hashrate', 'Hashrate');
         if (result.success && result.data && result.data.length) {
-          minerData.hashrate = getLatest(result.data, 'hashrate', 'value', 'hash');
+          console.log('[Miner] Hashrate sample:', JSON.stringify(result.data[result.data.length-1]));
+          minerData.hashrate = getLatest(result.data, 'hashrate', 'hash', 'value');
           console.log('✓ Hashrate:', minerData.hashrate);
         }
       } catch(e) { console.warn('Hashrate fetch error:', e); }
@@ -3606,6 +3644,7 @@
       try {
         const result = await fetchBGeometrics('/v1/difficulty-BTC', 'Difficulty');
         if (result.success && result.data && result.data.length) {
+          console.log('[Miner] Difficulty sample:', JSON.stringify(result.data[result.data.length-1]));
           minerData.difficulty = getLatest(result.data, 'difficultyBtc', 'difficulty', 'value');
           console.log('✓ Difficulty:', minerData.difficulty);
         }
@@ -3674,12 +3713,28 @@
         puellStatusEl.style.color = color;
       }
       
-      // Hashrate
+      // Hashrate - detect scale automatically
       const hashEl = document.getElementById('minerHashrate');
       const hashStatusEl = document.getElementById('minerHashrateStatus');
       const hashVal = num(minerData.hashrate);
       if (hashVal !== null) {
-        const formatted = (hashVal / 1e18).toFixed(0) + ' EH/s';
+        let formatted;
+        // Determine the scale - hashrate could come in H/s, EH/s, or already formatted
+        if (hashVal > 1e18) {
+          formatted = (hashVal / 1e18).toFixed(0) + ' EH/s';
+        } else if (hashVal > 1e15) {
+          formatted = (hashVal / 1e15).toFixed(0) + ' PH/s';
+        } else if (hashVal > 1e12) {
+          formatted = (hashVal / 1e12).toFixed(0) + ' TH/s';
+        } else if (hashVal > 1000) {
+          // Likely already in EH/s (e.g., 750 = 750 EH/s)
+          formatted = hashVal.toFixed(0) + ' EH/s';
+        } else if (hashVal > 1) {
+          // Small number, probably EH/s
+          formatted = hashVal.toFixed(1) + ' EH/s';
+        } else {
+          formatted = (hashVal * 1000).toFixed(0) + ' EH/s';
+        }
         hashEl.textContent = formatted;
         hashEl.style.color = 'var(--accent-green)';
         hashStatusEl.textContent = 'HEALTHY';
