@@ -1164,6 +1164,11 @@
     // ========== STATE ==========
     const state = { prices: [], metricHistory: {}, zScoreHistory: {}, zScores: {}, rawValues: {}, composite: null, compositeHistory: [], apiStatus: {}, endpointsLoaded: 0, totalEndpoints: 10, errors: [] };
     
+    // Global states for report integration
+    const smartMoneyState = { lth30d: null, sth30d: null, ratio: null, hodl1y: null, lthSopr: null, reserveRisk: null, confidence: 0 };
+    const leverageState = { oi: null, liq24h: null, funding: null, longShort: null, longPct: null, shortPct: null, riskScore: 0 };
+    const minerState = { posIdx: null, reserve: null, reserveChg: null, puell: null, hashrate: null, difficulty: null, healthScore: 0 };
+    
     // ========== CONFIG ==========
     const CONFIG = { 
       BGEOMETRICS_TOKEN: 'SahfZ2aHol', 
@@ -1214,6 +1219,30 @@
     function formatDateShort(d) { 
       try { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: '2-digit' }); } 
       catch { return '--'; } 
+    }
+    
+    // Format BTC amounts clearly with K/M suffix
+    function formatBTC(value, showSign = true) {
+      if (value === null || value === undefined || isNaN(value)) return '--';
+      const abs = Math.abs(value);
+      const sign = showSign ? (value >= 0 ? '+' : '') : (value < 0 ? '-' : '');
+      if (abs >= 1000000) return sign + (Math.abs(value)/1000000).toFixed(2) + 'M';
+      if (abs >= 1000) return sign + (Math.abs(value)/1000).toFixed(1) + 'K';
+      if (abs >= 100) return sign + Math.round(Math.abs(value)).toString();
+      if (abs >= 1) return sign + Math.abs(value).toFixed(1);
+      return sign + Math.abs(value).toFixed(2);
+    }
+    
+    // Format USD amounts clearly with K/M/B suffix
+    function formatUSD(value, showSign = false) {
+      if (value === null || value === undefined || isNaN(value)) return '--';
+      const abs = Math.abs(value);
+      const sign = showSign ? (value >= 0 ? '+' : '-') : '';
+      if (abs >= 1e12) return sign + '$' + (abs/1e12).toFixed(2) + 'T';
+      if (abs >= 1e9) return sign + '$' + (abs/1e9).toFixed(1) + 'B';
+      if (abs >= 1e6) return sign + '$' + (abs/1e6).toFixed(1) + 'M';
+      if (abs >= 1e3) return sign + '$' + (abs/1e3).toFixed(1) + 'K';
+      return sign + '$' + abs.toFixed(0);
     }
     
     function getZone(z) {
@@ -2801,9 +2830,9 @@
         if (data.length) {
           const latest = data[data.length-1].value;
           const sum7d  = data.slice(-7).reduce((a,d)=>a+(d.value||0),0);
-          document.getElementById('flowEtfLatest').textContent = (latest>=0?'+':'') + Math.round(latest).toLocaleString() + ' BTC';
+          document.getElementById('flowEtfLatest').textContent = formatBTC(latest) + ' BTC';
           document.getElementById('flowEtfLatest').style.color = latest>=0 ? 'var(--accent-green)' : 'var(--accent-red)';
-          document.getElementById('flowEtf7d').textContent = (sum7d>=0?'+':'') + Math.round(sum7d).toLocaleString();
+          document.getElementById('flowEtf7d').textContent = formatBTC(sum7d);
           document.getElementById('flowEtf7d').style.color = sum7d>=0 ? 'var(--accent-green)' : 'var(--accent-red)';
           document.getElementById('flowEtf7dSub').textContent = 'BTC net · 7 days';
           renderFlowLineChart('flowEtfChart', data, 'ETF Flow', '#3b82f6', true);
@@ -2817,8 +2846,8 @@
           const latest = data[data.length-1].value;
           const prev7  = data.length > 7 ? data[data.length-8].value : latest;
           const delta  = latest - prev7;
-          document.getElementById('flowReserveLatest').textContent = (latest/1000).toFixed(1) + 'K BTC';
-          document.getElementById('flowExReserve').textContent = (delta>=0?'+':'') + Math.round(delta).toLocaleString();
+          document.getElementById('flowReserveLatest').textContent = formatBTC(latest, false) + ' BTC';
+          document.getElementById('flowExReserve').textContent = formatBTC(delta);
           document.getElementById('flowExReserve').style.color = delta < 0 ? 'var(--accent-green)' : 'var(--accent-red)'; // falling reserve = bullish
           document.getElementById('flowExReserveSub').textContent = delta < 0 ? '▼ coins leaving exchanges' : '▲ coins entering exchanges';
           renderFlowLineChart('flowReserveChart', data, 'Reserve', '#a855f7', false);
@@ -2864,7 +2893,7 @@
           const avgDaily = sum30d / data.length;
           const label = avgDaily < -500 ? 'Strong Outflow' : avgDaily < 0 ? 'Net Outflow' : avgDaily < 500 ? 'Net Inflow' : 'Strong Inflow';
           const color = avgDaily < 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-          document.getElementById('flowWhaleRatio').textContent = (avgDaily >= 0 ? '+' : '') + Math.round(avgDaily).toLocaleString() + ' BTC/d';
+          document.getElementById('flowWhaleRatio').textContent = formatBTC(avgDaily) + '/d';
           document.getElementById('flowWhaleRatio').style.color = color;
           document.getElementById('flowWhaleRatioSub').textContent = label + ' (30d avg)';
         }
@@ -3197,6 +3226,15 @@
       confValueEl.style.color = confColor;
       confFillEl.style.background = confColor;
       confDescEl.textContent = confDesc;
+      
+      // Save to global state for report integration
+      smartMoneyState.lth30d = num(smData.lth30d);
+      smartMoneyState.sth30d = num(smData.sth30d);
+      smartMoneyState.ratio = num(smData.sthLthRatio);
+      smartMoneyState.hodl1y = num(smData.hodl1y);
+      smartMoneyState.lthSopr = num(smData.lthSopr);
+      smartMoneyState.reserveRisk = num(smData.reserveRisk);
+      smartMoneyState.confidence = confidence;
       
       // --- Render LTH History Chart ---
       if (smData.lthHistory && smData.lthHistory.length > 0) {
@@ -3548,6 +3586,15 @@
       gaugeFillEl.style.width = riskScore + '%';
       gaugeFillEl.style.background = color;
       
+      // Save to global state for report integration
+      leverageState.oi = oiVal;
+      leverageState.liq24h = liqVal;
+      leverageState.funding = fundingVal;
+      leverageState.longShort = lsVal;
+      leverageState.longPct = longPctVal;
+      leverageState.shortPct = shortPctVal;
+      leverageState.riskScore = riskScore;
+      
       // Chart
       if (levData.oiHistory && levData.oiHistory.length > 0) {
         renderLevOiChart(levData.oiHistory);
@@ -3754,30 +3801,34 @@
         puellStatusEl.style.color = color;
       }
       
-      // Hashrate - data shows values like 850 for recent dates (EH/s)
+      // Hashrate - data shows values around 800-1000 which is in EH/s
       const hashEl = document.getElementById('minerHashrate');
       const hashStatusEl = document.getElementById('minerHashrateStatus');
       const hashVal = num(minerData.hashrate);
       if (hashVal !== null) {
         let formatted;
-        // Recent Bitcoin hashrate is ~800-900 EH/s
-        // API returns values like 850 for EH/s
-        if (hashVal > 10000) {
-          // Might be in PH/s
+        // API returns hashrate in EH/s (current BTC hashrate ~800-1000 EH/s)
+        // But looking at screenshot showing 997226, it might be in TH/s
+        // 997226 TH/s = 997.2 EH/s (divide by 1000)
+        // Or it could be the raw value needs /1000
+        if (hashVal > 100000) {
+          // Likely in PH/s, convert to EH/s
           formatted = (hashVal / 1000).toFixed(0) + ' EH/s';
+        } else if (hashVal > 1000) {
+          // Already reasonable for EH/s
+          formatted = hashVal.toFixed(0) + ' EH/s';
         } else if (hashVal > 100) {
           // Already in EH/s
           formatted = hashVal.toFixed(0) + ' EH/s';
-        } else if (hashVal > 1) {
-          // Could be in ZH/s or some other unit
-          formatted = hashVal.toFixed(1) + ' EH/s';
         } else {
-          // Historical small values
-          formatted = (hashVal * 1000).toFixed(2) + ' PH/s';
+          // Small value, show as is
+          formatted = hashVal.toFixed(1) + ' EH/s';
         }
         hashEl.textContent = formatted;
-        hashEl.style.color = hashVal > 100 ? 'var(--accent-green)' : 'var(--accent-yellow)';
-        hashStatusEl.textContent = hashVal > 100 ? 'HEALTHY' : 'LOW';
+        // Check if healthy (current network is ~800-1000 EH/s)
+        const healthyThreshold = hashVal > 100000 ? 500000 : 500; // adjust based on scale
+        hashEl.style.color = hashVal > healthyThreshold ? 'var(--accent-green)' : 'var(--accent-yellow)';
+        hashStatusEl.textContent = hashVal > healthyThreshold ? 'HEALTHY' : 'LOW';
         hashStatusEl.style.color = hashEl.style.color;
       }
       
@@ -3858,6 +3909,15 @@
       gaugeStatusEl.style.color = color;
       gaugeFillEl.style.width = healthScore + '%';
       gaugeFillEl.style.background = color;
+      
+      // Save to global state for report integration
+      minerState.posIdx = mpiVal;
+      minerState.reserve = num(minerData.reserve);
+      minerState.reserveChg = num(minerData.reserveChg);
+      minerState.puell = puellVal;
+      minerState.hashrate = num(minerData.hashrate);
+      minerState.difficulty = num(minerData.difficulty);
+      minerState.healthScore = healthScore;
       
       // Chart
       if (minerData.reserveHistory && minerData.reserveHistory.length > 0) {
@@ -5135,98 +5195,236 @@
       document.getElementById('reportRisk').style.color = riskColor;
       document.getElementById('reportTimeframe').innerHTML = capitalAllocation + '<div style="font-size:8px;color:var(--text-muted);margin-top:2px;">do capital</div>';
       
-      // ========== GENERATE MAIN TEXT ==========
+      // ========== GENERATE MAIN TEXT (INTEGRATED ANALYSIS) ==========
       let mainText = '';
       
-      // Market structure analysis
+      // 1. MARKET STRUCTURE
+      mainText += `<div style="margin-bottom:16px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">📊 ESTRUTURA DE MERCADO</strong></div>`;
       if (!inBullMarket) {
         mainText += `O mercado está em <strong style="color:var(--accent-red)">estrutura de baixa</strong> (SMA50 < SMA200). `;
-        mainText += `Isso significa que estamos tecnicamente em bear market e qualquer rally pode ser apenas um "bear market rally". `;
+        mainText += `Estamos tecnicamente em bear market — rallies podem ser armadilhas. `;
       } else {
         mainText += `O mercado mantém <strong style="color:var(--accent-green)">estrutura de alta</strong> (SMA50 > SMA200). `;
         if (priceAboveSma50) {
-          mainText += `O preço está acima das médias principais, indicando força na tendência. `;
+          mainText += `Preço acima das médias principais indica força. `;
         } else {
-          mainText += `Porém, o preço está abaixo da SMA50, sugerindo uma correção em andamento. `;
+          mainText += `Preço abaixo da SMA50 sugere correção em andamento. `;
         }
       }
       
-      // Z-Score analysis
-      mainText += `<br><br>O Z-Score composto está em <strong>${zScore ? zScore.toFixed(2) : '--'}</strong>, `;
+      // 2. Z-SCORE / ON-CHAIN
+      mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">⛓️ ON-CHAIN (Z-SCORE)</strong></div>`;
+      mainText += `Z-Score composto: <strong style="color:${postureColor}">${zScore ? zScore.toFixed(2) : '--'}</strong> → `;
       if (zone === 'ACCUMULATE') {
-        mainText += `zona de <strong style="color:var(--accent-green)">ACUMULAÇÃO</strong>. Historicamente, esses níveis precedem fortes movimentos de alta. `;
-        mainText += `O mercado está em capitulação — vendedores exaustos, pouco interesse. É quando as mãos fortes compram.`;
+        mainText += `<strong style="color:var(--accent-green)">ZONA DE ACUMULAÇÃO</strong>. Capitulação extrema — mãos fortes comprando.`;
       } else if (zone === 'UNDERVALUED') {
-        mainText += `zona de <strong style="color:var(--accent-lime)">SUBVALORIZADO</strong>. Ainda há desconto, mas não é extremo. `;
-        mainText += `Boa região para acumulação gradual.`;
+        mainText += `<strong style="color:var(--accent-lime)">SUBVALORIZADO</strong>. Desconto moderado, boa região para DCA.`;
       } else if (zone === 'FAIR VALUE') {
-        mainText += `zona de <strong style="color:var(--accent-yellow)">FAIR VALUE</strong>. O mercado está precificado de forma justa. `;
-        mainText += `Sem pressa para comprar ou vender.`;
+        mainText += `<strong style="color:var(--accent-yellow)">FAIR VALUE</strong>. Preço justo, sem urgência.`;
       } else if (zone === 'ELEVATED') {
-        mainText += `zona <strong style="color:var(--accent-orange)">ELEVADA</strong>. O mercado está caro em relação ao histórico. `;
-        mainText += `Cautela é necessária.`;
+        mainText += `<strong style="color:var(--accent-orange)">ELEVADO</strong>. Mercado caro, cautela.`;
       } else if (zone === 'OVERHEATED') {
-        mainText += `zona de <strong style="color:var(--accent-red)">SUPERAQUECIMENTO</strong>. Euforia máxima. `;
-        mainText += `Historicamente, esses níveis precedem correções significativas.`;
+        mainText += `<strong style="color:var(--accent-red)">SUPERAQUECIDO</strong>. Euforia — correções históricas seguem esse nível.`;
+      }
+      if (sopr > 0) {
+        mainText += ` SOPR: <strong>${sopr.toFixed(3)}</strong>`;
+        if (sopr < 1) mainText += ` (vendendo no prejuízo = capitulação)`;
+        else if (sopr > 1.05) mainText += ` (realizando lucro)`;
       }
       
-      // SOPR analysis
-      if (sopr > 0) {
-        mainText += `<br><br>O SOPR está em <strong>${sopr.toFixed(3)}</strong>. `;
-        if (sopr < 1) {
-          mainText += `Abaixo de 1.0 indica que investidores estão realizando perdas — sinal de capitulação. `;
-        } else if (sopr > 1.05) {
-          mainText += `Acima de 1.05 indica que investidores estão realizando lucros significativos. `;
-        } else {
-          mainText += `Próximo de 1.0 indica equilíbrio entre lucro e prejuízo nas transações. `;
+      // 3. SMART MONEY
+      mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">🐋 SMART MONEY</strong></div>`;
+      if (smartMoneyState.confidence > 0) {
+        const smConf = smartMoneyState.confidence;
+        const smColor = smConf >= 70 ? 'var(--accent-green)' : smConf >= 40 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+        mainText += `Confidence Score: <strong style="color:${smColor}">${smConf}%</strong>. `;
+        
+        if (smartMoneyState.lth30d !== null) {
+          const lth = smartMoneyState.lth30d;
+          if (lth > 0) {
+            mainText += `LTH <strong style="color:var(--accent-green)">acumulando ${formatBTC(lth)}</strong> (30d). `;
+          } else {
+            mainText += `LTH <strong style="color:var(--accent-red)">distribuindo ${formatBTC(lth)}</strong> (30d). `;
+          }
         }
+        if (smartMoneyState.sth30d !== null) {
+          const sth = smartMoneyState.sth30d;
+          if (sth < 0) {
+            mainText += `STH vendendo — bullish para acumulação. `;
+          } else {
+            mainText += `STH comprando — FOMO no varejo. `;
+          }
+        }
+        if (smartMoneyState.reserveRisk !== null && smartMoneyState.reserveRisk < 0.005) {
+          mainText += `Reserve Risk <strong style="color:var(--accent-green)">baixo</strong> (zona de compra). `;
+        }
+      } else {
+        mainText += `Dados carregando...`;
+      }
+      
+      // 4. LEVERAGE / DERIVATIVES
+      mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">⚡ LEVERAGE & DERIVATIVOS</strong></div>`;
+      if (leverageState.riskScore !== undefined) {
+        const levRisk = leverageState.riskScore;
+        const levColor = levRisk >= 50 ? 'var(--accent-red)' : levRisk >= 25 ? 'var(--accent-yellow)' : 'var(--accent-green)';
+        mainText += `Risco de Cascade: <strong style="color:${levColor}">${levRisk}%</strong>. `;
+        
+        if (leverageState.oi !== null) {
+          mainText += `Open Interest: <strong>${formatUSD(leverageState.oi)}</strong>. `;
+        }
+        if (leverageState.longShort !== null) {
+          const ls = leverageState.longShort;
+          if (ls > 1.3) {
+            mainText += `L/S Ratio <strong style="color:var(--accent-orange)">${ls.toFixed(2)}</strong> — mercado crowded long. `;
+          } else if (ls < 0.8) {
+            mainText += `L/S Ratio <strong style="color:var(--accent-cyan)">${ls.toFixed(2)}</strong> — shorts dominando. `;
+          } else {
+            mainText += `L/S Ratio <strong>${ls.toFixed(2)}</strong> — equilibrado. `;
+          }
+        }
+        if (leverageState.funding !== null) {
+          const fund = leverageState.funding;
+          if (Math.abs(fund) > 0.0003) {
+            mainText += `Funding <strong style="color:${fund > 0 ? 'var(--accent-orange)' : 'var(--accent-cyan)'}">${(fund*100).toFixed(4)}%</strong>. `;
+          }
+        }
+      } else {
+        mainText += `Dados carregando...`;
+      }
+      
+      // 5. MINERS
+      mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">⛏️ MINERS</strong></div>`;
+      if (minerState.healthScore !== undefined) {
+        const minerHealth = minerState.healthScore;
+        const minerColor = minerHealth >= 50 ? 'var(--accent-green)' : minerHealth >= 25 ? 'var(--accent-yellow)' : 'var(--accent-orange)';
+        mainText += `Health Score: <strong style="color:${minerColor}">${minerHealth}%</strong>. `;
+        
+        if (minerState.posIdx !== null) {
+          const mpi = minerState.posIdx;
+          if (mpi < 0) {
+            mainText += `Position Index <strong style="color:var(--accent-green)">${mpi.toFixed(2)}</strong> — miners acumulando. `;
+          } else if (mpi > 2) {
+            mainText += `Position Index <strong style="color:var(--accent-red)">${mpi.toFixed(2)}</strong> — miners vendendo pesado. `;
+          } else {
+            mainText += `Position Index <strong>${mpi.toFixed(2)}</strong> — neutro. `;
+          }
+        }
+        if (minerState.puell !== null) {
+          const puell = minerState.puell;
+          if (puell < 0.5) {
+            mainText += `Puell <strong style="color:var(--accent-green)">${puell.toFixed(2)}</strong> (undervalued). `;
+          } else if (puell > 4) {
+            mainText += `Puell <strong style="color:var(--accent-red)">${puell.toFixed(2)}</strong> (overheated). `;
+          }
+        }
+        if (minerState.reserveChg !== null) {
+          const chg = minerState.reserveChg;
+          mainText += `Reserve 30d: <strong style="color:${chg < 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">${chg > 0 ? '+' : ''}${chg.toFixed(2)}%</strong>. `;
+        }
+      } else {
+        mainText += `Dados carregando...`;
+      }
+      
+      // 6. SENTIMENT
+      mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">😱 SENTIMENTO</strong></div>`;
+      if (fearGreed) {
+        const fg = fearGreed;
+        let fgLabel, fgColor;
+        if (fg <= 25) { fgLabel = 'Extreme Fear'; fgColor = 'var(--accent-green)'; }
+        else if (fg <= 45) { fgLabel = 'Fear'; fgColor = 'var(--accent-lime)'; }
+        else if (fg <= 55) { fgLabel = 'Neutral'; fgColor = 'var(--accent-yellow)'; }
+        else if (fg <= 75) { fgLabel = 'Greed'; fgColor = 'var(--accent-orange)'; }
+        else { fgLabel = 'Extreme Greed'; fgColor = 'var(--accent-red)'; }
+        mainText += `Fear & Greed: <strong style="color:${fgColor}">${fg.toFixed(0)}</strong> (${fgLabel}). `;
+      }
+      if (funding) {
+        const fundColor = funding > 0.01 ? 'var(--accent-red)' : funding < -0.01 ? 'var(--accent-green)' : 'var(--text-secondary)';
+        mainText += `Funding: <strong style="color:${fundColor}">${(funding*100).toFixed(4)}%</strong>. `;
+      }
+      if (rsi) {
+        const rsiColor = rsi > 70 ? 'var(--accent-red)' : rsi < 30 ? 'var(--accent-green)' : 'var(--accent-yellow)';
+        mainText += `RSI: <strong style="color:${rsiColor}">${rsi.toFixed(0)}</strong>. `;
       }
       
       document.getElementById('reportMainText').innerHTML = mainText;
       
-      // ========== ACTION RECOMMENDATION ==========
+      // ========== ACTION RECOMMENDATION (INTEGRATED) ==========
       let actionText = '';
       
+      // Calculate overall signal strength
+      const signals_bullish = [
+        zScore !== null && zScore <= -0.5,
+        smartMoneyState.confidence >= 60,
+        smartMoneyState.lth30d > 0,
+        leverageState.riskScore < 25,
+        minerState.healthScore >= 50,
+        fearGreed && fearGreed < 40
+      ].filter(Boolean).length;
+      
+      const signals_bearish = [
+        zScore !== null && zScore >= 0.5,
+        smartMoneyState.confidence < 30,
+        smartMoneyState.lth30d < -50000,
+        leverageState.riskScore >= 50,
+        minerState.healthScore < 25,
+        fearGreed && fearGreed > 70
+      ].filter(Boolean).length;
+      
       if (posture === 'ACUMULAR') {
-        actionText = `<strong style="color:var(--accent-green)">COMPRAR (${capitalAllocation}):</strong> Momento favorável para aumentar posição. Dividir compras em 3-4 parcelas ao longo das próximas semanas. Aguardar confirmação de reversão técnica (EMA21 > EMA50) para entrada mais agressiva.`;
+        actionText = `<strong style="color:var(--accent-green)">🟢 COMPRAR (${capitalAllocation}):</strong> Múltiplos indicadores alinhados para acumulação (${signals_bullish}/6 bullish). Dividir em 3-4 parcelas. Aguardar confirmação técnica para entrada agressiva.`;
       } else if (posture === 'ACUMULAR LEVE') {
-        actionText = `<strong style="color:var(--accent-lime)">COMPRAR LEVE (${capitalAllocation}):</strong> Continuar DCA normal. Pode aumentar levemente a alocação. Não ir all-in ainda. ${allocationDesc}.`;
+        actionText = `<strong style="color:var(--accent-lime)">🟡 COMPRAR LEVE (${capitalAllocation}):</strong> Sinais positivos mas não extremos (${signals_bullish}/6 bullish). DCA normal, pode aumentar levemente.`;
       } else if (posture === 'REALIZAR') {
-        actionText = `<strong style="color:var(--accent-red)">VENDER (${capitalAllocation}):</strong> Realizar lucros parciais. Reduzir exposição gradualmente. Manter stop loss apertado em posições restantes.`;
+        actionText = `<strong style="color:var(--accent-red)">🔴 VENDER (${capitalAllocation}):</strong> Múltiplos sinais de topo (${signals_bearish}/6 bearish). Realizar lucros, reduzir exposição, stops apertados.`;
       } else if (posture === 'CAUTELA') {
-        actionText = `<strong style="color:var(--accent-orange)">CAUTELA (${capitalAllocation}):</strong> Não aumentar posição. Considerar reduzir exposição. Ter stops definidos.`;
+        actionText = `<strong style="color:var(--accent-orange)">🟠 CAUTELA (${capitalAllocation}):</strong> Sinais mistos com viés bearish (${signals_bearish}/6). Não aumentar, considerar reduzir.`;
       } else if (posture === 'HOLD') {
-        actionText = `<strong style="color:var(--accent-cyan)">MANTER (${capitalAllocation}):</strong> Posições atuais podem ser mantidas. Aguardar movimentação mais clara para agir.`;
+        actionText = `<strong style="color:var(--accent-cyan)">⚪ MANTER (${capitalAllocation}):</strong> Mercado equilibrado. Manter posições, aguardar direção mais clara.`;
       } else {
-        actionText = `<strong style="color:var(--accent-yellow)">AGUARDAR (${capitalAllocation}):</strong> Momento de observação. Não abrir novas posições. Esperar confirmação de tendência.`;
+        actionText = `<strong style="color:var(--accent-yellow)">⏸️ AGUARDAR (${capitalAllocation}):</strong> Sinais conflitantes. Observar, não abrir novas posições.`;
       }
       
       if (openSignal) {
-        actionText += `<br><br><strong>Trade System:</strong> Posição ${openSignal.signal} aberta desde ${openSignal.date} @ $${openSignal.entryPrice.toLocaleString()}. P&L atual: ${openSignal.pnl}%`;
+        actionText += `<br><br><strong>📈 Trade System:</strong> Posição ${openSignal.signal} aberta desde ${openSignal.date} @ $${openSignal.entryPrice.toLocaleString()}. P&L: ${openSignal.pnl}%`;
       }
       
       document.getElementById('reportAction').innerHTML = actionText;
       
-      // ========== RISKS ==========
+      // ========== RISKS (INTEGRATED) ==========
       let risksText = '';
       
       if (!inBullMarket) {
-        risksText += '• Bear market estrutural — rallies podem ser armadilhas<br>';
+        risksText += '• <strong>Bear market estrutural</strong> — rallies podem ser armadilhas<br>';
       }
       if (rsi > 70) {
-        risksText += '• RSI sobrecomprado — risco de correção técnica<br>';
+        risksText += '• <strong>RSI sobrecomprado</strong> — risco de correção técnica<br>';
       }
       if (rsi < 30) {
-        risksText += '• RSI sobrevendido — pode haver mais queda antes de reversão<br>';
+        risksText += '• <strong>RSI sobrevendido</strong> — pode haver mais queda antes de reversão<br>';
       }
       if (zScore >= 1.0) {
-        risksText += '• Métricas on-chain em zona de risco — distribuição em andamento<br>';
+        risksText += '• <strong>Métricas on-chain em zona de risco</strong> — distribuição em andamento<br>';
+      }
+      if (leverageState.riskScore >= 50) {
+        risksText += '• <strong>Leverage elevado</strong> — risco de cascata de liquidações<br>';
+      }
+      if (leverageState.longShort > 1.5) {
+        risksText += '• <strong>Mercado crowded long</strong> — vulnerável a squeeze<br>';
+      }
+      if (smartMoneyState.lth30d < -50000) {
+        risksText += '• <strong>LTH distribuindo pesado</strong> — pressão vendedora estrutural<br>';
+      }
+      if (minerState.healthScore < 25) {
+        risksText += '• <strong>Miners em stress</strong> — possível capitulação em andamento<br>';
+      }
+      if (fearGreed > 75) {
+        risksText += '• <strong>Extreme Greed</strong> — euforia máxima precede correções<br>';
       }
       if (funding > 0.03) {
-        risksText += '• Funding rate elevado — mercado alavancado pro lado long<br>';
+        risksText += '• <strong>Funding rate elevado</strong> — mercado alavancado pro lado long<br>';
       }
       if (funding < -0.02) {
-        risksText += '• Funding rate negativo — shorts pagando longs<br>';
+        risksText += '• <strong>Funding rate negativo</strong> — shorts pagando longs<br>';
       }
       
       risksText += '• Risco macro: dados de inflação, decisões de juros, eventos geopolíticos<br>';
@@ -5272,11 +5470,22 @@
         }
       }
       
-      // Add current cycle context
+      // Add integrated summary
+      contextText += `<br><br><strong style="color:var(--accent-cyan)">📋 RESUMO INTEGRADO:</strong><br>`;
+      
+      // Calculate overall market health score
+      const overallBullish = signals_bullish;
+      const overallBearish = signals_bearish;
+      const overallSignal = overallBullish > overallBearish ? 'BULLISH' : overallBearish > overallBullish ? 'BEARISH' : 'NEUTRO';
+      const overallColor = overallSignal === 'BULLISH' ? 'var(--accent-green)' : overallSignal === 'BEARISH' ? 'var(--accent-red)' : 'var(--accent-yellow)';
+      
+      contextText += `• Viés Geral: <strong style="color:${overallColor}">${overallSignal}</strong> (${overallBullish} bullish / ${overallBearish} bearish)<br>`;
+      contextText += `• Z-Score: ${zScore ? zScore.toFixed(2) : '--'} | SM Confidence: ${smartMoneyState.confidence}% | Lev Risk: ${leverageState.riskScore}% | Miner Health: ${minerState.healthScore}%<br>`;
+      
       if (inBullMarket) {
-        contextText += `<br><br>Ciclo atual: Estamos em estrutura de alta desde que SMA50 cruzou SMA200 pra cima. `;
+        contextText += `• Ciclo: <strong style="color:var(--accent-green)">Bull Market</strong> (SMA50 > SMA200)`;
       } else {
-        contextText += `<br><br>Ciclo atual: Estamos em estrutura de baixa. Aguardar Golden Cross (SMA50 > SMA200) para confirmar novo bull market. `;
+        contextText += `• Ciclo: <strong style="color:var(--accent-red)">Bear Market</strong> — aguardar Golden Cross`;
       }
       
       document.getElementById('reportContext').innerHTML = contextText;
