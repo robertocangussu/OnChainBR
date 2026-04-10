@@ -290,8 +290,10 @@
     <a href="#flow" onclick="setActiveNav(this)">03 · Flow Analysis</a>
     <a href="#smartmoney" onclick="setActiveNav(this)">04 · Smart Money</a>
     <a href="#sentiment" onclick="setActiveNav(this)">05 · Sentiment</a>
-    <a href="#trading" onclick="setActiveNav(this)">06 · Trading</a>
-    <a href="#report" onclick="setActiveNav(this)">07 · Relatório</a>
+    <a href="#leverage" onclick="setActiveNav(this)">06 · Leverage Risk</a>
+    <a href="#miners" onclick="setActiveNav(this)">07 · Miners & Macro</a>
+    <a href="#trading" onclick="setActiveNav(this)">08 · Trading</a>
+    <a href="#report" onclick="setActiveNav(this)">09 · Relatório</a>
   </nav>
   <div id="dashboard">
   <div class="loading-overlay" id="loadingOverlay">
@@ -687,10 +689,212 @@
     </div>
   </div>
 
-  <!-- ========== SECTION 6: TRADING SYSTEMS ========== -->
-  <div class="section-wrap" id="trading" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+  <!-- ========== SECTION 6: LEVERAGE RISK METER ========== -->
+  <div class="section-wrap" id="leverage" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">06</span>
+      <span class="section-title">Leverage Risk Meter</span>
+      <span class="section-sub">OPEN INTEREST · LIQUIDATIONS · FUNDING RATE · LONG/SHORT RATIO</span>
+    </div>
+    
+    <!-- Top Row: Gauge + Chart -->
+    <div class="smart-money-top">
+      <div class="sm-gauge-card">
+        <div class="sm-gauge-label">Leverage Risk Level</div>
+        <div class="sm-gauge-status" id="levGaugeStatus">ANALYZING...</div>
+        <div class="sm-gauge-value" id="levGaugeValue">--</div>
+        <div class="sm-gauge-unit" id="levGaugeUnit">Risk Score</div>
+        <div class="sm-gauge-bar">
+          <div class="sm-gauge-fill" id="levGaugeFill" style="width:50%;background:var(--accent-yellow)"></div>
+        </div>
+        <div class="sm-gauge-legends">
+          <span>LOW</span>
+          <span>MEDIUM</span>
+          <span>EXTREME</span>
+        </div>
+      </div>
+      <div class="sm-chart-card">
+        <div class="sm-chart-title">Open Interest — 30 Day History</div>
+        <div class="sm-chart-container"><canvas id="levOiChart"></canvas></div>
+      </div>
+    </div>
+    
+    <!-- Stats Row -->
+    <div class="sm-stats-row">
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Open Interest</div>
+        <div class="sm-stat-value" id="levOi">--</div>
+        <div class="sm-stat-status" id="levOiStatus">--</div>
+        <div class="sm-stat-raw">futures contracts</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Liquidations 24h</div>
+        <div class="sm-stat-value" id="levLiq24h">--</div>
+        <div class="sm-stat-status" id="levLiq24hStatus">--</div>
+        <div class="sm-stat-raw">USD value</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Funding Rate</div>
+        <div class="sm-stat-value" id="levFunding">--</div>
+        <div class="sm-stat-status" id="levFundingStatus">--</div>
+        <div class="sm-stat-raw">8h rate</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Long/Short Ratio</div>
+        <div class="sm-stat-value" id="levLongShort">--</div>
+        <div class="sm-stat-status" id="levLongShortStatus">--</div>
+        <div class="sm-stat-raw">account ratio</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Long Accounts</div>
+        <div class="sm-stat-value" id="levLongPct">--</div>
+        <div class="sm-stat-status" id="levLongPctStatus">--</div>
+        <div class="sm-stat-raw">% of traders</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Short Accounts</div>
+        <div class="sm-stat-value" id="levShortPct">--</div>
+        <div class="sm-stat-status" id="levShortPctStatus">--</div>
+        <div class="sm-stat-raw">% of traders</div>
+      </div>
+    </div>
+    
+    <!-- Risk Assessment -->
+    <div class="sm-checklist-card">
+      <div class="sm-checklist-title">Leverage Risk Assessment</div>
+      <div class="sm-checklist-grid">
+        <div class="sm-check-item neutral" id="levCheck1">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">High Open Interest (elevated leverage)</span>
+        </div>
+        <div class="sm-check-item neutral" id="levCheck2">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">Extreme Funding Rate (imbalance)</span>
+        </div>
+        <div class="sm-check-item neutral" id="levCheck3">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">Long/Short Ratio extreme (&gt;1.5 or &lt;0.7)</span>
+        </div>
+        <div class="sm-check-item neutral" id="levCheck4">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">Recent large liquidations</span>
+        </div>
+      </div>
+      
+      <div class="sm-confidence-wrap" style="margin-top:20px;">
+        <div class="sm-confidence-label">CASCADE RISK SCORE</div>
+        <div class="sm-confidence-value" id="levRiskScore">--%</div>
+        <div class="sm-confidence-bar"><div class="sm-confidence-fill" id="levRiskFill" style="width:0%;background:var(--accent-green)"></div></div>
+        <div class="sm-confidence-desc" id="levRiskDesc">Analyzing derivatives data...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SECTION 7: MINER & MACRO CONTEXT ========== -->
+  <div class="section-wrap" id="miners" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <span class="section-title">Miner & Macro Context</span>
+      <span class="section-sub">HASH RIBBONS · MINER RESERVES · PUELL MULTIPLE · DIFFICULTY</span>
+    </div>
+    
+    <!-- Top Row: Gauge + Chart -->
+    <div class="smart-money-top">
+      <div class="sm-gauge-card">
+        <div class="sm-gauge-label">Miner Health Status</div>
+        <div class="sm-gauge-status" id="minerGaugeStatus">ANALYZING...</div>
+        <div class="sm-gauge-value" id="minerGaugeValue">--</div>
+        <div class="sm-gauge-unit" id="minerGaugeUnit">Position Index</div>
+        <div class="sm-gauge-bar">
+          <div class="sm-gauge-fill" id="minerGaugeFill" style="width:50%;background:var(--accent-yellow)"></div>
+        </div>
+        <div class="sm-gauge-legends">
+          <span>CAPITULATING</span>
+          <span>NEUTRAL</span>
+          <span>HEALTHY</span>
+        </div>
+      </div>
+      <div class="sm-chart-card">
+        <div class="sm-chart-title">Miner Reserve — 90 Day History</div>
+        <div class="sm-chart-container"><canvas id="minerReserveChart"></canvas></div>
+      </div>
+    </div>
+    
+    <!-- Stats Row -->
+    <div class="sm-stats-row">
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Miner Position Index</div>
+        <div class="sm-stat-value" id="minerPosIdx">--</div>
+        <div class="sm-stat-status" id="minerPosIdxStatus">--</div>
+        <div class="sm-stat-raw">accumulation signal</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Miner Reserve</div>
+        <div class="sm-stat-value" id="minerReserve">--</div>
+        <div class="sm-stat-status" id="minerReserveStatus">--</div>
+        <div class="sm-stat-raw">BTC held</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Reserve Change 30d</div>
+        <div class="sm-stat-value" id="minerReserveChg">--</div>
+        <div class="sm-stat-status" id="minerReserveChgStatus">--</div>
+        <div class="sm-stat-raw">% change</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Puell Multiple</div>
+        <div class="sm-stat-value" id="minerPuell">--</div>
+        <div class="sm-stat-status" id="minerPuellStatus">--</div>
+        <div class="sm-stat-raw">revenue ratio</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Hash Rate</div>
+        <div class="sm-stat-value" id="minerHashrate">--</div>
+        <div class="sm-stat-status" id="minerHashrateStatus">--</div>
+        <div class="sm-stat-raw">network security</div>
+      </div>
+      <div class="sm-stat-card">
+        <div class="sm-stat-label">Difficulty</div>
+        <div class="sm-stat-value" id="minerDifficulty">--</div>
+        <div class="sm-stat-status" id="minerDifficultyStatus">--</div>
+        <div class="sm-stat-raw">mining difficulty</div>
+      </div>
+    </div>
+    
+    <!-- Miner Checklist -->
+    <div class="sm-checklist-card">
+      <div class="sm-checklist-title">Miner Capitulation Checklist</div>
+      <div class="sm-checklist-grid">
+        <div class="sm-check-item neutral" id="minerCheck1">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">Miner Position Index negative (accumulating)</span>
+        </div>
+        <div class="sm-check-item neutral" id="minerCheck2">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">Miner Reserve declining (selling pressure)</span>
+        </div>
+        <div class="sm-check-item neutral" id="minerCheck3">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">Puell Multiple below 0.5 (undervalued)</span>
+        </div>
+        <div class="sm-check-item neutral" id="minerCheck4">
+          <span class="sm-check-icon">○</span>
+          <span class="sm-check-text">Hash Rate growing (network healthy)</span>
+        </div>
+      </div>
+      
+      <div class="sm-confidence-wrap" style="margin-top:20px;">
+        <div class="sm-confidence-label">MINER HEALTH SCORE</div>
+        <div class="sm-confidence-value" id="minerHealthScore">--%</div>
+        <div class="sm-confidence-bar"><div class="sm-confidence-fill" id="minerHealthFill" style="width:0%;background:var(--accent-green)"></div></div>
+        <div class="sm-confidence-desc" id="minerHealthDesc">Analyzing miner data...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SECTION 8: TRADING SYSTEMS ========== -->
+  <div class="section-wrap" id="trading" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">08</span>
       <span class="section-title">Trading Systems</span>
       <span class="section-sub">TREND FOLLOWING · REVERSAL DETECTION · MOMENTUM</span>
     </div>
@@ -851,10 +1055,10 @@
     </div>
   </div>
 
-  <!-- ========== SECTION 07: REPORT ========== -->
+  <!-- ========== SECTION 09: REPORT ========== -->
   <div class="section-wrap" id="report" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
-      <span class="section-num">07</span>
+      <span class="section-num">09</span>
       <span class="section-title">Leitura do Mercado</span>
       <span id="reportDate" style="font-size:10px;color:var(--text-muted);"></span>
     </div>
@@ -1250,7 +1454,7 @@
         calculateAllZScores();
         calculateCompositeHistory();
         _coreUpdateUI();
-        setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSmartMoneyData(); fetchSentimentData(); }, 150);
+        setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSmartMoneyData(); fetchSentimentData(); fetchLeverageData(); fetchMinerData(); }, 150);
         setTimeout(() => generateReport(), 300);
         return;
       }
@@ -1297,7 +1501,7 @@
       calculateAllZScores();
       calculateCompositeHistory();
       _coreUpdateUI();
-      setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSmartMoneyData(); fetchSentimentData(); }, 150);
+      setTimeout(() => { renderSignalsSection(); fetchFlowData(); fetchSmartMoneyData(); fetchSentimentData(); fetchLeverageData(); fetchMinerData(); }, 150);
       
       // Call generateReport after on-chain data is loaded
       // This ensures the report has Z-Score data even if trading data loads later
@@ -3052,6 +3256,552 @@
     // ========== SENTIMENT SECTION ==========
     let _sentFgChart = null, _sentOverlayChart = null;
 
+    // ========== SECTION 06: LEVERAGE RISK METER ==========
+    let _levOiChart = null;
+    
+    async function fetchLeverageData() {
+      console.log('⚡ Fetching Leverage data...');
+      
+      const levData = {
+        openInterest: null,
+        liquidations24h: null,
+        fundingRate: null,
+        longShortRatio: null,
+        longPct: null,
+        shortPct: null,
+        oiHistory: []
+      };
+      
+      const toNum = (v) => {
+        if (v === null || v === undefined) return null;
+        const n = typeof v === 'string' ? parseFloat(v) : v;
+        return isNaN(n) ? null : n;
+      };
+      
+      const getLatest = (arr, ...keys) => {
+        if (!arr || !arr.length) return null;
+        const item = arr[arr.length - 1];
+        for (const key of keys) {
+          if (item[key] !== undefined && item[key] !== null) return toNum(item[key]);
+        }
+        return null;
+      };
+      
+      // 1. Open Interest
+      try {
+        const result = await fetchBGeometrics('/v1/open-interest-futures', 'Open Interest');
+        if (result.success && result.data && result.data.length) {
+          const data = result.data;
+          const last30 = data.slice(-30);
+          levData.oiHistory = last30.map(d => ({
+            date: d.d || d.day || d.date,
+            value: toNum(d.openInterestFutures || d.openInterest || d.value || d.oi) || 0
+          }));
+          levData.openInterest = getLatest(data, 'openInterestFutures', 'openInterest', 'value', 'oi');
+          console.log('✓ Open Interest:', levData.openInterest);
+        }
+      } catch(e) { console.warn('OI fetch error:', e); }
+      
+      // 2. Liquidations 24h
+      try {
+        const result = await fetchBGeometrics('/v1/btc-liquidations-1d', 'Liquidations 1d');
+        if (result.success && result.data && result.data.length) {
+          const latest = result.data[result.data.length - 1];
+          levData.liquidations24h = toNum(latest.usdValue || latest.value || latest.liquidations);
+          console.log('✓ Liquidations 24h:', levData.liquidations24h);
+        }
+      } catch(e) { console.warn('Liquidations fetch error:', e); }
+      
+      // 3. Funding Rate
+      try {
+        const result = await fetchBGeometrics('/v1/funding-rate', 'Funding Rate');
+        if (result.success && result.data && result.data.length) {
+          levData.fundingRate = getLatest(result.data, 'fundingRate', 'rate', 'value');
+          console.log('✓ Funding Rate:', levData.fundingRate);
+        }
+      } catch(e) { console.warn('Funding Rate fetch error:', e); }
+      
+      // 4. Long/Short Ratio (futures-global-1h)
+      try {
+        const result = await fetchBGeometrics('/v1/futures-global-1h', 'Futures Global');
+        if (result.success && result.data && result.data.length) {
+          const latest = result.data[result.data.length - 1];
+          levData.longShortRatio = toNum(latest.longShortRatio || latest.ratio || latest.value);
+          levData.longPct = toNum(latest.longAccount || latest.longPct || latest.long);
+          levData.shortPct = toNum(latest.shortAccount || latest.shortPct || latest.short);
+          // If we have long/short pct, calculate ratio
+          if (!levData.longShortRatio && levData.longPct && levData.shortPct) {
+            levData.longShortRatio = levData.longPct / levData.shortPct;
+          }
+          console.log('✓ Long/Short:', levData.longShortRatio, 'Long:', levData.longPct, 'Short:', levData.shortPct);
+        }
+      } catch(e) { console.warn('Long/Short fetch error:', e); }
+      
+      console.log('⚡ Leverage data collected:', levData);
+      renderLeverageUI(levData);
+    }
+    
+    function renderLeverageUI(levData) {
+      const num = (v) => {
+        if (v === null || v === undefined) return null;
+        const n = typeof v === 'string' ? parseFloat(v) : v;
+        return isNaN(n) ? null : n;
+      };
+      
+      // Open Interest
+      const oiEl = document.getElementById('levOi');
+      const oiStatusEl = document.getElementById('levOiStatus');
+      const oiVal = num(levData.openInterest);
+      if (oiVal !== null) {
+        const formatted = '$' + (oiVal / 1e9).toFixed(2) + 'B';
+        oiEl.textContent = formatted;
+        const color = oiVal > 35e9 ? 'var(--accent-red)' : oiVal < 20e9 ? 'var(--accent-green)' : 'var(--accent-yellow)';
+        const status = oiVal > 35e9 ? 'HIGH RISK' : oiVal < 20e9 ? 'LOW' : 'MODERATE';
+        oiEl.style.color = color;
+        oiStatusEl.textContent = status;
+        oiStatusEl.style.color = color;
+      }
+      
+      // Liquidations 24h
+      const liqEl = document.getElementById('levLiq24h');
+      const liqStatusEl = document.getElementById('levLiq24hStatus');
+      const liqVal = num(levData.liquidations24h);
+      if (liqVal !== null) {
+        const formatted = '$' + (liqVal / 1e6).toFixed(1) + 'M';
+        liqEl.textContent = formatted;
+        const color = liqVal > 500e6 ? 'var(--accent-red)' : liqVal < 100e6 ? 'var(--accent-green)' : 'var(--accent-yellow)';
+        const status = liqVal > 500e6 ? 'FLUSH' : liqVal < 100e6 ? 'CALM' : 'MODERATE';
+        liqEl.style.color = color;
+        liqStatusEl.textContent = status;
+        liqStatusEl.style.color = color;
+      }
+      
+      // Funding Rate
+      const fundingEl = document.getElementById('levFunding');
+      const fundingStatusEl = document.getElementById('levFundingStatus');
+      const fundingVal = num(levData.fundingRate);
+      if (fundingVal !== null) {
+        const pct = (fundingVal >= 0 ? '+' : '') + (fundingVal * 100).toFixed(4) + '%';
+        fundingEl.textContent = pct;
+        const color = Math.abs(fundingVal) > 0.001 ? 'var(--accent-red)' : Math.abs(fundingVal) < 0.0003 ? 'var(--accent-green)' : 'var(--accent-yellow)';
+        const status = fundingVal > 0.001 ? 'LONGS PAY' : fundingVal < -0.001 ? 'SHORTS PAY' : 'NEUTRAL';
+        fundingEl.style.color = color;
+        fundingStatusEl.textContent = status;
+        fundingStatusEl.style.color = color;
+      }
+      
+      // Long/Short Ratio
+      const lsEl = document.getElementById('levLongShort');
+      const lsStatusEl = document.getElementById('levLongShortStatus');
+      const lsVal = num(levData.longShortRatio);
+      if (lsVal !== null) {
+        lsEl.textContent = lsVal.toFixed(2);
+        const color = lsVal > 1.5 ? 'var(--accent-red)' : lsVal < 0.7 ? 'var(--accent-red)' : 'var(--accent-green)';
+        const status = lsVal > 1.5 ? 'LONG HEAVY' : lsVal < 0.7 ? 'SHORT HEAVY' : 'BALANCED';
+        lsEl.style.color = color;
+        lsStatusEl.textContent = status;
+        lsStatusEl.style.color = color;
+      }
+      
+      // Long/Short Percentages
+      const longPctVal = num(levData.longPct);
+      const shortPctVal = num(levData.shortPct);
+      if (longPctVal !== null) {
+        const el = document.getElementById('levLongPct');
+        const statusEl = document.getElementById('levLongPctStatus');
+        el.textContent = (longPctVal * 100).toFixed(1) + '%';
+        el.style.color = longPctVal > 0.6 ? 'var(--accent-red)' : 'var(--accent-green)';
+        statusEl.textContent = longPctVal > 0.6 ? 'CROWDED' : 'NORMAL';
+        statusEl.style.color = el.style.color;
+      }
+      if (shortPctVal !== null) {
+        const el = document.getElementById('levShortPct');
+        const statusEl = document.getElementById('levShortPctStatus');
+        el.textContent = (shortPctVal * 100).toFixed(1) + '%';
+        el.style.color = shortPctVal > 0.6 ? 'var(--accent-red)' : 'var(--accent-green)';
+        statusEl.textContent = shortPctVal > 0.6 ? 'CROWDED' : 'NORMAL';
+        statusEl.style.color = el.style.color;
+      }
+      
+      // Risk Checklist
+      const checks = [
+        { id: 'levCheck1', pass: oiVal !== null && oiVal > 30e9 },
+        { id: 'levCheck2', pass: fundingVal !== null && Math.abs(fundingVal) > 0.0005 },
+        { id: 'levCheck3', pass: lsVal !== null && (lsVal > 1.5 || lsVal < 0.7) },
+        { id: 'levCheck4', pass: liqVal !== null && liqVal > 200e6 }
+      ];
+      
+      let riskCount = 0;
+      checks.forEach(c => {
+        const el = document.getElementById(c.id);
+        if (el) {
+          const icon = el.querySelector('.sm-check-icon');
+          if (c.pass) {
+            el.className = 'sm-check-item fail';
+            if (icon) icon.textContent = '⚠';
+            riskCount++;
+          } else {
+            el.className = 'sm-check-item pass';
+            if (icon) icon.textContent = '✓';
+          }
+        }
+      });
+      
+      // Risk Score (higher = more risk)
+      const riskScore = Math.round((riskCount / 4) * 100);
+      const scoreEl = document.getElementById('levRiskScore');
+      const fillEl = document.getElementById('levRiskFill');
+      const descEl = document.getElementById('levRiskDesc');
+      
+      scoreEl.textContent = riskScore + '%';
+      fillEl.style.width = riskScore + '%';
+      
+      let color, desc;
+      if (riskScore >= 75) {
+        color = 'var(--accent-red)';
+        desc = 'EXTREME RISK: High leverage, imbalanced positioning. Cascade liquidations likely.';
+      } else if (riskScore >= 50) {
+        color = 'var(--accent-orange)';
+        desc = 'ELEVATED RISK: Multiple warning signs. Exercise caution with leveraged positions.';
+      } else if (riskScore >= 25) {
+        color = 'var(--accent-yellow)';
+        desc = 'MODERATE: Some risk factors present but market relatively balanced.';
+      } else {
+        color = 'var(--accent-green)';
+        desc = 'LOW RISK: Leverage metrics healthy. Market not over-extended.';
+      }
+      
+      scoreEl.style.color = color;
+      fillEl.style.background = color;
+      descEl.textContent = desc;
+      
+      // Gauge
+      const gaugeStatusEl = document.getElementById('levGaugeStatus');
+      const gaugeValueEl = document.getElementById('levGaugeValue');
+      const gaugeFillEl = document.getElementById('levGaugeFill');
+      
+      gaugeValueEl.textContent = riskScore + '%';
+      gaugeValueEl.style.color = color;
+      gaugeStatusEl.textContent = riskScore >= 75 ? 'EXTREME' : riskScore >= 50 ? 'HIGH' : riskScore >= 25 ? 'MEDIUM' : 'LOW';
+      gaugeStatusEl.style.color = color;
+      gaugeFillEl.style.width = riskScore + '%';
+      gaugeFillEl.style.background = color;
+      
+      // Chart
+      if (levData.oiHistory && levData.oiHistory.length > 0) {
+        renderLevOiChart(levData.oiHistory);
+      }
+    }
+    
+    function renderLevOiChart(data) {
+      const ctx = document.getElementById('levOiChart');
+      if (!ctx) return;
+      if (_levOiChart) _levOiChart.destroy();
+      
+      _levOiChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [{
+            data: data.map(d => d.value / 1e9),
+            backgroundColor: data.map(d => d.value > 30e9 ? 'rgba(239,68,68,0.7)' : 'rgba(0,217,126,0.7)'),
+            borderRadius: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: true, grid: { display: false }, ticks: { color: '#9a9aa6', maxTicksLimit: 6, font: { size: 8 } } },
+            y: { display: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9a9aa6', font: { size: 8 }, callback: v => '$' + v.toFixed(0) + 'B' } }
+          }
+        }
+      });
+    }
+    
+    // ========== SECTION 07: MINER & MACRO ==========
+    let _minerReserveChart = null;
+    
+    async function fetchMinerData() {
+      console.log('⛏️ Fetching Miner data...');
+      
+      const minerData = {
+        positionIndex: null,
+        reserve: null,
+        reserveChange30d: null,
+        puellMultiple: null,
+        hashrate: null,
+        difficulty: null,
+        reserveHistory: []
+      };
+      
+      const toNum = (v) => {
+        if (v === null || v === undefined) return null;
+        const n = typeof v === 'string' ? parseFloat(v) : v;
+        return isNaN(n) ? null : n;
+      };
+      
+      const getLatest = (arr, ...keys) => {
+        if (!arr || !arr.length) return null;
+        const item = arr[arr.length - 1];
+        for (const key of keys) {
+          if (item[key] !== undefined && item[key] !== null) return toNum(item[key]);
+        }
+        return null;
+      };
+      
+      // 1. Miner Position Index
+      try {
+        const result = await fetchBGeometrics('/v1/miner-position-index', 'Miner Position Index');
+        if (result.success && result.data && result.data.length) {
+          minerData.positionIndex = getLatest(result.data, 'minerPositionIndex', 'value', 'mpi');
+          console.log('✓ Miner Position Index:', minerData.positionIndex);
+        }
+      } catch(e) { console.warn('MPI fetch error:', e); }
+      
+      // 2. Miner Reserve
+      try {
+        const result = await fetchBGeometrics('/v1/miner-reserve', 'Miner Reserve');
+        if (result.success && result.data && result.data.length) {
+          const data = result.data;
+          const last90 = data.slice(-90);
+          minerData.reserveHistory = last90.map(d => ({
+            date: d.d || d.day || d.date,
+            value: toNum(d.minerReserve || d.value || d.reserve) || 0
+          }));
+          minerData.reserve = getLatest(data, 'minerReserve', 'value', 'reserve');
+          console.log('✓ Miner Reserve:', minerData.reserve);
+        }
+      } catch(e) { console.warn('Miner Reserve fetch error:', e); }
+      
+      // 3. Miner Reserve Change 30d
+      try {
+        const result = await fetchBGeometrics('/v1/miner-reserve-change-30d-pct', 'Miner Reserve Change');
+        if (result.success && result.data && result.data.length) {
+          minerData.reserveChange30d = getLatest(result.data, 'minerReserveChange30dPct', 'value', 'change');
+          console.log('✓ Miner Reserve Change 30d:', minerData.reserveChange30d);
+        }
+      } catch(e) { console.warn('Miner Reserve Change fetch error:', e); }
+      
+      // 4. Puell Multiple
+      try {
+        const result = await fetchBGeometrics('/v1/puell-multiple', 'Puell Multiple');
+        if (result.success && result.data && result.data.length) {
+          minerData.puellMultiple = getLatest(result.data, 'puellMultiple', 'value', 'puell');
+          console.log('✓ Puell Multiple:', minerData.puellMultiple);
+        }
+      } catch(e) { console.warn('Puell fetch error:', e); }
+      
+      // 5. Hashrate
+      try {
+        const result = await fetchBGeometrics('/v1/hashrate', 'Hashrate');
+        if (result.success && result.data && result.data.length) {
+          minerData.hashrate = getLatest(result.data, 'hashrate', 'value', 'hash');
+          console.log('✓ Hashrate:', minerData.hashrate);
+        }
+      } catch(e) { console.warn('Hashrate fetch error:', e); }
+      
+      // 6. Difficulty
+      try {
+        const result = await fetchBGeometrics('/v1/difficulty-BTC', 'Difficulty');
+        if (result.success && result.data && result.data.length) {
+          minerData.difficulty = getLatest(result.data, 'difficultyBtc', 'difficulty', 'value');
+          console.log('✓ Difficulty:', minerData.difficulty);
+        }
+      } catch(e) { console.warn('Difficulty fetch error:', e); }
+      
+      console.log('⛏️ Miner data collected:', minerData);
+      renderMinerUI(minerData);
+    }
+    
+    function renderMinerUI(minerData) {
+      const num = (v) => {
+        if (v === null || v === undefined) return null;
+        const n = typeof v === 'string' ? parseFloat(v) : v;
+        return isNaN(n) ? null : n;
+      };
+      
+      // Miner Position Index
+      const mpiEl = document.getElementById('minerPosIdx');
+      const mpiStatusEl = document.getElementById('minerPosIdxStatus');
+      const mpiVal = num(minerData.positionIndex);
+      if (mpiVal !== null) {
+        mpiEl.textContent = mpiVal.toFixed(2);
+        const color = mpiVal < 0 ? 'var(--accent-green)' : mpiVal > 1 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = mpiVal < 0 ? 'ACCUMULATING' : mpiVal > 1 ? 'SELLING' : 'NEUTRAL';
+        mpiEl.style.color = color;
+        mpiStatusEl.textContent = status;
+        mpiStatusEl.style.color = color;
+      }
+      
+      // Miner Reserve
+      const resEl = document.getElementById('minerReserve');
+      const resStatusEl = document.getElementById('minerReserveStatus');
+      const resVal = num(minerData.reserve);
+      if (resVal !== null) {
+        const formatted = (resVal / 1000).toFixed(1) + 'K BTC';
+        resEl.textContent = formatted;
+        resEl.style.color = 'var(--text-primary)';
+        resStatusEl.textContent = 'CURRENT';
+        resStatusEl.style.color = 'var(--text-muted)';
+      }
+      
+      // Reserve Change 30d
+      const chgEl = document.getElementById('minerReserveChg');
+      const chgStatusEl = document.getElementById('minerReserveChgStatus');
+      const chgVal = num(minerData.reserveChange30d);
+      if (chgVal !== null) {
+        const pct = (chgVal >= 0 ? '+' : '') + (chgVal * 100).toFixed(2) + '%';
+        chgEl.textContent = pct;
+        const color = chgVal < -0.02 ? 'var(--accent-red)' : chgVal > 0.02 ? 'var(--accent-green)' : 'var(--accent-yellow)';
+        const status = chgVal < -0.02 ? 'SELLING' : chgVal > 0.02 ? 'HODLING' : 'STABLE';
+        chgEl.style.color = color;
+        chgStatusEl.textContent = status;
+        chgStatusEl.style.color = color;
+      }
+      
+      // Puell Multiple
+      const puellEl = document.getElementById('minerPuell');
+      const puellStatusEl = document.getElementById('minerPuellStatus');
+      const puellVal = num(minerData.puellMultiple);
+      if (puellVal !== null) {
+        puellEl.textContent = puellVal.toFixed(2);
+        const color = puellVal < 0.5 ? 'var(--accent-green)' : puellVal > 4 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const status = puellVal < 0.5 ? 'UNDERVALUED' : puellVal > 4 ? 'OVERVALUED' : 'FAIR VALUE';
+        puellEl.style.color = color;
+        puellStatusEl.textContent = status;
+        puellStatusEl.style.color = color;
+      }
+      
+      // Hashrate
+      const hashEl = document.getElementById('minerHashrate');
+      const hashStatusEl = document.getElementById('minerHashrateStatus');
+      const hashVal = num(minerData.hashrate);
+      if (hashVal !== null) {
+        const formatted = (hashVal / 1e18).toFixed(0) + ' EH/s';
+        hashEl.textContent = formatted;
+        hashEl.style.color = 'var(--accent-green)';
+        hashStatusEl.textContent = 'HEALTHY';
+        hashStatusEl.style.color = 'var(--accent-green)';
+      }
+      
+      // Difficulty
+      const diffEl = document.getElementById('minerDifficulty');
+      const diffStatusEl = document.getElementById('minerDifficultyStatus');
+      const diffVal = num(minerData.difficulty);
+      if (diffVal !== null) {
+        const formatted = (diffVal / 1e12).toFixed(2) + 'T';
+        diffEl.textContent = formatted;
+        diffEl.style.color = 'var(--text-primary)';
+        diffStatusEl.textContent = 'CURRENT';
+        diffStatusEl.style.color = 'var(--text-muted)';
+      }
+      
+      // Checklist
+      const checks = [
+        { id: 'minerCheck1', pass: mpiVal !== null && mpiVal < 0 },
+        { id: 'minerCheck2', pass: chgVal !== null && chgVal < -0.01 },
+        { id: 'minerCheck3', pass: puellVal !== null && puellVal < 0.5 },
+        { id: 'minerCheck4', pass: hashVal !== null && hashVal > 0 }
+      ];
+      
+      let healthCount = 0;
+      checks.forEach(c => {
+        const el = document.getElementById(c.id);
+        if (el) {
+          const icon = el.querySelector('.sm-check-icon');
+          if (c.pass) {
+            el.className = 'sm-check-item pass';
+            if (icon) icon.textContent = '✓';
+            healthCount++;
+          } else {
+            el.className = 'sm-check-item fail';
+            if (icon) icon.textContent = '✗';
+          }
+        }
+      });
+      
+      // Health Score
+      const healthScore = Math.round((healthCount / 4) * 100);
+      const scoreEl = document.getElementById('minerHealthScore');
+      const fillEl = document.getElementById('minerHealthFill');
+      const descEl = document.getElementById('minerHealthDesc');
+      
+      scoreEl.textContent = healthScore + '%';
+      fillEl.style.width = healthScore + '%';
+      
+      let color, desc;
+      if (healthScore >= 75) {
+        color = 'var(--accent-green)';
+        desc = 'HEALTHY: Miners accumulating, Puell low. Historically favorable for price.';
+      } else if (healthScore >= 50) {
+        color = 'var(--accent-yellow)';
+        desc = 'NEUTRAL: Mixed signals from miner activity. Monitor closely.';
+      } else if (healthScore >= 25) {
+        color = 'var(--accent-orange)';
+        desc = 'STRESSED: Some capitulation signals. Miners under pressure.';
+      } else {
+        color = 'var(--accent-red)';
+        desc = 'CAPITULATING: Miners selling heavily. Could signal bottom formation.';
+      }
+      
+      scoreEl.style.color = color;
+      fillEl.style.background = color;
+      descEl.textContent = desc;
+      
+      // Gauge
+      const gaugeStatusEl = document.getElementById('minerGaugeStatus');
+      const gaugeValueEl = document.getElementById('minerGaugeValue');
+      const gaugeFillEl = document.getElementById('minerGaugeFill');
+      
+      if (mpiVal !== null) {
+        gaugeValueEl.textContent = mpiVal.toFixed(2);
+      }
+      gaugeValueEl.style.color = color;
+      gaugeStatusEl.textContent = healthScore >= 75 ? 'HEALTHY' : healthScore >= 50 ? 'NEUTRAL' : healthScore >= 25 ? 'STRESSED' : 'CAPITULATING';
+      gaugeStatusEl.style.color = color;
+      gaugeFillEl.style.width = healthScore + '%';
+      gaugeFillEl.style.background = color;
+      
+      // Chart
+      if (minerData.reserveHistory && minerData.reserveHistory.length > 0) {
+        renderMinerReserveChart(minerData.reserveHistory);
+      }
+    }
+    
+    function renderMinerReserveChart(data) {
+      const ctx = document.getElementById('minerReserveChart');
+      if (!ctx) return;
+      if (_minerReserveChart) _minerReserveChart.destroy();
+      
+      _minerReserveChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.map(d => d.date),
+          datasets: [{
+            data: data.map(d => d.value / 1000),
+            borderColor: 'rgba(0,217,126,0.8)',
+            backgroundColor: 'rgba(0,217,126,0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: true, grid: { display: false }, ticks: { color: '#9a9aa6', maxTicksLimit: 6, font: { size: 8 } } },
+            y: { display: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9a9aa6', font: { size: 8 }, callback: v => v.toFixed(0) + 'K' } }
+          }
+        }
+      });
+    }
+
+    // ========== ORIGINAL SENTIMENT SECTION ==========
+
     function _fgColor(v) { return v<=25?'var(--accent-red)':v<=45?'var(--accent-orange)':v<=55?'var(--accent-yellow)':v<=75?'var(--accent-lime)':'var(--accent-green)'; }
     function _fgLabel(v) { return v<=25?'Extreme Fear':v<=45?'Fear':v<=55?'Neutral':v<=75?'Greed':'Extreme Greed'; }
 
@@ -4134,7 +4884,9 @@
         renderSignalsSection(); 
         fetchFlowData(); 
         fetchSmartMoneyData();
-        fetchSentimentData(); 
+        fetchSentimentData();
+        fetchLeverageData();
+        fetchMinerData();
         try { fetchTradingData(); } catch(e) { console.error('[Trading] Error:', e); }
         setTimeout(() => generateReport(), 500);
       }, 150); 
