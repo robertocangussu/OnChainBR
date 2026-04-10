@@ -1063,93 +1063,158 @@
       <span id="reportDate" style="font-size:10px;color:var(--text-muted);"></span>
     </div>
     
-    <!-- Report Status Cards -->
-    <div class="report-status-row" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
-      <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
-        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Postura</div>
-        <div id="reportPosture" style="font-size:18px;font-weight:700;color:var(--accent-yellow);">AGUARDAR</div>
-      </div>
-      <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
-        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Viés</div>
-        <div id="reportBias" style="font-size:18px;font-weight:700;color:var(--text-secondary);">NEUTRO</div>
-      </div>
-      <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
-        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Risco</div>
-        <div id="reportRisk" style="font-size:18px;font-weight:700;color:var(--accent-orange);">MÉDIO</div>
-      </div>
-      <div class="report-status-card" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;">
-        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Alocação</div>
-        <div id="reportTimeframe" style="font-size:18px;font-weight:700;color:var(--accent-cyan);">0%</div>
+    <!-- Executive Summary Card -->
+    <div id="reportSummaryCard" style="background:linear-gradient(135deg, var(--bg-card) 0%, rgba(0,212,255,0.05) 100%);border:1px solid var(--accent-cyan);border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div id="reportPostureBadge" style="background:var(--accent-yellow);color:#000;font-size:14px;font-weight:800;padding:8px 20px;border-radius:20px;text-transform:uppercase;letter-spacing:1px;">
+          AGUARDAR
+        </div>
+        <div id="reportSummaryText" style="flex:1;font-size:13px;color:var(--text-primary);line-height:1.5;">
+          Carregando análise...
+        </div>
       </div>
     </div>
     
-    <!-- Main Report Content -->
-    <div class="report-grid" style="display:grid;grid-template-columns:2fr 1fr;gap:16px;">
-      <!-- Left: Analysis Text -->
-      <div class="report-analysis" style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:20px;">
-        <div style="font-size:11px;color:var(--accent-orange);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">📊 Leitura do Dia</div>
-        <div id="reportMainText" style="font-size:12px;line-height:1.7;color:var(--text-secondary);">
+    <!-- Score Gauges Row -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px;">
+      <!-- Z-Score Gauge -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;letter-spacing:1px;">Z-Score</div>
+        <div style="position:relative;width:80px;height:80px;margin:0 auto 8px;">
+          <svg viewBox="0 0 36 36" style="transform:rotate(-90deg);">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3"/>
+            <circle id="gaugeZscore" cx="18" cy="18" r="15.9" fill="none" stroke="var(--accent-yellow)" stroke-width="3" stroke-dasharray="0 100" stroke-linecap="round"/>
+          </svg>
+          <div id="gaugeZscoreValue" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;font-weight:700;color:var(--accent-yellow);">--</div>
+        </div>
+        <div id="gaugeZscoreLabel" style="font-size:10px;color:var(--text-muted);">FAIR VALUE</div>
+      </div>
+      
+      <!-- Smart Money Confidence -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;letter-spacing:1px;">Smart Money</div>
+        <div style="position:relative;width:80px;height:80px;margin:0 auto 8px;">
+          <svg viewBox="0 0 36 36" style="transform:rotate(-90deg);">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3"/>
+            <circle id="gaugeSM" cx="18" cy="18" r="15.9" fill="none" stroke="var(--accent-cyan)" stroke-width="3" stroke-dasharray="0 100" stroke-linecap="round"/>
+          </svg>
+          <div id="gaugeSMValue" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;font-weight:700;color:var(--accent-cyan);">--%</div>
+        </div>
+        <div id="gaugeSMLabel" style="font-size:10px;color:var(--text-muted);">CONFIDENCE</div>
+      </div>
+      
+      <!-- Leverage Risk -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;letter-spacing:1px;">Leverage Risk</div>
+        <div style="position:relative;width:80px;height:80px;margin:0 auto 8px;">
+          <svg viewBox="0 0 36 36" style="transform:rotate(-90deg);">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3"/>
+            <circle id="gaugeLev" cx="18" cy="18" r="15.9" fill="none" stroke="var(--accent-green)" stroke-width="3" stroke-dasharray="0 100" stroke-linecap="round"/>
+          </svg>
+          <div id="gaugeLevValue" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;font-weight:700;color:var(--accent-green);">--%</div>
+        </div>
+        <div id="gaugeLevLabel" style="font-size:10px;color:var(--text-muted);">CASCADE RISK</div>
+      </div>
+      
+      <!-- Miner Health -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;letter-spacing:1px;">Miner Health</div>
+        <div style="position:relative;width:80px;height:80px;margin:0 auto 8px;">
+          <svg viewBox="0 0 36 36" style="transform:rotate(-90deg);">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--border)" stroke-width="3"/>
+            <circle id="gaugeMiner" cx="18" cy="18" r="15.9" fill="none" stroke="var(--accent-orange)" stroke-width="3" stroke-dasharray="0 100" stroke-linecap="round"/>
+          </svg>
+          <div id="gaugeMinerValue" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;font-weight:700;color:var(--accent-orange);">--%</div>
+        </div>
+        <div id="gaugeMinerLabel" style="font-size:10px;color:var(--text-muted);">HEALTH SCORE</div>
+      </div>
+    </div>
+    
+    <!-- Action Card -->
+    <div id="reportActionCard" style="background:var(--bg-card);border-left:4px solid var(--accent-yellow);border-radius:8px;padding:16px 20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <span style="font-size:18px;">🎯</span>
+        <span style="font-size:11px;color:var(--accent-cyan);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Ação Recomendada</span>
+      </div>
+      <div id="reportAction" style="font-size:13px;line-height:1.6;color:var(--text-primary);">
+        Carregando...
+      </div>
+    </div>
+    
+    <!-- Main Grid: Analysis + Data -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <!-- Left: Key Insights -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-size:10px;color:var(--accent-orange);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">📊 Análise por Setor</div>
+        <div id="reportMainText" style="font-size:11px;line-height:1.7;color:var(--text-secondary);">
           Carregando análise...
-        </div>
-        
-        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-          <div style="font-size:11px;color:var(--accent-cyan);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">🎯 Ação Recomendada</div>
-          <div id="reportAction" style="font-size:12px;line-height:1.6;color:var(--text-primary);">
-            Carregando...
-          </div>
-        </div>
-        
-        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-          <div style="font-size:11px;color:var(--accent-purple);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">⚠️ Riscos da Semana</div>
-          <div id="reportRisks" style="font-size:11px;line-height:1.6;color:var(--text-muted);">
-            Carregando...
-          </div>
         </div>
       </div>
       
-      <!-- Right: Data Summary -->
-      <div class="report-data" style="display:flex;flex-direction:column;gap:12px;">
-        <!-- On-Chain Summary -->
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
-          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">On-Chain</div>
-          <div id="reportOnChain" style="font-size:11px;line-height:1.8;color:var(--text-secondary);">
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Z-Score:</span><span id="repZscore">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Zona:</span><span id="repZone">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>MVRV:</span><span id="repMvrv">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>NUPL:</span><span id="repNupl">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>SOPR:</span><span id="repSopr">--</span></div>
+      <!-- Right: Data Cards -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <!-- On-Chain -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-size:9px;color:var(--accent-cyan);text-transform:uppercase;margin-bottom:8px;font-weight:600;">⛓️ On-Chain</div>
+          <div style="font-size:10px;line-height:1.9;color:var(--text-secondary);">
+            <div style="display:flex;justify-content:space-between;"><span>Z-Score</span><span id="repZscore" style="font-weight:600;">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Zona</span><span id="repZone">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>MVRV</span><span id="repMvrv">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>NUPL</span><span id="repNupl">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>SOPR</span><span id="repSopr">--</span></div>
           </div>
         </div>
         
-        <!-- Technical Summary -->
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
-          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">Técnico</div>
-          <div id="reportTechnical" style="font-size:11px;line-height:1.8;color:var(--text-secondary);">
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Preço:</span><span id="repPrice">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>SMA50:</span><span id="repSma50">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>SMA200:</span><span id="repSma200">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>RSI:</span><span id="repRsi">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Tendência:</span><span id="repTrend">--</span></div>
+        <!-- Technical -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-size:9px;color:var(--accent-purple);text-transform:uppercase;margin-bottom:8px;font-weight:600;">📈 Técnico</div>
+          <div style="font-size:10px;line-height:1.9;color:var(--text-secondary);">
+            <div style="display:flex;justify-content:space-between;"><span>Preço</span><span id="repPrice">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>SMA50</span><span id="repSma50">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>SMA200</span><span id="repSma200">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>RSI</span><span id="repRsi">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Trend</span><span id="repTrend">--</span></div>
           </div>
         </div>
         
-        <!-- Sentiment Summary -->
-        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
-          <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">Sentimento</div>
-          <div id="reportSentiment" style="font-size:11px;line-height:1.8;color:var(--text-secondary);">
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Fear & Greed:</span><span id="repFearGreed">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Funding:</span><span id="repFunding">--</span></div>
-            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Trade System:</span><span id="repTradeSystem">--</span></div>
+        <!-- Sentiment -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-size:9px;color:var(--accent-lime);text-transform:uppercase;margin-bottom:8px;font-weight:600;">😱 Sentimento</div>
+          <div style="font-size:10px;line-height:1.9;color:var(--text-secondary);">
+            <div style="display:flex;justify-content:space-between;"><span>F&G</span><span id="repFearGreed">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Funding</span><span id="repFunding">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>System</span><span id="repTradeSystem">--</span></div>
+          </div>
+        </div>
+        
+        <!-- Smart Money -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-size:9px;color:var(--accent-green);text-transform:uppercase;margin-bottom:8px;font-weight:600;">🐋 Smart Money</div>
+          <div style="font-size:10px;line-height:1.9;color:var(--text-secondary);">
+            <div style="display:flex;justify-content:space-between;"><span>LTH 30d</span><span id="repLth30d">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>STH 30d</span><span id="repSth30d">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Ratio</span><span id="repRatio">--</span></div>
           </div>
         </div>
       </div>
     </div>
     
-    <!-- Historical Context -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;">
-      <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">📈 Contexto Histórico</div>
-      <div id="reportContext" style="font-size:11px;line-height:1.6;color:var(--text-muted);">
-        Carregando contexto...
+    <!-- Risks Row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <!-- Risks -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-size:10px;color:var(--accent-red);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">⚠️ Riscos Ativos</div>
+        <div id="reportRisks" style="font-size:11px;line-height:1.6;color:var(--text-muted);">
+          Carregando...
+        </div>
+      </div>
+      
+      <!-- Historical Context -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="font-size:10px;color:var(--accent-purple);font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px;">📚 Contexto Histórico</div>
+        <div id="reportContext" style="font-size:11px;line-height:1.6;color:var(--text-muted);">
+          Carregando contexto...
+        </div>
       </div>
     </div>
   </div>
@@ -1165,9 +1230,19 @@
     const state = { prices: [], metricHistory: {}, zScoreHistory: {}, zScores: {}, rawValues: {}, composite: null, compositeHistory: [], apiStatus: {}, endpointsLoaded: 0, totalEndpoints: 10, errors: [] };
     
     // Global states for report integration
-    const smartMoneyState = { lth30d: null, sth30d: null, ratio: null, hodl1y: null, lthSopr: null, reserveRisk: null, confidence: 0 };
-    const leverageState = { oi: null, liq24h: null, funding: null, longShort: null, longPct: null, shortPct: null, riskScore: 0 };
-    const minerState = { posIdx: null, reserve: null, reserveChg: null, puell: null, hashrate: null, difficulty: null, healthScore: 0 };
+    const smartMoneyState = { lth30d: null, sth30d: null, ratio: null, hodl1y: null, lthSopr: null, reserveRisk: null, confidence: 0, loaded: false };
+    const leverageState = { oi: null, liq24h: null, funding: null, longShort: null, longPct: null, shortPct: null, riskScore: 0, loaded: false };
+    const minerState = { posIdx: null, reserve: null, reserveChg: null, puell: null, hashrate: null, difficulty: null, healthScore: 0, loaded: false };
+    const sentimentState = { fearGreed: null, funding: null, loaded: false };
+    
+    // Report ready check
+    function checkReportReady() {
+      const ready = smartMoneyState.loaded && leverageState.loaded && minerState.loaded;
+      console.log(`[Report] Ready check: SM=${smartMoneyState.loaded}, LEV=${leverageState.loaded}, MINER=${minerState.loaded} → ${ready}`);
+      if (ready) {
+        setTimeout(generateReport, 100);
+      }
+    }
     
     // ========== CONFIG ==========
     const CONFIG = { 
@@ -3235,6 +3310,8 @@
       smartMoneyState.lthSopr = num(smData.lthSopr);
       smartMoneyState.reserveRisk = num(smData.reserveRisk);
       smartMoneyState.confidence = confidence;
+      smartMoneyState.loaded = true;
+      checkReportReady();
       
       // --- Render LTH History Chart ---
       if (smData.lthHistory && smData.lthHistory.length > 0) {
@@ -3594,6 +3671,8 @@
       leverageState.longPct = longPctVal;
       leverageState.shortPct = shortPctVal;
       leverageState.riskScore = riskScore;
+      leverageState.loaded = true;
+      checkReportReady();
       
       // Chart
       if (levData.oiHistory && levData.oiHistory.length > 0) {
@@ -3918,6 +3997,8 @@
       minerState.hashrate = num(minerData.hashrate);
       minerState.difficulty = num(minerData.difficulty);
       minerState.healthScore = healthScore;
+      minerState.loaded = true;
+      checkReportReady();
       
       // Chart
       if (minerData.reserveHistory && minerData.reserveHistory.length > 0) {
@@ -5054,16 +5135,25 @@
     function generateReport() {
       console.log('[Report] Generating daily analysis...');
       console.log('[Report] state.composite:', state.composite);
-      console.log('[Report] state.rawValues:', JSON.stringify(state.rawValues));
-      console.log('[Report] tradingState.technicalData length:', tradingState.technicalData?.length || 0);
+      console.log('[Report] smartMoneyState:', JSON.stringify(smartMoneyState));
+      console.log('[Report] leverageState:', JSON.stringify(leverageState));
+      console.log('[Report] minerState:', JSON.stringify(minerState));
       
       // Check if on-chain data is ready - if not, retry with delay
       const hasOnchainData = state.composite !== null && Object.keys(state.rawValues || {}).length > 0;
-      const hasTechData = tradingState.technicalData && tradingState.technicalData.length > 0;
+      const hasSectionData = smartMoneyState.loaded || leverageState.loaded || minerState.loaded;
       
       if (!hasOnchainData && reportRetryCount < MAX_REPORT_RETRIES) {
         reportRetryCount++;
         console.log(`[Report] On-chain data not ready, retry ${reportRetryCount}/${MAX_REPORT_RETRIES} in 500ms...`);
+        setTimeout(generateReport, 500);
+        return;
+      }
+      
+      // Extra wait for section data if on-chain is ready but sections aren't
+      if (hasOnchainData && !hasSectionData && reportRetryCount < MAX_REPORT_RETRIES + 5) {
+        reportRetryCount++;
+        console.log(`[Report] Waiting for section data, retry ${reportRetryCount}...`);
         setTimeout(generateReport, 500);
         return;
       }
@@ -5186,111 +5276,166 @@
       else if (zScore >= 1.5) zoneName = 'OVERHEATED';
       else if (zScore >= 0.5) zoneName = 'ELEVATED';
       
-      // Update status cards
-      document.getElementById('reportPosture').textContent = posture;
-      document.getElementById('reportPosture').style.color = postureColor;
-      document.getElementById('reportBias').textContent = bias;
-      document.getElementById('reportBias').style.color = biasColor;
-      document.getElementById('reportRisk').textContent = risk;
-      document.getElementById('reportRisk').style.color = riskColor;
-      document.getElementById('reportTimeframe').innerHTML = capitalAllocation + '<div style="font-size:8px;color:var(--text-muted);margin-top:2px;">do capital</div>';
+      // ========== UPDATE EXECUTIVE SUMMARY ==========
+      const postureBadge = document.getElementById('reportPostureBadge');
+      postureBadge.textContent = posture;
+      postureBadge.style.background = postureColor;
+      postureBadge.style.color = (posture === 'AGUARDAR' || posture === 'HOLD') ? '#000' : '#fff';
       
-      // ========== GENERATE MAIN TEXT (INTEGRATED ANALYSIS) ==========
+      // Build summary text
+      let summaryText = '';
+      if (posture === 'ACUMULAR') {
+        summaryText = `Múltiplos indicadores em zona de compra. Z-Score em ${zScore?.toFixed(2) || '--'} indica subvalorização extrema. Considerar aportes de ${capitalAllocation} do capital.`;
+      } else if (posture === 'ACUMULAR LEVE') {
+        summaryText = `Mercado com desconto moderado (Z: ${zScore?.toFixed(2) || '--'}). Bom momento para DCA. Sugestão: ${capitalAllocation} do capital em pequenas parcelas.`;
+      } else if (posture === 'REALIZAR') {
+        summaryText = `Indicadores em zona de topo (Z: ${zScore?.toFixed(2) || '--'}). Reduzir exposição em ${capitalAllocation.replace('-','')}. Proteger lucros.`;
+      } else if (posture === 'CAUTELA') {
+        summaryText = `Mercado caro mas não extremo (Z: ${zScore?.toFixed(2) || '--'}). Evitar novos aportes. Stops ajustados.`;
+      } else if (posture === 'HOLD') {
+        summaryText = `Mercado equilibrado (Z: ${zScore?.toFixed(2) || '--'}). ${inBullMarket ? 'Estrutura bullish mantida.' : ''} Manter posições atuais.`;
+      } else {
+        summaryText = `Sinais mistos (Z: ${zScore?.toFixed(2) || '--'}). ${!inBullMarket ? 'Bear market estrutural — cautela com rallies.' : 'Aguardar definição de tendência.'}`;
+      }
+      document.getElementById('reportSummaryText').textContent = summaryText;
+      
+      // Update action card border color
+      document.getElementById('reportActionCard').style.borderLeftColor = postureColor;
+      
+      // ========== UPDATE GAUGES ==========
+      // Helper to update gauge
+      function updateGauge(circleId, valueId, labelId, value, maxVal, color, label) {
+        const circle = document.getElementById(circleId);
+        const valueEl = document.getElementById(valueId);
+        const labelEl = document.getElementById(labelId);
+        if (circle && valueEl) {
+          const pct = Math.min(100, Math.max(0, (value / maxVal) * 100));
+          circle.setAttribute('stroke-dasharray', `${pct} 100`);
+          circle.setAttribute('stroke', color);
+          valueEl.style.color = color;
+        }
+        if (labelEl && label) labelEl.textContent = label;
+      }
+      
+      // Z-Score gauge (scale: -3 to +3, map to 0-100)
+      const zPct = zScore !== null ? ((zScore + 3) / 6) * 100 : 50;
+      const zColor = zScore <= -1.5 ? 'var(--accent-green)' : zScore <= -0.5 ? 'var(--accent-lime)' : zScore >= 1.5 ? 'var(--accent-red)' : zScore >= 0.5 ? 'var(--accent-orange)' : 'var(--accent-yellow)';
+      updateGauge('gaugeZscore', 'gaugeZscoreValue', 'gaugeZscoreLabel', zPct, 100, zColor, zoneName);
+      document.getElementById('gaugeZscoreValue').textContent = zScore !== null ? zScore.toFixed(2) : '--';
+      
+      // Smart Money gauge (0-100)
+      const smConf = smartMoneyState.confidence || 0;
+      const smColor = smConf >= 70 ? 'var(--accent-green)' : smConf >= 40 ? 'var(--accent-cyan)' : 'var(--accent-orange)';
+      const smLabel = smConf >= 70 ? 'ACCUMULATION' : smConf >= 40 ? 'NEUTRAL' : 'DISTRIBUTION';
+      updateGauge('gaugeSM', 'gaugeSMValue', 'gaugeSMLabel', smConf, 100, smColor, smLabel);
+      document.getElementById('gaugeSMValue').textContent = smConf + '%';
+      
+      // Leverage Risk gauge (0-100, inverted: low is good)
+      const levRisk = leverageState.riskScore || 0;
+      const levColor = levRisk >= 50 ? 'var(--accent-red)' : levRisk >= 25 ? 'var(--accent-orange)' : 'var(--accent-green)';
+      const levLabel = levRisk >= 50 ? 'HIGH RISK' : levRisk >= 25 ? 'MEDIUM' : 'LOW RISK';
+      updateGauge('gaugeLev', 'gaugeLevValue', 'gaugeLevLabel', levRisk, 100, levColor, levLabel);
+      document.getElementById('gaugeLevValue').textContent = levRisk + '%';
+      
+      // Miner Health gauge (0-100)
+      const minerHealth = minerState.healthScore || 0;
+      const minerColor = minerHealth >= 50 ? 'var(--accent-green)' : minerHealth >= 25 ? 'var(--accent-orange)' : 'var(--accent-red)';
+      const minerLabel = minerHealth >= 50 ? 'HEALTHY' : minerHealth >= 25 ? 'STRESSED' : 'CAPITULATING';
+      updateGauge('gaugeMiner', 'gaugeMinerValue', 'gaugeMinerLabel', minerHealth, 100, minerColor, minerLabel);
+      document.getElementById('gaugeMinerValue').textContent = minerHealth + '%';
+      
+      // ========== GENERATE MAIN TEXT (COMPACT SECTOR ANALYSIS) ==========
       let mainText = '';
       
       // 1. MARKET STRUCTURE
-      mainText += `<div style="margin-bottom:16px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">📊 ESTRUTURA DE MERCADO</strong></div>`;
+      mainText += `<div style="margin-bottom:12px;">`;
+      mainText += `<span style="color:var(--accent-cyan);font-weight:600;">📊 Estrutura:</span> `;
       if (!inBullMarket) {
-        mainText += `O mercado está em <strong style="color:var(--accent-red)">estrutura de baixa</strong> (SMA50 < SMA200). `;
-        mainText += `Estamos tecnicamente em bear market — rallies podem ser armadilhas. `;
+        mainText += `<strong style="color:var(--accent-red)">Bear Market</strong> (SMA50 < SMA200). Rallies = armadilhas.`;
       } else {
-        mainText += `O mercado mantém <strong style="color:var(--accent-green)">estrutura de alta</strong> (SMA50 > SMA200). `;
-        if (priceAboveSma50) {
-          mainText += `Preço acima das médias principais indica força. `;
-        } else {
-          mainText += `Preço abaixo da SMA50 sugere correção em andamento. `;
-        }
+        mainText += `<strong style="color:var(--accent-green)">Bull Market</strong>`;
+        mainText += priceAboveSma50 ? ` — preço forte acima das médias.` : ` — correção em andamento.`;
       }
+      mainText += `</div>`;
       
       // 2. Z-SCORE / ON-CHAIN
-      mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">⛓️ ON-CHAIN (Z-SCORE)</strong></div>`;
-      mainText += `Z-Score composto: <strong style="color:${postureColor}">${zScore ? zScore.toFixed(2) : '--'}</strong> → `;
-      if (zone === 'ACCUMULATE') {
-        mainText += `<strong style="color:var(--accent-green)">ZONA DE ACUMULAÇÃO</strong>. Capitulação extrema — mãos fortes comprando.`;
-      } else if (zone === 'UNDERVALUED') {
-        mainText += `<strong style="color:var(--accent-lime)">SUBVALORIZADO</strong>. Desconto moderado, boa região para DCA.`;
-      } else if (zone === 'FAIR VALUE') {
-        mainText += `<strong style="color:var(--accent-yellow)">FAIR VALUE</strong>. Preço justo, sem urgência.`;
-      } else if (zone === 'ELEVATED') {
-        mainText += `<strong style="color:var(--accent-orange)">ELEVADO</strong>. Mercado caro, cautela.`;
-      } else if (zone === 'OVERHEATED') {
-        mainText += `<strong style="color:var(--accent-red)">SUPERAQUECIDO</strong>. Euforia — correções históricas seguem esse nível.`;
+      mainText += `<div style="margin-bottom:12px;">`;
+      mainText += `<span style="color:var(--accent-cyan);font-weight:600;">⛓️ On-Chain:</span> `;
+      mainText += `Z-Score <strong style="color:${zColor}">${zScore ? zScore.toFixed(2) : '--'}</strong> → ${zoneName}`;
+      if (sopr > 0 && sopr !== 1) {
+        mainText += `. SOPR: ${sopr.toFixed(3)}`;
+        if (sopr < 1) mainText += ` (capitulação)`;
       }
-      if (sopr > 0) {
-        mainText += ` SOPR: <strong>${sopr.toFixed(3)}</strong>`;
-        if (sopr < 1) mainText += ` (vendendo no prejuízo = capitulação)`;
-        else if (sopr > 1.05) mainText += ` (realizando lucro)`;
-      }
+      mainText += `</div>`;
       
       // 3. SMART MONEY
-      mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">🐋 SMART MONEY</strong></div>`;
-      if (smartMoneyState.confidence > 0) {
-        const smConf = smartMoneyState.confidence;
-        const smColor = smConf >= 70 ? 'var(--accent-green)' : smConf >= 40 ? 'var(--accent-yellow)' : 'var(--accent-red)';
-        mainText += `Confidence Score: <strong style="color:${smColor}">${smConf}%</strong>. `;
-        
+      mainText += `<div style="margin-bottom:12px;">`;
+      mainText += `<span style="color:var(--accent-cyan);font-weight:600;">🐋 Smart Money:</span> `;
+      if (smartMoneyState.loaded && smartMoneyState.confidence > 0) {
+        mainText += `Conf. <strong style="color:${smColor}">${smConf}%</strong>`;
         if (smartMoneyState.lth30d !== null) {
           const lth = smartMoneyState.lth30d;
-          if (lth > 0) {
-            mainText += `LTH <strong style="color:var(--accent-green)">acumulando ${formatBTC(lth)}</strong> (30d). `;
-          } else {
-            mainText += `LTH <strong style="color:var(--accent-red)">distribuindo ${formatBTC(lth)}</strong> (30d). `;
-          }
-        }
-        if (smartMoneyState.sth30d !== null) {
-          const sth = smartMoneyState.sth30d;
-          if (sth < 0) {
-            mainText += `STH vendendo — bullish para acumulação. `;
-          } else {
-            mainText += `STH comprando — FOMO no varejo. `;
-          }
+          mainText += `. LTH ${lth > 0 ? '<span style="color:var(--accent-green)">+' : '<span style="color:var(--accent-red)">'}${formatBTC(lth)}</span>`;
         }
         if (smartMoneyState.reserveRisk !== null && smartMoneyState.reserveRisk < 0.005) {
-          mainText += `Reserve Risk <strong style="color:var(--accent-green)">baixo</strong> (zona de compra). `;
+          mainText += `. Reserve Risk <span style="color:var(--accent-green)">baixo</span>`;
         }
       } else {
-        mainText += `Dados carregando...`;
+        mainText += `<span style="color:var(--text-muted)">Carregando...</span>`;
       }
+      mainText += `</div>`;
       
-      // 4. LEVERAGE / DERIVATIVES
-      mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">⚡ LEVERAGE & DERIVATIVOS</strong></div>`;
-      if (leverageState.riskScore !== undefined) {
-        const levRisk = leverageState.riskScore;
-        const levColor = levRisk >= 50 ? 'var(--accent-red)' : levRisk >= 25 ? 'var(--accent-yellow)' : 'var(--accent-green)';
-        mainText += `Risco de Cascade: <strong style="color:${levColor}">${levRisk}%</strong>. `;
-        
+      // 4. LEVERAGE
+      mainText += `<div style="margin-bottom:12px;">`;
+      mainText += `<span style="color:var(--accent-cyan);font-weight:600;">⚡ Leverage:</span> `;
+      if (leverageState.loaded) {
+        mainText += `Risco <strong style="color:${levColor}">${levRisk}%</strong>`;
         if (leverageState.oi !== null) {
-          mainText += `Open Interest: <strong>${formatUSD(leverageState.oi)}</strong>. `;
+          mainText += `. OI: ${formatUSD(leverageState.oi)}`;
         }
         if (leverageState.longShort !== null) {
-          const ls = leverageState.longShort;
-          if (ls > 1.3) {
-            mainText += `L/S Ratio <strong style="color:var(--accent-orange)">${ls.toFixed(2)}</strong> — mercado crowded long. `;
-          } else if (ls < 0.8) {
-            mainText += `L/S Ratio <strong style="color:var(--accent-cyan)">${ls.toFixed(2)}</strong> — shorts dominando. `;
-          } else {
-            mainText += `L/S Ratio <strong>${ls.toFixed(2)}</strong> — equilibrado. `;
-          }
-        }
-        if (leverageState.funding !== null) {
-          const fund = leverageState.funding;
-          if (Math.abs(fund) > 0.0003) {
-            mainText += `Funding <strong style="color:${fund > 0 ? 'var(--accent-orange)' : 'var(--accent-cyan)'}">${(fund*100).toFixed(4)}%</strong>. `;
-          }
+          mainText += `. L/S: ${leverageState.longShort.toFixed(2)}`;
         }
       } else {
-        mainText += `Dados carregando...`;
+        mainText += `<span style="color:var(--text-muted)">Carregando...</span>`;
       }
+      mainText += `</div>`;
+      
+      // 5. MINERS
+      mainText += `<div style="margin-bottom:12px;">`;
+      mainText += `<span style="color:var(--accent-cyan);font-weight:600;">⛏️ Miners:</span> `;
+      if (minerState.loaded) {
+        mainText += `Health <strong style="color:${minerColor}">${minerHealth}%</strong>`;
+        if (minerState.puell !== null) {
+          const puell = minerState.puell;
+          const puellColor = puell < 0.5 ? 'var(--accent-green)' : puell > 4 ? 'var(--accent-red)' : 'var(--text-secondary)';
+          mainText += `. Puell: <span style="color:${puellColor}">${puell.toFixed(2)}</span>`;
+        }
+        if (minerState.reserveChg !== null) {
+          mainText += `. Reserva 30d: ${minerState.reserveChg > 0 ? '+' : ''}${minerState.reserveChg.toFixed(2)}%`;
+        }
+      } else {
+        mainText += `<span style="color:var(--text-muted)">Carregando...</span>`;
+      }
+      mainText += `</div>`;
+      
+      // 6. SENTIMENT
+      mainText += `<div>`;
+      mainText += `<span style="color:var(--accent-cyan);font-weight:600;">😱 Sentimento:</span> `;
+      if (fearGreed) {
+        let fgLabel, fgColor;
+        if (fearGreed <= 25) { fgLabel = 'Extreme Fear'; fgColor = 'var(--accent-green)'; }
+        else if (fearGreed <= 45) { fgLabel = 'Fear'; fgColor = 'var(--accent-lime)'; }
+        else if (fearGreed <= 55) { fgLabel = 'Neutral'; fgColor = 'var(--accent-yellow)'; }
+        else if (fearGreed <= 75) { fgLabel = 'Greed'; fgColor = 'var(--accent-orange)'; }
+        else { fgLabel = 'Extreme Greed'; fgColor = 'var(--accent-red)'; }
+        mainText += `F&G <strong style="color:${fgColor}">${fearGreed.toFixed(0)}</strong> (${fgLabel})`;
+      }
+      if (rsi) {
+        const rsiColor = rsi > 70 ? 'var(--accent-red)' : rsi < 30 ? 'var(--accent-green)' : 'var(--text-secondary)';
+        mainText += `. RSI: <span style="color:${rsiColor}">${rsi.toFixed(0)}</span>`;
+      }
+      mainText += `</div>`;
       
       // 5. MINERS
       mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">⛏️ MINERS</strong></div>`;
@@ -5452,6 +5597,23 @@
       document.getElementById('repTradeSystem').innerHTML = trendStatus === 'LONG' ?
         '<strong style="color:var(--accent-green)">LONG</strong>' :
         '<strong style="color:var(--text-muted)">CASH</strong>';
+      
+      // Smart Money data
+      const repLth30d = document.getElementById('repLth30d');
+      const repSth30d = document.getElementById('repSth30d');
+      const repRatio = document.getElementById('repRatio');
+      if (repLth30d && smartMoneyState.lth30d !== null) {
+        const lth = smartMoneyState.lth30d;
+        repLth30d.innerHTML = `<span style="color:${lth > 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${formatBTC(lth)}</span>`;
+      }
+      if (repSth30d && smartMoneyState.sth30d !== null) {
+        const sth = smartMoneyState.sth30d;
+        repSth30d.innerHTML = `<span style="color:${sth < 0 ? 'var(--accent-green)' : 'var(--accent-orange)'}">${formatBTC(sth)}</span>`;
+      }
+      if (repRatio && smartMoneyState.ratio !== null) {
+        const ratio = smartMoneyState.ratio;
+        repRatio.innerHTML = `<span style="color:${ratio < 0.5 ? 'var(--accent-green)' : 'var(--accent-yellow)'}">${ratio.toFixed(3)}</span>`;
+      }
       
       // ========== HISTORICAL CONTEXT ==========
       let contextText = '';
