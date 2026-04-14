@@ -3156,7 +3156,10 @@
         });
       }
 
-      // Sort newest first
+      // Store trades in state for backstage to use (sorted oldest first for equity curve)
+      window.signalTradesData = [...rows].sort((a, b) => new Date(a.entryDate) - new Date(b.entryDate));
+
+      // Sort newest first for display
       rows.sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate));
 
       const fmt = d => d && d !== '--' ? new Date(d).toLocaleDateString('en-US', {month:'short', day:'2-digit', year:'2-digit'}).toUpperCase() : '--';
@@ -6293,24 +6296,37 @@
           }
         }
 
-        // Compare with LTH
-        if (whaleState.whale10k30d !== null && smartMoneyState.lth30d !== null) {
-          const el = document.getElementById('whaleVsLth');
-          if (el) {
-            const whaleTotal = (whaleState.whale10k30d || 0) + (whaleState.whale1k10k30d || 0);
-            const lth = smartMoneyState.lth30d;
-            const aligned = (whaleTotal > 0 && lth > 0) || (whaleTotal < 0 && lth < 0);
-            el.innerHTML = aligned ?
-              '<span style="color:var(--accent-green)">ALIGNED</span> — Whales + LTH same direction' :
-              '<span style="color:var(--accent-orange)">DIVERGENT</span> — Whales vs LTH disagreeing';
-          }
-        }
-
         whaleState.loaded = true;
+
+        // Compare with LTH (with retry if LTH not loaded yet)
+        updateWhaleVsLth();
+
         calculateNetBuyingPressure();
         updateConfluenceScore();
       } catch(e) {
         console.error('[Whale] Error:', e);
+      }
+    }
+
+    // ========== WHALE vs LTH COMPARISON (with retry) ==========
+    function updateWhaleVsLth() {
+      if (whaleState.whale10k30d !== null && smartMoneyState.loaded && smartMoneyState.lth30d !== null) {
+        const el = document.getElementById('whaleVsLth');
+        if (el) {
+          const whaleTotal = (whaleState.whale10k30d || 0) + (whaleState.whale1k10k30d || 0);
+          const lth = smartMoneyState.lth30d;
+          const aligned = (whaleTotal > 0 && lth > 0) || (whaleTotal < 0 && lth < 0);
+          el.innerHTML = aligned ?
+            '<span style="color:var(--accent-green)">ALIGNED</span> — Whales + LTH same direction' :
+            '<span style="color:var(--accent-orange)">DIVERGENT</span> — Whales vs LTH disagreeing';
+        }
+      } else if (whaleState.loaded) {
+        // LTH data not ready yet, retry
+        if (!window._whaleVsLthRetry) window._whaleVsLthRetry = 0;
+        window._whaleVsLthRetry++;
+        if (window._whaleVsLthRetry < 15) {
+          setTimeout(updateWhaleVsLth, 2000);
+        }
       }
     }
 
@@ -6567,29 +6583,18 @@
     function renderBackstageCharts() {
       console.log('[Backstage] Rendering equity curve and underwater chart...');
 
-      // Use the existing signal system trades
-      const trades = [];
-      const tableRows = document.querySelectorAll('#signalTableBody tr');
-      tableRows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 7) {
-          const entry = {
-            entryDate: cells[0]?.textContent?.trim(),
-            entryPrice: parseFloat(cells[1]?.textContent?.replace(/[$,]/g, '')),
-            exitDate: cells[2]?.textContent?.trim(),
-            exitPrice: parseFloat(cells[3]?.textContent?.replace(/[$,]/g, '')),
-            zEntry: parseFloat(cells[4]?.textContent),
-            returnPct: parseFloat(cells[5]?.textContent?.replace(/[%+]/g, '')),
-            status: cells[6]?.textContent?.trim()
-          };
-          if (!isNaN(entry.entryPrice)) trades.push(entry);
+      // Use stored signal trades data (set by renderSignalTable)
+      const trades = window.signalTradesData;
+      if (!trades || trades.length === 0) {
+        console.log('[Backstage] No trades found, will retry in 3s...');
+        if (!window._backstageRetry) window._backstageRetry = 0;
+        window._backstageRetry++;
+        if (window._backstageRetry < 10) {
+          setTimeout(renderBackstageCharts, 3000);
         }
-      });
-
-      if (trades.length === 0) {
-        console.log('[Backstage] No trades found for equity curve');
         return;
       }
+      console.log('[Backstage] Found', trades.length, 'trades for equity curve');
 
       // Build equity curve
       let equity = 100;
@@ -6740,20 +6745,32 @@
     // Schedule new data fetches after initial load
     setTimeout(() => {
       console.log('[v2.0] Starting enhanced data fetches...');
-      fetchFuturesPressureData();
-      fetchWhaleData();
-    }, 5000);
+      fetchFuturesPressureData().then(() => {
+        // After futures, recalculate NBP if whale data is ready
+        if (whaleState.loaded) calculateNetBuyingPressure();
+      });
+      fetchWhaleData().then(() => {
+        // After whale, recalculate NBP if futures data is ready
+        if (futuresPressureState.loaded) calculateNetBuyingPressure();
+      });
+    }, 4000);
 
-    // Schedule backstage rendering after signals are loaded
-    setTimeout(() => {
-      console.log('[v2.0] Rendering backstage analytics...');
+    // Schedule backstage rendering after signals are loaded (with smart retry)
+    function initBackstage() {
+      console.log('[v2.0] Initializing backstage analytics...');
       renderROCTable();
       renderBackstageCharts();
       updateConfluenceScore();
-    }, 8000);
+    }
+    setTimeout(initBackstage, 6000);
+    // Retry backstage at 12s and 18s in case data was slow
+    setTimeout(initBackstage, 12000);
+    setTimeout(initBackstage, 18000);
 
     // Periodic refresh for confluence score
-    setTimeout(() => { updateConfluenceScore(); }, 12000);
+    setTimeout(() => { updateConfluenceScore(); }, 10000);
+    setTimeout(() => { updateConfluenceScore(); }, 15000);
+    setTimeout(() => { updateConfluenceScore(); }, 20000);
 
   </script>
 </body>
