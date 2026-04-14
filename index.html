@@ -383,13 +383,13 @@
     <div class="section-header">
       <span class="section-num">02</span>
       <span class="section-title">Trade Signals</span>
-      <span class="section-sub">ZONE TRANSITION SYSTEM · BUY: Z cruza -1.5 ↑ (saindo ACC) · SELL: Z cruza +1.5 ↑ (entrando HOT)</span>
+      <span class="section-sub">FULL HISTORY · BUY: Z exits ACCUMULATE zone (confirmed) · SELL: Z enters ELEVATED zone</span>
     </div>
 
-    <!-- Stats row - Performance -->
+    <!-- Stats row -->
     <div class="sig-stats-row">
       <div class="sig-stat-card">
-        <div class="sig-stat-label">Total Trades</div>
+        <div class="sig-stat-label">Total Signals</div>
         <div class="sig-stat-val" id="sigTotalTrades" style="color:var(--accent-blue)">--</div>
       </div>
       <div class="sig-stat-card">
@@ -397,48 +397,20 @@
         <div class="sig-stat-val" id="sigWinRate">--</div>
       </div>
       <div class="sig-stat-card">
-        <div class="sig-stat-label">Avg Return</div>
+        <div class="sig-stat-label">Avg Return / Trade</div>
         <div class="sig-stat-val" id="sigAvgReturn">--</div>
-      </div>
-      <div class="sig-stat-card">
-        <div class="sig-stat-label">Total Return</div>
-        <div class="sig-stat-val" id="sigTotalReturn" style="color:var(--accent-green)">--</div>
-      </div>
-      <div class="sig-stat-card">
-        <div class="sig-stat-label">Max Drawdown</div>
-        <div class="sig-stat-val" id="sigMaxDD" style="color:var(--accent-red)">--</div>
-      </div>
-      <div class="sig-stat-card">
-        <div class="sig-stat-label">Current</div>
-        <div class="sig-stat-val" id="sigPosition">--</div>
-      </div>
-    </div>
-
-    <!-- Advanced Metrics Row -->
-    <div class="sig-stats-row" style="margin-top:8px;">
-      <div class="sig-stat-card">
-        <div class="sig-stat-label">Sharpe Ratio</div>
-        <div class="sig-stat-val" id="sigSharpe">--</div>
-      </div>
-      <div class="sig-stat-card">
-        <div class="sig-stat-label">Profit Factor</div>
-        <div class="sig-stat-val" id="sigProfitFactor">--</div>
-      </div>
-      <div class="sig-stat-card">
-        <div class="sig-stat-label">Expectancy</div>
-        <div class="sig-stat-val" id="sigExpectancy">--</div>
       </div>
       <div class="sig-stat-card">
         <div class="sig-stat-label">Best Trade</div>
         <div class="sig-stat-val" id="sigBestTrade" style="color:var(--accent-green)">--</div>
       </div>
       <div class="sig-stat-card">
-        <div class="sig-stat-label">Worst Trade</div>
-        <div class="sig-stat-val" id="sigWorstTrade" style="color:var(--accent-red)">--</div>
+        <div class="sig-stat-label">Total Return (all)</div>
+        <div class="sig-stat-val" id="sigTotalReturn" style="color:var(--accent-green)">--</div>
       </div>
       <div class="sig-stat-card">
-        <div class="sig-stat-label">Avg Days/Trade</div>
-        <div class="sig-stat-val" id="sigAvgDays">--</div>
+        <div class="sig-stat-label">Current Position</div>
+        <div class="sig-stat-val" id="sigPosition">--</div>
       </div>
     </div>
 
@@ -483,19 +455,6 @@
           <thead><tr><th>Entry Date</th><th>Entry $</th><th>Exit Date</th><th>Exit $</th><th>Z Entry</th><th>Return</th><th>Status</th></tr></thead>
           <tbody id="signalTableBody"></tbody>
         </table>
-      </div>
-    </div>
-
-    <!-- Equity Curve -->
-    <div class="sig-chart-card" style="margin-top:16px;">
-      <div class="sig-chart-topbar">
-        <div>
-          <div class="sig-chart-title">Equity Curve — Cumulative Returns</div>
-          <div class="sig-chart-sub">Crescimento de $10,000 investidos seguindo os sinais · Drawdown em vermelho</div>
-        </div>
-      </div>
-      <div class="sig-chart-body" style="height:200px;">
-        <canvas id="equityChart"></canvas>
       </div>
     </div>
   </div>
@@ -2403,68 +2362,35 @@
 
       const priceMap = new Map(priceHistory.map(d => [d.date, d.value]));
 
-      // ══════════════════════════════════════════════════════════════════════
-      // Z-SCORE ZONE TRANSITION SYSTEM
-      // ══════════════════════════════════════════════════════════════════════
-      // 
-      // FILOSOFIA: Entrar quando o mercado SAI da capitulação e está 
-      // CONFIRMANDO reversão, não no fundo absoluto. Evita falsos sinais.
-      //
-      // ZONAS:
-      // ≤ -1.5  = ACCUMULATE (verde escuro) - capitulação extrema
-      // -1.5 a -0.5 = UNDERVALUED (verde claro) - desconto
-      // -0.5 a +0.5 = FAIR VALUE (amarelo) - preço justo
-      // +0.5 a +1.5 = ELEVATED (laranja) - caro
-      // ≥ +1.5  = OVERHEATED (vermelho) - euforia extrema
-      //
-      // ENTRADA: Z cruza -1.0 de baixo para cima APÓS ter estado em ACC
-      // SAÍDA: Z cruza +1.5 de baixo para cima (entra zona HOT)
-      // ══════════════════════════════════════════════════════════════════════
-
       // ── PARAMETERS ──────────────────────────────────────────────
-      const ACC_ZONE      = -1.5;   // Zona de acumulação extrema
-      const ENTRY_TH      = -1.5;   // Threshold de entrada: SAINDO da zona ACC
-      const FAIR_TH       = -0.5;   // Início do Fair Value
-      const EXIT_TH       =  1.5;   // Threshold de saída (zona HOT)
-      
-      const MIN_ACC_DAYS    = 3;    // Mínimo de dias em ACC antes de sinal (muito relaxado)
-      const CONFIRM_DAYS    = 2;    // Dias para confirmar cruzamento (rápido)
-      const Z_RISING_DAYS   = 5;    // Z deve estar subindo por X dias
-      const LOOKBACK_DAYS   = 90;   // Janela para verificar se veio de ACC (ampla)
+      const ACC_TH           = -1.5;
+      const HOT_TH           =  1.5;
+      const MIN_ACC_DAYS     = 10;   // reduced: 2025 cycle was fast (was 14)
+      const MIN_DEEP_DAYS    = 3;    // reduced: fewer days needed below -2.0 (was 5)
+      const Z_RECOVERY_DAYS  = 3;    // reduced: faster recovery confirmation (was 5)
+      const CONFIRM_BUY_DAYS = 5;
+      const CONFIRM_SEL_DAYS = 3;
+      const PRICE_CONFIRM    = 0.15;
       // ────────────────────────────────────────────────────────────
 
-      // Helper: check if Z is rising (trend up)
-      function isZRising(history, endIdx, days) {
-        if (endIdx < days) return false;
-        const slice = history.slice(endIdx - days, endIdx + 1);
-        const vals = slice.map(d => d.value).filter(v => v !== null);
-        if (vals.length < days) return false;
-        // Simple: end > start and no deep retracement
-        const start = vals[0];
-        const end = vals[vals.length - 1];
-        const min = Math.min(...vals);
-        // Rising if: end > start AND min is not too far below end
-        return end > start && (end - min) < (end - start) * 1.5;
-      }
-
-      // Helper: count days in ACC zone in lookback
-      function countAccDays(history, endIdx, lookback) {
-        const start = Math.max(0, endIdx - lookback);
-        return history.slice(start, endIdx).filter(d => d.value !== null && d.value <= ACC_ZONE).length;
-      }
-
-      // Helper: get Z moving average
-      function getZMA(history, endIdx, period) {
-        const start = Math.max(0, endIdx - period + 1);
-        const vals = history.slice(start, endIdx + 1).map(d => d.value).filter(v => v !== null);
-        return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+      // Helper: get min price in last N days before a given date (date-string based)
+      function getPriceLow(beforeDate, days) {
+        const d = new Date(beforeDate);
+        d.setDate(d.getDate() - days);
+        const cutoff = d.toISOString().split('T')[0];
+        // priceHistory is sorted oldest→newest, filter by date string comparison
+        const vals = priceHistory
+          .filter(p => p.date > cutoff && p.date <= beforeDate && p.value > 0)
+          .map(p => p.value);
+        return vals.length ? Math.min(...vals) : null;
       }
 
       const signals   = [];
       let openTrade   = null;
       let buyPending  = null;
-      let daysAboveEntry = 0;
-      let daysAboveExit  = 0;
+      let sellPending = null;
+      let daysAboveBuy  = 0;
+      let daysAboveSell = 0;
 
       for (let i = 1; i < compositeHistory.length; i++) {
         const prev  = compositeHistory[i-1].value;
@@ -2473,104 +2399,90 @@
         const price = priceMap.get(date);
         if (price == null || prev === null || curr === null) continue;
 
-        // ══════════════════════════════════════════════════════════════
-        // ENTRY LOGIC: Z cruza -1.5 para cima (SAINDO da zona ACC)
-        // ══════════════════════════════════════════════════════════════
+        // ── BUY ─────────────────────────────────────────────────
         if (!openTrade) {
-          // Count consecutive days above entry threshold
-          if (curr > ENTRY_TH) {
-            daysAboveEntry++;
+          if (curr > ACC_TH) {
+            daysAboveBuy++;
           } else {
-            daysAboveEntry = 0;
-            // Reset pending if Z drops back into deep ACC
-            if (buyPending && curr <= ACC_ZONE - 0.5) {
+            daysAboveBuy = 0;
+            // Reset pending if Z returns to DEEP-ACC
+            if (buyPending && curr <= -2.0) {
               console.log(`↩ BUY pending reset (deep ACC): ${date} Z=${curr.toFixed(2)}`);
               buyPending = null;
             }
           }
 
-          // Detect Z crossing -1.5 upward (SAINDO da zona ACC verde escuro)
-          if (prev <= ENTRY_TH && curr > ENTRY_TH) {
-            const accDays = countAccDays(compositeHistory, i, LOOKBACK_DAYS);
-            const zRising = isZRising(compositeHistory, i, Z_RISING_DAYS);
-            const zma5 = getZMA(compositeHistory, i, 5);
-            const zma14 = getZMA(compositeHistory, i, 14);
-            const maCross = zma5 !== null && zma14 !== null && zma5 > zma14;
+          // Detect Z crossing -1.5 upward
+          if (prev <= ACC_TH && curr > ACC_TH) {
+            const lb = compositeHistory.slice(Math.max(0, i - MIN_ACC_DAYS - 15), i);
+            const accDays  = lb.filter(d => d.value !== null && d.value <= ACC_TH).length;
+            const deepDays = lb.filter(d => d.value !== null && d.value <= -2.0).length;
+            const zVals    = lb.map(d => d.value).filter(v => v !== null);
+            const zMin     = Math.min(...zVals);
+            const zMinAge  = lb.length - 1 - lb.findLastIndex(d => d.value === zMin);
 
-            // Signal strength classification
-            let strength = 'WEAK';
-            let strengthScore = 0;
-            if (accDays >= 10) strengthScore++;
-            if (accDays >= 20) strengthScore++;
-            if (zRising) strengthScore++;
-            if (maCross) strengthScore++;
-            
-            if (strengthScore >= 3) strength = 'STRONG';
-            else if (strengthScore >= 2) strength = 'MEDIUM';
+            // Log every crossover with why it passed or failed
+            console.log(`📊 Z cross -1.5 on ${date}: accDays=${accDays}(need ${MIN_ACC_DAYS}) deepDays=${deepDays}(need ${MIN_DEEP_DAYS}) zMinAge=${zMinAge}(need ${Z_RECOVERY_DAYS}) → ${accDays>=MIN_ACC_DAYS && deepDays>=MIN_DEEP_DAYS && zMinAge>=Z_RECOVERY_DAYS ? '✅ PENDING' : '❌ SKIP'}`);
 
-            console.log(`📊 Z cross -1.5 on ${date}: accDays=${accDays}(need ${MIN_ACC_DAYS}) zRising=${zRising} maCross=${maCross} strength=${strength}`);
+            if (accDays >= MIN_ACC_DAYS && deepDays >= MIN_DEEP_DAYS && zMinAge >= Z_RECOVERY_DAYS) {
+              // DATE-based 90-day low: only prices strictly within 90 days before crossover
+              const raw90Low = getPriceLow(date, 90);
+              // Safety: if 90d low is more than 50% below current price, it's a stale ancient low
+              // Use 60d low instead which is more recent
+              let cycleLow = raw90Low;
+              if (raw90Low !== null && raw90Low < price * 0.50) {
+                const raw60Low = getPriceLow(date, 60);
+                cycleLow = raw60Low !== null ? raw60Low : price * 0.80;
+                console.log(`⚠ 90d low $${Math.round(raw90Low)} too old, using 60d: $${Math.round(cycleLow)}`);
+              }
+              if (cycleLow === null) cycleLow = price * 0.80;
 
-            // Entry when Z exits ACC zone after being there for some time
-            if (accDays >= MIN_ACC_DAYS) {
-              buyPending = { crossDate: date, crossPrice: price, strength, accDays };
-              daysAboveEntry = 1;
-              console.log(`🟡 BUY pending (${strength}): ${date} @ $${Math.round(price)}`);
+              buyPending = { crossDate: date, crossPrice: price, cycleLow };
+              daysAboveBuy = 1;
+              console.log(`🟡 BUY pending: ${date} @ $${Math.round(price)} | cycleLow: $${Math.round(cycleLow)} | trigger: $${Math.round(cycleLow * (1 + PRICE_CONFIRM))}`);
             }
           }
 
-          // Confirm BUY after X days above threshold
-          if (buyPending && daysAboveEntry >= CONFIRM_DAYS) {
-            openTrade = { date, price, z: curr, strength: buyPending.strength };
-            signals.push({ 
-              type: 'BUY', 
-              date, 
-              price, 
-              z: curr,
-              strength: buyPending.strength,
-              crossDate: buyPending.crossDate
-            });
-            console.log(`✅ BUY confirmed (${buyPending.strength}): ${date} @ $${Math.round(price)} | Z: ${curr.toFixed(2)}`);
-            buyPending = null; 
-            daysAboveEntry = 0; 
-            daysAboveExit = 0;
+          // Confirm BUY
+          if (buyPending && daysAboveBuy >= CONFIRM_BUY_DAYS) {
+            // Refresh cycleLow — update if price made new lows since pending was created
+            const freshLow = getPriceLow(date, 90);
+            if (freshLow !== null && freshLow < buyPending.cycleLow && freshLow >= price * 0.50) {
+              buyPending.cycleLow = freshLow;
+            }
+            const cycleLow    = buyPending.cycleLow;
+            const pctAboveLow = (price - cycleLow) / cycleLow;
+
+            if (pctAboveLow >= PRICE_CONFIRM) {
+              openTrade = { date, price, z: curr, cycleLow, pctAboveLow };
+              signals.push({ type: 'BUY', date, price, z: curr,
+                crossDate: buyPending.crossDate, low90d: cycleLow, pctAboveLow });
+              buyPending = null; daysAboveBuy = 0; daysAboveSell = 0; sellPending = null;
+              console.log(`✅ BUY confirmed: ${date} @ $${Math.round(price)} | low: $${Math.round(cycleLow)} | +${(pctAboveLow*100).toFixed(1)}% | Z: ${curr.toFixed(2)}`);
+            } else {
+              console.log(`⏳ BUY waiting: ${date} | need +${(PRICE_CONFIRM*100).toFixed(0)}%, have +${(pctAboveLow*100).toFixed(1)}% | trigger $${Math.round(cycleLow*(1+PRICE_CONFIRM))}`);
+            }
           }
         }
 
-        // ══════════════════════════════════════════════════════════════
-        // EXIT LOGIC: Z cruza +1.5 para cima (entra zona HOT)
-        // ══════════════════════════════════════════════════════════════
+        // ── SELL ─────────────────────────────────────────────────
         if (openTrade) {
-          if (curr >= EXIT_TH) {
-            daysAboveExit++;
+          if (curr >= HOT_TH) {
+            daysAboveSell++;
           } else {
-            daysAboveExit = 0;
+            daysAboveSell = 0;
+            sellPending = null;
           }
-
-          // Z entering HOT zone
-          if (prev < EXIT_TH && curr >= EXIT_TH) {
-            daysAboveExit = 1;
+          if (prev < HOT_TH && curr >= HOT_TH) {
+            sellPending = { crossDate: date };
+            daysAboveSell = 1;
           }
-
-          // Confirm SELL after 2 days in HOT zone (less confirmation needed for exits)
-          if (daysAboveExit >= 2) {
+          if (sellPending && daysAboveSell >= CONFIRM_SEL_DAYS) {
             const ret = ((price - openTrade.price) / openTrade.price) * 100;
-            const holdDays = Math.round((new Date(date) - new Date(openTrade.date)) / (1000 * 60 * 60 * 24));
-            signals.push({ 
-              type: 'SELL', 
-              date, 
-              price, 
-              z: curr,
-              returnPct: ret, 
-              buyDate: openTrade.date, 
-              buyPrice: openTrade.price,
-              holdDays,
-              strength: openTrade.strength
-            });
-            console.log(`🔴 SELL: ${date} @ $${Math.round(price)} | Return: ${ret.toFixed(1)}% | Hold: ${holdDays}d`);
-            openTrade = null; 
-            daysAboveExit = 0; 
-            daysAboveEntry = 0; 
-            buyPending = null;
+            signals.push({ type: 'SELL', date, price, z: curr,
+              returnPct: ret, buyDate: openTrade.date, buyPrice: openTrade.price });
+            console.log(`🔴 SELL: ${date} @ $${Math.round(price)} | Return: ${ret.toFixed(1)}%`);
+            openTrade = null; sellPending = null; daysAboveSell = 0; daysAboveBuy = 0; buyPending = null;
           }
         }
       }
@@ -2580,31 +2492,20 @@
         const last = priceHistory[priceHistory.length - 1];
         if (last) {
           const ret = ((last.value - openTrade.price) / openTrade.price) * 100;
-          const holdDays = Math.round((new Date(last.date) - new Date(openTrade.date)) / (1000 * 60 * 60 * 24));
-          signals.push({ 
-            type: 'OPEN', 
-            date: last.date, 
-            price: last.value,
+          signals.push({ type: 'OPEN', date: last.date, price: last.value,
             z: compositeHistory[compositeHistory.length-1].value,
-            returnPct: ret, 
-            buyDate: openTrade.date, 
-            buyPrice: openTrade.price,
-            holdDays,
-            strength: openTrade.strength
-          });
+            returnPct: ret, buyDate: openTrade.date, buyPrice: openTrade.price,
+            low90d: openTrade.cycleLow, pctAboveLow: openTrade.pctAboveLow });
         }
       } else if (buyPending) {
         const last = priceHistory[priceHistory.length - 1];
         if (last) {
-          signals.push({ 
-            type: 'PENDING', 
-            date: last.date, 
-            price: last.value,
+          const needed = buyPending.cycleLow * (1 + PRICE_CONFIRM);
+          signals.push({ type: 'PENDING', date: last.date, price: last.value,
             z: compositeHistory[compositeHistory.length-1].value,
-            strength: buyPending.strength,
-            crossDate: buyPending.crossDate
-          });
-          console.log(`⏳ PENDING (${buyPending.strength}): waiting confirmation`);
+            cycleLow: buyPending.cycleLow, needed,
+            pctAboveLow: (last.value - buyPending.cycleLow) / buyPending.cycleLow });
+          console.log(`⏳ PENDING: low $${Math.round(buyPending.cycleLow)}, need $${Math.round(needed)}, current $${Math.round(last.value)}`);
         }
       }
 
@@ -2616,147 +2517,46 @@
 
       const closed = signals.filter(s => s.type === 'SELL');
       const open   = signals.find(s  => s.type === 'OPEN');
-      const pending = signals.find(s => s.type === 'PENDING');
-      const wins   = closed.filter(s => s.returnPct > 0);
-      const losses = closed.filter(s => s.returnPct <= 0);
+      const wins   = closed.filter(s => s.returnPct > 0).length;
+      const avgRet = closed.length ? closed.reduce((a,s) => a + s.returnPct, 0) / closed.length : 0;
+      const bestRet= closed.length ? Math.max(...closed.map(s => s.returnPct)) : 0;
+      const totalRet = closed.reduce((a,s) => a + s.returnPct, 0);
       const total  = closed.length + (open ? 1 : 0);
-
-      // ══════════════════════════════════════════════════════════════════════
-      // ADVANCED METRICS CALCULATION
-      // ══════════════════════════════════════════════════════════════════════
-      
-      // Basic stats
-      const winRate = closed.length ? (wins.length / closed.length) * 100 : 0;
-      const avgRet = closed.length ? closed.reduce((a, s) => a + s.returnPct, 0) / closed.length : 0;
-      const totalRet = closed.reduce((a, s) => a + s.returnPct, 0);
-      const bestRet = closed.length ? Math.max(...closed.map(s => s.returnPct)) : 0;
-      const worstRet = closed.length ? Math.min(...closed.map(s => s.returnPct)) : 0;
-      
-      // Average hold days
-      const avgDays = closed.length && closed[0].holdDays !== undefined
-        ? Math.round(closed.reduce((a, s) => a + (s.holdDays || 0), 0) / closed.length)
-        : '--';
-
-      // Profit Factor = Gross Profits / Gross Losses
-      const grossProfit = wins.reduce((a, s) => a + s.returnPct, 0);
-      const grossLoss = Math.abs(losses.reduce((a, s) => a + s.returnPct, 0));
-      const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : grossProfit > 0 ? '∞' : '--';
-
-      // Expectancy = (Win% × Avg Win) - (Loss% × Avg Loss)
-      const avgWin = wins.length ? wins.reduce((a, s) => a + s.returnPct, 0) / wins.length : 0;
-      const avgLoss = losses.length ? Math.abs(losses.reduce((a, s) => a + s.returnPct, 0) / losses.length) : 0;
-      const expectancy = closed.length 
-        ? ((winRate/100 * avgWin) - ((100-winRate)/100 * avgLoss)).toFixed(1)
-        : '--';
-
-      // Max Drawdown calculation (equity curve based)
-      let equity = 10000;
-      let peak = equity;
-      let maxDD = 0;
-      const equityCurve = [];
-      
-      closed.forEach((trade, i) => {
-        equity = equity * (1 + trade.returnPct / 100);
-        equityCurve.push({ date: trade.date, equity, trade: i + 1 });
-        if (equity > peak) peak = equity;
-        const dd = ((peak - equity) / peak) * 100;
-        if (dd > maxDD) maxDD = dd;
-      });
-      
-      // If open trade, add current equity
-      if (open) {
-        const currentEquity = equity * (1 + open.returnPct / 100);
-        equityCurve.push({ date: open.date, equity: currentEquity, trade: closed.length + 1, open: true });
-        if (currentEquity < peak) {
-          const dd = ((peak - currentEquity) / peak) * 100;
-          if (dd > maxDD) maxDD = dd;
-        }
-      }
-
-      // Sharpe Ratio (simplified: using trade returns as periods)
-      // Sharpe = (Mean Return - Risk Free) / Std Dev
-      // Assuming risk-free ≈ 0 for simplicity
-      let sharpe = '--';
-      if (closed.length >= 3) {
-        const returns = closed.map(s => s.returnPct);
-        const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
-        const variance = returns.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / returns.length;
-        const stdDev = Math.sqrt(variance);
-        if (stdDev > 0) {
-          sharpe = (mean / stdDev).toFixed(2);
-        }
-      }
-
-      // ══════════════════════════════════════════════════════════════════════
-      // UPDATE UI
-      // ══════════════════════════════════════════════════════════════════════
 
       document.getElementById('sigTotalTrades').textContent = total || '--';
 
       const wrEl = document.getElementById('sigWinRate');
-      wrEl.textContent = closed.length ? Math.round(winRate) + '%' : '--';
-      wrEl.style.color = closed.length && winRate >= 50 ? 'var(--accent-green)' : 'var(--accent-red)';
+      wrEl.textContent = closed.length ? Math.round((wins/closed.length)*100) + '%' : '--';
+      wrEl.style.color = closed.length && wins/closed.length >= 0.5 ? 'var(--accent-green)' : 'var(--accent-red)';
 
       const arEl = document.getElementById('sigAvgReturn');
       arEl.textContent = closed.length ? (avgRet >= 0 ? '+' : '') + avgRet.toFixed(0) + '%' : '--';
       arEl.style.color = avgRet >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
 
+      document.getElementById('sigBestTrade').textContent = bestRet > 0 ? '+' + bestRet.toFixed(0) + '%' : '--';
+
       const trEl = document.getElementById('sigTotalReturn');
       trEl.textContent = closed.length ? (totalRet >= 0 ? '+' : '') + totalRet.toFixed(0) + '%' : '--';
       trEl.style.color = totalRet >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
 
-      document.getElementById('sigBestTrade').textContent = bestRet > 0 ? '+' + bestRet.toFixed(0) + '%' : '--';
-      
-      const wtEl = document.getElementById('sigWorstTrade');
-      if (wtEl) {
-        wtEl.textContent = worstRet !== 0 ? worstRet.toFixed(0) + '%' : '--';
-        wtEl.style.color = worstRet < 0 ? 'var(--accent-red)' : 'var(--accent-yellow)';
-      }
-
-      const ddEl = document.getElementById('sigMaxDD');
-      if (ddEl) {
-        ddEl.textContent = maxDD > 0 ? '-' + maxDD.toFixed(1) + '%' : '--';
-        ddEl.style.color = maxDD > 30 ? 'var(--accent-red)' : maxDD > 15 ? 'var(--accent-orange)' : 'var(--accent-yellow)';
-      }
-
-      const shEl = document.getElementById('sigSharpe');
-      if (shEl) {
-        shEl.textContent = sharpe;
-        shEl.style.color = parseFloat(sharpe) >= 1 ? 'var(--accent-green)' : parseFloat(sharpe) >= 0.5 ? 'var(--accent-yellow)' : 'var(--accent-orange)';
-      }
-
-      const pfEl = document.getElementById('sigProfitFactor');
-      if (pfEl) {
-        pfEl.textContent = profitFactor;
-        pfEl.style.color = parseFloat(profitFactor) >= 2 ? 'var(--accent-green)' : parseFloat(profitFactor) >= 1 ? 'var(--accent-yellow)' : 'var(--accent-red)';
-      }
-
-      const exEl = document.getElementById('sigExpectancy');
-      if (exEl) {
-        exEl.textContent = expectancy !== '--' ? (parseFloat(expectancy) >= 0 ? '+' : '') + expectancy + '%' : '--';
-        exEl.style.color = parseFloat(expectancy) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-      }
-
-      const adEl = document.getElementById('sigAvgDays');
-      if (adEl) adEl.textContent = avgDays !== '--' ? avgDays + 'd' : '--';
-
-      // Position status
       const posEl = document.getElementById('sigPosition');
+      const pending = signals.find(s => s.type === 'PENDING');
       if (open) {
         posEl.textContent = 'LONG ' + (open.returnPct >= 0 ? '+' : '') + open.returnPct.toFixed(0) + '%';
         posEl.style.color = open.returnPct >= 0 ? 'var(--accent-green)' : 'var(--accent-orange)';
       } else if (pending) {
-        posEl.innerHTML = '⏳ ' + (pending.strength || 'WATCHING');
+        posEl.innerHTML = '⏳ WATCHING';
         posEl.style.color = 'var(--accent-yellow)';
-        posEl.title = 'Z crossed -1.0, waiting confirmation';
+        posEl.title = 'Z confirmed ACC. Waiting for price ≥$' + Math.round(pending.needed).toLocaleString() + ' (+15% above $' + Math.round(pending.cycleLow).toLocaleString() + ' low)';
       } else {
         posEl.textContent = 'CASH';
         posEl.style.color = 'var(--text-muted)';
+        const wb = document.getElementById('watchingBadge');
+        if (wb) wb.style.display = 'none';
       }
 
       renderSignalChart(signals);
       renderSignalTable(signals);
-      renderEquityChart(equityCurve, maxDD);
     }
 
     let _sigRangeDays = 0; // 0 = ALL
@@ -3021,16 +2821,14 @@
         rows.push({
           entryDate: sell.buyDate, entryPrice: sell.buyPrice,
           exitDate: sell.date, exitPrice: sell.price,
-          zEntry: sell.z, returnPct: sell.returnPct, status: 'CLOSED',
-          holdDays: sell.holdDays, strength: sell.strength
+          zEntry: sell.z, returnPct: sell.returnPct, status: 'CLOSED'
         });
       });
       if (open) {
         rows.push({
           entryDate: open.buyDate, entryPrice: open.buyPrice,
           exitDate: '--', exitPrice: null,
-          zEntry: open.z, returnPct: open.returnPct, status: 'OPEN',
-          holdDays: open.holdDays, strength: open.strength
+          zEntry: open.z, returnPct: open.returnPct, status: 'OPEN'
         });
       }
 
@@ -3040,120 +2838,17 @@
       const fmt = d => d && d !== '--' ? new Date(d).toLocaleDateString('en-US', {month:'short', day:'2-digit', year:'2-digit'}).toUpperCase() : '--';
       const fmtP = v => v != null ? '$' + Math.round(v).toLocaleString() : '--';
       const fmtR = r => r >= 0 ? `<span style="color:#00d97e">+${r.toFixed(0)}%</span>` : `<span style="color:#ef4444">${r.toFixed(0)}%</span>`;
-      const fmtStrength = s => s === 'STRONG' ? '🟢' : s === 'MEDIUM' ? '🟡' : '⚪';
+      const fmtReason = r => false ? '🛑 STOP' : r.status === 'OPEN' ? '📈 OPEN' : '✅ Z-SELL';
 
       tbody.innerHTML = rows.map(r => `<tr>
-        <td style="color:var(--accent-green)">${fmt(r.entryDate)} ${fmtStrength(r.strength)}</td>
+        <td style="color:var(--accent-green)">${fmt(r.entryDate)}</td>
         <td style="color:var(--text-primary);font-weight:600">${fmtP(r.entryPrice)}</td>
         <td style="color:${r.status==='OPEN'?'var(--accent-blue)':'var(--text-secondary)'}">${fmt(r.exitDate)}</td>
         <td style="color:var(--text-primary)">${fmtP(r.exitPrice)}</td>
         <td style="color:var(--text-muted)">${r.zEntry?.toFixed(2) ?? '--'}</td>
         <td>${fmtR(r.returnPct)}</td>
-        <td><span style="background:${r.status==='OPEN'?'rgba(96,165,250,0.15)':'rgba(255,255,255,0.06)'};color:${r.status==='OPEN'?'#60a5fa':'#888'};padding:2px 8px;border-radius:3px;font-size:8px;font-weight:600">${r.status==='OPEN'?'OPEN':r.holdDays?r.holdDays+'d':'CLOSED'}</span></td>
+        <td><span style="background:${r.status==='OPEN'?'rgba(96,165,250,0.15)':'rgba(255,255,255,0.06)'};color:${r.status==='OPEN'?'#60a5fa':'#888'};padding:2px 8px;border-radius:3px;font-size:8px;font-weight:600">${r.status==='OPEN'?'OPEN':'CLOSED'}</span></td>
       </tr>`).join('');
-    }
-
-    let _equityChart = null;
-    function renderEquityChart(equityCurve, maxDD) {
-      const ctx = document.getElementById('equityChart')?.getContext('2d');
-      if (!ctx || !equityCurve.length) return;
-      
-      if (_equityChart) _equityChart.destroy();
-      
-      // Calculate drawdown at each point
-      let peak = 10000;
-      const ddData = equityCurve.map(d => {
-        if (d.equity > peak) peak = d.equity;
-        const dd = ((peak - d.equity) / peak) * 100;
-        return { ...d, drawdown: dd };
-      });
-      
-      _equityChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: equityCurve.map(d => d.date),
-          datasets: [
-            {
-              label: 'Equity',
-              data: equityCurve.map(d => d.equity),
-              borderColor: '#00d97e',
-              backgroundColor: 'rgba(0,217,126,0.1)',
-              borderWidth: 2,
-              fill: true,
-              tension: 0.3,
-              pointRadius: equityCurve.map(d => d.open ? 6 : 3),
-              pointBackgroundColor: equityCurve.map(d => d.open ? '#3b82f6' : '#00d97e'),
-              yAxisID: 'yEquity'
-            },
-            {
-              label: 'Drawdown',
-              data: ddData.map(d => -d.drawdown),
-              borderColor: 'rgba(239,68,68,0.6)',
-              backgroundColor: 'rgba(239,68,68,0.2)',
-              borderWidth: 1,
-              fill: true,
-              tension: 0.3,
-              pointRadius: 0,
-              yAxisID: 'yDD'
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { intersect: false, mode: 'index' },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: 'rgba(10,10,11,0.95)',
-              borderColor: 'rgba(255,255,255,0.1)',
-              borderWidth: 1,
-              callbacks: {
-                label: ctx => {
-                  if (ctx.datasetIndex === 0) {
-                    return `Equity: $${ctx.raw.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}`;
-                  } else {
-                    return `Drawdown: ${Math.abs(ctx.raw).toFixed(1)}%`;
-                  }
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              display: true,
-              grid: { display: false },
-              ticks: { color: '#9a9aa6', maxTicksLimit: 8, font: { size: 9 } }
-            },
-            yEquity: {
-              type: 'linear',
-              position: 'left',
-              display: true,
-              grid: { color: 'rgba(255,255,255,0.04)' },
-              ticks: { 
-                color: '#00d97e', 
-                font: { size: 9 },
-                callback: v => '$' + (v/1000).toFixed(0) + 'k'
-              },
-              title: { display: true, text: 'Equity', color: '#00d97e', font: { size: 9 } }
-            },
-            yDD: {
-              type: 'linear',
-              position: 'right',
-              display: true,
-              grid: { display: false },
-              min: -50,
-              max: 0,
-              ticks: { 
-                color: '#ef4444', 
-                font: { size: 9 },
-                callback: v => Math.abs(v).toFixed(0) + '%'
-              },
-              title: { display: true, text: 'DD%', color: '#ef4444', font: { size: 9 } }
-            }
-          }
-        }
-      });
     }
 
     function renderFlowLineChart(canvasId, data, label, color, withFill) {
@@ -5741,6 +5436,60 @@
         mainText += `. RSI: <span style="color:${rsiColor}">${rsi.toFixed(0)}</span>`;
       }
       mainText += `</div>`;
+      
+      // 5. MINERS
+      mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">⛏️ MINERS</strong></div>`;
+      if (minerState.healthScore !== undefined) {
+        const minerHealth = minerState.healthScore;
+        const minerColor = minerHealth >= 50 ? 'var(--accent-green)' : minerHealth >= 25 ? 'var(--accent-yellow)' : 'var(--accent-orange)';
+        mainText += `Health Score: <strong style="color:${minerColor}">${minerHealth}%</strong>. `;
+        
+        if (minerState.posIdx !== null) {
+          const mpi = minerState.posIdx;
+          if (mpi < 0) {
+            mainText += `Position Index <strong style="color:var(--accent-green)">${mpi.toFixed(2)}</strong> — miners acumulando. `;
+          } else if (mpi > 2) {
+            mainText += `Position Index <strong style="color:var(--accent-red)">${mpi.toFixed(2)}</strong> — miners vendendo pesado. `;
+          } else {
+            mainText += `Position Index <strong>${mpi.toFixed(2)}</strong> — neutro. `;
+          }
+        }
+        if (minerState.puell !== null) {
+          const puell = minerState.puell;
+          if (puell < 0.5) {
+            mainText += `Puell <strong style="color:var(--accent-green)">${puell.toFixed(2)}</strong> (undervalued). `;
+          } else if (puell > 4) {
+            mainText += `Puell <strong style="color:var(--accent-red)">${puell.toFixed(2)}</strong> (overheated). `;
+          }
+        }
+        if (minerState.reserveChg !== null) {
+          const chg = minerState.reserveChg;
+          mainText += `Reserve 30d: <strong style="color:${chg < 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">${chg > 0 ? '+' : ''}${chg.toFixed(2)}%</strong>. `;
+        }
+      } else {
+        mainText += `Dados carregando...`;
+      }
+      
+      // 6. SENTIMENT
+      mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">😱 SENTIMENTO</strong></div>`;
+      if (fearGreed) {
+        const fg = fearGreed;
+        let fgLabel, fgColor;
+        if (fg <= 25) { fgLabel = 'Extreme Fear'; fgColor = 'var(--accent-green)'; }
+        else if (fg <= 45) { fgLabel = 'Fear'; fgColor = 'var(--accent-lime)'; }
+        else if (fg <= 55) { fgLabel = 'Neutral'; fgColor = 'var(--accent-yellow)'; }
+        else if (fg <= 75) { fgLabel = 'Greed'; fgColor = 'var(--accent-orange)'; }
+        else { fgLabel = 'Extreme Greed'; fgColor = 'var(--accent-red)'; }
+        mainText += `Fear & Greed: <strong style="color:${fgColor}">${fg.toFixed(0)}</strong> (${fgLabel}). `;
+      }
+      if (funding) {
+        const fundColor = funding > 0.01 ? 'var(--accent-red)' : funding < -0.01 ? 'var(--accent-green)' : 'var(--text-secondary)';
+        mainText += `Funding: <strong style="color:${fundColor}">${(funding*100).toFixed(4)}%</strong>. `;
+      }
+      if (rsi) {
+        const rsiColor = rsi > 70 ? 'var(--accent-red)' : rsi < 30 ? 'var(--accent-green)' : 'var(--accent-yellow)';
+        mainText += `RSI: <strong style="color:${rsiColor}">${rsi.toFixed(0)}</strong>. `;
+      }
       
       document.getElementById('reportMainText').innerHTML = mainText;
       
