@@ -383,7 +383,7 @@
     <div class="section-header">
       <span class="section-num">02</span>
       <span class="section-title">Trade Signals</span>
-      <span class="section-sub">ZONE TRANSITION SYSTEM · BUY: Z cruza -1.0 ↑ (saindo ACC) · SELL: Z entra +1.5 ↑ (HOT)</span>
+      <span class="section-sub">ZONE TRANSITION SYSTEM · BUY: Z cruza -1.5 ↑ (saindo ACC) · SELL: Z cruza +1.5 ↑ (entrando HOT)</span>
     </div>
 
     <!-- Stats row - Performance -->
@@ -2423,14 +2423,14 @@
 
       // ── PARAMETERS ──────────────────────────────────────────────
       const ACC_ZONE      = -1.5;   // Zona de acumulação extrema
-      const ENTRY_TH      = -1.0;   // Threshold de entrada (transição ACC→UNDER)
+      const ENTRY_TH      = -1.5;   // Threshold de entrada: SAINDO da zona ACC
       const FAIR_TH       = -0.5;   // Início do Fair Value
       const EXIT_TH       =  1.5;   // Threshold de saída (zona HOT)
       
-      const MIN_ACC_DAYS    = 5;    // Mínimo de dias em ACC antes de sinal (relaxed)
-      const CONFIRM_DAYS    = 3;    // Dias para confirmar cruzamento
+      const MIN_ACC_DAYS    = 3;    // Mínimo de dias em ACC antes de sinal (muito relaxado)
+      const CONFIRM_DAYS    = 2;    // Dias para confirmar cruzamento (rápido)
       const Z_RISING_DAYS   = 5;    // Z deve estar subindo por X dias
-      const LOOKBACK_DAYS   = 60;   // Janela para verificar se veio de ACC (increased)
+      const LOOKBACK_DAYS   = 90;   // Janela para verificar se veio de ACC (ampla)
       // ────────────────────────────────────────────────────────────
 
       // Helper: check if Z is rising (trend up)
@@ -2474,7 +2474,7 @@
         if (price == null || prev === null || curr === null) continue;
 
         // ══════════════════════════════════════════════════════════════
-        // ENTRY LOGIC: Z cruza -1.0 para cima após capitulação
+        // ENTRY LOGIC: Z cruza -1.5 para cima (SAINDO da zona ACC)
         // ══════════════════════════════════════════════════════════════
         if (!openTrade) {
           // Count consecutive days above entry threshold
@@ -2483,13 +2483,13 @@
           } else {
             daysAboveEntry = 0;
             // Reset pending if Z drops back into deep ACC
-            if (buyPending && curr <= ACC_ZONE) {
-              console.log(`↩ BUY pending reset (back to ACC): ${date} Z=${curr.toFixed(2)}`);
+            if (buyPending && curr <= ACC_ZONE - 0.5) {
+              console.log(`↩ BUY pending reset (deep ACC): ${date} Z=${curr.toFixed(2)}`);
               buyPending = null;
             }
           }
 
-          // Detect Z crossing -1.0 upward (saindo da zona de desconto profundo)
+          // Detect Z crossing -1.5 upward (SAINDO da zona ACC verde escuro)
           if (prev <= ENTRY_TH && curr > ENTRY_TH) {
             const accDays = countAccDays(compositeHistory, i, LOOKBACK_DAYS);
             const zRising = isZRising(compositeHistory, i, Z_RISING_DAYS);
@@ -2500,18 +2500,17 @@
             // Signal strength classification
             let strength = 'WEAK';
             let strengthScore = 0;
-            if (accDays >= MIN_ACC_DAYS) strengthScore++;
+            if (accDays >= 10) strengthScore++;
+            if (accDays >= 20) strengthScore++;
             if (zRising) strengthScore++;
             if (maCross) strengthScore++;
-            if (curr > -0.8) strengthScore++; // Closer to fair value
             
             if (strengthScore >= 3) strength = 'STRONG';
             else if (strengthScore >= 2) strength = 'MEDIUM';
 
-            console.log(`📊 Z cross -1.0 on ${date}: accDays=${accDays}(need ${MIN_ACC_DAYS}) zRising=${zRising} maCross=${maCross} strength=${strength}`);
+            console.log(`📊 Z cross -1.5 on ${date}: accDays=${accDays}(need ${MIN_ACC_DAYS}) zRising=${zRising} maCross=${maCross} strength=${strength}`);
 
-            // SIMPLIFIED: Just need to have been in ACC zone recently
-            // The crossing of -1.0 upward after ACC is the signal itself
+            // Entry when Z exits ACC zone after being there for some time
             if (accDays >= MIN_ACC_DAYS) {
               buyPending = { crossDate: date, crossPrice: price, strength, accDays };
               daysAboveEntry = 1;
