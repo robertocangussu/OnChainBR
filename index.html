@@ -279,6 +279,83 @@
 
     @media (max-width: 1200px) { .signals-grid { grid-template-columns: 1fr; } .flow-grid { grid-template-columns: 1fr; } .sentiment-grid { grid-template-columns: 1fr; } .sig-stats-row { grid-template-columns: repeat(3,1fr); } .trading-grid { grid-template-columns: 1fr; } .trading-status-row { grid-template-columns: 1fr; } .smart-money-top { grid-template-columns: 1fr; } .sm-stats-row { grid-template-columns: repeat(3, 1fr); } .sm-checklist-grid { grid-template-columns: 1fr; } }
     @media (max-width: 700px) { .sig-stats-row { grid-template-columns: repeat(2,1fr); } .sm-stats-row { grid-template-columns: repeat(2, 1fr); } }
+
+    /* ===== BACKSTAGE SECTION ===== */
+    .backstage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .backstage-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .backstage-card-full { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .backstage-title { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .roc-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+    .roc-table th { padding: 8px 6px; text-align: left; color: var(--text-muted); font-weight: 500; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.5px; }
+    .roc-table td { padding: 7px 6px; border-bottom: 1px solid rgba(255,255,255,0.03); font-family: 'JetBrains Mono', monospace; }
+    .roc-table tr:hover { background: rgba(255,255,255,0.02); }
+    .roc-positive { color: var(--accent-green); }
+    .roc-negative { color: var(--accent-red); }
+    .roc-neutral { color: var(--text-muted); }
+    .roc-sparkline { display: inline-block; width: 60px; height: 16px; vertical-align: middle; }
+    .backstage-metrics-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+    .backstage-metric-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 12px; text-align: center; }
+    .backstage-metric-label { font-size: 7px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .backstage-metric-value { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
+    .backstage-metric-sub { font-size: 7px; color: var(--text-muted); margin-top: 3px; }
+    .equity-chart-container { height: 300px; }
+    .underwater-chart-container { height: 150px; }
+    .trades-extended-table { width: 100%; border-collapse: collapse; font-size: 9px; max-height: 300px; overflow-y: auto; }
+    .trades-extended-table th { padding: 6px 8px; text-align: left; color: var(--text-muted); font-weight: 500; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg-card); }
+    .trades-extended-table td { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+
+    /* ===== FUTURES PRESSURE CARD ===== */
+    .futures-pressure-card { background: linear-gradient(135deg, var(--bg-card) 0%, rgba(249,115,22,0.05) 100%); border: 1px solid var(--accent-orange); border-radius: 10px; padding: 20px; margin-top: 16px; }
+    .futures-pressure-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .futures-pressure-title { font-size: 12px; font-weight: 700; color: var(--accent-orange); letter-spacing: 0.5px; }
+    .futures-score-big { font-family: 'Space Grotesk', sans-serif; font-size: 48px; font-weight: 700; text-align: center; margin: 12px 0; }
+    .futures-metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+    .futures-metric { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; padding: 10px; text-align: center; }
+    .futures-metric-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .futures-metric-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; }
+    .futures-metric-sub { font-size: 7px; color: var(--text-muted); margin-top: 3px; }
+    .futures-verdict { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; font-size: 12px; line-height: 1.6; }
+    .futures-verdict-icon { font-size: 24px; margin-bottom: 6px; }
+
+    /* ===== WHALE BREAKDOWN + NET BUYING PRESSURE ===== */
+    .whale-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .whale-card { background: linear-gradient(135deg, var(--bg-card) 0%, rgba(6,182,212,0.05) 100%); border: 1px solid var(--accent-cyan); border-radius: 10px; padding: 20px; }
+    .whale-card-title { font-size: 11px; font-weight: 700; color: var(--accent-cyan); letter-spacing: 0.5px; margin-bottom: 16px; }
+    .whale-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 10px; }
+    .whale-row:last-child { border-bottom: none; }
+    .whale-label { color: var(--text-secondary); }
+    .whale-value { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+    .nbp-card { background: linear-gradient(135deg, var(--bg-card) 0%, rgba(59,130,246,0.05) 100%); border: 1px solid var(--accent-blue); border-radius: 10px; padding: 20px; text-align: center; }
+    .nbp-title { font-size: 11px; font-weight: 700; color: var(--accent-blue); letter-spacing: 0.5px; margin-bottom: 16px; }
+    .nbp-score { font-family: 'Space Grotesk', sans-serif; font-size: 52px; font-weight: 700; }
+    .nbp-label { font-size: 12px; font-weight: 600; margin-top: 6px; }
+    .nbp-bar { height: 8px; background: var(--border); border-radius: 4px; margin: 16px 0 8px; overflow: hidden; }
+    .nbp-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s, background 0.5s; }
+    .nbp-bar-labels { display: flex; justify-content: space-between; font-size: 7px; color: var(--text-muted); }
+    .nbp-verdict { margin-top: 14px; font-size: 10px; line-height: 1.5; color: var(--text-secondary); padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; }
+
+    /* ===== CONFLUENCE SCORE ===== */
+    .confluence-card { background: linear-gradient(135deg, var(--bg-card) 0%, rgba(168,85,247,0.08) 100%); border: 1px solid var(--accent-purple); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .confluence-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .confluence-title { font-size: 12px; font-weight: 700; color: var(--accent-purple); letter-spacing: 1px; text-transform: uppercase; }
+    .confluence-score-wrap { text-align: center; margin: 16px 0; }
+    .confluence-score-big { font-family: 'Space Grotesk', sans-serif; font-size: 56px; font-weight: 700; }
+    .confluence-breakdown { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 16px; }
+    .confluence-factor { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 6px; padding: 10px; text-align: center; }
+    .confluence-factor-label { font-size: 7px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .confluence-factor-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; }
+    .confluence-factor-weight { font-size: 7px; color: var(--text-muted); margin-top: 3px; }
+    .confluence-factor-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+    .confluence-factor-fill { height: 100%; border-radius: 2px; }
+
+    /* ===== ROC BADGES ===== */
+    .roc-badge { display: inline-block; font-size: 7px; font-family: 'JetBrains Mono', monospace; padding: 1px 4px; border-radius: 2px; margin-left: 4px; font-weight: 600; }
+    .roc-badge-up { background: rgba(0,217,126,0.15); color: var(--accent-green); }
+    .roc-badge-down { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+    .roc-badge-flat { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+
+    @media (max-width: 1200px) { .backstage-grid { grid-template-columns: 1fr; } .whale-grid { grid-template-columns: 1fr; } .futures-metrics-grid { grid-template-columns: repeat(3,1fr); } .backstage-metrics-row { grid-template-columns: repeat(3,1fr); } .confluence-breakdown { grid-template-columns: repeat(3,1fr); } }
+    @media (max-width: 700px) { .futures-metrics-grid { grid-template-columns: repeat(2,1fr); } .backstage-metrics-row { grid-template-columns: repeat(2,1fr); } .confluence-breakdown { grid-template-columns: repeat(2,1fr); } }
   </style>
 </head>
 <body>
@@ -294,6 +371,7 @@
     <a href="#miners" onclick="setActiveNav(this)">07 · Miners & Macro</a>
     <a href="#trading" onclick="setActiveNav(this)">08 · Trading</a>
     <a href="#report" onclick="setActiveNav(this)">09 · Relatório</a>
+    <a href="#backstage" onclick="setActiveNav(this)">10 · Backstage</a>
   </nav>
   <div id="dashboard">
   <div class="loading-overlay" id="loadingOverlay">
@@ -307,7 +385,7 @@
       <div>
         <div class="brand-name">@ONCHAINBR</div>
         <div class="brand-title">BTC Valuation Index</div>
-        <div class="brand-sub">Composite Z-Score · Rolling 365d · 9 Metrics · Hybrid API · v3.1</div>
+        <div class="brand-sub">Composite Z-Score · Rolling 365d · 9 Metrics · Hybrid API · v4.0</div>
       </div>
       <div class="header-right">
         <div class="status-ok" id="statusEndpoints">● 0/10 ENDPOINTS</div>
@@ -521,6 +599,52 @@
         <div style="margin-top:16px;font-size:9px;color:var(--text-muted);line-height:1.6;" id="flowPressureDesc">Loading flow data...</div>
       </div>
     </div>
+
+    <!-- Futures-Driven Pressure Card -->
+    <div class="futures-pressure-card" id="futuresPressureCard">
+      <div class="futures-pressure-header">
+        <div>
+          <div class="futures-pressure-title">FUTURES-DRIVEN PRESSURE</div>
+          <div style="font-size:9px;color:var(--text-muted);margin-top:4px;">Quem está movendo o preço? Compradores ou vendedores nos futuros?</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;">Pressure Score</div>
+          <div class="futures-score-big" id="futuresScoreValue" style="font-size:36px;">--</div>
+        </div>
+      </div>
+      <div class="futures-metrics-grid">
+        <div class="futures-metric">
+          <div class="futures-metric-label">Funding Rate (8h)</div>
+          <div class="futures-metric-value" id="fpFunding">--</div>
+          <div class="futures-metric-sub" id="fpFundingSub">8h rate</div>
+        </div>
+        <div class="futures-metric">
+          <div class="futures-metric-label">Taker Buy/Sell</div>
+          <div class="futures-metric-value" id="fpTaker">--</div>
+          <div class="futures-metric-sub" id="fpTakerSub">volume ratio</div>
+        </div>
+        <div class="futures-metric">
+          <div class="futures-metric-label">OI Change 24h</div>
+          <div class="futures-metric-value" id="fpOiChange">--</div>
+          <div class="futures-metric-sub" id="fpOiChangeSub">% change</div>
+        </div>
+        <div class="futures-metric">
+          <div class="futures-metric-label">Liquidations 24h</div>
+          <div class="futures-metric-value" id="fpLiq">--</div>
+          <div class="futures-metric-sub" id="fpLiqSub">Long vs Short</div>
+        </div>
+        <div class="futures-metric">
+          <div class="futures-metric-label">Top Traders L/S</div>
+          <div class="futures-metric-value" id="fpTopTraders">--</div>
+          <div class="futures-metric-sub" id="fpTopTradersSub">position ratio</div>
+        </div>
+      </div>
+      <div class="futures-verdict" id="futuresVerdict">
+        <div class="futures-verdict-icon">⏳</div>
+        <div>Carregando dados de futuros...</div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ========== SECTION 4: SMART MONEY TRACKER ========== -->
@@ -633,6 +757,60 @@
         <div class="sm-confidence-desc" id="smConfidenceDesc">Analyzing on-chain data to determine smart money positioning...</div>
       </div>
     </div>
+
+    <!-- Whale Breakdown + Net Buying Pressure -->
+    <div class="whale-grid">
+      <div class="whale-card">
+        <div class="whale-card-title">WHALE ACCUMULATION BREAKDOWN (30d)</div>
+        <div class="whale-row">
+          <span class="whale-label">Whales >10K BTC</span>
+          <span class="whale-value" id="whale10k">--</span>
+        </div>
+        <div class="whale-row">
+          <span class="whale-label">Δ 7d</span>
+          <span class="whale-value" id="whale10k7d">--</span>
+        </div>
+        <div class="whale-row">
+          <span class="whale-label">Δ 30d</span>
+          <span class="whale-value" id="whale10k30d">--</span>
+        </div>
+        <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px;"></div>
+        <div class="whale-row">
+          <span class="whale-label">Large Holders 1K–10K BTC</span>
+          <span class="whale-value" id="whale1k10k">--</span>
+        </div>
+        <div class="whale-row">
+          <span class="whale-label">Δ 7d</span>
+          <span class="whale-value" id="whale1k10k7d">--</span>
+        </div>
+        <div class="whale-row">
+          <span class="whale-label">Δ 30d</span>
+          <span class="whale-value" id="whale1k10k30d">--</span>
+        </div>
+        <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px;"></div>
+        <div class="whale-row">
+          <span class="whale-label">vs LTH Net Position</span>
+          <span class="whale-value" id="whaleVsLth">--</span>
+        </div>
+      </div>
+      <div class="nbp-card">
+        <div class="nbp-title">NET BUYING PRESSURE</div>
+        <div class="nbp-score" id="nbpScore">--</div>
+        <div class="nbp-label" id="nbpLabel">ANALYZING...</div>
+        <div class="nbp-bar">
+          <div class="nbp-bar-fill" id="nbpFill" style="width:50%;background:var(--accent-yellow)"></div>
+        </div>
+        <div class="nbp-bar-labels">
+          <span>SELL PRESSURE</span>
+          <span>NEUTRAL</span>
+          <span>BUY PRESSURE</span>
+        </div>
+        <div class="nbp-verdict" id="nbpVerdict">
+          Combinando: Taker Buy/Sell + Exchange Netflow + Whale Net Change para determinar pressão real de compra/venda...
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ========== SECTION 5: SENTIMENT INDEX ========== -->
@@ -1063,8 +1241,52 @@
       <span id="reportDate" style="font-size:10px;color:var(--text-muted);"></span>
     </div>
     
+    <!-- Confluence Score -->
+    <div class="confluence-card" id="confluenceCard">
+      <div class="confluence-header">
+        <div class="confluence-title">Confluence Score</div>
+        <div style="font-size:9px;color:var(--text-muted);">Weighted aggregate of all dashboard signals</div>
+      </div>
+      <div class="confluence-score-wrap">
+        <div class="confluence-score-big" id="confluenceScoreValue" style="color:var(--accent-yellow)">--</div>
+        <div id="confluenceScoreLabel" style="font-size:14px;font-weight:600;margin-top:4px;color:var(--text-muted)">CALCULATING...</div>
+      </div>
+      <div class="confluence-breakdown">
+        <div class="confluence-factor">
+          <div class="confluence-factor-label">Z-Score</div>
+          <div class="confluence-factor-value" id="cfZscore">--</div>
+          <div class="confluence-factor-weight">35% weight</div>
+          <div class="confluence-factor-bar"><div class="confluence-factor-fill" id="cfZscoreFill" style="width:0%;background:var(--accent-cyan)"></div></div>
+        </div>
+        <div class="confluence-factor">
+          <div class="confluence-factor-label">Smart Money + Whales</div>
+          <div class="confluence-factor-value" id="cfSmartMoney">--</div>
+          <div class="confluence-factor-weight">25% weight</div>
+          <div class="confluence-factor-bar"><div class="confluence-factor-fill" id="cfSmartMoneyFill" style="width:0%;background:var(--accent-green)"></div></div>
+        </div>
+        <div class="confluence-factor">
+          <div class="confluence-factor-label">Futures Pressure</div>
+          <div class="confluence-factor-value" id="cfFutures">--</div>
+          <div class="confluence-factor-weight">15% weight</div>
+          <div class="confluence-factor-bar"><div class="confluence-factor-fill" id="cfFuturesFill" style="width:0%;background:var(--accent-orange)"></div></div>
+        </div>
+        <div class="confluence-factor">
+          <div class="confluence-factor-label">Sentiment + Funding</div>
+          <div class="confluence-factor-value" id="cfSentiment">--</div>
+          <div class="confluence-factor-weight">15% weight</div>
+          <div class="confluence-factor-bar"><div class="confluence-factor-fill" id="cfSentimentFill" style="width:0%;background:var(--accent-pink)"></div></div>
+        </div>
+        <div class="confluence-factor">
+          <div class="confluence-factor-label">Miners + Leverage</div>
+          <div class="confluence-factor-value" id="cfMinersLev">--</div>
+          <div class="confluence-factor-weight">10% weight</div>
+          <div class="confluence-factor-bar"><div class="confluence-factor-fill" id="cfMinersLevFill" style="width:0%;background:var(--accent-purple)"></div></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Executive Summary Card -->
-    <div id="reportSummaryCard" style="background:linear-gradient(135deg, var(--bg-card) 0%, rgba(0,212,255,0.05) 100%);border:1px solid var(--accent-cyan);border-radius:12px;padding:20px;margin-bottom:20px;">
+    <div id="reportSummaryCard" style="background:linear-gradient(135deg, var(--bg-card) 0%, rgba(168,85,247,0.05) 100%);border:1px solid var(--accent-purple);border-radius:12px;padding:20px;margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <div id="reportPostureBadge" style="background:var(--accent-yellow);color:#000;font-size:14px;font-weight:800;padding:8px 20px;border-radius:20px;text-transform:uppercase;letter-spacing:1px;">
           AGUARDAR
@@ -1219,9 +1441,111 @@
     </div>
   </div>
 
+
+  <!-- ========== SECTION 10: BACKSTAGE (Advanced Analytics) ========== -->
+  <div class="section-wrap" id="backstage" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <span class="section-title">Backstage</span>
+      <span class="section-sub">ROC · DRAWDOWN · BACKTEST · RISK METRICS · ENGINE</span>
+    </div>
+
+    <!-- Risk Metrics Row -->
+    <div class="backstage-metrics-row">
+      <div class="backstage-metric-card">
+        <div class="backstage-metric-label">Calmar Ratio</div>
+        <div class="backstage-metric-value" id="bsCalmar">--</div>
+        <div class="backstage-metric-sub">return / max DD</div>
+      </div>
+      <div class="backstage-metric-card">
+        <div class="backstage-metric-label">Profit Factor</div>
+        <div class="backstage-metric-value" id="bsProfitFactor">--</div>
+        <div class="backstage-metric-sub">gross profit / gross loss</div>
+      </div>
+      <div class="backstage-metric-card">
+        <div class="backstage-metric-label">Expectancy</div>
+        <div class="backstage-metric-value" id="bsExpectancy">--</div>
+        <div class="backstage-metric-sub">avg $ per trade</div>
+      </div>
+      <div class="backstage-metric-card">
+        <div class="backstage-metric-label">Max Drawdown</div>
+        <div class="backstage-metric-value" id="bsMaxDD">--</div>
+        <div class="backstage-metric-sub">peak-to-trough</div>
+      </div>
+      <div class="backstage-metric-card">
+        <div class="backstage-metric-label">Current DD</div>
+        <div class="backstage-metric-value" id="bsCurrentDD">--</div>
+        <div class="backstage-metric-sub">from ATH equity</div>
+      </div>
+    </div>
+
+    <!-- ROC Table -->
+    <div class="backstage-card-full">
+      <div class="backstage-title">Rate of Change (ROC) — Key Indicators</div>
+      <div style="overflow-x:auto;">
+        <table class="roc-table">
+          <thead>
+            <tr>
+              <th>Indicator</th>
+              <th>Current</th>
+              <th>ROC 7d</th>
+              <th>ROC 14d</th>
+              <th>ROC 30d</th>
+              <th>ROC 90d</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody id="rocTableBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--text-muted);">Calculating ROC data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Equity Curve + Underwater -->
+    <div class="backstage-grid">
+      <div class="backstage-card">
+        <div class="backstage-title">Equity Curve — Z-Composite Strategy</div>
+        <div class="equity-chart-container"><canvas id="equityCurveChart"></canvas></div>
+      </div>
+      <div class="backstage-card">
+        <div class="backstage-title">Underwater Curve (Drawdown)</div>
+        <div class="underwater-chart-container"><canvas id="underwaterChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Extended Backtest Table -->
+    <div class="backstage-card-full">
+      <div class="backstage-title">Backtest — All Trades (Z-Composite Strategy)</div>
+      <div style="max-height:300px;overflow-y:auto;">
+        <table class="trades-extended-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Entry Date</th>
+              <th>Entry $</th>
+              <th>Exit Date</th>
+              <th>Exit $</th>
+              <th>Z Entry</th>
+              <th>Z Exit</th>
+              <th>Return</th>
+              <th>Cum. Return</th>
+              <th>Duration</th>
+              <th>Max DD in Trade</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="backtestTableBody">
+            <tr><td colspan="12" style="text-align:center;color:var(--text-muted);">Loading backtest data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- ========== GLOBAL FOOTER ========== -->
   <footer class="footer" style="max-width:1400px;margin:0 auto;padding:12px 24px 24px;">
-    <div>@ONCHAINBR · Z-Score Model · Rolling 365d · 9 Metrics · Signals · Flow · Sentiment · Trading · Relatório</div>
+    <div>@ONCHAINBR · Z-Score Model · Rolling 365d · 9 Metrics · Signals · Flow · Sentiment · Trading · Relatório · Backstage</div>
     <div>APIs: <a href="https://bitview.space" target="_blank">Bitview</a> + <a href="https://bitcoin-data.com" target="_blank">BGeometrics</a> + <a href="https://alternative.me" target="_blank">Alternative.me</a> + <a href="https://binance.com" target="_blank">Binance</a></div>
   </footer>
 
@@ -5287,7 +5611,7 @@
       if (posture === 'ACUMULAR') {
         summaryText = `Múltiplos indicadores em zona de compra. Z-Score em ${zScore?.toFixed(2) || '--'} indica subvalorização extrema. Considerar aportes de ${capitalAllocation} do capital.`;
       } else if (posture === 'ACUMULAR LEVE') {
-        summaryText = `Mercado com desconto moderado (Z: ${zScore?.toFixed(2) || '--'}). Bom momento para DCA. Sugestão: ${capitalAllocation} do capital em pequenas parcelas.`;
+        summaryText = `Mercado com desconto moderado (Z: ${zScore?.toFixed(2) || '--'}). ${futuresPressureState.score > 55 ? "Futuros com pressão compradora." : futuresPressureState.score < 45 ? "Futuros com pressão vendedora." : "Futuros neutros."} ${nbpState.score > 55 ? "Baleias acumulando." : "Baleias neutras."} Sugestão: ${capitalAllocation} do capital em pequenas parcelas.`;
       } else if (posture === 'REALIZAR') {
         summaryText = `Indicadores em zona de topo (Z: ${zScore?.toFixed(2) || '--'}). Reduzir exposição em ${capitalAllocation.replace('-','')}. Proteger lucros.`;
       } else if (posture === 'CAUTELA') {
@@ -5672,6 +5996,765 @@
         renderTradingChart(this.dataset.range);
       });
     });
+
+
+    // ========== NEW GLOBAL STATES (v2.0) ==========
+    const futuresPressureState = { score: null, funding: null, takerRatio: null, oiChange: null, liqLong: null, liqShort: null, topTraderRatio: null, loaded: false };
+    const whaleState = { whale10k: null, whale10k7d: null, whale10k30d: null, whale1k10k: null, whale1k10k7d: null, whale1k10k30d: null, loaded: false };
+    const nbpState = { score: null, loaded: false };
+    const confluenceState = { score: null, loaded: false };
+    const backstageState = { rocData: [], equityCurve: [], loaded: false };
+
+    // ========== ROC CALCULATION ==========
+    function calculateROC(dataArray, periods) {
+      // dataArray: [{date, value}, ...] sorted by date
+      if (!dataArray || dataArray.length < periods + 1) return null;
+      const current = dataArray[dataArray.length - 1].value;
+      const past = dataArray[dataArray.length - 1 - periods]?.value;
+      if (!past || past === 0) return null;
+      return ((current - past) / Math.abs(past)) * 100;
+    }
+
+    // ========== FUTURES-DRIVEN PRESSURE ==========
+    async function fetchFuturesPressureData() {
+      console.log('[Futures Pressure] Fetching data...');
+      try {
+        // Fetch all futures data in parallel
+        const [fundingRes, takerRes, oiRes, liqRes, topTraderRes] = await Promise.allSettled([
+          fetchBGeometrics('/v1/funding-rate', 'FP: Funding Rate'),
+          fetchBGeometrics('/v1/taker-vol-1h', 'FP: Taker Vol'),
+          fetchBGeometrics('/v1/open-interest-1h', 'FP: OI 1h'),
+          fetchBGeometrics('/v1/btc-liquidations-1h', 'FP: Liquidations'),
+          fetchBGeometrics('/v1/top-trader-position-1h', 'FP: Top Traders')
+        ]);
+
+        // Process Funding Rate
+        if (fundingRes.status === 'fulfilled' && fundingRes.value.success) {
+          const data = fundingRes.value.data;
+          if (Array.isArray(data) && data.length > 0) {
+            const last = data[data.length - 1];
+            const fr = parseFloat(last.fundingRate || last.rate || Object.values(last).find(v => typeof v === 'number' && Math.abs(v) < 1));
+            if (!isNaN(fr)) {
+              futuresPressureState.funding = fr;
+              const el = document.getElementById('fpFunding');
+              if (el) {
+                const pct = (fr * 100).toFixed(4);
+                el.textContent = pct + '%';
+                el.style.color = fr > 0 ? 'var(--accent-green)' : fr < 0 ? 'var(--accent-red)' : 'var(--text-primary)';
+              }
+              // Calculate 7d avg
+              const last7 = data.slice(-56); // ~7 days of 3h intervals
+              if (last7.length > 0) {
+                const avg = last7.reduce((s, d) => s + parseFloat(d.fundingRate || d.rate || 0), 0) / last7.length;
+                const sub = document.getElementById('fpFundingSub');
+                if (sub) sub.textContent = `7d avg: ${(avg*100).toFixed(4)}%`;
+              }
+            }
+          }
+        }
+
+        // Process Taker Buy/Sell Volume
+        if (takerRes.status === 'fulfilled' && takerRes.value.success) {
+          const data = takerRes.value.data;
+          if (Array.isArray(data) && data.length > 0) {
+            const recent = data.slice(-24); // last 24 hours
+            let totalBuy = 0, totalSell = 0;
+            recent.forEach(d => {
+              const buy = parseFloat(d.takerBuyVolume || d.buyVolume || d.buy || 0);
+              const sell = parseFloat(d.takerSellVolume || d.sellVolume || d.sell || 0);
+              totalBuy += buy; totalSell += sell;
+            });
+            const ratio = totalSell > 0 ? totalBuy / totalSell : 1;
+            futuresPressureState.takerRatio = ratio;
+            const el = document.getElementById('fpTaker');
+            if (el) {
+              el.textContent = ratio.toFixed(3);
+              el.style.color = ratio > 1.1 ? 'var(--accent-green)' : ratio < 0.9 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+            }
+            const sub = document.getElementById('fpTakerSub');
+            if (sub) sub.textContent = ratio > 1.1 ? 'Buy dominant' : ratio < 0.9 ? 'Sell dominant' : 'Balanced';
+          }
+        }
+
+        // Process Open Interest change
+        if (oiRes.status === 'fulfilled' && oiRes.value.success) {
+          const data = oiRes.value.data;
+          if (Array.isArray(data) && data.length >= 25) {
+            const latest = data[data.length - 1];
+            const h24ago = data[data.length - 25]; // ~24h ago
+            const oiNow = parseFloat(latest.openInterest || latest.oi || Object.values(latest).find(v => typeof v === 'number' && v > 1000000));
+            const oiPast = parseFloat(h24ago.openInterest || h24ago.oi || Object.values(h24ago).find(v => typeof v === 'number' && v > 1000000));
+            if (oiNow && oiPast && oiPast > 0) {
+              const change = ((oiNow - oiPast) / oiPast) * 100;
+              futuresPressureState.oiChange = change;
+              const el = document.getElementById('fpOiChange');
+              if (el) {
+                el.textContent = (change > 0 ? '+' : '') + change.toFixed(1) + '%';
+                el.style.color = change > 2 ? 'var(--accent-green)' : change < -2 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+              }
+            }
+          }
+        }
+
+        // Process Liquidations
+        if (liqRes.status === 'fulfilled' && liqRes.value.success) {
+          const data = liqRes.value.data;
+          if (Array.isArray(data) && data.length > 0) {
+            const recent = data.slice(-24);
+            let longLiq = 0, shortLiq = 0;
+            recent.forEach(d => {
+              longLiq += parseFloat(d.longLiquidations || d.longLiq || d.liqLong || 0);
+              shortLiq += parseFloat(d.shortLiquidations || d.shortLiq || d.liqShort || 0);
+            });
+            const total = longLiq + shortLiq;
+            futuresPressureState.liqLong = longLiq;
+            futuresPressureState.liqShort = shortLiq;
+            const el = document.getElementById('fpLiq');
+            if (el) {
+              el.textContent = formatUSD(total);
+              el.style.color = total > 100e6 ? 'var(--accent-red)' : total > 50e6 ? 'var(--accent-orange)' : 'var(--accent-green)';
+            }
+            const sub = document.getElementById('fpLiqSub');
+            if (sub) sub.textContent = `L: ${formatUSD(longLiq)} / S: ${formatUSD(shortLiq)}`;
+          }
+        }
+
+        // Process Top Traders
+        if (topTraderRes.status === 'fulfilled' && topTraderRes.value.success) {
+          const data = topTraderRes.value.data;
+          if (Array.isArray(data) && data.length > 0) {
+            const last = data[data.length - 1];
+            const longRatio = parseFloat(last.longAccount || last.longPosition || last.longRatio || 0);
+            const shortRatio = parseFloat(last.shortAccount || last.shortPosition || last.shortRatio || 0);
+            const ratio = shortRatio > 0 ? longRatio / shortRatio : longRatio;
+            futuresPressureState.topTraderRatio = ratio;
+            const el = document.getElementById('fpTopTraders');
+            if (el) {
+              el.textContent = ratio.toFixed(2);
+              el.style.color = ratio > 1.2 ? 'var(--accent-green)' : ratio < 0.8 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+            }
+            const sub = document.getElementById('fpTopTradersSub');
+            if (sub) sub.textContent = `L: ${(longRatio*100).toFixed(0)}% / S: ${(shortRatio*100).toFixed(0)}%`;
+          }
+        }
+
+        // Calculate Futures Pressure Score (0-100)
+        calculateFuturesPressureScore();
+        futuresPressureState.loaded = true;
+        updateConfluenceScore();
+
+      } catch(e) {
+        console.error('[Futures Pressure] Error:', e);
+      }
+    }
+
+    function calculateFuturesPressureScore() {
+      let score = 50; // Start neutral
+      let factors = 0;
+
+      // Funding Rate (positive = bullish pressure from longs)
+      if (futuresPressureState.funding !== null) {
+        const fr = futuresPressureState.funding;
+        if (fr > 0.0005) score += 10;
+        else if (fr > 0.0001) score += 5;
+        else if (fr < -0.0005) score -= 10;
+        else if (fr < -0.0001) score -= 5;
+        factors++;
+      }
+
+      // Taker Ratio (>1 = buy dominant)
+      if (futuresPressureState.takerRatio !== null) {
+        const tr = futuresPressureState.takerRatio;
+        if (tr > 1.15) score += 15;
+        else if (tr > 1.05) score += 8;
+        else if (tr < 0.85) score -= 15;
+        else if (tr < 0.95) score -= 8;
+        factors++;
+      }
+
+      // OI Change (rising OI with price can indicate conviction)
+      if (futuresPressureState.oiChange !== null) {
+        const oi = futuresPressureState.oiChange;
+        if (oi > 5) score += 10;
+        else if (oi > 2) score += 5;
+        else if (oi < -5) score -= 5;
+        factors++;
+      }
+
+      // Liquidations (more short liqs = bullish squeeze)
+      if (futuresPressureState.liqShort !== null && futuresPressureState.liqLong !== null) {
+        const total = futuresPressureState.liqLong + futuresPressureState.liqShort;
+        if (total > 0) {
+          const shortPct = futuresPressureState.liqShort / total;
+          if (shortPct > 0.6) score += 8; // Short squeeze
+          else if (shortPct < 0.4) score -= 8; // Long squeeze
+        }
+        factors++;
+      }
+
+      // Top Traders
+      if (futuresPressureState.topTraderRatio !== null) {
+        const tt = futuresPressureState.topTraderRatio;
+        if (tt > 1.3) score += 7;
+        else if (tt < 0.7) score -= 7;
+        factors++;
+      }
+
+      score = Math.max(0, Math.min(100, score));
+      futuresPressureState.score = score;
+
+      // Update UI
+      const scoreEl = document.getElementById('futuresScoreValue');
+      const verdictEl = document.getElementById('futuresVerdict');
+      if (scoreEl) {
+        scoreEl.textContent = score;
+        scoreEl.style.color = score >= 65 ? 'var(--accent-green)' : score <= 35 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+      }
+
+      if (verdictEl) {
+        let icon, msg;
+        if (score >= 70) {
+          icon = '🟢'; msg = 'Preco subindo por forca de compradores agressivos nos futuros. Funding positivo + Takers comprando + OI subindo.';
+        } else if (score >= 55) {
+          icon = '🔵'; msg = 'Pressao moderada de compra nos futuros. Compradores levemente dominantes.';
+        } else if (score <= 30) {
+          icon = '🔴'; msg = 'Queda acelerada por venda nos futuros. Funding negativo + Takers vendendo + Liquidacoes de longs.';
+        } else if (score <= 45) {
+          icon = '🟠'; msg = 'Pressao moderada de venda nos futuros. Vendedores levemente dominantes.';
+        } else {
+          icon = '⚪'; msg = 'Futuros em equilibrio. Sem pressao direcional clara de compradores ou vendedores.';
+        }
+        verdictEl.innerHTML = `<div class="futures-verdict-icon">${icon}</div><div style="font-weight:600;">${msg}</div>`;
+      }
+    }
+
+    // ========== WHALE ACCUMULATION ==========
+    async function fetchWhaleData() {
+      console.log('[Whale] Fetching whale data...');
+      try {
+        const [whale10kRes, coins10kRes, whale1kRes, coins1kRes] = await Promise.allSettled([
+          fetchBGeometrics('/v1/balance-addr-10K-BTC', 'Whale: Addr >10K'),
+          fetchBGeometrics('/v1/coins-addr-10K-BTC', 'Whale: Coins >10K'),
+          fetchBGeometrics('/v1/balance-addr-10K-1K-BTC', 'Whale: Addr 1K-10K'),
+          fetchBGeometrics('/v1/coins-addr-10K-1K-BTC', 'Whale: Coins 1K-10K')
+        ]);
+
+        // Process >10K BTC whales
+        if (coins10kRes.status === 'fulfilled' && coins10kRes.value.success) {
+          const data = normalizeBGeometricsData(coins10kRes.value.data);
+          if (data.length > 30) {
+            const current = data[data.length - 1].value;
+            const d7 = data.length >= 8 ? data[data.length - 8].value : current;
+            const d30 = data.length >= 31 ? data[data.length - 31].value : current;
+
+            whaleState.whale10k = current;
+            whaleState.whale10k7d = current - d7;
+            whaleState.whale10k30d = current - d30;
+
+            const el10k = document.getElementById('whale10k');
+            if (el10k) el10k.textContent = formatBTC(current, false) + ' BTC';
+            const el7d = document.getElementById('whale10k7d');
+            if (el7d) {
+              el7d.textContent = formatBTC(current - d7);
+              el7d.style.color = (current - d7) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+            }
+            const el30d = document.getElementById('whale10k30d');
+            if (el30d) {
+              el30d.textContent = formatBTC(current - d30);
+              el30d.style.color = (current - d30) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+            }
+          }
+        }
+
+        // Process 1K-10K holders
+        if (coins1kRes.status === 'fulfilled' && coins1kRes.value.success) {
+          const data = normalizeBGeometricsData(coins1kRes.value.data);
+          if (data.length > 30) {
+            const current = data[data.length - 1].value;
+            const d7 = data.length >= 8 ? data[data.length - 8].value : current;
+            const d30 = data.length >= 31 ? data[data.length - 31].value : current;
+
+            whaleState.whale1k10k = current;
+            whaleState.whale1k10k7d = current - d7;
+            whaleState.whale1k10k30d = current - d30;
+
+            const el1k = document.getElementById('whale1k10k');
+            if (el1k) el1k.textContent = formatBTC(current, false) + ' BTC';
+            const el7d = document.getElementById('whale1k10k7d');
+            if (el7d) {
+              el7d.textContent = formatBTC(current - d7);
+              el7d.style.color = (current - d7) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+            }
+            const el30d = document.getElementById('whale1k10k30d');
+            if (el30d) {
+              el30d.textContent = formatBTC(current - d30);
+              el30d.style.color = (current - d30) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+            }
+          }
+        }
+
+        // Compare with LTH
+        if (whaleState.whale10k30d !== null && smartMoneyState.lth30d !== null) {
+          const el = document.getElementById('whaleVsLth');
+          if (el) {
+            const whaleTotal = (whaleState.whale10k30d || 0) + (whaleState.whale1k10k30d || 0);
+            const lth = smartMoneyState.lth30d;
+            const aligned = (whaleTotal > 0 && lth > 0) || (whaleTotal < 0 && lth < 0);
+            el.innerHTML = aligned ?
+              '<span style="color:var(--accent-green)">ALIGNED</span> — Whales + LTH same direction' :
+              '<span style="color:var(--accent-orange)">DIVERGENT</span> — Whales vs LTH disagreeing';
+          }
+        }
+
+        whaleState.loaded = true;
+        calculateNetBuyingPressure();
+        updateConfluenceScore();
+      } catch(e) {
+        console.error('[Whale] Error:', e);
+      }
+    }
+
+    // ========== NET BUYING PRESSURE ==========
+    function calculateNetBuyingPressure() {
+      let score = 50;
+
+      // Factor 1: Taker Buy/Sell Ratio (from futures pressure)
+      if (futuresPressureState.takerRatio !== null) {
+        const tr = futuresPressureState.takerRatio;
+        if (tr > 1.15) score += 18;
+        else if (tr > 1.05) score += 10;
+        else if (tr < 0.85) score -= 18;
+        else if (tr < 0.95) score -= 10;
+      }
+
+      // Factor 2: Exchange Netflow (from flow section - use leverageState proxy or flowState)
+      // Negative netflow = coins leaving = bullish
+      // We'll use the flowPressure value if available
+      const pressureEl = document.getElementById('flowPressureValue');
+      if (pressureEl && pressureEl.textContent !== '--') {
+        const pressureVal = parseFloat(pressureEl.textContent);
+        if (!isNaN(pressureVal)) {
+          if (pressureVal < 0.9) score += 12; // outflow dominant
+          else if (pressureVal > 1.1) score -= 12; // inflow dominant
+        }
+      }
+
+      // Factor 3: Whale net change 30d
+      if (whaleState.whale10k30d !== null) {
+        const wc = whaleState.whale10k30d;
+        if (wc > 10000) score += 15;
+        else if (wc > 1000) score += 8;
+        else if (wc < -10000) score -= 15;
+        else if (wc < -1000) score -= 8;
+      }
+
+      score = Math.max(0, Math.min(100, score));
+      nbpState.score = score;
+      nbpState.loaded = true;
+
+      // Update UI
+      const scoreEl = document.getElementById('nbpScore');
+      const labelEl = document.getElementById('nbpLabel');
+      const fillEl = document.getElementById('nbpFill');
+      const verdictEl = document.getElementById('nbpVerdict');
+
+      if (scoreEl) {
+        scoreEl.textContent = score;
+        scoreEl.style.color = score >= 65 ? 'var(--accent-green)' : score <= 35 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+      }
+
+      let label, labelColor, verdict;
+      if (score >= 75) {
+        label = 'STRONG BUY PRESSURE'; labelColor = 'var(--accent-green)';
+        verdict = 'Baleias + Takers comprando agressivamente. Saida de moedas das exchanges. Pressao de compra forte.';
+      } else if (score >= 55) {
+        label = 'MODERATE BUY'; labelColor = 'var(--accent-cyan)';
+        verdict = 'Compradores levemente dominantes. Fluxo positivo moderado.';
+      } else if (score <= 25) {
+        label = 'STRONG SELL PRESSURE'; labelColor = 'var(--accent-red)';
+        verdict = 'Distribuicao de baleias + Takers vendendo. Entrada de moedas nas exchanges. Pressao de venda forte.';
+      } else if (score <= 45) {
+        label = 'MODERATE SELL'; labelColor = 'var(--accent-orange)';
+        verdict = 'Vendedores levemente dominantes. Fluxo negativo moderado.';
+      } else {
+        label = 'NEUTRAL'; labelColor = 'var(--accent-yellow)';
+        verdict = 'Equilibrio entre compradores e vendedores. Sem pressao direcional clara.';
+      }
+
+      if (labelEl) { labelEl.textContent = label; labelEl.style.color = labelColor; }
+      if (fillEl) { fillEl.style.width = score + '%'; fillEl.style.background = labelColor; }
+      if (verdictEl) verdictEl.textContent = verdict;
+    }
+
+    // ========== CONFLUENCE SCORE ==========
+    function updateConfluenceScore() {
+      // Weights: Z-Score 35%, Smart Money+Whales 25%, Futures 15%, Sentiment+Funding 15%, Miners+Leverage 10%
+      let total = 0;
+      let weights = 0;
+
+      // 1. Z-Score (35%) - map from [-3, +3] to [100, 0] (undervalued = high score = bullish)
+      const zFactor = { score: 50, weight: 35 };
+      if (state.composite !== null) {
+        // -3 = 100 (extremely bullish), +3 = 0 (extremely bearish)
+        zFactor.score = Math.max(0, Math.min(100, ((state.composite * -1) + 3) / 6 * 100));
+        weights += 35;
+        total += zFactor.score * 0.35;
+      }
+
+      // 2. Smart Money + Whales (25%)
+      const smFactor = { score: 50, weight: 25 };
+      if (smartMoneyState.loaded) {
+        smFactor.score = smartMoneyState.confidence || 50;
+        // Boost/reduce based on whale data
+        if (whaleState.whale10k30d > 5000) smFactor.score = Math.min(100, smFactor.score + 10);
+        else if (whaleState.whale10k30d < -5000) smFactor.score = Math.max(0, smFactor.score - 10);
+        weights += 25;
+        total += smFactor.score * 0.25;
+      }
+
+      // 3. Futures Pressure (15%)
+      const fpFactor = { score: 50, weight: 15 };
+      if (futuresPressureState.loaded) {
+        fpFactor.score = futuresPressureState.score || 50;
+        weights += 15;
+        total += fpFactor.score * 0.15;
+      }
+
+      // 4. Sentiment + Funding (15%)
+      const sentFactor = { score: 50, weight: 15 };
+      if (sentimentState.loaded || state.rawValues.fearGreed) {
+        const fg = state.rawValues.fearGreed || 50;
+        // Contrarian: extreme fear = bullish, extreme greed = bearish
+        sentFactor.score = Math.max(0, Math.min(100, 100 - fg));
+        // Adjust with funding
+        if (futuresPressureState.funding !== null) {
+          const fr = futuresPressureState.funding;
+          if (fr < -0.0003) sentFactor.score = Math.min(100, sentFactor.score + 10); // Negative funding = contrarian bullish
+          else if (fr > 0.001) sentFactor.score = Math.max(0, sentFactor.score - 5);
+        }
+        weights += 15;
+        total += sentFactor.score * 0.15;
+      }
+
+      // 5. Miners + Leverage (10%)
+      const mlFactor = { score: 50, weight: 10 };
+      if (minerState.loaded && leverageState.loaded) {
+        // Higher miner health = bullish, lower leverage risk = bullish
+        const minerScore = minerState.healthScore || 50;
+        const levInverse = 100 - (leverageState.riskScore || 50);
+        mlFactor.score = (minerScore + levInverse) / 2;
+        weights += 10;
+        total += mlFactor.score * 0.10;
+      }
+
+      // Normalize if not all weights present
+      const finalScore = weights > 0 ? Math.round((total / weights) * 100) : 50;
+      confluenceState.score = finalScore;
+      confluenceState.loaded = true;
+
+      // Update UI
+      const scoreEl = document.getElementById('confluenceScoreValue');
+      const labelEl = document.getElementById('confluenceScoreLabel');
+      if (scoreEl) {
+        scoreEl.textContent = finalScore;
+        let color;
+        if (finalScore >= 70) color = 'var(--accent-green)';
+        else if (finalScore >= 55) color = 'var(--accent-cyan)';
+        else if (finalScore <= 30) color = 'var(--accent-red)';
+        else if (finalScore <= 45) color = 'var(--accent-orange)';
+        else color = 'var(--accent-yellow)';
+        scoreEl.style.color = color;
+
+        let label;
+        if (finalScore >= 75) label = 'STRONG BULLISH CONFLUENCE';
+        else if (finalScore >= 60) label = 'MODERATE BULLISH';
+        else if (finalScore <= 25) label = 'STRONG BEARISH CONFLUENCE';
+        else if (finalScore <= 40) label = 'MODERATE BEARISH';
+        else label = 'NEUTRAL';
+        if (labelEl) { labelEl.textContent = label; labelEl.style.color = color; }
+      }
+
+      // Update factor cards
+      function updateFactor(id, fillId, factor) {
+        const el = document.getElementById(id);
+        const fillEl = document.getElementById(fillId);
+        if (el) {
+          el.textContent = Math.round(factor.score);
+          el.style.color = factor.score >= 60 ? 'var(--accent-green)' : factor.score <= 40 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        }
+        if (fillEl) {
+          fillEl.style.width = factor.score + '%';
+          fillEl.style.background = factor.score >= 60 ? 'var(--accent-green)' : factor.score <= 40 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        }
+      }
+      updateFactor('cfZscore', 'cfZscoreFill', zFactor);
+      updateFactor('cfSmartMoney', 'cfSmartMoneyFill', smFactor);
+      updateFactor('cfFutures', 'cfFuturesFill', fpFactor);
+      updateFactor('cfSentiment', 'cfSentimentFill', sentFactor);
+      updateFactor('cfMinersLev', 'cfMinersLevFill', mlFactor);
+    }
+
+    // ========== BACKSTAGE: ROC TABLE ==========
+    function renderROCTable() {
+      console.log('[Backstage] Rendering ROC table...');
+      const indicators = [
+        { name: 'Z-Score Composite', data: state.compositeHistory, current: state.composite },
+        { name: 'MVRV', data: state.metricHistory.mvrv, current: state.rawValues.mvrv },
+        { name: 'NUPL', data: state.metricHistory.nupl, current: state.rawValues.nupl },
+        { name: 'SOPR', data: state.metricHistory.sopr, current: state.rawValues.sopr },
+        { name: 'Fear & Greed', data: state.metricHistory.fearGreed, current: state.rawValues.fearGreed },
+        { name: 'Puell Multiple', data: state.metricHistory.puell, current: state.rawValues.puell },
+      ];
+
+      // Add LTH/ETF/Exchange if available
+      // These come from fetchSmartMoneyData/fetchFlowData which store in their own arrays
+
+      const tbody = document.getElementById('rocTableBody');
+      if (!tbody) return;
+
+      let rows = '';
+      indicators.forEach(ind => {
+        const data = ind.data;
+        const current = ind.current;
+        if (!data || !Array.isArray(data) || data.length < 8) {
+          rows += `<tr><td>${ind.name}</td><td>${current !== null && current !== undefined ? safeFixed(current, 3) : '--'}</td><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td></tr>`;
+          return;
+        }
+
+        // Normalize data format
+        const normalized = data.map(d => ({
+          date: d.date || d.d,
+          value: typeof d === 'number' ? d : (d.value !== undefined ? d.value : d.z || d.composite)
+        })).filter(d => d.value !== null && d.value !== undefined && !isNaN(d.value));
+
+        const roc7 = calculateROC(normalized, 7);
+        const roc14 = calculateROC(normalized, 14);
+        const roc30 = calculateROC(normalized, 30);
+        const roc90 = calculateROC(normalized, 90);
+
+        function rocCell(val) {
+          if (val === null) return '<td class="roc-neutral">--</td>';
+          const cls = val > 0 ? 'roc-positive' : val < 0 ? 'roc-negative' : 'roc-neutral';
+          return `<td class="${cls}">${val > 0 ? '+' : ''}${val.toFixed(1)}%</td>`;
+        }
+
+        // Trend arrow
+        let trend = '→';
+        let trendColor = 'var(--text-muted)';
+        if (roc7 !== null && roc30 !== null) {
+          if (roc7 > 0 && roc30 > 0) { trend = '↑↑'; trendColor = 'var(--accent-green)'; }
+          else if (roc7 > 0 && roc30 <= 0) { trend = '↗'; trendColor = 'var(--accent-cyan)'; }
+          else if (roc7 < 0 && roc30 < 0) { trend = '↓↓'; trendColor = 'var(--accent-red)'; }
+          else if (roc7 < 0 && roc30 >= 0) { trend = '↘'; trendColor = 'var(--accent-orange)'; }
+        }
+
+        const currentVal = current !== null && current !== undefined ? safeFixed(current, 3) : '--';
+        rows += `<tr>`;
+        rows += `<td style="color:var(--text-primary);font-weight:500;">${ind.name}</td>`;
+        rows += `<td style="font-weight:600;">${currentVal}</td>`;
+        rows += rocCell(roc7);
+        rows += rocCell(roc14);
+        rows += rocCell(roc30);
+        rows += rocCell(roc90);
+        rows += `<td style="color:${trendColor};font-weight:700;font-size:14px;">${trend}</td>`;
+        rows += `</tr>`;
+      });
+
+      tbody.innerHTML = rows;
+    }
+
+    // ========== BACKSTAGE: EQUITY CURVE & DRAWDOWN ==========
+    function renderBackstageCharts() {
+      console.log('[Backstage] Rendering equity curve and underwater chart...');
+
+      // Use the existing signal system trades
+      const trades = [];
+      const tableRows = document.querySelectorAll('#signalTableBody tr');
+      tableRows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 7) {
+          const entry = {
+            entryDate: cells[0]?.textContent?.trim(),
+            entryPrice: parseFloat(cells[1]?.textContent?.replace(/[$,]/g, '')),
+            exitDate: cells[2]?.textContent?.trim(),
+            exitPrice: parseFloat(cells[3]?.textContent?.replace(/[$,]/g, '')),
+            zEntry: parseFloat(cells[4]?.textContent),
+            returnPct: parseFloat(cells[5]?.textContent?.replace(/[%+]/g, '')),
+            status: cells[6]?.textContent?.trim()
+          };
+          if (!isNaN(entry.entryPrice)) trades.push(entry);
+        }
+      });
+
+      if (trades.length === 0) {
+        console.log('[Backstage] No trades found for equity curve');
+        return;
+      }
+
+      // Build equity curve
+      let equity = 100;
+      let peak = 100;
+      let maxDD = 0;
+      const equityPoints = [{ date: trades[0].entryDate, value: 100 }];
+      const ddPoints = [{ date: trades[0].entryDate, value: 0 }];
+      let grossProfit = 0, grossLoss = 0, wins = 0, losses = 0;
+
+      trades.forEach((trade, i) => {
+        const ret = trade.returnPct || 0;
+        equity *= (1 + ret / 100);
+        if (equity > peak) peak = equity;
+        const dd = ((equity - peak) / peak) * 100;
+        if (dd < maxDD) maxDD = dd;
+
+        if (ret > 0) { grossProfit += ret; wins++; }
+        else if (ret < 0) { grossLoss += Math.abs(ret); losses++; }
+
+        const dateLabel = trade.exitDate && trade.exitDate !== '--' ? trade.exitDate : trade.entryDate;
+        equityPoints.push({ date: dateLabel, value: equity });
+        ddPoints.push({ date: dateLabel, value: dd });
+      });
+
+      // Calculate risk metrics
+      const totalTrades = trades.length;
+      const winRate = totalTrades > 0 ? (wins / totalTrades * 100) : 0;
+      const avgWin = wins > 0 ? grossProfit / wins : 0;
+      const avgLoss = losses > 0 ? grossLoss / losses : 0;
+      const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
+      const expectancy = totalTrades > 0 ? (winRate/100 * avgWin) - ((100 - winRate)/100 * avgLoss) : 0;
+      const totalReturn = equity - 100;
+      const years = totalTrades > 0 ? Math.max(1, (new Date().getFullYear() - 2018)) : 1;
+      const annualReturn = Math.pow(equity / 100, 1/years) * 100 - 100;
+      const calmar = maxDD !== 0 ? annualReturn / Math.abs(maxDD) : 0;
+      const currentDD = ((equity - peak) / peak) * 100;
+
+      // Update metric cards
+      const bsCalmar = document.getElementById('bsCalmar');
+      if (bsCalmar) { bsCalmar.textContent = calmar.toFixed(2); bsCalmar.style.color = calmar > 1 ? 'var(--accent-green)' : 'var(--accent-orange)'; }
+      const bsPF = document.getElementById('bsProfitFactor');
+      if (bsPF) { bsPF.textContent = profitFactor === Infinity ? '∞' : profitFactor.toFixed(2); bsPF.style.color = profitFactor > 1.5 ? 'var(--accent-green)' : 'var(--accent-orange)'; }
+      const bsExp = document.getElementById('bsExpectancy');
+      if (bsExp) { bsExp.textContent = (expectancy > 0 ? '+' : '') + expectancy.toFixed(1) + '%'; bsExp.style.color = expectancy > 0 ? 'var(--accent-green)' : 'var(--accent-red)'; }
+      const bsMDD = document.getElementById('bsMaxDD');
+      if (bsMDD) { bsMDD.textContent = maxDD.toFixed(1) + '%'; bsMDD.style.color = maxDD > -20 ? 'var(--accent-green)' : maxDD > -40 ? 'var(--accent-orange)' : 'var(--accent-red)'; }
+      const bsCDD = document.getElementById('bsCurrentDD');
+      if (bsCDD) { bsCDD.textContent = currentDD.toFixed(1) + '%'; bsCDD.style.color = currentDD > -5 ? 'var(--accent-green)' : currentDD > -15 ? 'var(--accent-orange)' : 'var(--accent-red)'; }
+
+      // Render equity curve chart
+      const eqCtx = document.getElementById('equityCurveChart')?.getContext('2d');
+      if (eqCtx) {
+        if (window._equityChart) window._equityChart.destroy();
+        window._equityChart = new Chart(eqCtx, {
+          type: 'line',
+          data: {
+            labels: equityPoints.map(p => p.date),
+            datasets: [{
+              label: 'Equity',
+              data: equityPoints.map(p => p.value),
+              borderColor: '#00d97e',
+              backgroundColor: 'rgba(0,217,126,0.1)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3,
+              pointBackgroundColor: '#00d97e',
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => 'Equity: ' + ctx.parsed.y.toFixed(1) + '%' } } },
+            scales: { x: { ticks: { color: '#8a8a96', font: { size: 8 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#8a8a96', font: { size: 9 }, callback: v => v.toFixed(0) + '%' }, grid: { color: 'rgba(255,255,255,0.04)' } } }
+          }
+        });
+      }
+
+      // Render underwater chart
+      const uwCtx = document.getElementById('underwaterChart')?.getContext('2d');
+      if (uwCtx) {
+        if (window._underwaterChart) window._underwaterChart.destroy();
+        window._underwaterChart = new Chart(uwCtx, {
+          type: 'line',
+          data: {
+            labels: ddPoints.map(p => p.date),
+            datasets: [{
+              label: 'Drawdown',
+              data: ddPoints.map(p => p.value),
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239,68,68,0.15)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 2,
+              borderWidth: 1.5
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => 'DD: ' + ctx.parsed.y.toFixed(1) + '%' } } },
+            scales: { x: { ticks: { color: '#8a8a96', font: { size: 8 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#8a8a96', font: { size: 9 }, callback: v => v.toFixed(0) + '%' }, grid: { color: 'rgba(255,255,255,0.04)' } } }
+          }
+        });
+      }
+
+      // Render extended backtest table
+      const btBody = document.getElementById('backtestTableBody');
+      if (btBody) {
+        let cumReturn = 0;
+        let btRows = '';
+        trades.forEach((trade, i) => {
+          const ret = trade.returnPct || 0;
+          cumReturn += ret;
+          const duration = trade.entryDate && trade.exitDate && trade.exitDate !== '--' ?
+            Math.round((new Date(trade.exitDate) - new Date(trade.entryDate)) / (1000*60*60*24)) + 'd' : 'OPEN';
+
+          btRows += `<tr>`;
+          btRows += `<td>${i+1}</td>`;
+          btRows += `<td style="color:var(--accent-green)">${trade.entryDate || '--'}</td>`;
+          btRows += `<td>$${trade.entryPrice ? trade.entryPrice.toLocaleString() : '--'}</td>`;
+          btRows += `<td>${trade.exitDate || '--'}</td>`;
+          btRows += `<td>${trade.exitPrice ? '$' + trade.exitPrice.toLocaleString() : '--'}</td>`;
+          btRows += `<td>${!isNaN(trade.zEntry) ? trade.zEntry.toFixed(2) : '--'}</td>`;
+          btRows += `<td>--</td>`;
+          btRows += `<td style="color:${ret >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${ret > 0 ? '+' : ''}${ret.toFixed(0)}%</td>`;
+          btRows += `<td style="color:var(--accent-cyan)">${cumReturn > 0 ? '+' : ''}${cumReturn.toFixed(0)}%</td>`;
+          btRows += `<td>${duration}</td>`;
+          btRows += `<td>--</td>`;
+          btRows += `<td>${trade.status === 'OPEN' ? '<span style="color:var(--accent-green);font-weight:700">OPEN</span>' : '<span style="color:var(--text-muted)">CLOSED</span>'}</td>`;
+          btRows += `</tr>`;
+        });
+        btBody.innerHTML = btRows;
+      }
+    }
+
+    // ========== ENHANCED REPORT WITH CONFLUENCE + FUTURES + WHALES ==========
+    const _originalCheckReportReady = checkReportReady;
+    // Override checkReportReady to also trigger new features
+    function checkReportReadyV2() {
+      _originalCheckReportReady();
+      // After report generates, update confluence
+      setTimeout(updateConfluenceScore, 200);
+    }
+
+    // ========== INITIALIZATION OF NEW FEATURES ==========
+    // Wait for initial data load, then fetch new data
+    const _originalFetchFlowData = typeof fetchFlowData === 'function' ? fetchFlowData : null;
+
+    // Schedule new data fetches after initial load
+    setTimeout(() => {
+      console.log('[v2.0] Starting enhanced data fetches...');
+      fetchFuturesPressureData();
+      fetchWhaleData();
+    }, 5000);
+
+    // Schedule backstage rendering after signals are loaded
+    setTimeout(() => {
+      console.log('[v2.0] Rendering backstage analytics...');
+      renderROCTable();
+      renderBackstageCharts();
+      updateConfluenceScore();
+    }, 8000);
+
+    // Periodic refresh for confluence score
+    setTimeout(() => { updateConfluenceScore(); }, 12000);
+
   </script>
 </body>
 </html>
