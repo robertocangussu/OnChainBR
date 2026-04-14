@@ -2427,10 +2427,10 @@
       const FAIR_TH       = -0.5;   // Início do Fair Value
       const EXIT_TH       =  1.5;   // Threshold de saída (zona HOT)
       
-      const MIN_ACC_DAYS    = 7;    // Mínimo de dias em ACC antes de sinal
+      const MIN_ACC_DAYS    = 5;    // Mínimo de dias em ACC antes de sinal (relaxed)
       const CONFIRM_DAYS    = 3;    // Dias para confirmar cruzamento
       const Z_RISING_DAYS   = 5;    // Z deve estar subindo por X dias
-      const LOOKBACK_DAYS   = 30;   // Janela para verificar se veio de ACC
+      const LOOKBACK_DAYS   = 60;   // Janela para verificar se veio de ACC (increased)
       // ────────────────────────────────────────────────────────────
 
       // Helper: check if Z is rising (trend up)
@@ -2510,8 +2510,9 @@
 
             console.log(`📊 Z cross -1.0 on ${date}: accDays=${accDays}(need ${MIN_ACC_DAYS}) zRising=${zRising} maCross=${maCross} strength=${strength}`);
 
-            // Require minimum conditions
-            if (accDays >= MIN_ACC_DAYS && (zRising || maCross)) {
+            // SIMPLIFIED: Just need to have been in ACC zone recently
+            // The crossing of -1.0 upward after ACC is the signal itself
+            if (accDays >= MIN_ACC_DAYS) {
               buyPending = { crossDate: date, crossPrice: price, strength, accDays };
               daysAboveEntry = 1;
               console.log(`🟡 BUY pending (${strength}): ${date} @ $${Math.round(price)}`);
