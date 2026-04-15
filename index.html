@@ -639,6 +639,11 @@
           <div class="futures-metric-sub" id="fpTopTradersSub">position ratio</div>
         </div>
       </div>
+      <div style="display:flex;gap:24px;justify-content:center;margin-bottom:14px;font-size:9px;font-family:'JetBrains Mono',monospace;">
+        <span style="color:var(--text-muted);">Funding ROC 7d: <strong id="fpFundingRoc7d" style="color:var(--text-secondary)">--</strong></span>
+        <span style="color:var(--text-muted);">OI ROC 7d: <strong id="fpOiRoc7d" style="color:var(--text-secondary)">--</strong></span>
+        <span style="color:var(--text-muted);">Taker ROC 7d: <strong id="fpTakerRoc7d" style="color:var(--text-secondary)">--</strong></span>
+      </div>
       <div class="futures-verdict" id="futuresVerdict">
         <div class="futures-verdict-icon">⏳</div>
         <div>Carregando dados de futuros...</div>
@@ -6072,10 +6077,10 @@
             const el = document.getElementById('fpTaker');
             if (el) {
               el.textContent = ratio.toFixed(3);
-              el.style.color = ratio > 1.1 ? 'var(--accent-green)' : ratio < 0.9 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+              el.style.color = ratio > 1.05 ? 'var(--accent-green)' : ratio < 0.95 ? 'var(--accent-red)' : 'var(--accent-yellow)';
             }
             const sub = document.getElementById('fpTakerSub');
-            if (sub) sub.textContent = ratio > 1.1 ? 'Buy dominant' : ratio < 0.9 ? 'Sell dominant' : 'Balanced';
+            if (sub) sub.textContent = ratio > 1.05 ? 'Buy dominant' : ratio < 0.95 ? 'Sell dominant' : 'Balanced';
           }
         }
 
@@ -6138,6 +6143,62 @@
             }
             const sub = document.getElementById('fpTopTradersSub');
             if (sub) sub.textContent = `L: ${(longRatio*100).toFixed(0)}% / S: ${(shortRatio*100).toFixed(0)}%`;
+          }
+        }
+
+        // Calculate ROC 7d for Funding, OI, Taker
+        if (fundingRes.status === 'fulfilled' && fundingRes.value.success) {
+          const data = fundingRes.value.data;
+          if (Array.isArray(data) && data.length >= 57) {
+            const recent = data.slice(-1)[0];
+            const past7d = data.slice(-57, -56)[0]; // ~7 days ago in 3h intervals
+            if (recent && past7d) {
+              const frNow = parseFloat(recent.fundingRate || recent.rate || 0);
+              const frPast = parseFloat(past7d.fundingRate || past7d.rate || 0);
+              const roc = frPast !== 0 ? ((frNow - frPast) / Math.abs(frPast) * 100) : 0;
+              const el = document.getElementById('fpFundingRoc7d');
+              if (el) {
+                el.textContent = (roc > 0 ? '+' : '') + roc.toFixed(1) + '%';
+                el.style.color = roc > 0 ? 'var(--accent-green)' : roc < 0 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+              }
+            }
+          }
+        }
+        if (oiRes.status === 'fulfilled' && oiRes.value.success) {
+          const data = oiRes.value.data;
+          if (Array.isArray(data) && data.length >= 169) {
+            const recent = data[data.length - 1];
+            const past7d = data[data.length - 169]; // ~7 days ago in 1h intervals
+            const oiNow = parseFloat(recent.openInterest || recent.oi || Object.values(recent).find(v => typeof v === 'number' && v > 1000000));
+            const oiPast = parseFloat(past7d.openInterest || past7d.oi || Object.values(past7d).find(v => typeof v === 'number' && v > 1000000));
+            if (oiNow && oiPast && oiPast > 0) {
+              const roc = ((oiNow - oiPast) / oiPast) * 100;
+              const el = document.getElementById('fpOiRoc7d');
+              if (el) {
+                el.textContent = (roc > 0 ? '+' : '') + roc.toFixed(1) + '%';
+                el.style.color = roc > 5 ? 'var(--accent-green)' : roc < -5 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+              }
+            }
+          }
+        }
+        if (takerRes.status === 'fulfilled' && takerRes.value.success) {
+          const data = takerRes.value.data;
+          if (Array.isArray(data) && data.length >= 169) {
+            const recentSlice = data.slice(-24);
+            const pastSlice = data.slice(-192, -168);
+            let recentBuy = 0, recentSell = 0, pastBuy = 0, pastSell = 0;
+            recentSlice.forEach(d => { recentBuy += parseFloat(d.takerBuyVolume || d.buyVolume || d.buy || 0); recentSell += parseFloat(d.takerSellVolume || d.sellVolume || d.sell || 0); });
+            pastSlice.forEach(d => { pastBuy += parseFloat(d.takerBuyVolume || d.buyVolume || d.buy || 0); pastSell += parseFloat(d.takerSellVolume || d.sellVolume || d.sell || 0); });
+            const ratioNow = recentSell > 0 ? recentBuy / recentSell : 1;
+            const ratioPast = pastSell > 0 ? pastBuy / pastSell : 1;
+            if (ratioPast > 0) {
+              const roc = ((ratioNow - ratioPast) / ratioPast) * 100;
+              const el = document.getElementById('fpTakerRoc7d');
+              if (el) {
+                el.textContent = (roc > 0 ? '+' : '') + roc.toFixed(1) + '%';
+                el.style.color = roc > 2 ? 'var(--accent-green)' : roc < -2 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+              }
+            }
           }
         }
 
@@ -6301,6 +6362,7 @@
         // Compare with LTH (with retry if LTH not loaded yet)
         updateWhaleVsLth();
 
+
         calculateNetBuyingPressure();
         updateConfluenceScore();
       } catch(e) {
@@ -6316,9 +6378,17 @@
           const whaleTotal = (whaleState.whale10k30d || 0) + (whaleState.whale1k10k30d || 0);
           const lth = smartMoneyState.lth30d;
           const aligned = (whaleTotal > 0 && lth > 0) || (whaleTotal < 0 && lth < 0);
-          el.innerHTML = aligned ?
-            '<span style="color:var(--accent-green)">ALIGNED</span> — Whales + LTH same direction' :
-            '<span style="color:var(--accent-orange)">DIVERGENT</span> — Whales vs LTH disagreeing';
+          if (aligned) {
+            el.innerHTML = '<span style="font-size:13px;font-weight:700;color:#00d97e;">✅ ALIGNED</span><br><span style="font-size:9px;color:var(--text-secondary);">Whales + LTH acumulando na mesma direção</span>';
+          } else {
+            el.innerHTML = '<span style="font-size:13px;font-weight:700;color:#FF9500;">⚠️ DIVERGENT</span><br><span style="font-size:9px;color:#FF9500;">Whales vs LTH em direções opostas — atenção!</span>';
+            el.parentElement.style.borderBottom = 'none';
+            // Add a subtle alert background
+            el.style.background = 'rgba(255,149,0,0.08)';
+            el.style.borderRadius = '6px';
+            el.style.padding = '8px 10px';
+            el.style.marginTop = '4px';
+          }
         }
       } else if (whaleState.loaded) {
         // LTH data not ready yet, retry
@@ -6702,6 +6772,10 @@
       // Render extended backtest table
       const btBody = document.getElementById('backtestTableBody');
       if (btBody) {
+        // Build lookup maps for Z-score and price by date
+        const zMap = new Map((state.compositeHistory || []).map(d => [d.date, d.value]));
+        const priceArr = (state.prices || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+
         let cumReturn = 0;
         let btRows = '';
         trades.forEach((trade, i) => {
@@ -6710,18 +6784,58 @@
           const duration = trade.entryDate && trade.exitDate && trade.exitDate !== '--' ?
             Math.round((new Date(trade.exitDate) - new Date(trade.entryDate)) / (1000*60*60*24)) + 'd' : 'OPEN';
 
+          // Z Entry: lookup Z-score at entry date
+          const zEntryVal = zMap.get(trade.entryDate);
+          const zEntryStr = zEntryVal != null ? zEntryVal.toFixed(2) : (!isNaN(trade.zEntry) ? trade.zEntry.toFixed(2) : '--');
+
+          // Z Exit: lookup Z-score at exit date
+          let zExitStr = '--';
+          if (trade.exitDate && trade.exitDate !== '--') {
+            const zExitVal = zMap.get(trade.exitDate);
+            if (zExitVal != null) {
+              zExitStr = zExitVal.toFixed(2);
+            }
+          } else if (trade.status === 'OPEN') {
+            // For open trades, show current Z
+            const lastZ = state.compositeHistory && state.compositeHistory.length > 0
+              ? state.compositeHistory[state.compositeHistory.length - 1].value : null;
+            if (lastZ != null) zExitStr = lastZ.toFixed(2) + '*';
+          }
+
+          // Max DD in Trade: find min price during trade period, calc drawdown from entry
+          let maxDDStr = '--';
+          if (trade.entryPrice && trade.entryDate) {
+            const endDate = (trade.exitDate && trade.exitDate !== '--') ? trade.exitDate : new Date().toISOString().split('T')[0];
+            let minPrice = Infinity;
+            for (let p = 0; p < priceArr.length; p++) {
+              if (priceArr[p].date >= trade.entryDate && priceArr[p].date <= endDate && priceArr[p].value > 0) {
+                if (priceArr[p].value < minPrice) minPrice = priceArr[p].value;
+              }
+            }
+            if (minPrice < Infinity && minPrice < trade.entryPrice) {
+              const tradeMDD = ((minPrice - trade.entryPrice) / trade.entryPrice) * 100;
+              maxDDStr = tradeMDD.toFixed(1) + '%';
+            } else {
+              maxDDStr = '0.0%';
+            }
+          }
+
+          const mddColor = maxDDStr === '--' ? 'var(--text-muted)' :
+            parseFloat(maxDDStr) > -10 ? 'var(--accent-green)' :
+            parseFloat(maxDDStr) > -25 ? 'var(--accent-orange)' : 'var(--accent-red)';
+
           btRows += `<tr>`;
           btRows += `<td>${i+1}</td>`;
           btRows += `<td style="color:var(--accent-green)">${trade.entryDate || '--'}</td>`;
           btRows += `<td>$${trade.entryPrice ? trade.entryPrice.toLocaleString() : '--'}</td>`;
           btRows += `<td>${trade.exitDate || '--'}</td>`;
           btRows += `<td>${trade.exitPrice ? '$' + trade.exitPrice.toLocaleString() : '--'}</td>`;
-          btRows += `<td>${!isNaN(trade.zEntry) ? trade.zEntry.toFixed(2) : '--'}</td>`;
-          btRows += `<td>--</td>`;
+          btRows += `<td>${zEntryStr}</td>`;
+          btRows += `<td>${zExitStr}</td>`;
           btRows += `<td style="color:${ret >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${ret > 0 ? '+' : ''}${ret.toFixed(0)}%</td>`;
           btRows += `<td style="color:var(--accent-cyan)">${cumReturn > 0 ? '+' : ''}${cumReturn.toFixed(0)}%</td>`;
           btRows += `<td>${duration}</td>`;
-          btRows += `<td>--</td>`;
+          btRows += `<td style="color:${mddColor}">${maxDDStr}</td>`;
           btRows += `<td>${trade.status === 'OPEN' ? '<span style="color:var(--accent-green);font-weight:700">OPEN</span>' : '<span style="color:var(--text-muted)">CLOSED</span>'}</td>`;
           btRows += `</tr>`;
         });
