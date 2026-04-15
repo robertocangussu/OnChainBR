@@ -1452,100 +1452,101 @@
     <div class="section-header">
       <span class="section-num">10</span>
       <span class="section-title">Backstage</span>
-      <span class="section-sub">ROC · DRAWDOWN · BACKTEST · RISK METRICS · ENGINE</span>
+      <span class="section-sub">STRATEGY COMPARISON · EQUITY CURVES · DRAWDOWN · BACKTEST</span>
     </div>
 
-    <!-- Risk Metrics Row -->
-    <div class="backstage-metrics-row">
-      <div class="backstage-metric-card">
-        <div class="backstage-metric-label">Calmar Ratio</div>
-        <div class="backstage-metric-value" id="bsCalmar">--</div>
-        <div class="backstage-metric-sub">return / max DD</div>
-      </div>
-      <div class="backstage-metric-card">
-        <div class="backstage-metric-label">Profit Factor</div>
-        <div class="backstage-metric-value" id="bsProfitFactor">--</div>
-        <div class="backstage-metric-sub">gross profit / gross loss</div>
-      </div>
-      <div class="backstage-metric-card">
-        <div class="backstage-metric-label">Expectancy</div>
-        <div class="backstage-metric-value" id="bsExpectancy">--</div>
-        <div class="backstage-metric-sub">avg $ per trade</div>
-      </div>
-      <div class="backstage-metric-card">
-        <div class="backstage-metric-label">Max Drawdown</div>
-        <div class="backstage-metric-value" id="bsMaxDD">--</div>
-        <div class="backstage-metric-sub">peak-to-trough</div>
-      </div>
-      <div class="backstage-metric-card">
-        <div class="backstage-metric-label">Current DD</div>
-        <div class="backstage-metric-value" id="bsCurrentDD">--</div>
-        <div class="backstage-metric-sub">from ATH equity</div>
-      </div>
+    <!-- Section Title -->
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:16px;font-weight:700;color:var(--text-primary);letter-spacing:1px;text-transform:uppercase;">Strategy Comparison</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Z-Composite Signal System vs Trend & Reversal — Side by Side Performance Analysis</div>
     </div>
 
-    <!-- ROC Table (Strategy-Focused) -->
+    <!-- Comparison Metrics Table -->
     <div class="backstage-card-full">
-      <div class="backstage-title">Strategy Performance — Rate of Change (ROC)</div>
+      <div class="backstage-title">Performance Metrics — Head to Head</div>
       <div style="overflow-x:auto;">
-        <table class="roc-table">
+        <table class="trades-extended-table" id="comparisonTable">
           <thead>
             <tr>
-              <th>Metric</th>
-              <th>Current</th>
-              <th>Zone</th>
-              <th>ROC 7d</th>
-              <th>ROC 14d</th>
-              <th>ROC 30d</th>
-              <th>ROC 90d</th>
-              <th>Momentum</th>
+              <th style="text-align:left;min-width:180px;">Metric</th>
+              <th style="min-width:140px;"><span style="color:#00d97e;">Z-Composite</span></th>
+              <th style="min-width:140px;"><span style="color:#3b82f6;">Trend & Reversal</span></th>
+              <th style="min-width:120px;">Advantage</th>
             </tr>
           </thead>
-          <tbody id="rocTableBody">
-            <tr><td colspan="8" style="text-align:center;color:var(--text-muted);">Calculating ROC data...</td></tr>
+          <tbody id="comparisonBody">
+            <tr><td colspan="4" style="text-align:center;color:var(--text-muted);">Loading comparison data...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Equity Curve (Full Width, Premium) -->
+    <!-- Dual Equity Curve (Full Width) -->
     <div class="backstage-card-full" style="position:relative;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div class="backstage-title" style="margin:0;">Equity Curve — Z-Composite Strategy</div>
+        <div class="backstage-title" style="margin:0;">Equity Curves — Strategy Comparison</div>
         <div id="equityCurveLegend" style="display:flex;gap:16px;font-size:11px;font-family:'JetBrains Mono',monospace;"></div>
       </div>
-      <div style="height:320px;position:relative;"><canvas id="equityCurveChart"></canvas></div>
+      <div style="height:350px;position:relative;"><canvas id="equityCurveChart"></canvas></div>
     </div>
 
-    <!-- Underwater Curve (Full Width) -->
+    <!-- Dual Underwater Curve -->
     <div class="backstage-card-full" style="position:relative;">
-      <div class="backstage-title">Underwater Curve (Drawdown)</div>
-      <div style="height:180px;position:relative;"><canvas id="underwaterChart"></canvas></div>
+      <div class="backstage-title">Underwater Curves (Drawdown Comparison)</div>
+      <div style="height:200px;position:relative;"><canvas id="underwaterChart"></canvas></div>
     </div>
 
-    <!-- Extended Backtest Table -->
+    <!-- When to Use Each -->
+    <div class="backstage-card-full" id="strategyAdviceCard">
+      <div class="backstage-title">When to Use Each Strategy</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;" id="strategyAdvice">
+        <div style="background:rgba(0,217,126,0.06);border:1px solid rgba(0,217,126,0.15);border-radius:8px;padding:16px;">
+          <div style="color:#00d97e;font-weight:700;font-size:12px;margin-bottom:8px;letter-spacing:0.5px;">Z-COMPOSITE IS BETTER WHEN...</div>
+          <div id="adviceZComposite" style="color:var(--text-secondary);font-size:11px;line-height:1.6;">Loading...</div>
+        </div>
+        <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:8px;padding:16px;">
+          <div style="color:#3b82f6;font-weight:700;font-size:12px;margin-bottom:8px;letter-spacing:0.5px;">TREND & REVERSAL IS BETTER WHEN...</div>
+          <div id="adviceTrend" style="color:var(--text-secondary);font-size:11px;line-height:1.6;">Loading...</div>
+        </div>
+        <div style="background:rgba(255,184,0,0.06);border:1px solid rgba(255,184,0,0.15);border-radius:8px;padding:16px;">
+          <div style="color:#ffb800;font-weight:700;font-size:12px;margin-bottom:8px;letter-spacing:0.5px;">USE BOTH TOGETHER WHEN...</div>
+          <div id="adviceBoth" style="color:var(--text-secondary);font-size:11px;line-height:1.6;">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Z-Composite Backtest Table -->
     <div class="backstage-card-full">
-      <div class="backstage-title">Backtest — All Trades (Z-Composite Strategy)</div>
+      <div class="backstage-title">Z-Composite — Trade Log</div>
+      <div style="max-height:250px;overflow-y:auto;">
+        <table class="trades-extended-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Entry Date</th><th>Entry $</th><th>Exit Date</th><th>Exit $</th>
+              <th>Z Entry</th><th>Z Exit</th><th>Return</th><th>Cum. Return</th>
+              <th>Duration</th><th>Max DD</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="backtestTableBody">
+            <tr><td colspan="12" style="text-align:center;color:var(--text-muted);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Trend & Reversal Backtest Table -->
+    <div class="backstage-card-full">
+      <div class="backstage-title">Trend & Reversal — Trade Log</div>
       <div style="max-height:300px;overflow-y:auto;">
         <table class="trades-extended-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Entry Date</th>
-              <th>Entry $</th>
-              <th>Exit Date</th>
-              <th>Exit $</th>
-              <th>Z Entry</th>
-              <th>Z Exit</th>
-              <th>Return</th>
-              <th>Cum. Return</th>
-              <th>Duration</th>
-              <th>Max DD in Trade</th>
-              <th>Status</th>
+              <th>#</th><th>Entry Date</th><th>Entry $</th><th>Exit Date</th><th>Exit $</th>
+              <th>Return</th><th>Cum. Return</th><th>Duration</th><th>Status</th>
             </tr>
           </thead>
-          <tbody id="backtestTableBody">
-            <tr><td colspan="12" style="text-align:center;color:var(--text-muted);">Loading backtest data...</td></tr>
+          <tbody id="trendBacktestBody">
+            <tr><td colspan="9" style="text-align:center;color:var(--text-muted);">Loading...</td></tr>
           </tbody>
         </table>
       </div>
@@ -6663,8 +6664,41 @@
       updateFactor('cfMinersLev', 'cfMinersLevFill', mlFactor);
     }
 
-    // ========== BACKSTAGE: ROC TABLE ==========
-    function renderROCTable() {
+    // ========== BACKSTAGE: STRATEGY COMPARISON ==========
+    function calcStrategyMetrics(trades) {
+      if (!trades || !trades.length) return null;
+      let equity = 100, peak = 100, maxDD = 0;
+      let grossProfit = 0, grossLoss = 0, wins = 0, losses = 0;
+      const equityPts = [{ date: trades[0].entryDate || trades[0].date, value: 100 }];
+      const ddPts = [{ date: trades[0].entryDate || trades[0].date, value: 0 }];
+      trades.forEach(t => {
+        const ret = parseFloat(t.returnPct || t.pnl || 0);
+        equity *= (1 + ret / 100);
+        if (equity > peak) peak = equity;
+        const dd = ((equity - peak) / peak) * 100;
+        if (dd < maxDD) maxDD = dd;
+        if (ret > 0) { grossProfit += ret; wins++; }
+        else if (ret < 0) { grossLoss += Math.abs(ret); losses++; }
+        const dateLabel = (t.exitDate && t.exitDate !== '--') ? t.exitDate : (t.entryDate || t.date);
+        equityPts.push({ date: dateLabel, value: equity });
+        ddPts.push({ date: dateLabel, value: dd });
+      });
+      const total = trades.length;
+      const winRate = total > 0 ? (wins / total * 100) : 0;
+      const avgWin = wins > 0 ? grossProfit / wins : 0;
+      const avgLoss = losses > 0 ? grossLoss / losses : 0;
+      const pf = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
+      const expectancy = total > 0 ? (winRate/100 * avgWin) - ((100 - winRate)/100 * avgLoss) : 0;
+      const firstDate = trades[0].entryDate || trades[0].date;
+      const years = Math.max(1, (new Date().getFullYear() - new Date(firstDate).getFullYear()));
+      const annualReturn = Math.pow(equity / 100, 1/years) * 100 - 100;
+      const calmar = maxDD !== 0 ? annualReturn / Math.abs(maxDD) : 0;
+      const currentDD = ((equity - peak) / peak) * 100;
+      const avgReturn = total > 0 ? (grossProfit - grossLoss) / total : 0;
+      return { equity, peak, maxDD, grossProfit, grossLoss, wins, losses, total, winRate, avgWin, avgLoss, pf, expectancy, annualReturn, calmar, currentDD, avgReturn, totalReturn: equity - 100, equityPts, ddPts };
+    }
+
+    function _legacyRenderROCTable() {
       console.log('[Backstage] Rendering strategy-focused ROC table...');
 
       // Only Z-Score Composite + Trade Log equity performance
@@ -6785,185 +6819,174 @@
       tbody.innerHTML = rows;
     }
 
-    // ========== BACKSTAGE: EQUITY CURVE & DRAWDOWN ==========
+    // ========== BACKSTAGE: STRATEGY COMPARISON (DUAL) ==========
     function renderBackstageCharts() {
-      console.log('[Backstage] Rendering equity curve and underwater chart...');
+      console.log('[Backstage] Rendering strategy comparison...');
 
-      // Use stored signal trades data (set by renderSignalTable)
-      const trades = window.signalTradesData;
-      if (!trades || trades.length === 0) {
-        console.log('[Backstage] No trades found, will retry in 3s...');
+      // ── GET Z-COMPOSITE TRADES ──
+      const zTrades = window.signalTradesData;
+      if (!zTrades || zTrades.length === 0) {
+        console.log('[Backstage] No Z-Composite trades, will retry...');
         if (!window._backstageRetry) window._backstageRetry = 0;
         window._backstageRetry++;
-        if (window._backstageRetry < 10) {
-          setTimeout(renderBackstageCharts, 3000);
-        }
+        if (window._backstageRetry < 10) setTimeout(renderBackstageCharts, 3000);
         return;
       }
-      console.log('[Backstage] Found', trades.length, 'trades for equity curve');
+      // ── GET TREND & REVERSAL TRADES ──
+      const trSignals = (tradingState && tradingState.signals) ? tradingState.signals : [];
+      if (trSignals.length === 0) {
+        console.log('[Backstage] No Trend signals yet, will retry...');
+        if (!window._backstageRetry) window._backstageRetry = 0;
+        window._backstageRetry++;
+        if (window._backstageRetry < 15) setTimeout(renderBackstageCharts, 3000);
+        return;
+      }
 
-      // Build equity curve
-      let equity = 100;
-      let peak = 100;
-      let maxDD = 0;
-      const equityPoints = [{ date: trades[0].entryDate, value: 100 }];
-      const ddPoints = [{ date: trades[0].entryDate, value: 0 }];
-      let grossProfit = 0, grossLoss = 0, wins = 0, losses = 0;
+      // Normalize Trend trades to same format
+      const trTrades = trSignals.map(s => ({
+        entryDate: s.date,
+        exitDate: s.exitDate || '--',
+        entryPrice: s.entryPrice,
+        exitPrice: s.exitPrice,
+        returnPct: parseFloat(s.pnl || 0),
+        status: s.status || 'CLOSED',
+        signal: s.signal
+      }));
 
-      trades.forEach((trade, i) => {
-        const ret = trade.returnPct || 0;
-        equity *= (1 + ret / 100);
-        if (equity > peak) peak = equity;
-        const dd = ((equity - peak) / peak) * 100;
-        if (dd < maxDD) maxDD = dd;
+      const trades = zTrades; // alias for backward compat in backtest table
+      console.log('[Backstage] Z-Composite:', zTrades.length, 'trades | Trend:', trTrades.length, 'trades');
 
-        if (ret > 0) { grossProfit += ret; wins++; }
-        else if (ret < 0) { grossLoss += Math.abs(ret); losses++; }
+      // ── CALCULATE METRICS ──
+      const zM = calcStrategyMetrics(zTrades);
+      const trM = calcStrategyMetrics(trTrades);
 
-        const dateLabel = trade.exitDate && trade.exitDate !== '--' ? trade.exitDate : trade.entryDate;
-        equityPoints.push({ date: dateLabel, value: equity });
-        ddPoints.push({ date: dateLabel, value: dd });
-      });
-
-      // Calculate risk metrics
-      const totalTrades = trades.length;
-      const winRate = totalTrades > 0 ? (wins / totalTrades * 100) : 0;
-      const avgWin = wins > 0 ? grossProfit / wins : 0;
-      const avgLoss = losses > 0 ? grossLoss / losses : 0;
-      const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
-      const expectancy = totalTrades > 0 ? (winRate/100 * avgWin) - ((100 - winRate)/100 * avgLoss) : 0;
-      const totalReturn = equity - 100;
-      const years = totalTrades > 0 ? Math.max(1, (new Date().getFullYear() - 2018)) : 1;
-      const annualReturn = Math.pow(equity / 100, 1/years) * 100 - 100;
-      const calmar = maxDD !== 0 ? annualReturn / Math.abs(maxDD) : 0;
-      const currentDD = ((equity - peak) / peak) * 100;
-
-      // Update metric cards
-      const bsCalmar = document.getElementById('bsCalmar');
-      if (bsCalmar) { bsCalmar.textContent = calmar.toFixed(2); bsCalmar.style.color = calmar > 1 ? 'var(--accent-green)' : 'var(--accent-orange)'; }
-      const bsPF = document.getElementById('bsProfitFactor');
-      if (bsPF) { bsPF.textContent = profitFactor === Infinity ? '∞' : profitFactor.toFixed(2); bsPF.style.color = profitFactor > 1.5 ? 'var(--accent-green)' : 'var(--accent-orange)'; }
-      const bsExp = document.getElementById('bsExpectancy');
-      if (bsExp) { bsExp.textContent = (expectancy > 0 ? '+' : '') + expectancy.toFixed(1) + '%'; bsExp.style.color = expectancy > 0 ? 'var(--accent-green)' : 'var(--accent-red)'; }
-      const bsMDD = document.getElementById('bsMaxDD');
-      if (bsMDD) { bsMDD.textContent = maxDD.toFixed(1) + '%'; bsMDD.style.color = maxDD > -20 ? 'var(--accent-green)' : maxDD > -40 ? 'var(--accent-orange)' : 'var(--accent-red)'; }
-      const bsCDD = document.getElementById('bsCurrentDD');
-      if (bsCDD) { bsCDD.textContent = currentDD.toFixed(1) + '%'; bsCDD.style.color = currentDD > -5 ? 'var(--accent-green)' : currentDD > -15 ? 'var(--accent-orange)' : 'var(--accent-red)'; }
-
-      // ── PREMIUM EQUITY CURVE ──────────────────────────────────
-      // Build detailed equity path with daily interpolation between trades
-      const buyMarkers = [];
-      const sellMarkers = [];
-      trades.forEach((trade, i) => {
-        const eqBefore = i === 0 ? 100 : equityPoints[i].value;
-        const eqAfter = equityPoints[i + 1].value;
-        buyMarkers.push({ x: trade.entryDate, y: eqBefore, label: `BUY #${i+1}` });
-        if (trade.exitDate && trade.exitDate !== '--') {
-          sellMarkers.push({ x: trade.exitDate, y: eqAfter, label: `SELL #${i+1}` });
+      // ── COMPARISON TABLE ──
+      const compBody = document.getElementById('comparisonBody');
+      if (compBody && zM && trM) {
+        function compRow(label, zVal, trVal, format, higherIsBetter) {
+          const zStr = format(zVal);
+          const trStr = format(trVal);
+          let adv = '--';
+          let advColor = 'var(--text-muted)';
+          if (zVal !== null && trVal !== null) {
+            const zBetter = higherIsBetter ? zVal > trVal : zVal < trVal;
+            const trBetter = higherIsBetter ? trVal > zVal : trVal < zVal;
+            if (zBetter) { adv = '◀ Z-Composite'; advColor = '#00d97e'; }
+            else if (trBetter) { adv = 'Trend ▶'; advColor = '#3b82f6'; }
+            else { adv = 'TIE'; advColor = '#ffb800'; }
+          }
+          return `<tr>
+            <td style="font-weight:600;color:var(--text-primary);">${label}</td>
+            <td style="font-family:'JetBrains Mono',monospace;text-align:center;">${zStr}</td>
+            <td style="font-family:'JetBrains Mono',monospace;text-align:center;">${trStr}</td>
+            <td style="color:${advColor};font-weight:600;text-align:center;font-size:11px;">${adv}</td>
+          </tr>`;
         }
-      });
+        const fmtPct = v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+        const fmtNum = v => v === Infinity ? '∞' : v.toFixed(2);
+        const fmtInt = v => v.toString();
 
-      // Update legend
+        compBody.innerHTML =
+          compRow('Total Return', zM.totalReturn, trM.totalReturn, fmtPct, true) +
+          compRow('Annual Return', zM.annualReturn, trM.annualReturn, fmtPct, true) +
+          compRow('Win Rate', zM.winRate, trM.winRate, v => v.toFixed(0) + '%', true) +
+          compRow('Avg Return / Trade', zM.avgReturn, trM.avgReturn, fmtPct, true) +
+          compRow('Avg Win', zM.avgWin, trM.avgWin, fmtPct, true) +
+          compRow('Avg Loss', zM.avgLoss, trM.avgLoss, v => '-' + v.toFixed(1) + '%', false) +
+          compRow('Profit Factor', zM.pf, trM.pf, fmtNum, true) +
+          compRow('Expectancy', zM.expectancy, trM.expectancy, fmtPct, true) +
+          compRow('Max Drawdown', zM.maxDD, trM.maxDD, fmtPct, false) +
+          compRow('Calmar Ratio', zM.calmar, trM.calmar, fmtNum, true) +
+          compRow('Current DD', zM.currentDD, trM.currentDD, fmtPct, false) +
+          compRow('Number of Trades', zM.total, trM.total, fmtInt, null);
+      }
+
+      // ── LEGEND ──
       const legendEl = document.getElementById('equityCurveLegend');
-      if (legendEl) {
-        const cumRet = (equity - 100).toFixed(1);
-        const cumColor = equity >= 100 ? '#00d97e' : '#ef4444';
+      if (legendEl && zM && trM) {
         legendEl.innerHTML = `
-          <span style="color:${cumColor};font-weight:700;">Cumulative: ${cumRet > 0 ? '+' : ''}${cumRet}%</span>
+          <span style="color:#00d97e;font-weight:700;">● Z-Composite: ${zM.totalReturn > 0 ? '+' : ''}${zM.totalReturn.toFixed(0)}%</span>
+          <span style="color:#3b82f6;font-weight:700;">● Trend: ${trM.totalReturn > 0 ? '+' : ''}${trM.totalReturn.toFixed(0)}%</span>
           <span style="color:#8a8a96;">|</span>
-          <span style="color:#00d97e;">&#9650; BUY</span>
-          <span style="color:#ef4444;">&#9660; SELL</span>
-          <span style="color:#8a8a96;">|</span>
-          <span style="color:var(--accent-cyan);">Trades: ${trades.length}</span>
+          <span style="color:#8a8a96;">${zM.total} vs ${trM.total} trades</span>
         `;
       }
 
+      // ── MERGE DATES FOR ALIGNED X-AXIS ──
+      const allDatesSet = new Set();
+      if (zM) zM.equityPts.forEach(p => allDatesSet.add(p.date));
+      if (trM) trM.equityPts.forEach(p => allDatesSet.add(p.date));
+      const allDates = [...allDatesSet].sort();
+
+      function interpolate(pts, dates) {
+        const map = new Map(pts.map(p => [p.date, p.value]));
+        const result = [];
+        let lastVal = null;
+        dates.forEach(d => {
+          if (map.has(d)) { lastVal = map.get(d); result.push(lastVal); }
+          else { result.push(lastVal); }
+        });
+        return result;
+      }
+
+      const zEquity = zM ? interpolate(zM.equityPts, allDates) : allDates.map(() => null);
+      const trEquity = trM ? interpolate(trM.equityPts, allDates) : allDates.map(() => null);
+      const zDD = zM ? interpolate(zM.ddPts, allDates) : allDates.map(() => null);
+      const trDD = trM ? interpolate(trM.ddPts, allDates) : allDates.map(() => null);
+
+      // ── DUAL EQUITY CURVE ──
       const eqCtx = document.getElementById('equityCurveChart')?.getContext('2d');
       if (eqCtx) {
         if (window._equityChart) window._equityChart.destroy();
-
-        // Custom gradient plugin
-        const gradientFill = {
-          id: 'equityGradient',
-          beforeDraw(chart) {
-            const { ctx, chartArea, scales } = chart;
-            if (!chartArea) return;
-            const yScale = scales.y;
-            const baselineY = yScale.getPixelForValue(100);
-            const ds = chart.data.datasets[0];
-            if (!ds) return;
-
-            // Green gradient above 100%, red below
-            const greenGrad = ctx.createLinearGradient(0, chartArea.top, 0, baselineY);
-            greenGrad.addColorStop(0, 'rgba(0,217,126,0.25)');
-            greenGrad.addColorStop(1, 'rgba(0,217,126,0.02)');
-
-            const redGrad = ctx.createLinearGradient(0, baselineY, 0, chartArea.bottom);
-            redGrad.addColorStop(0, 'rgba(239,68,68,0.02)');
-            redGrad.addColorStop(1, 'rgba(239,68,68,0.20)');
-
-            ds.backgroundColor = (context) => {
-              const val = context.parsed?.y;
-              return val >= 100 ? greenGrad : redGrad;
-            };
-          }
-        };
-
         window._equityChart = new Chart(eqCtx, {
           type: 'line',
           data: {
-            labels: equityPoints.map(p => p.date),
+            labels: allDates,
             datasets: [
               {
-                label: 'Equity',
-                data: equityPoints.map(p => p.value),
-                borderColor: (ctx) => {
-                  const val = ctx.parsed?.y;
-                  return val != null && val < 100 ? '#ef4444' : '#00d97e';
-                },
-                segment: {
-                  borderColor: (ctx) => ctx.p1.parsed.y < 100 ? '#ef4444' : '#00d97e'
-                },
+                label: 'Z-Composite',
+                data: zEquity,
+                borderColor: '#00d97e',
                 backgroundColor: 'rgba(0,217,126,0.08)',
                 fill: true,
                 tension: 0.35,
-                pointRadius: equityPoints.map((p, i) => {
-                  if (i === 0) return 5;
-                  if (i === equityPoints.length - 1) return 6;
-                  return 4;
-                }),
-                pointBackgroundColor: equityPoints.map((p, i) => {
-                  if (i === equityPoints.length - 1) return '#00bfff';
-                  return p.value >= 100 ? '#00d97e' : '#ef4444';
-                }),
-                pointBorderColor: equityPoints.map((p, i) => {
-                  if (i === equityPoints.length - 1) return '#00bfff';
-                  return 'rgba(0,0,0,0.6)';
-                }),
-                pointBorderWidth: 1.5,
-                pointStyle: equityPoints.map((p, i) => {
-                  if (i === 0) return 'circle';
-                  if (i === equityPoints.length - 1) return 'rectRot';
-                  // Even indices (after start) = entry, odd = exit
-                  return i % 2 === 1 ? 'triangle' : 'triangle';
-                }),
-                pointRotation: equityPoints.map((p, i) => {
-                  // Sell points get downward triangle
-                  if (i > 0 && i < equityPoints.length - 1 && i % 2 === 0) return 180;
+                borderWidth: 2.5,
+                pointRadius: zEquity.map((v, i) => {
+                  if (i === 0 || i === zEquity.length - 1) return 5;
+                  if (v !== zEquity[i-1]) return 3;
                   return 0;
                 }),
-                borderWidth: 2.5
+                pointBackgroundColor: '#00d97e',
+                pointBorderColor: 'rgba(0,0,0,0.5)',
+                pointBorderWidth: 1,
+                spanGaps: true
               },
-              // 100% baseline reference
+              {
+                label: 'Trend & Reversal',
+                data: trEquity,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.06)',
+                fill: true,
+                tension: 0.35,
+                borderWidth: 2.5,
+                pointRadius: trEquity.map((v, i) => {
+                  if (i === 0 || i === trEquity.length - 1) return 5;
+                  if (v !== trEquity[i-1]) return 2;
+                  return 0;
+                }),
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: 'rgba(0,0,0,0.5)',
+                pointBorderWidth: 1,
+                spanGaps: true
+              },
               {
                 label: 'Baseline',
-                data: equityPoints.map(() => 100),
-                borderColor: 'rgba(255,255,255,0.12)',
+                data: allDates.map(() => 100),
+                borderColor: 'rgba(255,255,255,0.1)',
                 borderDash: [6, 4],
                 borderWidth: 1,
                 pointRadius: 0,
-                fill: false,
-                tension: 0
+                fill: false
               }
             ]
           },
@@ -6980,214 +7003,151 @@
                 bodyFont: { family: "'JetBrains Mono', monospace", size: 12 },
                 padding: 12,
                 callbacks: {
-                  title: (items) => items[0]?.label || '',
                   label: (ctx) => {
-                    if (ctx.datasetIndex === 1) return null; // hide baseline
-                    const val = ctx.parsed.y;
-                    const ret = (val - 100).toFixed(1);
-                    return `Equity: ${val.toFixed(1)}%  (${ret >= 0 ? '+' : ''}${ret}%)`;
+                    if (ctx.datasetIndex === 2) return null;
+                    const v = ctx.parsed.y;
+                    if (v == null) return null;
+                    const name = ctx.datasetIndex === 0 ? 'Z-Composite' : 'Trend';
+                    return `${name}: ${v.toFixed(1)}% (${(v-100) >= 0 ? '+' : ''}${(v-100).toFixed(1)}%)`;
                   }
                 },
-                filter: (item) => item.datasetIndex === 0
+                filter: item => item.datasetIndex < 2
               }
             },
             scales: {
-              x: {
-                ticks: { color: '#6b6b78', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0 },
-                grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }
-              },
-              y: {
-                ticks: {
-                  color: '#6b6b78',
-                  font: { family: "'JetBrains Mono', monospace", size: 10 },
-                  callback: v => v.toFixed(0) + '%'
-                },
-                grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }
-              }
+              x: { ticks: { color: '#6b6b78', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0, maxTicksLimit: 8 }, grid: { color: 'rgba(255,255,255,0.03)' } },
+              y: { ticks: { color: '#6b6b78', font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: v => v.toFixed(0) + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } }
             }
-          },
-          plugins: [{
-            id: 'tradeAnnotations',
-            afterDraw(chart) {
-              const { ctx, scales } = chart;
-              const xScale = scales.x;
-              const yScale = scales.y;
-              // Draw BUY triangles
-              buyMarkers.forEach(m => {
-                const xi = xScale.getLabelIndex ? null : chart.data.labels.indexOf(m.x);
-                if (xi === -1) return;
-                const px = xScale.getPixelForValue(xi);
-                const py = yScale.getPixelForValue(m.y);
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(px, py - 10);
-                ctx.lineTo(px - 6, py + 2);
-                ctx.lineTo(px + 6, py + 2);
-                ctx.closePath();
-                ctx.fillStyle = 'rgba(0,217,126,0.85)';
-                ctx.fill();
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 0.5;
-                ctx.stroke();
-                ctx.restore();
-              });
-              // Draw SELL triangles (inverted)
-              sellMarkers.forEach(m => {
-                const xi = chart.data.labels.indexOf(m.x);
-                if (xi === -1) return;
-                const px = xScale.getPixelForValue(xi);
-                const py = yScale.getPixelForValue(m.y);
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(px, py + 10);
-                ctx.lineTo(px - 6, py - 2);
-                ctx.lineTo(px + 6, py - 2);
-                ctx.closePath();
-                ctx.fillStyle = 'rgba(239,68,68,0.85)';
-                ctx.fill();
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 0.5;
-                ctx.stroke();
-                ctx.restore();
-              });
-            }
-          }]
+          }
         });
       }
 
-      // ── PREMIUM UNDERWATER CHART ──────────────────────────────
+      // ── DUAL UNDERWATER CHART ──
       const uwCtx = document.getElementById('underwaterChart')?.getContext('2d');
       if (uwCtx) {
         if (window._underwaterChart) window._underwaterChart.destroy();
         window._underwaterChart = new Chart(uwCtx, {
           type: 'line',
           data: {
-            labels: ddPoints.map(p => p.date),
-            datasets: [{
-              label: 'Drawdown',
-              data: ddPoints.map(p => p.value),
-              borderColor: '#ef4444',
-              borderWidth: 1.5,
-              fill: true,
-              backgroundColor: (ctx) => {
-                const chart = ctx.chart;
-                const { ctx: c, chartArea } = chart;
-                if (!chartArea) return 'rgba(239,68,68,0.15)';
-                const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                grad.addColorStop(0, 'rgba(239,68,68,0.05)');
-                grad.addColorStop(0.5, 'rgba(239,68,68,0.15)');
-                grad.addColorStop(1, 'rgba(239,68,68,0.35)');
-                return grad;
+            labels: allDates,
+            datasets: [
+              {
+                label: 'Z-Composite DD',
+                data: zDD,
+                borderColor: '#00d97e',
+                backgroundColor: 'rgba(0,217,126,0.08)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 1.5,
+                pointRadius: 0,
+                spanGaps: true
               },
-              tension: 0.3,
-              pointRadius: ddPoints.map(p => Math.abs(p.value) > 20 ? 4 : 2),
-              pointBackgroundColor: ddPoints.map(p => {
-                if (p.value === 0) return '#00d97e';
-                if (p.value > -10) return '#ffb800';
-                return '#ef4444';
-              }),
-              pointBorderColor: 'rgba(0,0,0,0.5)',
-              pointBorderWidth: 1
-            },
-            // Zero line
-            {
-              label: 'Zero',
-              data: ddPoints.map(() => 0),
-              borderColor: 'rgba(0,217,126,0.3)',
-              borderDash: [4, 4],
-              borderWidth: 1,
-              pointRadius: 0,
-              fill: false
-            }]
+              {
+                label: 'Trend DD',
+                data: trDD,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.06)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 1.5,
+                pointRadius: 0,
+                spanGaps: true
+              },
+              {
+                label: 'Zero',
+                data: allDates.map(() => 0),
+                borderColor: 'rgba(255,255,255,0.1)',
+                borderDash: [4, 4],
+                borderWidth: 1,
+                pointRadius: 0,
+                fill: false
+              }
+            ]
           },
           options: {
             responsive: true, maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-              legend: { display: false },
+              legend: {
+                display: true,
+                position: 'top',
+                align: 'end',
+                labels: { color: '#8a8a96', font: { family: "'JetBrains Mono', monospace", size: 10 }, boxWidth: 12, padding: 12, filter: item => item.datasetIndex < 2 }
+              },
               tooltip: {
                 backgroundColor: 'rgba(15,15,20,0.95)',
-                borderColor: 'rgba(239,68,68,0.3)',
-                borderWidth: 1,
-                titleFont: { family: "'JetBrains Mono', monospace", size: 11 },
-                bodyFont: { family: "'JetBrains Mono', monospace", size: 12 },
                 callbacks: {
-                  label: ctx => ctx.datasetIndex === 0 ? `Drawdown: ${ctx.parsed.y.toFixed(1)}%` : null
+                  label: ctx => ctx.datasetIndex < 2 ? `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(1) || '--'}%` : null
                 },
-                filter: (item) => item.datasetIndex === 0
+                filter: item => item.datasetIndex < 2
               }
             },
             scales: {
-              x: {
-                ticks: { color: '#6b6b78', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0 },
-                grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }
-              },
-              y: {
-                reverse: false,
-                ticks: {
-                  color: '#6b6b78',
-                  font: { family: "'JetBrains Mono', monospace", size: 10 },
-                  callback: v => v.toFixed(0) + '%'
-                },
-                grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }
-              }
+              x: { ticks: { color: '#6b6b78', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0, maxTicksLimit: 8 }, grid: { color: 'rgba(255,255,255,0.03)' } },
+              y: { ticks: { color: '#6b6b78', font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: v => v.toFixed(0) + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } }
             }
           }
         });
       }
 
-      // Render extended backtest table
+      // ── STRATEGY ADVICE (data-driven) ──
+      if (zM && trM) {
+        const adZ = document.getElementById('adviceZComposite');
+        const adTR = document.getElementById('adviceTrend');
+        const adB = document.getElementById('adviceBoth');
+        if (adZ) adZ.innerHTML = [
+          zM.avgReturn > trM.avgReturn ? `Higher avg return per trade (${zM.avgReturn.toFixed(1)}% vs ${trM.avgReturn.toFixed(1)}%)` : null,
+          zM.pf > trM.pf ? `Superior Profit Factor (${zM.pf === Infinity ? '∞' : zM.pf.toFixed(2)} vs ${trM.pf.toFixed(2)})` : null,
+          'Cycle bottoms and macro regime changes',
+          'Long-term accumulation phases (weeks to months)',
+          'On-chain data confirms deep value (Z < -1.5)'
+        ].filter(Boolean).map(s => `• ${s}`).join('<br>');
+
+        if (adTR) adTR.innerHTML = [
+          trM.total > zM.total ? `More trading opportunities (${trM.total} vs ${zM.total} trades)` : null,
+          Math.abs(trM.maxDD) < Math.abs(zM.maxDD) ? `Shallower drawdowns (${trM.maxDD.toFixed(1)}% vs ${zM.maxDD.toFixed(1)}%)` : null,
+          'Trending markets with clear EMA structure',
+          'Medium-term momentum plays (days to weeks)',
+          'Technical breakouts with volume confirmation'
+        ].filter(Boolean).map(s => `• ${s}`).join('<br>');
+
+        if (adB) adB.innerHTML = [
+          'Z-Composite confirms macro bottom → Trend times the entry',
+          'Z says ACCUMULATE + EMA21 crosses above EMA50 = high conviction',
+          'Diversification: Z captures cycles, Trend captures momentum',
+          `Combined: ${zM.total + trM.total} signals covering both on-chain and technical`,
+          'Use Z for position sizing, Trend for timing'
+        ].map(s => `• ${s}`).join('<br>');
+      }
+
+      // ── Z-COMPOSITE BACKTEST TABLE ──
       const btBody = document.getElementById('backtestTableBody');
       if (btBody) {
-        // Build lookup maps for Z-score and price by date
         const zMap = new Map((state.compositeHistory || []).map(d => [d.date, d.value]));
         const priceArr = (state.prices || []).slice().sort((a, b) => a.date.localeCompare(b.date));
-
         let cumReturn = 0;
         let btRows = '';
-        trades.forEach((trade, i) => {
+        zTrades.forEach((trade, i) => {
           const ret = trade.returnPct || 0;
           cumReturn += ret;
           const duration = trade.entryDate && trade.exitDate && trade.exitDate !== '--' ?
             Math.round((new Date(trade.exitDate) - new Date(trade.entryDate)) / (1000*60*60*24)) + 'd' : 'OPEN';
 
-          // Z-Score color helper
-          function zColor(z) {
-            if (z <= -1.5) return '#00d97e'; // Accumulate
-            if (z <= -0.5) return '#00bfff'; // Undervalued
-            if (z <= 0.5) return '#8a8a96';  // Fair
-            if (z <= 1.5) return '#ffb800';  // Elevated
-            return '#ef4444';                // Overheated
-          }
-          function zBadge(z, suffix) {
-            const s = suffix || '';
-            const color = zColor(z);
-            return `<span style="color:${color};font-weight:600;">${z.toFixed(2)}${s}</span>`;
-          }
+          function zColor(z) { return z <= -1.5 ? '#00d97e' : z <= -0.5 ? '#00bfff' : z <= 0.5 ? '#8a8a96' : z <= 1.5 ? '#ffb800' : '#ef4444'; }
+          function zBadge(z, s) { return `<span style="color:${zColor(z)};font-weight:600;">${z.toFixed(2)}${s||''}</span>`; }
 
-          // Z Entry: lookup Z-score at entry date
           const zEntryVal = zMap.get(trade.entryDate);
           const zEntryNum = zEntryVal != null ? zEntryVal : (!isNaN(trade.zEntry) ? trade.zEntry : null);
           const zEntryHtml = zEntryNum != null ? zBadge(zEntryNum) : '--';
-
-          // Z Exit: lookup Z-score at exit date
           let zExitHtml = '--';
-          let zExitNum = null;
           if (trade.exitDate && trade.exitDate !== '--') {
-            zExitNum = zMap.get(trade.exitDate);
-            if (zExitNum != null) {
-              zExitHtml = zBadge(zExitNum);
-            }
+            const zExitVal = zMap.get(trade.exitDate);
+            if (zExitVal != null) zExitHtml = zBadge(zExitVal);
           } else if (trade.status === 'OPEN') {
-            const lastZ = state.compositeHistory && state.compositeHistory.length > 0
-              ? state.compositeHistory[state.compositeHistory.length - 1].value : null;
-            if (lastZ != null) {
-              zExitNum = lastZ;
-              zExitHtml = zBadge(lastZ, '*');
-            }
+            const lastZ = state.compositeHistory?.length > 0 ? state.compositeHistory[state.compositeHistory.length - 1].value : null;
+            if (lastZ != null) zExitHtml = zBadge(lastZ, '*');
           }
 
-          // Max DD in Trade: find min price during trade period, calc drawdown from entry
           let maxDDStr = '--';
           if (trade.entryPrice && trade.entryDate) {
             const endDate = (trade.exitDate && trade.exitDate !== '--') ? trade.exitDate : new Date().toISOString().split('T')[0];
@@ -7198,16 +7158,10 @@
               }
             }
             if (minPrice < Infinity && minPrice < trade.entryPrice) {
-              const tradeMDD = ((minPrice - trade.entryPrice) / trade.entryPrice) * 100;
-              maxDDStr = tradeMDD.toFixed(1) + '%';
-            } else {
-              maxDDStr = '0.0%';
-            }
+              maxDDStr = ((minPrice - trade.entryPrice) / trade.entryPrice * 100).toFixed(1) + '%';
+            } else { maxDDStr = '0.0%'; }
           }
-
-          const mddColor = maxDDStr === '--' ? 'var(--text-muted)' :
-            parseFloat(maxDDStr) > -10 ? 'var(--accent-green)' :
-            parseFloat(maxDDStr) > -25 ? 'var(--accent-orange)' : 'var(--accent-red)';
+          const mddColor = maxDDStr === '--' ? 'var(--text-muted)' : parseFloat(maxDDStr) > -10 ? 'var(--accent-green)' : parseFloat(maxDDStr) > -25 ? 'var(--accent-orange)' : 'var(--accent-red)';
 
           btRows += `<tr>`;
           btRows += `<td>${i+1}</td>`;
@@ -7226,7 +7180,32 @@
         });
         btBody.innerHTML = btRows;
       }
+
+      // ── TREND & REVERSAL BACKTEST TABLE ──
+      const trBody = document.getElementById('trendBacktestBody');
+      if (trBody && trTrades.length > 0) {
+        let cumRet = 0;
+        trBody.innerHTML = trTrades.map((t, i) => {
+          const ret = t.returnPct || 0;
+          cumRet += ret;
+          const duration = t.entryDate && t.exitDate && t.exitDate !== '--' ?
+            Math.round((new Date(t.exitDate) - new Date(t.entryDate)) / (1000*60*60*24)) + 'd' : 'OPEN';
+          const signalColor = t.signal === 'LONG' ? '#00d97e' : '#ef4444';
+          return `<tr>
+            <td>${i+1}</td>
+            <td style="color:${signalColor}">${t.entryDate || '--'}</td>
+            <td>$${t.entryPrice ? Math.round(t.entryPrice).toLocaleString() : '--'}</td>
+            <td>${t.exitDate || '--'}</td>
+            <td>$${t.exitPrice ? Math.round(t.exitPrice).toLocaleString() : '--'}</td>
+            <td style="color:${ret >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${ret > 0 ? '+' : ''}${parseFloat(ret).toFixed(1)}%</td>
+            <td style="color:var(--accent-cyan)">${cumRet > 0 ? '+' : ''}${cumRet.toFixed(0)}%</td>
+            <td>${duration}</td>
+            <td>${t.status === 'OPEN' ? '<span style="color:#3b82f6;font-weight:700">OPEN</span>' : '<span style="color:var(--text-muted)">CLOSED</span>'}</td>
+          </tr>`;
+        }).join('');
+      }
     }
+
 
     // ========== ENHANCED REPORT WITH CONFLUENCE + FUTURES + WHALES ==========
     const _originalCheckReportReady = checkReportReady;
@@ -7257,7 +7236,6 @@
     // Schedule backstage rendering after signals are loaded (with smart retry)
     function initBackstage() {
       console.log('[v2.0] Initializing backstage analytics...');
-      renderROCTable();
       renderBackstageCharts();
       updateConfluenceScore();
     }
