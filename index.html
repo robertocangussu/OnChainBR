@@ -6032,7 +6032,7 @@
           fetchBGeometrics('/v1/funding-rate', 'FP: Funding Rate'),
           fetchBGeometrics('/v1/taker-vol-1h', 'FP: Taker Vol'),
           fetchBGeometrics('/v1/open-interest-1h', 'FP: OI 1h'),
-          fetchBGeometrics('/v1/btc-liquidations-1h', 'FP: Liquidations'),
+          fetchBGeometrics('/v1/btc-liquidations-1h/48', 'FP: Liquidations'),
           fetchBGeometrics('/v1/top-trader-position-1h', 'FP: Top Traders')
         ]);
 
@@ -6109,12 +6109,20 @@
           const data = liqRes.value.data;
           if (Array.isArray(data) && data.length > 0) {
             const recent = data.slice(-24);
-            let longLiq = 0, shortLiq = 0;
+            let longLiq = 0, shortLiq = 0, totalFromField = 0;
             recent.forEach(d => {
-              longLiq += parseFloat(d.longLiquidations || d.longLiq || d.liqLong || 0);
-              shortLiq += parseFloat(d.shortLiquidations || d.shortLiq || d.liqShort || 0);
+              longLiq += parseFloat(d.longLiquidationsUsd || d.longLiquidations || 0);
+              shortLiq += parseFloat(d.shortLiquidationsUsd || d.shortLiquidations || 0);
+              totalFromField += parseFloat(d.totalLiquidationsUsd || 0);
             });
-            const total = longLiq + shortLiq;
+            // Use long+short if available, otherwise fall back to totalLiquidationsUsd
+            let total = longLiq + shortLiq;
+            if (total === 0 && totalFromField > 0) {
+              total = totalFromField;
+              longLiq = totalFromField * 0.5; // estimate split if only total available
+              shortLiq = totalFromField * 0.5;
+            }
+            console.log('[FP Liq] 24h total:', total, 'long:', longLiq, 'short:', shortLiq, 'records:', recent.length, 'sample:', JSON.stringify(data[data.length-1]));
             futuresPressureState.liqLong = longLiq;
             futuresPressureState.liqShort = shortLiq;
             const el = document.getElementById('fpLiq');
@@ -6132,9 +6140,13 @@
           const data = topTraderRes.value.data;
           if (Array.isArray(data) && data.length > 0) {
             const last = data[data.length - 1];
-            const longRatio = parseFloat(last.longAccount || last.longPosition || last.longRatio || 0);
-            const shortRatio = parseFloat(last.shortAccount || last.shortPosition || last.shortRatio || 0);
-            const ratio = shortRatio > 0 ? longRatio / shortRatio : longRatio;
+            console.log('[FP TopTraders] sample:', JSON.stringify(last));
+            // API fields: topTraderLongPosition, topTraderShortPosition, topTraderLongShortRatioPosition
+            const longRatio = parseFloat(last.topTraderLongPosition || last.topTraderLongAccount || last.longPosition || last.longAccount || 0);
+            const shortRatio = parseFloat(last.topTraderShortPosition || last.topTraderShortAccount || last.shortPosition || last.shortAccount || 0);
+            // Direct ratio field as fallback
+            const directRatio = parseFloat(last.topTraderLongShortRatioPosition || last.topTraderLongShortRatioAccount || 0);
+            const ratio = directRatio > 0 ? directRatio : (shortRatio > 0 ? longRatio / shortRatio : longRatio > 0 ? longRatio : 1);
             futuresPressureState.topTraderRatio = ratio;
             const el = document.getElementById('fpTopTraders');
             if (el) {
@@ -6142,7 +6154,15 @@
               el.style.color = ratio > 1.2 ? 'var(--accent-green)' : ratio < 0.8 ? 'var(--accent-red)' : 'var(--accent-yellow)';
             }
             const sub = document.getElementById('fpTopTradersSub');
-            if (sub) sub.textContent = `L: ${(longRatio*100).toFixed(0)}% / S: ${(shortRatio*100).toFixed(0)}%`;
+            if (sub) {
+              // longRatio/shortRatio are proportions (e.g. 0.55/0.45)
+              if (longRatio > 0 || shortRatio > 0) {
+                sub.textContent = `L: ${(longRatio*100).toFixed(0)}% / S: ${(shortRatio*100).toFixed(0)}%`;
+              } else if (directRatio > 0) {
+                const lPct = (directRatio / (1 + directRatio)) * 100;
+                sub.textContent = `L: ${lPct.toFixed(0)}% / S: ${(100-lPct).toFixed(0)}%`;
+              }
+            }
           }
         }
 
