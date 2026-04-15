@@ -372,6 +372,8 @@
     <a href="#trading" onclick="setActiveNav(this)">08 · Trading</a>
     <a href="#report" onclick="setActiveNav(this)">09 · Relatório</a>
     <a href="#backstage" onclick="setActiveNav(this)">10 · Backstage</a>
+    <a href="#pricelayers" onclick="setActiveNav(this)">11 · Price Layers</a>
+    <a href="#cohort" onclick="setActiveNav(this)">12 · Cohort</a>
   </nav>
   <div id="dashboard">
   <div class="loading-overlay" id="loadingOverlay">
@@ -1576,9 +1578,164 @@
     </div>
   </div>
 
+
+  <!-- ========== SECTION 11: REALIZED PRICE LAYERS ========== -->
+  <div class="section-wrap" id="pricelayers" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">11</span>
+      <span class="section-title">Realized Price Layers</span>
+      <span class="section-sub">COST BASIS BY COHORT · ON-CHAIN SUPPORT & RESISTANCE</span>
+    </div>
+
+    <!-- Price Position Score KPI -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Price Position Score</div>
+        <div id="plScoreValue" style="font-size:48px;font-weight:800;color:var(--accent-cyan);line-height:1;">--</div>
+        <div id="plScoreZone" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-top:8px;text-transform:uppercase;letter-spacing:1px;">Carregando...</div>
+        <div id="plScoreLabel" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">--</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Crossover Status</div>
+        <div id="plCrossoverStatus" style="font-size:20px;font-weight:700;color:var(--accent-cyan);line-height:1.2;">--</div>
+        <div id="plCrossoverSpread" style="font-size:14px;color:var(--text-muted);margin-top:8px;">STH/LTH Spread: --</div>
+        <div id="plCrossoverSignal" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">--</div>
+      </div>
+    </div>
+
+    <!-- 4 KPI Cards - Distance to each layer -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#E24B4A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">STH Realized Price</div>
+        <div id="plSthRP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="plDistSTH" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Resistência (custo STH)</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#378ADD;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Realized Price Global</div>
+        <div id="plRealizedP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="plDistRealized" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Custo médio global</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#1D9E75;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">LTH Realized Price</div>
+        <div id="plLthRP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="plDistLTH" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Suporte estrutural</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#8B5CF6;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Delta Price</div>
+        <div id="plDeltaP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="plDistDelta" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Floor histórico de ciclo</div>
+      </div>
+    </div>
+
+    <!-- Main Chart: 5 Layers -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;">BTC Spot vs Realized Price Layers</div>
+        <div style="display:flex;gap:8px;" id="plTimeButtons">
+          <button onclick="setPLTimeRange(365)" style="background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-muted);padding:4px 10px;border-radius:4px;font-size:10px;cursor:pointer;">1A</button>
+          <button onclick="setPLTimeRange(730)" class="active" style="background:var(--accent-cyan);border:1px solid var(--accent-cyan);color:#000;padding:4px 10px;border-radius:4px;font-size:10px;cursor:pointer;font-weight:700;">2A</button>
+        </div>
+      </div>
+      <div style="height:380px;">
+        <canvas id="plLayersChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Layer Analysis Checklist -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Layer Analysis Checklist</div>
+      <div id="plChecklist" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="color:var(--text-muted);font-size:11px;">Carregando checklist...</div>
+      </div>
+      <div id="plNarrative" style="margin-top:16px;padding:14px;background:var(--bg-secondary);border-radius:8px;font-size:11px;line-height:1.7;color:var(--text-secondary);">
+        Carregando narrativa...
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SECTION 12: COHORT PROFITABILITY ========== -->
+  <div class="section-wrap" id="cohort" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">12</span>
+      <span class="section-title">Cohort Profitability</span>
+      <span class="section-sub">STH STRESS INDEX · UTXO AGE BANDS · ACCUMULATION CHECKLIST</span>
+    </div>
+
+    <!-- STH Stress Index KPI + Supply in Profit -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">STH Stress Index</div>
+        <div id="cohortStressValue" style="font-size:48px;font-weight:800;color:var(--accent-orange);line-height:1;">--</div>
+        <div id="cohortStressZone" style="font-size:12px;font-weight:600;margin-top:8px;text-transform:uppercase;letter-spacing:1px;">Carregando...</div>
+        <div id="cohortStressSignal" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">--</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Supply in Profit</div>
+        <div id="cohortSupplyProfit" style="font-size:48px;font-weight:800;color:var(--accent-cyan);line-height:1;">--</div>
+        <div id="cohortSupplyLabel" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-top:8px;">--</div>
+        <div id="cohortSupplyContext" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">--</div>
+      </div>
+    </div>
+
+    <!-- 3 Component Cards for STH Stress -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#E24B4A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Dist. Spot vs STH RP</div>
+        <div id="cohortPriceDelta" style="font-size:18px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="cohortPriceScore" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Score: --/40</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#F0A500;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">MVRV STH</div>
+        <div id="cohortMvrvSTH" style="font-size:18px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="cohortMvrvScore" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Score: --/30</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#8B5CF6;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">SOPR STH (7d avg)</div>
+        <div id="cohortSoprSTH" style="font-size:18px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="cohortSoprScore" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Score: --/30</div>
+      </div>
+    </div>
+
+    <!-- Realized Price Chart (90d) -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Spot vs STH RP vs LTH RP — 90 dias</div>
+      <div style="height:300px;">
+        <canvas id="cohortRPChart"></canvas>
+      </div>
+    </div>
+
+    <!-- HODL Waves Simplificadas -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">HODL Waves — Distribuição por Idade</div>
+      <div id="cohortHodlWaves" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+        <div style="color:var(--text-muted);font-size:11px;">Carregando HODL waves...</div>
+      </div>
+      <div style="margin-top:12px;height:32px;border-radius:6px;overflow:hidden;display:flex;" id="cohortHodlBar">
+      </div>
+    </div>
+
+    <!-- Accumulation Checklist -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;">Accumulation Checklist</div>
+        <div id="cohortAccScore" style="font-size:14px;font-weight:700;color:var(--accent-cyan);">--</div>
+      </div>
+      <div id="cohortChecklist" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="color:var(--text-muted);font-size:11px;">Carregando checklist...</div>
+      </div>
+      <div id="cohortNarrative" style="margin-top:16px;padding:14px;background:var(--bg-secondary);border-radius:8px;font-size:11px;line-height:1.7;color:var(--text-secondary);">
+        Carregando narrativa...
+      </div>
+    </div>
+  </div>
+
   <!-- ========== GLOBAL FOOTER ========== -->
   <footer class="footer" style="max-width:1400px;margin:0 auto;padding:12px 24px 24px;">
-    <div>@ONCHAINBR · Z-Score Model · Rolling 365d · 9 Metrics · Signals · Flow · Sentiment · Trading · Relatório · Backstage</div>
+    <div>@ONCHAINBR · Z-Score Model · Rolling 365d · 9 Metrics · Signals · Flow · Sentiment · Trading · Relatório · Backstage · Price Layers · Cohort</div>
     <div>APIs: <a href="https://bitview.space" target="_blank">Bitview</a> + <a href="https://bitcoin-data.com" target="_blank">BGeometrics</a> + <a href="https://alternative.me" target="_blank">Alternative.me</a> + <a href="https://binance.com" target="_blank">Binance</a></div>
   </footer>
 
@@ -7779,6 +7936,547 @@
     setTimeout(() => { updateConfluenceScore(); }, 10000);
     setTimeout(() => { updateConfluenceScore(); }, 15000);
     setTimeout(() => { updateConfluenceScore(); }, 20000);
+
+
+    // ========== ABA 11: REALIZED PRICE LAYERS ==========
+    const priceLayersState = { loaded: false, layers: null, history: null, chart: null, timeRange: 730 };
+
+    async function fetchPriceLayers() {
+      console.log('[PriceLayers] Fetching data...');
+      try {
+        const [spotRes, sthRPRes, lthRPRes, realizedRes] = await Promise.all([
+          fetchBGeometrics('/v1/btc-price', 'PL:Spot'),
+          fetchBGeometrics('/v1/sth-realized-price', 'PL:STH RP'),
+          fetchBGeometrics('/v1/lth-realized-price', 'PL:LTH RP'),
+          fetchBGeometrics('/v1/realized-price', 'PL:Realized Price'),
+        ]);
+        
+        // Try optional endpoints (may not exist)
+        let deltaRes = { success: false }, tmmRes = { success: false };
+        try { deltaRes = await fetchBGeometrics('/v1/delta-price', 'PL:Delta Price'); } catch(e) {}
+        try { tmmRes = await fetchBGeometrics('/v1/true-market-mean', 'PL:TMM'); } catch(e) {}
+        
+        if (!spotRes.success || !sthRPRes.success || !lthRPRes.success) {
+          console.warn('[PriceLayers] Core endpoints failed');
+          return;
+        }
+        
+        // Normalize data
+        const parseArr = (res, field) => {
+          if (!res.success || !res.data) return [];
+          const arr = Array.isArray(res.data) ? res.data : res.data.data || res.data.chart || [];
+          return arr.map(d => ({
+            date: d.d || d.date || d.t,
+            value: parseFloat(d[field] || d.value || d.price || d.v || Object.values(d).find(v => typeof v === 'number' && v > 100))
+          })).filter(d => d.date && !isNaN(d.value)).sort((a,b) => new Date(a.date) - new Date(b.date));
+        };
+        
+        const spot = parseArr(spotRes, 'price');
+        const sthRP = parseArr(sthRPRes, 'value');
+        const lthRP = parseArr(lthRPRes, 'value');
+        const realized = parseArr(realizedRes, 'value');
+        const delta = parseArr(deltaRes, 'value');
+        const tmm = parseArr(tmmRes, 'value');
+        
+        // Get latest values
+        const latestSpot = spot.length > 0 ? spot[spot.length - 1].value : (tradingState.currentPrice || 0);
+        const latestSTH = sthRP.length > 0 ? sthRP[sthRP.length - 1].value : 0;
+        const latestLTH = lthRP.length > 0 ? lthRP[lthRP.length - 1].value : 0;
+        const latestRealized = realized.length > 0 ? realized[realized.length - 1].value : 0;
+        const latestDelta = delta.length > 0 ? delta[delta.length - 1].value : 0;
+        const latestTMM = tmm.length > 0 ? tmm[tmm.length - 1].value : 0;
+        
+        priceLayersState.layers = { spot: latestSpot, sthRP: latestSTH, lthRP: latestLTH, realized: latestRealized, deltaP: latestDelta, tmm: latestTMM };
+        priceLayersState.history = { spot, sthRP, lthRP, realized, delta, tmm };
+        priceLayersState.loaded = true;
+        
+        console.log('[PriceLayers] Data loaded:', priceLayersState.layers);
+        renderPriceLayers();
+      } catch (err) {
+        console.error('[PriceLayers] Fetch error:', err);
+      }
+    }
+    
+    function calcPricePositionScore(layers) {
+      const { spot, sthRP, lthRP, deltaP, realized } = layers;
+      if (!spot || !lthRP || !sthRP) return { score: 50, zone: 'INDEFINIDO', label: 'Dados insuficientes', distances: {} };
+      
+      const distToSTH = ((spot - sthRP) / sthRP * 100);
+      const distToLTH = ((spot - lthRP) / lthRP * 100);
+      const distToRealized = realized ? ((spot - realized) / realized * 100) : 0;
+      const distToDelta = deltaP ? ((spot - deltaP) / deltaP * 100) : 0;
+      
+      let score;
+      if (deltaP && spot <= deltaP) {
+        score = 0;
+      } else if (spot <= lthRP) {
+        score = deltaP ? Math.round((spot - deltaP) / (lthRP - deltaP) * 20) : 10;
+      } else if (realized && spot <= realized) {
+        score = Math.round(20 + (spot - lthRP) / (realized - lthRP) * 20);
+      } else if (spot <= sthRP) {
+        const mid = realized || ((lthRP + sthRP) / 2);
+        if (spot <= mid) {
+          score = Math.round(40 + (spot - (realized || lthRP)) / (mid - (realized || lthRP)) * 15);
+        } else {
+          score = Math.round(55 + (spot - mid) / (sthRP - mid) * 15);
+        }
+      } else {
+        const overSTH = (spot - sthRP) / sthRP * 100;
+        score = Math.min(100, Math.round(70 + overSTH / 2));
+      }
+      score = Math.max(0, Math.min(100, score));
+      
+      let zone, label, color;
+      if (score >= 70) { zone = 'BULL ESTRUTURAL'; label = 'Todos os grupos no lucro'; color = '#ef4444'; }
+      else if (score >= 55) { zone = 'TRANSIÇÃO'; label = 'STHs no prejuízo, LTHs no lucro'; color = '#f97316'; }
+      else if (score >= 40) { zone = 'ACUMULAÇÃO'; label = 'Spot entre realized prices'; color = '#eab308'; }
+      else if (score >= 20) { zone = 'DESCONTO'; label = 'Spot próximo ao LTH RP'; color = '#84cc16'; }
+      else { zone = 'CAPITULAÇÃO'; label = 'Spot abaixo do LTH RP'; color = '#00d97e'; }
+      
+      return { score, zone, label, color, distances: { toSTH: distToSTH.toFixed(1), toLTH: distToLTH.toFixed(1), toRealized: distToRealized.toFixed(1), toDelta: distToDelta.toFixed(1) } };
+    }
+    
+    function detectLayerCrossovers(sthHistory, lthHistory) {
+      const crossovers = [];
+      const len = Math.min(sthHistory.length, lthHistory.length);
+      // Align by date
+      const sthMap = {};
+      sthHistory.forEach(d => { sthMap[d.date] = d.value; });
+      const dates = lthHistory.map(d => d.date).filter(d => sthMap[d]);
+      
+      for (let i = 1; i < dates.length; i++) {
+        const sthPrev = sthMap[dates[i-1]], sthCurr = sthMap[dates[i]];
+        const lthPrev = lthHistory.find(d => d.date === dates[i-1])?.value;
+        const lthCurr = lthHistory.find(d => d.date === dates[i])?.value;
+        if (!sthPrev || !sthCurr || !lthPrev || !lthCurr) continue;
+        
+        if (sthPrev > lthPrev && sthCurr <= lthCurr) {
+          crossovers.push({ date: dates[i], type: 'BOTTOM_SIGNAL', label: 'STH RP cruzou abaixo do LTH RP' });
+        }
+        if (sthPrev <= lthPrev && sthCurr > lthCurr) {
+          crossovers.push({ date: dates[i], type: 'BULL_IGNITION', label: 'STH RP cruzou acima do LTH RP' });
+        }
+      }
+      
+      const sthNow = sthHistory.length > 0 ? sthHistory[sthHistory.length - 1].value : 0;
+      const lthNow = lthHistory.length > 0 ? lthHistory[lthHistory.length - 1].value : 0;
+      const spread = lthNow > 0 ? ((sthNow - lthNow) / lthNow * 100).toFixed(1) : '--';
+      const status = sthNow > lthNow ? 'BULL_STRUCTURE' : 'BEAR_CAPITULATION';
+      return { crossovers, spread, status, sthNow, lthNow };
+    }
+    
+    function renderPriceLayers() {
+      if (!priceLayersState.loaded) return;
+      const { layers, history } = priceLayersState;
+      
+      // Price Position Score
+      const pps = calcPricePositionScore(layers);
+      const scoreEl = document.getElementById('plScoreValue');
+      if (scoreEl) {
+        scoreEl.textContent = pps.score;
+        scoreEl.style.color = pps.color || 'var(--accent-cyan)';
+      }
+      const zoneEl = document.getElementById('plScoreZone');
+      if (zoneEl) { zoneEl.textContent = pps.zone; zoneEl.style.color = pps.color; }
+      const labelEl = document.getElementById('plScoreLabel');
+      if (labelEl) labelEl.textContent = pps.label;
+      
+      // KPI Cards
+      const fmt = v => v > 0 ? '$' + (v >= 1000 ? (v/1000).toFixed(1) + 'K' : v.toFixed(0)) : '--';
+      const fmtDist = (v, invert) => {
+        const n = parseFloat(v);
+        if (isNaN(n)) return '--';
+        const color = n < 0 ? '#E24B4A' : '#00d97e';
+        return `<span style="color:${color};font-weight:700;">${n > 0 ? '+' : ''}${n}%</span>`;
+      };
+      
+      const setHTML = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+      const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+      
+      setText('plSthRP', fmt(layers.sthRP));
+      setHTML('plDistSTH', fmtDist(pps.distances.toSTH));
+      setText('plRealizedP', fmt(layers.realized));
+      setHTML('plDistRealized', fmtDist(pps.distances.toRealized));
+      setText('plLthRP', fmt(layers.lthRP));
+      setHTML('plDistLTH', fmtDist(pps.distances.toLTH));
+      setText('plDeltaP', fmt(layers.deltaP));
+      setHTML('plDistDelta', fmtDist(pps.distances.toDelta));
+      
+      // Crossover Status
+      const xover = detectLayerCrossovers(history.sthRP, history.lthRP);
+      const xStatusEl = document.getElementById('plCrossoverStatus');
+      if (xStatusEl) {
+        if (xover.status === 'BULL_STRUCTURE') {
+          xStatusEl.textContent = 'BULL STRUCTURE';
+          xStatusEl.style.color = '#00d97e';
+        } else {
+          xStatusEl.textContent = 'BEAR CAPITULATION';
+          xStatusEl.style.color = '#E24B4A';
+        }
+      }
+      setText('plCrossoverSpread', `STH/LTH Spread: ${xover.spread}%`);
+      const lastXover = xover.crossovers.length > 0 ? xover.crossovers[xover.crossovers.length - 1] : null;
+      setText('plCrossoverSignal', lastXover ? `Último: ${lastXover.label} (${formatDate(lastXover.date)})` : 'Sem crossovers recentes');
+      
+      // Checklist
+      const checks = [
+        { label: 'Spot acima do LTH RP (suporte)', pass: layers.spot > layers.lthRP },
+        { label: 'Spot abaixo do STH RP (desconto)', pass: layers.spot < layers.sthRP },
+        { label: 'LTHs no lucro (spot > LTH RP)', pass: layers.spot > layers.lthRP },
+        { label: 'STHs no prejuízo (spot < STH RP)', pass: layers.spot < layers.sthRP },
+        { label: 'Spread STH/LTH positivo (bull)', pass: parseFloat(xover.spread) > 0 },
+        { label: 'Spot acima do Realized Price', pass: layers.realized > 0 && layers.spot > layers.realized },
+      ];
+      const checklistEl = document.getElementById('plChecklist');
+      if (checklistEl) {
+        checklistEl.innerHTML = checks.map(c => 
+          `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-secondary);border-radius:6px;">
+            <span style="font-size:14px;">${c.pass ? '✅' : '❌'}</span>
+            <span style="font-size:11px;color:${c.pass ? 'var(--accent-green)' : 'var(--text-muted)'};">${c.label}</span>
+          </div>`
+        ).join('');
+      }
+      
+      // Narrative
+      const passing = checks.filter(c => c.pass).length;
+      let narrative = '';
+      if (pps.score >= 70) {
+        narrative = `BTC em estrutura bull — spot ${Math.abs(pps.distances.toSTH)}% acima do STH RP. Todos os grupos em lucro. Fase de markup confirmada.`;
+      } else if (pps.score >= 40) {
+        narrative = `BTC na zona de transição — spot ${Math.abs(pps.distances.toSTH)}% ABAIXO do STH RP (~${fmt(layers.sthRP)}), mas ${pps.distances.toLTH}% ACIMA do LTH RP (~${fmt(layers.lthRP)}). STHs no prejuízo médio. LTHs fortemente no lucro e demonstrando convicção.`;
+      } else if (pps.score >= 20) {
+        narrative = `ATENÇÃO: BTC próximo ao custo de base dos LTHs. Nível que historicamente marcou fundos de ciclo.`;
+      } else {
+        narrative = `ALERTA: BTC abaixo do LTH RP. Capitulação extrema confirmada. Historicamente melhor momento de compra.`;
+      }
+      if (xover.status === 'BULL_STRUCTURE') {
+        narrative += ` Spread STH/LTH: ${xover.spread}% — estrutura bull intacta.`;
+      } else {
+        narrative += ` SINAL: STH RP abaixo do LTH RP — historicamente marca fundo de ciclo.`;
+      }
+      narrative += ` Checklist: ${passing}/6 condições atendidas (Score: ${pps.score}/100).`;
+      setHTML('plNarrative', narrative);
+      
+      // Render chart
+      renderPLChart();
+    }
+    
+    function setPLTimeRange(days) {
+      priceLayersState.timeRange = days;
+      document.querySelectorAll('#plTimeButtons button').forEach(b => {
+        b.style.background = 'var(--bg-secondary)';
+        b.style.border = '1px solid var(--border)';
+        b.style.color = 'var(--text-muted)';
+        b.style.fontWeight = '400';
+      });
+      event.target.style.background = 'var(--accent-cyan)';
+      event.target.style.border = '1px solid var(--accent-cyan)';
+      event.target.style.color = '#000';
+      event.target.style.fontWeight = '700';
+      renderPLChart();
+    }
+    
+    function renderPLChart() {
+      if (!priceLayersState.history) return;
+      const { spot, sthRP, lthRP, realized, delta } = priceLayersState.history;
+      const days = priceLayersState.timeRange;
+      
+      const sliceEnd = (arr) => arr.slice(Math.max(0, arr.length - days));
+      const toXY = (arr) => arr.map(d => ({ x: d.date, y: d.value }));
+      
+      const datasets = [
+        { label: 'BTC Spot', data: toXY(sliceEnd(spot)), borderColor: '#FFFFFF', borderWidth: 2, fill: false, pointRadius: 0, order: 0 },
+        { label: 'STH RP', data: toXY(sliceEnd(sthRP)), borderColor: '#E24B4A', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], order: 1 },
+        { label: 'Realized Price', data: toXY(sliceEnd(realized)), borderColor: '#888780', borderWidth: 1, fill: false, pointRadius: 0, borderDash: [2,3], order: 2 },
+        { label: 'LTH RP', data: toXY(sliceEnd(lthRP)), borderColor: '#1D9E75', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], order: 3 },
+      ];
+      if (delta.length > 0) {
+        datasets.push({ label: 'Delta Price', data: toXY(sliceEnd(delta)), borderColor: '#8B5CF6', borderWidth: 1, fill: false, pointRadius: 0, borderDash: [2,4], order: 4 });
+      }
+      
+      if (priceLayersState.chart) priceLayersState.chart.destroy();
+      const ctx = document.getElementById('plLayersChart');
+      if (!ctx) return;
+      
+      priceLayersState.chart = new Chart(ctx, {
+        type: 'line',
+        data: { datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            y: {
+              type: 'logarithmic',
+              position: 'left',
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: 'var(--text-muted)', font: { size: 10 }, callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v) }
+            },
+            x: {
+              type: 'time',
+              time: { unit: days > 400 ? 'month' : 'week' },
+              grid: { display: false },
+              ticks: { color: 'var(--text-muted)', font: { size: 9 }, maxTicksLimit: 12 }
+            }
+          },
+          plugins: {
+            legend: { display: true, position: 'top', labels: { color: '#999', font: { size: 10 }, boxWidth: 12, padding: 8 } },
+            tooltip: { mode: 'index', intersect: false, callbacks: { label: ctx => `${ctx.dataset.label}: $${ctx.parsed.y?.toLocaleString()}` } }
+          },
+          interaction: { mode: 'nearest', axis: 'x', intersect: false }
+        }
+      });
+    }
+    
+    // ========== ABA 12: COHORT PROFITABILITY ==========
+    const cohortState = { loaded: false, sthRP: [], lthRP: [], sthMVRV: null, sthSOPR: null, supplyProfit: null, hodlWaves: null, chart: null };
+    
+    async function fetchCohortData() {
+      console.log('[Cohort] Fetching data...');
+      try {
+        const [sthRPRes, lthRPRes, mvrvSthRes, soprSthRes, supplyProfitRes, hodlWavesRes] = await Promise.all([
+          fetchBGeometrics('/v1/sth-realized-price', 'Cohort:STH RP'),
+          fetchBGeometrics('/v1/lth-realized-price', 'Cohort:LTH RP'),
+          fetchBGeometrics('/v1/sth-mvrv', 'Cohort:MVRV STH'),
+          fetchBGeometrics('/v1/sopr-sth', 'Cohort:SOPR STH'),
+          fetchBGeometrics('/v1/supply-in-profit', 'Cohort:Supply Profit'),
+          fetchBGeometrics('/v1/hodl-waves', 'Cohort:HODL Waves'),
+        ]);
+        
+        const parseVal = (res) => {
+          if (!res.success || !res.data) return null;
+          const arr = Array.isArray(res.data) ? res.data : res.data.data || res.data.chart || [];
+          if (arr.length === 0) return null;
+          const last = arr[arr.length - 1] || arr[0];
+          const val = last.value || last.v || Object.values(last).find(v => typeof v === 'number' && v !== 0);
+          return parseFloat(val);
+        };
+        
+        const parseHistory = (res) => {
+          if (!res.success || !res.data) return [];
+          const arr = Array.isArray(res.data) ? res.data : res.data.data || res.data.chart || [];
+          return arr.map(d => ({
+            date: d.d || d.date || d.t,
+            value: parseFloat(d.value || d.v || Object.values(d).find(v => typeof v === 'number'))
+          })).filter(d => d.date && !isNaN(d.value)).sort((a,b) => new Date(a.date) - new Date(b.date));
+        };
+        
+        cohortState.sthRP = parseHistory(sthRPRes);
+        cohortState.lthRP = parseHistory(lthRPRes);
+        cohortState.sthMVRV = parseVal(mvrvSthRes);
+        cohortState.sthSOPR = parseVal(soprSthRes);
+        cohortState.supplyProfit = parseVal(supplyProfitRes);
+        
+        // HODL waves - try to parse whatever structure comes back
+        if (hodlWavesRes.success && hodlWavesRes.data) {
+          const hd = Array.isArray(hodlWavesRes.data) ? hodlWavesRes.data[hodlWavesRes.data.length - 1] || hodlWavesRes.data[0] : hodlWavesRes.data;
+          cohortState.hodlWaves = hd;
+        }
+        
+        cohortState.loaded = true;
+        console.log('[Cohort] Data loaded. MVRV STH:', cohortState.sthMVRV, 'SOPR STH:', cohortState.sthSOPR);
+        renderCohort();
+      } catch (err) {
+        console.error('[Cohort] Fetch error:', err);
+      }
+    }
+    
+    function calcSTHStressIndex(spotPrice, sthRealized, sthMVRV, sthSOPR_7d) {
+      if (!spotPrice || !sthRealized) return { score: 0, zone: 'INDEFINIDO', signal: '--', components: {} };
+      
+      // Component 1 (0-40): distance spot vs STH cost basis
+      const priceDelta = (spotPrice - sthRealized) / sthRealized;
+      const priceScore = Math.max(0, Math.min(40, (-priceDelta) * 200));
+      
+      // Component 2 (0-30): MVRV STH
+      const mvrvScore = sthMVRV !== null ? Math.max(0, Math.min(30, (1 - sthMVRV) * 150)) : 0;
+      
+      // Component 3 (0-30): SOPR STH 7d avg
+      const soprScore = sthSOPR_7d !== null ? Math.max(0, Math.min(30, (1 - sthSOPR_7d) * 300)) : 0;
+      
+      const total = priceScore + mvrvScore + soprScore;
+      
+      let zone, signal, color;
+      if (total >= 75) { zone = 'CAPITULAÇÃO'; signal = 'COMPRA FORTE'; color = '#00d97e'; }
+      else if (total >= 50) { zone = 'STRESS ALTO'; signal = 'ACUMULAR'; color = '#84cc16'; }
+      else if (total >= 25) { zone = 'STRESS MODERADO'; signal = 'NEUTRO'; color = '#eab308'; }
+      else { zone = 'SAUDÁVEL'; signal = 'AGUARDAR'; color = '#f97316'; }
+      
+      return { score: Math.round(total), zone, signal, color, components: { priceScore: Math.round(priceScore), mvrvScore: Math.round(mvrvScore), soprScore: Math.round(soprScore) }, priceDelta };
+    }
+    
+    function renderCohort() {
+      if (!cohortState.loaded) return;
+      const spot = tradingState.currentPrice || (priceLayersState.layers?.spot) || 0;
+      const sthRP = cohortState.sthRP.length > 0 ? cohortState.sthRP[cohortState.sthRP.length - 1].value : 0;
+      const lthRP = cohortState.lthRP.length > 0 ? cohortState.lthRP[cohortState.lthRP.length - 1].value : 0;
+      
+      // STH Stress Index
+      const stress = calcSTHStressIndex(spot, sthRP, cohortState.sthMVRV, cohortState.sthSOPR);
+      
+      const setText = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+      const setHTML = (id, h) => { const el = document.getElementById(id); if (el) el.innerHTML = h; };
+      const setColor = (id, c) => { const el = document.getElementById(id); if (el) el.style.color = c; };
+      
+      setText('cohortStressValue', stress.score);
+      setColor('cohortStressValue', stress.color);
+      setText('cohortStressZone', stress.zone);
+      setColor('cohortStressZone', stress.color);
+      setText('cohortStressSignal', `Sinal: ${stress.signal}`);
+      
+      // Component cards
+      const pctDelta = stress.priceDelta ? (stress.priceDelta * 100).toFixed(1) : '--';
+      setText('cohortPriceDelta', `${pctDelta}%`);
+      setColor('cohortPriceDelta', parseFloat(pctDelta) < 0 ? '#E24B4A' : '#00d97e');
+      setText('cohortPriceScore', `Score: ${stress.components.priceScore || 0}/40`);
+      
+      setText('cohortMvrvSTH', cohortState.sthMVRV !== null ? cohortState.sthMVRV.toFixed(3) : '--');
+      setColor('cohortMvrvSTH', cohortState.sthMVRV < 1 ? '#E24B4A' : '#00d97e');
+      setText('cohortMvrvScore', `Score: ${stress.components.mvrvScore || 0}/30`);
+      
+      setText('cohortSoprSTH', cohortState.sthSOPR !== null ? cohortState.sthSOPR.toFixed(4) : '--');
+      setColor('cohortSoprSTH', cohortState.sthSOPR < 1 ? '#E24B4A' : '#00d97e');
+      setText('cohortSoprScore', `Score: ${stress.components.soprScore || 0}/30`);
+      
+      // Supply in Profit
+      const sp = cohortState.supplyProfit;
+      if (sp !== null) {
+        const spVal = sp > 100 ? sp : sp * (sp < 1 ? 100 : 1);
+        setText('cohortSupplyProfit', safeFixed(spVal, 1) + '%');
+        setColor('cohortSupplyProfit', spVal > 75 ? '#00d97e' : spVal > 50 ? '#eab308' : '#E24B4A');
+        setText('cohortSupplyLabel', spVal > 75 ? 'MAIORIA NO LUCRO' : spVal > 50 ? 'EQUILIBRADO' : 'MAIORIA NO PREJUÍZO');
+        setText('cohortSupplyContext', spVal > 75 ? 'Mercado saudável — pressão de venda baixa' : spVal > 50 ? 'Equilíbrio — observar tendência' : 'Stress elevado — capitulação possível');
+      }
+      
+      // HODL Waves (best-effort parsing)
+      const hw = cohortState.hodlWaves;
+      if (hw) {
+        // Try to find hodl wave buckets
+        const findVal = (...keys) => {
+          for (const k of keys) { if (hw[k] !== undefined) return parseFloat(hw[k]); }
+          return 0;
+        };
+        const maosF = findVal('1d','1w','1m','less_1m','less_3m','0_3m') || 0;
+        const trans = findVal('3m','6m','3_6m','3m_6m') || 0;
+        const lthJ = findVal('1y','2y','1_2y','1y_2y','12m_18m') || 0;
+        const diam = findVal('3y','5y','10y','3y_5y','5y_plus','3_plus','3y_plus') || 0;
+        const total = maosF + trans + lthJ + diam;
+        
+        if (total > 0) {
+          const groups = [
+            { label: 'Mãos Fracas', sub: '0-3 meses', value: maosF, pct: (maosF/total*100).toFixed(1), color: '#E24B4A' },
+            { label: 'Transição', sub: '3-12 meses', value: trans, pct: (trans/total*100).toFixed(1), color: '#F0A500' },
+            { label: 'LTH Jovem', sub: '1-3 anos', value: lthJ, pct: (lthJ/total*100).toFixed(1), color: '#378ADD' },
+            { label: 'Diamantes', sub: '3+ anos', value: diam, pct: (diam/total*100).toFixed(1), color: '#1D9E75' },
+          ];
+          
+          setHTML('cohortHodlWaves', groups.map(g =>
+            `<div style="text-align:center;padding:12px;background:var(--bg-secondary);border-radius:8px;">
+              <div style="font-size:9px;color:${g.color};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">${g.label}</div>
+              <div style="font-size:20px;font-weight:700;color:var(--text-primary);">${g.pct}%</div>
+              <div style="font-size:9px;color:var(--text-muted);">${g.sub}</div>
+            </div>`
+          ).join(''));
+          
+          setHTML('cohortHodlBar', groups.map(g =>
+            `<div style="width:${g.pct}%;background:${g.color};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#000;">${g.pct}%</div>`
+          ).join(''));
+        }
+      }
+      
+      // Accumulation Checklist
+      const accChecks = [
+        { label: 'STHs no prejuízo (MVRV < 1)', pass: cohortState.sthMVRV !== null && cohortState.sthMVRV < 1 },
+        { label: 'SOPR STH < 1 (vendendo com loss)', pass: cohortState.sthSOPR !== null && cohortState.sthSOPR < 1 },
+        { label: 'Spot abaixo do STH RP', pass: spot > 0 && sthRP > 0 && spot < sthRP },
+        { label: 'Spot acima do LTH RP', pass: spot > 0 && lthRP > 0 && spot > lthRP },
+        { label: 'STH/LTH ratio < 0.5', pass: smartMoneyState.ratio !== null && smartMoneyState.ratio < 0.5 },
+        { label: 'HODL 1Y+ supply > 65%', pass: smartMoneyState.hodl1y !== null && smartMoneyState.hodl1y > 65 },
+      ];
+      const accPassing = accChecks.filter(c => c.pass).length;
+      const accScore = Math.round((accPassing / accChecks.length) * 100);
+      
+      setText('cohortAccScore', `${accPassing}/6 (${accScore}%)`);
+      setColor('cohortAccScore', accScore >= 83 ? '#00d97e' : accScore >= 50 ? '#84cc16' : '#eab308');
+      
+      setHTML('cohortChecklist', accChecks.map(c =>
+        `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-secondary);border-radius:6px;">
+          <span style="font-size:14px;">${c.pass ? '✅' : '❌'}</span>
+          <span style="font-size:11px;color:${c.pass ? 'var(--accent-green)' : 'var(--text-muted)'};">${c.label}</span>
+        </div>`
+      ).join(''));
+      
+      // Narrative
+      let narrative = '';
+      if (stress.score >= 75) {
+        narrative = `<strong style="color:#00d97e;">CAPITULAÇÃO DE STHs DETECTADA.</strong> Score ${stress.score}/100. STHs estão vendendo com prejuízo (SOPR < 1) com spot ${Math.abs(pctDelta)}% abaixo do custo de base. Historicamente, este é o melhor momento de compra do ciclo.`;
+      } else if (stress.score >= 50) {
+        narrative = `<strong style="color:#84cc16;">STRESS ALTO EM STHs.</strong> Score ${stress.score}/100. Spot ${Math.abs(pctDelta)}% abaixo do STH RP. MVRV STH em ${cohortState.sthMVRV?.toFixed(2) || '--'} (abaixo de 1 = prejuízo médio). Zona favorável para acumulação gradual.`;
+      } else if (stress.score >= 25) {
+        narrative = `<strong style="color:#eab308;">STRESS MODERADO.</strong> Score ${stress.score}/100. Pressão presente mas não crítica. Observar se SOPR STH continua abaixo de 1.`;
+      } else {
+        narrative = `<strong style="color:#f97316;">STHs SAUDÁVEIS.</strong> Score ${stress.score}/100. STHs em média no lucro. Sem pressão de venda desta coorte. Mercado sem desconto significativo.`;
+      }
+      narrative += ` Checklist de acumulação: ${accPassing}/6 condições atendidas (${accScore}%).`;
+      setHTML('cohortNarrative', narrative);
+      
+      // Render RP chart
+      renderCohortChart();
+    }
+    
+    function renderCohortChart() {
+      const spot90 = (priceLayersState.history?.spot || []).slice(-90).map(d => ({ x: d.date, y: d.value }));
+      const sth90 = cohortState.sthRP.slice(-90).map(d => ({ x: d.date, y: d.value }));
+      const lth90 = cohortState.lthRP.slice(-90).map(d => ({ x: d.date, y: d.value }));
+      
+      if (spot90.length === 0 && sth90.length === 0) return;
+      
+      if (cohortState.chart) cohortState.chart.destroy();
+      const ctx = document.getElementById('cohortRPChart');
+      if (!ctx) return;
+      
+      cohortState.chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: [
+            { label: 'BTC Spot', data: spot90, borderColor: '#FFFFFF', borderWidth: 2, fill: false, pointRadius: 0 },
+            { label: 'STH RP', data: sth90, borderColor: '#E24B4A', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2] },
+            { label: 'LTH RP', data: lth90, borderColor: '#1D9E75', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2] },
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            y: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: 'var(--text-muted)', font: { size: 10 }, callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v) }
+            },
+            x: {
+              type: 'time',
+              time: { unit: 'week' },
+              grid: { display: false },
+              ticks: { color: 'var(--text-muted)', font: { size: 9 }, maxTicksLimit: 10 }
+            }
+          },
+          plugins: {
+            legend: { display: true, position: 'top', labels: { color: '#999', font: { size: 10 }, boxWidth: 12 } },
+            tooltip: { mode: 'index', intersect: false }
+          }
+        }
+      });
+    }
+    
+    // ========== INITIALIZE NEW TABS ==========
+    function initNewTabs() {
+      console.log('[v2.0] Initializing Price Layers and Cohort tabs...');
+      fetchPriceLayers();
+      fetchCohortData();
+    }
+    // Start after main data loads (8s delay)
+    setTimeout(initNewTabs, 8000);
+    // Retry at 18s in case of slow API
+    setTimeout(() => {
+      if (!priceLayersState.loaded) fetchPriceLayers();
+      if (!cohortState.loaded) fetchCohortData();
+    }, 18000);
 
   </script>
 </body>
