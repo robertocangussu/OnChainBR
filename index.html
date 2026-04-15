@@ -1484,39 +1484,43 @@
       </div>
     </div>
 
-    <!-- ROC Table -->
+    <!-- ROC Table (Strategy-Focused) -->
     <div class="backstage-card-full">
-      <div class="backstage-title">Rate of Change (ROC) — Key Indicators</div>
+      <div class="backstage-title">Strategy Performance — Rate of Change (ROC)</div>
       <div style="overflow-x:auto;">
         <table class="roc-table">
           <thead>
             <tr>
-              <th>Indicator</th>
+              <th>Metric</th>
               <th>Current</th>
+              <th>Zone</th>
               <th>ROC 7d</th>
               <th>ROC 14d</th>
               <th>ROC 30d</th>
               <th>ROC 90d</th>
-              <th>Trend</th>
+              <th>Momentum</th>
             </tr>
           </thead>
           <tbody id="rocTableBody">
-            <tr><td colspan="7" style="text-align:center;color:var(--text-muted);">Calculating ROC data...</td></tr>
+            <tr><td colspan="8" style="text-align:center;color:var(--text-muted);">Calculating ROC data...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Equity Curve + Underwater -->
-    <div class="backstage-grid">
-      <div class="backstage-card">
-        <div class="backstage-title">Equity Curve — Z-Composite Strategy</div>
-        <div class="equity-chart-container"><canvas id="equityCurveChart"></canvas></div>
+    <!-- Equity Curve (Full Width, Premium) -->
+    <div class="backstage-card-full" style="position:relative;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div class="backstage-title" style="margin:0;">Equity Curve — Z-Composite Strategy</div>
+        <div id="equityCurveLegend" style="display:flex;gap:16px;font-size:11px;font-family:'JetBrains Mono',monospace;"></div>
       </div>
-      <div class="backstage-card">
-        <div class="backstage-title">Underwater Curve (Drawdown)</div>
-        <div class="underwater-chart-container"><canvas id="underwaterChart"></canvas></div>
-      </div>
+      <div style="height:320px;position:relative;"><canvas id="equityCurveChart"></canvas></div>
+    </div>
+
+    <!-- Underwater Curve (Full Width) -->
+    <div class="backstage-card-full" style="position:relative;">
+      <div class="backstage-title">Underwater Curve (Drawdown)</div>
+      <div style="height:180px;position:relative;"><canvas id="underwaterChart"></canvas></div>
     </div>
 
     <!-- Extended Backtest Table -->
@@ -6625,32 +6629,88 @@
 
     // ========== BACKSTAGE: ROC TABLE ==========
     function renderROCTable() {
-      console.log('[Backstage] Rendering ROC table...');
-      const indicators = [
-        { name: 'Z-Score Composite', data: state.compositeHistory, current: state.composite },
-        { name: 'MVRV', data: state.metricHistory.mvrv, current: state.rawValues.mvrv },
-        { name: 'NUPL', data: state.metricHistory.nupl, current: state.rawValues.nupl },
-        { name: 'SOPR', data: state.metricHistory.sopr, current: state.rawValues.sopr },
-        { name: 'Fear & Greed', data: state.metricHistory.fearGreed, current: state.rawValues.fearGreed },
-        { name: 'Puell Multiple', data: state.metricHistory.puell, current: state.rawValues.puell },
-      ];
+      console.log('[Backstage] Rendering strategy-focused ROC table...');
 
-      // Add LTH/ETF/Exchange if available
-      // These come from fetchSmartMoneyData/fetchFlowData which store in their own arrays
+      // Strategy-focused indicators only
+      const indicators = [
+        {
+          name: 'Z-Score Composite',
+          data: state.compositeHistory,
+          current: state.composite,
+          zoneCalc: (v) => {
+            if (v <= -1.5) return { label: 'ACCUMULATE', color: '#00d97e', bg: 'rgba(0,217,126,0.12)' };
+            if (v <= -0.5) return { label: 'UNDERVALUED', color: '#00bfff', bg: 'rgba(0,191,255,0.10)' };
+            if (v <= 0.5) return { label: 'FAIR VALUE', color: '#8a8a96', bg: 'rgba(138,138,150,0.08)' };
+            if (v <= 1.5) return { label: 'ELEVATED', color: '#ffb800', bg: 'rgba(255,184,0,0.10)' };
+            return { label: 'OVERHEATED', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
+          }
+        },
+        {
+          name: 'BTC Price (USD)',
+          data: state.prices,
+          current: state.prices?.length > 0 ? state.prices[state.prices.length-1].value : null,
+          format: (v) => '$' + Math.round(v).toLocaleString(),
+          zoneCalc: null
+        },
+        {
+          name: 'MVRV Z-Score',
+          data: state.metricHistory.mvrv,
+          current: state.rawValues.mvrv,
+          zoneCalc: (v) => {
+            if (v < 1) return { label: 'CHEAP', color: '#00d97e', bg: 'rgba(0,217,126,0.12)' };
+            if (v < 2.5) return { label: 'FAIR', color: '#8a8a96', bg: 'rgba(138,138,150,0.08)' };
+            if (v < 4) return { label: 'HOT', color: '#ffb800', bg: 'rgba(255,184,0,0.10)' };
+            return { label: 'EXTREME', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
+          }
+        },
+        {
+          name: 'NUPL',
+          data: state.metricHistory.nupl,
+          current: state.rawValues.nupl,
+          zoneCalc: (v) => {
+            if (v < 0) return { label: 'CAPITULATION', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
+            if (v < 0.25) return { label: 'HOPE', color: '#00d97e', bg: 'rgba(0,217,126,0.12)' };
+            if (v < 0.5) return { label: 'OPTIMISM', color: '#00bfff', bg: 'rgba(0,191,255,0.10)' };
+            if (v < 0.75) return { label: 'BELIEF', color: '#ffb800', bg: 'rgba(255,184,0,0.10)' };
+            return { label: 'EUPHORIA', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
+          }
+        },
+        {
+          name: 'SOPR',
+          data: state.metricHistory.sopr,
+          current: state.rawValues.sopr,
+          zoneCalc: (v) => {
+            if (v < 0.98) return { label: 'LOSS SELLING', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
+            if (v < 1.02) return { label: 'BREAKEVEN', color: '#8a8a96', bg: 'rgba(138,138,150,0.08)' };
+            return { label: 'PROFIT TAKING', color: '#00d97e', bg: 'rgba(0,217,126,0.12)' };
+          }
+        },
+        {
+          name: 'Puell Multiple',
+          data: state.metricHistory.puell,
+          current: state.rawValues.puell,
+          zoneCalc: (v) => {
+            if (v < 0.5) return { label: 'UNDERVALUED', color: '#00d97e', bg: 'rgba(0,217,126,0.12)' };
+            if (v < 1.2) return { label: 'FAIR', color: '#8a8a96', bg: 'rgba(138,138,150,0.08)' };
+            if (v < 4) return { label: 'HOT', color: '#ffb800', bg: 'rgba(255,184,0,0.10)' };
+            return { label: 'EXTREME', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
+          }
+        }
+      ];
 
       const tbody = document.getElementById('rocTableBody');
       if (!tbody) return;
 
       let rows = '';
-      indicators.forEach(ind => {
+      indicators.forEach((ind, idx) => {
         const data = ind.data;
         const current = ind.current;
+        const emptyRow = `<tr${idx === 0 ? ' style="background:rgba(255,255,255,0.03);"' : ''}><td style="font-weight:600;">${ind.name}</td><td>${current != null ? (ind.format ? ind.format(current) : safeFixed(current, 3)) : '--'}</td><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td></tr>`;
         if (!data || !Array.isArray(data) || data.length < 8) {
-          rows += `<tr><td>${ind.name}</td><td>${current !== null && current !== undefined ? safeFixed(current, 3) : '--'}</td><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td></tr>`;
+          rows += emptyRow;
           return;
         }
 
-        // Normalize data format
         const normalized = data.map(d => ({
           date: d.date || d.d,
           value: typeof d === 'number' ? d : (d.value !== undefined ? d.value : d.z || d.composite)
@@ -6662,30 +6722,52 @@
         const roc90 = calculateROC(normalized, 90);
 
         function rocCell(val) {
-          if (val === null) return '<td class="roc-neutral">--</td>';
+          if (val === null) return '<td style="color:#555;">--</td>';
           const cls = val > 0 ? 'roc-positive' : val < 0 ? 'roc-negative' : 'roc-neutral';
           return `<td class="${cls}">${val > 0 ? '+' : ''}${val.toFixed(1)}%</td>`;
         }
 
-        // Trend arrow
-        let trend = '→';
-        let trendColor = 'var(--text-muted)';
-        if (roc7 !== null && roc30 !== null) {
-          if (roc7 > 0 && roc30 > 0) { trend = '↑↑'; trendColor = 'var(--accent-green)'; }
-          else if (roc7 > 0 && roc30 <= 0) { trend = '↗'; trendColor = 'var(--accent-cyan)'; }
-          else if (roc7 < 0 && roc30 < 0) { trend = '↓↓'; trendColor = 'var(--accent-red)'; }
-          else if (roc7 < 0 && roc30 >= 0) { trend = '↘'; trendColor = 'var(--accent-orange)'; }
+        // Zone badge
+        let zoneBadge = '<td>--</td>';
+        if (ind.zoneCalc && current != null) {
+          const zone = ind.zoneCalc(current);
+          zoneBadge = `<td><span style="background:${zone.bg};color:${zone.color};padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.5px;">${zone.label}</span></td>`;
+        } else {
+          zoneBadge = '<td>--</td>';
         }
 
-        const currentVal = current !== null && current !== undefined ? safeFixed(current, 3) : '--';
-        rows += `<tr>`;
-        rows += `<td style="color:var(--text-primary);font-weight:500;">${ind.name}</td>`;
-        rows += `<td style="font-weight:600;">${currentVal}</td>`;
+        // Momentum indicator (weighted: 40% 7d, 30% 14d, 20% 30d, 10% 90d)
+        let momentum = '--';
+        let momColor = 'var(--text-muted)';
+        let momIcon = '→';
+        const weights = [
+          { val: roc7, w: 0.40 },
+          { val: roc14, w: 0.30 },
+          { val: roc30, w: 0.20 },
+          { val: roc90, w: 0.10 }
+        ];
+        const validW = weights.filter(w => w.val !== null);
+        if (validW.length >= 2) {
+          const totalW = validW.reduce((s, w) => s + w.w, 0);
+          const score = validW.reduce((s, w) => s + (w.val * w.w), 0) / totalW;
+          if (score > 10) { momIcon = '⬆⬆'; momColor = '#00d97e'; momentum = 'STRONG UP'; }
+          else if (score > 3) { momIcon = '⬆'; momColor = '#00d97e'; momentum = 'UP'; }
+          else if (score > -3) { momIcon = '→'; momColor = '#ffb800'; momentum = 'NEUTRAL'; }
+          else if (score > -10) { momIcon = '⬇'; momColor = '#ef4444'; momentum = 'DOWN'; }
+          else { momIcon = '⬇⬇'; momColor = '#ef4444'; momentum = 'STRONG DOWN'; }
+        }
+
+        const currentVal = current != null ? (ind.format ? ind.format(current) : safeFixed(current, 3)) : '--';
+        const isFirst = idx === 0;
+        rows += `<tr${isFirst ? ' style="background:rgba(255,255,255,0.03);"' : ''}>`;
+        rows += `<td style="color:var(--text-primary);font-weight:${isFirst ? '700' : '500'};${isFirst ? 'font-size:13px;' : ''}">${ind.name}</td>`;
+        rows += `<td style="font-weight:600;font-family:'JetBrains Mono',monospace;">${currentVal}</td>`;
+        rows += zoneBadge;
         rows += rocCell(roc7);
         rows += rocCell(roc14);
         rows += rocCell(roc30);
         rows += rocCell(roc90);
-        rows += `<td style="color:${trendColor};font-weight:700;font-size:14px;">${trend}</td>`;
+        rows += `<td style="color:${momColor};font-weight:700;font-size:13px;white-space:nowrap;">${momIcon}</td>`;
         rows += `</tr>`;
       });
 
@@ -6757,35 +6839,212 @@
       const bsCDD = document.getElementById('bsCurrentDD');
       if (bsCDD) { bsCDD.textContent = currentDD.toFixed(1) + '%'; bsCDD.style.color = currentDD > -5 ? 'var(--accent-green)' : currentDD > -15 ? 'var(--accent-orange)' : 'var(--accent-red)'; }
 
-      // Render equity curve chart
+      // ── PREMIUM EQUITY CURVE ──────────────────────────────────
+      // Build detailed equity path with daily interpolation between trades
+      const buyMarkers = [];
+      const sellMarkers = [];
+      trades.forEach((trade, i) => {
+        const eqBefore = i === 0 ? 100 : equityPoints[i].value;
+        const eqAfter = equityPoints[i + 1].value;
+        buyMarkers.push({ x: trade.entryDate, y: eqBefore, label: `BUY #${i+1}` });
+        if (trade.exitDate && trade.exitDate !== '--') {
+          sellMarkers.push({ x: trade.exitDate, y: eqAfter, label: `SELL #${i+1}` });
+        }
+      });
+
+      // Update legend
+      const legendEl = document.getElementById('equityCurveLegend');
+      if (legendEl) {
+        const cumRet = (equity - 100).toFixed(1);
+        const cumColor = equity >= 100 ? '#00d97e' : '#ef4444';
+        legendEl.innerHTML = `
+          <span style="color:${cumColor};font-weight:700;">Cumulative: ${cumRet > 0 ? '+' : ''}${cumRet}%</span>
+          <span style="color:#8a8a96;">|</span>
+          <span style="color:#00d97e;">&#9650; BUY</span>
+          <span style="color:#ef4444;">&#9660; SELL</span>
+          <span style="color:#8a8a96;">|</span>
+          <span style="color:var(--accent-cyan);">Trades: ${trades.length}</span>
+        `;
+      }
+
       const eqCtx = document.getElementById('equityCurveChart')?.getContext('2d');
       if (eqCtx) {
         if (window._equityChart) window._equityChart.destroy();
+
+        // Custom gradient plugin
+        const gradientFill = {
+          id: 'equityGradient',
+          beforeDraw(chart) {
+            const { ctx, chartArea, scales } = chart;
+            if (!chartArea) return;
+            const yScale = scales.y;
+            const baselineY = yScale.getPixelForValue(100);
+            const ds = chart.data.datasets[0];
+            if (!ds) return;
+
+            // Green gradient above 100%, red below
+            const greenGrad = ctx.createLinearGradient(0, chartArea.top, 0, baselineY);
+            greenGrad.addColorStop(0, 'rgba(0,217,126,0.25)');
+            greenGrad.addColorStop(1, 'rgba(0,217,126,0.02)');
+
+            const redGrad = ctx.createLinearGradient(0, baselineY, 0, chartArea.bottom);
+            redGrad.addColorStop(0, 'rgba(239,68,68,0.02)');
+            redGrad.addColorStop(1, 'rgba(239,68,68,0.20)');
+
+            ds.backgroundColor = (context) => {
+              const val = context.parsed?.y;
+              return val >= 100 ? greenGrad : redGrad;
+            };
+          }
+        };
+
         window._equityChart = new Chart(eqCtx, {
           type: 'line',
           data: {
             labels: equityPoints.map(p => p.date),
-            datasets: [{
-              label: 'Equity',
-              data: equityPoints.map(p => p.value),
-              borderColor: '#00d97e',
-              backgroundColor: 'rgba(0,217,126,0.1)',
-              fill: true,
-              tension: 0.3,
-              pointRadius: 3,
-              pointBackgroundColor: '#00d97e',
-              borderWidth: 2
-            }]
+            datasets: [
+              {
+                label: 'Equity',
+                data: equityPoints.map(p => p.value),
+                borderColor: (ctx) => {
+                  const val = ctx.parsed?.y;
+                  return val != null && val < 100 ? '#ef4444' : '#00d97e';
+                },
+                segment: {
+                  borderColor: (ctx) => ctx.p1.parsed.y < 100 ? '#ef4444' : '#00d97e'
+                },
+                backgroundColor: 'rgba(0,217,126,0.08)',
+                fill: true,
+                tension: 0.35,
+                pointRadius: equityPoints.map((p, i) => {
+                  if (i === 0) return 5;
+                  if (i === equityPoints.length - 1) return 6;
+                  return 4;
+                }),
+                pointBackgroundColor: equityPoints.map((p, i) => {
+                  if (i === equityPoints.length - 1) return '#00bfff';
+                  return p.value >= 100 ? '#00d97e' : '#ef4444';
+                }),
+                pointBorderColor: equityPoints.map((p, i) => {
+                  if (i === equityPoints.length - 1) return '#00bfff';
+                  return 'rgba(0,0,0,0.6)';
+                }),
+                pointBorderWidth: 1.5,
+                pointStyle: equityPoints.map((p, i) => {
+                  if (i === 0) return 'circle';
+                  if (i === equityPoints.length - 1) return 'rectRot';
+                  // Even indices (after start) = entry, odd = exit
+                  return i % 2 === 1 ? 'triangle' : 'triangle';
+                }),
+                pointRotation: equityPoints.map((p, i) => {
+                  // Sell points get downward triangle
+                  if (i > 0 && i < equityPoints.length - 1 && i % 2 === 0) return 180;
+                  return 0;
+                }),
+                borderWidth: 2.5
+              },
+              // 100% baseline reference
+              {
+                label: 'Baseline',
+                data: equityPoints.map(() => 100),
+                borderColor: 'rgba(255,255,255,0.12)',
+                borderDash: [6, 4],
+                borderWidth: 1,
+                pointRadius: 0,
+                fill: false,
+                tension: 0
+              }
+            ]
           },
           options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => 'Equity: ' + ctx.parsed.y.toFixed(1) + '%' } } },
-            scales: { x: { ticks: { color: '#8a8a96', font: { size: 8 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#8a8a96', font: { size: 9 }, callback: v => v.toFixed(0) + '%' }, grid: { color: 'rgba(255,255,255,0.04)' } } }
-          }
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(15,15,20,0.95)',
+                borderColor: 'rgba(255,255,255,0.1)',
+                borderWidth: 1,
+                titleFont: { family: "'JetBrains Mono', monospace", size: 11 },
+                bodyFont: { family: "'JetBrains Mono', monospace", size: 12 },
+                padding: 12,
+                callbacks: {
+                  title: (items) => items[0]?.label || '',
+                  label: (ctx) => {
+                    if (ctx.datasetIndex === 1) return null; // hide baseline
+                    const val = ctx.parsed.y;
+                    const ret = (val - 100).toFixed(1);
+                    return `Equity: ${val.toFixed(1)}%  (${ret >= 0 ? '+' : ''}${ret}%)`;
+                  }
+                },
+                filter: (item) => item.datasetIndex === 0
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: '#6b6b78', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0 },
+                grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }
+              },
+              y: {
+                ticks: {
+                  color: '#6b6b78',
+                  font: { family: "'JetBrains Mono', monospace", size: 10 },
+                  callback: v => v.toFixed(0) + '%'
+                },
+                grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }
+              }
+            }
+          },
+          plugins: [{
+            id: 'tradeAnnotations',
+            afterDraw(chart) {
+              const { ctx, scales } = chart;
+              const xScale = scales.x;
+              const yScale = scales.y;
+              // Draw BUY triangles
+              buyMarkers.forEach(m => {
+                const xi = xScale.getLabelIndex ? null : chart.data.labels.indexOf(m.x);
+                if (xi === -1) return;
+                const px = xScale.getPixelForValue(xi);
+                const py = yScale.getPixelForValue(m.y);
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(px, py - 10);
+                ctx.lineTo(px - 6, py + 2);
+                ctx.lineTo(px + 6, py + 2);
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(0,217,126,0.85)';
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+                ctx.restore();
+              });
+              // Draw SELL triangles (inverted)
+              sellMarkers.forEach(m => {
+                const xi = chart.data.labels.indexOf(m.x);
+                if (xi === -1) return;
+                const px = xScale.getPixelForValue(xi);
+                const py = yScale.getPixelForValue(m.y);
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(px, py + 10);
+                ctx.lineTo(px - 6, py - 2);
+                ctx.lineTo(px + 6, py - 2);
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(239,68,68,0.85)';
+                ctx.fill();
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+                ctx.restore();
+              });
+            }
+          }]
         });
       }
 
-      // Render underwater chart
+      // ── PREMIUM UNDERWATER CHART ──────────────────────────────
       const uwCtx = document.getElementById('underwaterChart')?.getContext('2d');
       if (uwCtx) {
         if (window._underwaterChart) window._underwaterChart.destroy();
@@ -6797,17 +7056,71 @@
               label: 'Drawdown',
               data: ddPoints.map(p => p.value),
               borderColor: '#ef4444',
-              backgroundColor: 'rgba(239,68,68,0.15)',
+              borderWidth: 1.5,
               fill: true,
+              backgroundColor: (ctx) => {
+                const chart = ctx.chart;
+                const { ctx: c, chartArea } = chart;
+                if (!chartArea) return 'rgba(239,68,68,0.15)';
+                const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                grad.addColorStop(0, 'rgba(239,68,68,0.05)');
+                grad.addColorStop(0.5, 'rgba(239,68,68,0.15)');
+                grad.addColorStop(1, 'rgba(239,68,68,0.35)');
+                return grad;
+              },
               tension: 0.3,
-              pointRadius: 2,
-              borderWidth: 1.5
+              pointRadius: ddPoints.map(p => Math.abs(p.value) > 20 ? 4 : 2),
+              pointBackgroundColor: ddPoints.map(p => {
+                if (p.value === 0) return '#00d97e';
+                if (p.value > -10) return '#ffb800';
+                return '#ef4444';
+              }),
+              pointBorderColor: 'rgba(0,0,0,0.5)',
+              pointBorderWidth: 1
+            },
+            // Zero line
+            {
+              label: 'Zero',
+              data: ddPoints.map(() => 0),
+              borderColor: 'rgba(0,217,126,0.3)',
+              borderDash: [4, 4],
+              borderWidth: 1,
+              pointRadius: 0,
+              fill: false
             }]
           },
           options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => 'DD: ' + ctx.parsed.y.toFixed(1) + '%' } } },
-            scales: { x: { ticks: { color: '#8a8a96', font: { size: 8 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#8a8a96', font: { size: 9 }, callback: v => v.toFixed(0) + '%' }, grid: { color: 'rgba(255,255,255,0.04)' } } }
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(15,15,20,0.95)',
+                borderColor: 'rgba(239,68,68,0.3)',
+                borderWidth: 1,
+                titleFont: { family: "'JetBrains Mono', monospace", size: 11 },
+                bodyFont: { family: "'JetBrains Mono', monospace", size: 12 },
+                callbacks: {
+                  label: ctx => ctx.datasetIndex === 0 ? `Drawdown: ${ctx.parsed.y.toFixed(1)}%` : null
+                },
+                filter: (item) => item.datasetIndex === 0
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: '#6b6b78', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0 },
+                grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }
+              },
+              y: {
+                reverse: false,
+                ticks: {
+                  color: '#6b6b78',
+                  font: { family: "'JetBrains Mono', monospace", size: 10 },
+                  callback: v => v.toFixed(0) + '%'
+                },
+                grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }
+              }
+            }
           }
         });
       }
@@ -6827,22 +7140,40 @@
           const duration = trade.entryDate && trade.exitDate && trade.exitDate !== '--' ?
             Math.round((new Date(trade.exitDate) - new Date(trade.entryDate)) / (1000*60*60*24)) + 'd' : 'OPEN';
 
+          // Z-Score color helper
+          function zColor(z) {
+            if (z <= -1.5) return '#00d97e'; // Accumulate
+            if (z <= -0.5) return '#00bfff'; // Undervalued
+            if (z <= 0.5) return '#8a8a96';  // Fair
+            if (z <= 1.5) return '#ffb800';  // Elevated
+            return '#ef4444';                // Overheated
+          }
+          function zBadge(z, suffix) {
+            const s = suffix || '';
+            const color = zColor(z);
+            return `<span style="color:${color};font-weight:600;">${z.toFixed(2)}${s}</span>`;
+          }
+
           // Z Entry: lookup Z-score at entry date
           const zEntryVal = zMap.get(trade.entryDate);
-          const zEntryStr = zEntryVal != null ? zEntryVal.toFixed(2) : (!isNaN(trade.zEntry) ? trade.zEntry.toFixed(2) : '--');
+          const zEntryNum = zEntryVal != null ? zEntryVal : (!isNaN(trade.zEntry) ? trade.zEntry : null);
+          const zEntryHtml = zEntryNum != null ? zBadge(zEntryNum) : '--';
 
           // Z Exit: lookup Z-score at exit date
-          let zExitStr = '--';
+          let zExitHtml = '--';
+          let zExitNum = null;
           if (trade.exitDate && trade.exitDate !== '--') {
-            const zExitVal = zMap.get(trade.exitDate);
-            if (zExitVal != null) {
-              zExitStr = zExitVal.toFixed(2);
+            zExitNum = zMap.get(trade.exitDate);
+            if (zExitNum != null) {
+              zExitHtml = zBadge(zExitNum);
             }
           } else if (trade.status === 'OPEN') {
-            // For open trades, show current Z
             const lastZ = state.compositeHistory && state.compositeHistory.length > 0
               ? state.compositeHistory[state.compositeHistory.length - 1].value : null;
-            if (lastZ != null) zExitStr = lastZ.toFixed(2) + '*';
+            if (lastZ != null) {
+              zExitNum = lastZ;
+              zExitHtml = zBadge(lastZ, '*');
+            }
           }
 
           // Max DD in Trade: find min price during trade period, calc drawdown from entry
@@ -6873,8 +7204,8 @@
           btRows += `<td>$${trade.entryPrice ? trade.entryPrice.toLocaleString() : '--'}</td>`;
           btRows += `<td>${trade.exitDate || '--'}</td>`;
           btRows += `<td>${trade.exitPrice ? '$' + trade.exitPrice.toLocaleString() : '--'}</td>`;
-          btRows += `<td>${zEntryStr}</td>`;
-          btRows += `<td>${zExitStr}</td>`;
+          btRows += `<td>${zEntryHtml}</td>`;
+          btRows += `<td>${zExitHtml}</td>`;
           btRows += `<td style="color:${ret >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${ret > 0 ? '+' : ''}${ret.toFixed(0)}%</td>`;
           btRows += `<td style="color:var(--accent-cyan)">${cumReturn > 0 ? '+' : ''}${cumReturn.toFixed(0)}%</td>`;
           btRows += `<td>${duration}</td>`;
