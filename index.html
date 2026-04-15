@@ -6105,24 +6105,41 @@
         }
 
         // Process Liquidations
+        console.log('[FP Liq] status:', liqRes.status, 'success:', liqRes.status === 'fulfilled' ? liqRes.value?.success : 'N/A');
         if (liqRes.status === 'fulfilled' && liqRes.value.success) {
-          const data = liqRes.value.data;
+          let data = liqRes.value.data;
+          console.log('[FP Liq] raw type:', typeof data, 'isArray:', Array.isArray(data), 'keys:', data && typeof data === 'object' ? Object.keys(data).slice(0,10) : 'N/A');
+          // Handle case where data might be wrapped in an object
+          if (!Array.isArray(data) && data && typeof data === 'object') {
+            // Try common wrapper keys
+            if (data.data && Array.isArray(data.data)) data = data.data;
+            else if (data.result && Array.isArray(data.result)) data = data.result;
+            else if (data.items && Array.isArray(data.items)) data = data.items;
+            // If it's a single object with liquidation fields, wrap in array
+            else if (data.totalLiquidationsUsd || data.longLiquidationsUsd || data.shortLiquidationsUsd) {
+              data = [data];
+            }
+          }
           if (Array.isArray(data) && data.length > 0) {
+            console.log('[FP Liq] first record keys:', Object.keys(data[0]), 'sample:', JSON.stringify(data[data.length-1]));
             const recent = data.slice(-24);
             let longLiq = 0, shortLiq = 0, totalFromField = 0;
             recent.forEach(d => {
-              longLiq += parseFloat(d.longLiquidationsUsd || d.longLiquidations || 0);
-              shortLiq += parseFloat(d.shortLiquidationsUsd || d.shortLiquidations || 0);
-              totalFromField += parseFloat(d.totalLiquidationsUsd || 0);
+              const l = parseFloat(d.longLiquidationsUsd || d.longLiquidations || 0);
+              const s = parseFloat(d.shortLiquidationsUsd || d.shortLiquidations || 0);
+              const t = parseFloat(d.totalLiquidationsUsd || 0);
+              longLiq += isNaN(l) ? 0 : l;
+              shortLiq += isNaN(s) ? 0 : s;
+              totalFromField += isNaN(t) ? 0 : t;
             });
             // Use long+short if available, otherwise fall back to totalLiquidationsUsd
             let total = longLiq + shortLiq;
             if (total === 0 && totalFromField > 0) {
               total = totalFromField;
-              longLiq = totalFromField * 0.5; // estimate split if only total available
+              longLiq = totalFromField * 0.5;
               shortLiq = totalFromField * 0.5;
             }
-            console.log('[FP Liq] 24h total:', total, 'long:', longLiq, 'short:', shortLiq, 'records:', recent.length, 'sample:', JSON.stringify(data[data.length-1]));
+            console.log('[FP Liq] 24h total:', total, 'long:', longLiq, 'short:', shortLiq, 'records:', recent.length);
             futuresPressureState.liqLong = longLiq;
             futuresPressureState.liqShort = shortLiq;
             const el = document.getElementById('fpLiq');
@@ -6132,7 +6149,13 @@
             }
             const sub = document.getElementById('fpLiqSub');
             if (sub) sub.textContent = `L: ${formatUSD(longLiq)} / S: ${formatUSD(shortLiq)}`;
+          } else {
+            console.warn('[FP Liq] Data not an array or empty after unwrapping:', typeof data, data);
           }
+        } else if (liqRes.status === 'fulfilled') {
+          console.warn('[FP Liq] Request fulfilled but not successful:', liqRes.value);
+        } else {
+          console.warn('[FP Liq] Request failed:', liqRes.reason);
         }
 
         // Process Top Traders
