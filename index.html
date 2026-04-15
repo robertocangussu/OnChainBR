@@ -4110,15 +4110,33 @@
         }
       } catch(e) { console.warn('Miner Reserve fetch error:', e); }
       
-      // 3. Miner Reserve Change 30d - try alternate endpoint if needed
+      // 3. Miner Reserve Change 30d - try multiple endpoints and formats
       try {
         let result = await fetchBGeometrics('/v1/miner-reserve-change-30d-pct/10', 'Miner Reserve Change 30d');
+        // Unwrap if needed
+        if (result.success && result.data && !Array.isArray(result.data)) {
+          if (result.data.data) result.data = result.data.data;
+          else if (typeof result.data === 'object' && result.data.minerReserveChange30dPct != null) result.data = [result.data];
+        }
         if (!result.success || !result.data || !result.data.length) {
           result = await fetchBGeometrics('/v1/miner-reserve-change-pct/10', 'Miner Reserve Change');
+          if (result.success && result.data && !Array.isArray(result.data)) {
+            if (result.data.data) result.data = result.data.data;
+            else if (typeof result.data === 'object') result.data = [result.data];
+          }
         }
+        if (!result.success || !result.data || !result.data.length) {
+          // Try without /10 as last resort
+          result = await fetchBGeometrics('/v1/miner-reserve-change-30d-pct', 'Miner Reserve Change 30d (full)');
+          if (result.success && result.data && !Array.isArray(result.data)) {
+            if (result.data.data) result.data = result.data.data;
+            else if (typeof result.data === 'object') result.data = [result.data];
+          }
+        }
+        console.log('[Miner] Reserve Change raw:', result.success, 'isArray:', Array.isArray(result.data), 'len:', result.data?.length, 'type:', typeof result.data);
         if (result.success && result.data && result.data.length) {
           console.log('[Miner] Reserve Change sample:', JSON.stringify(result.data[result.data.length-1]));
-          minerData.reserveChange30d = getLatest(result.data, 'minerReserveChange30dPct', 'minerReserveChangePct', 'change', 'value');
+          minerData.reserveChange30d = getLatest(result.data, 'minerReserveChange30dPct', 'minerReserveChangePct', 'change', 'value', 'pct');
           console.log('✓ Miner Reserve Change 30d:', minerData.reserveChange30d);
         }
       } catch(e) { console.warn('Miner Reserve Change fetch error:', e); }
@@ -4143,12 +4161,25 @@
         }
       } catch(e) { console.warn('Hashrate fetch error:', e); }
       
-      // 6. Difficulty
+      // 6. Difficulty - try multiple approaches
       try {
-        const result = await fetchBGeometrics('/v1/difficulty-BTC/10', 'Difficulty');
+        let result = await fetchBGeometrics('/v1/difficulty-BTC/10', 'Difficulty');
+        // Unwrap if needed
+        if (result.success && result.data && !Array.isArray(result.data)) {
+          if (result.data.data) result.data = result.data.data;
+          else if (typeof result.data === 'object' && (result.data.difficultyBtc != null || result.data.difficulty != null || result.data.value != null)) result.data = [result.data];
+        }
+        if (!result.success || !result.data || !result.data.length) {
+          result = await fetchBGeometrics('/v1/difficulty-BTC', 'Difficulty (full)');
+          if (result.success && result.data && !Array.isArray(result.data)) {
+            if (result.data.data) result.data = result.data.data;
+            else if (typeof result.data === 'object') result.data = [result.data];
+          }
+        }
+        console.log('[Miner] Difficulty raw:', result.success, 'isArray:', Array.isArray(result.data), 'len:', result.data?.length, 'type:', typeof result.data);
         if (result.success && result.data && result.data.length) {
           console.log('[Miner] Difficulty sample:', JSON.stringify(result.data[result.data.length-1]));
-          minerData.difficulty = getLatest(result.data, 'difficultyBtc', 'difficulty', 'value');
+          minerData.difficulty = getLatest(result.data, 'difficultyBtc', 'difficulty', 'value', 'diff');
           console.log('✓ Difficulty:', minerData.difficulty);
         }
       } catch(e) { console.warn('Difficulty fetch error:', e); }
@@ -6631,7 +6662,21 @@
     function renderROCTable() {
       console.log('[Backstage] Rendering strategy-focused ROC table...');
 
-      // Strategy-focused indicators only
+      // Only Z-Score Composite + Trade Log equity performance
+      // Build equity history from trades for ROC calculation
+      const tradeEquityHistory = [];
+      if (window.signalTradesData && window.signalTradesData.length > 0) {
+        let eq = 100;
+        const trd = window.signalTradesData;
+        tradeEquityHistory.push({ date: trd[0].entryDate, value: 100 });
+        trd.forEach(t => {
+          const ret = t.returnPct || 0;
+          eq *= (1 + ret / 100);
+          const d = (t.exitDate && t.exitDate !== '--') ? t.exitDate : t.entryDate;
+          tradeEquityHistory.push({ date: d, value: eq });
+        });
+      }
+
       const indicators = [
         {
           name: 'Z-Score Composite',
@@ -6646,54 +6691,15 @@
           }
         },
         {
-          name: 'BTC Price (USD)',
-          data: state.prices,
-          current: state.prices?.length > 0 ? state.prices[state.prices.length-1].value : null,
-          format: (v) => '$' + Math.round(v).toLocaleString(),
-          zoneCalc: null
-        },
-        {
-          name: 'MVRV Z-Score',
-          data: state.metricHistory.mvrv,
-          current: state.rawValues.mvrv,
+          name: 'Strategy Equity',
+          data: tradeEquityHistory,
+          current: tradeEquityHistory.length > 0 ? tradeEquityHistory[tradeEquityHistory.length-1].value : null,
+          format: (v) => v.toFixed(1) + '%',
           zoneCalc: (v) => {
-            if (v < 1) return { label: 'CHEAP', color: '#00d97e', bg: 'rgba(0,217,126,0.12)' };
-            if (v < 2.5) return { label: 'FAIR', color: '#8a8a96', bg: 'rgba(138,138,150,0.08)' };
-            if (v < 4) return { label: 'HOT', color: '#ffb800', bg: 'rgba(255,184,0,0.10)' };
-            return { label: 'EXTREME', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
-          }
-        },
-        {
-          name: 'NUPL',
-          data: state.metricHistory.nupl,
-          current: state.rawValues.nupl,
-          zoneCalc: (v) => {
-            if (v < 0) return { label: 'CAPITULATION', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
-            if (v < 0.25) return { label: 'HOPE', color: '#00d97e', bg: 'rgba(0,217,126,0.12)' };
-            if (v < 0.5) return { label: 'OPTIMISM', color: '#00bfff', bg: 'rgba(0,191,255,0.10)' };
-            if (v < 0.75) return { label: 'BELIEF', color: '#ffb800', bg: 'rgba(255,184,0,0.10)' };
-            return { label: 'EUPHORIA', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
-          }
-        },
-        {
-          name: 'SOPR',
-          data: state.metricHistory.sopr,
-          current: state.rawValues.sopr,
-          zoneCalc: (v) => {
-            if (v < 0.98) return { label: 'LOSS SELLING', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
-            if (v < 1.02) return { label: 'BREAKEVEN', color: '#8a8a96', bg: 'rgba(138,138,150,0.08)' };
-            return { label: 'PROFIT TAKING', color: '#00d97e', bg: 'rgba(0,217,126,0.12)' };
-          }
-        },
-        {
-          name: 'Puell Multiple',
-          data: state.metricHistory.puell,
-          current: state.rawValues.puell,
-          zoneCalc: (v) => {
-            if (v < 0.5) return { label: 'UNDERVALUED', color: '#00d97e', bg: 'rgba(0,217,126,0.12)' };
-            if (v < 1.2) return { label: 'FAIR', color: '#8a8a96', bg: 'rgba(138,138,150,0.08)' };
-            if (v < 4) return { label: 'HOT', color: '#ffb800', bg: 'rgba(255,184,0,0.10)' };
-            return { label: 'EXTREME', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
+            if (v >= 200) return { label: '2x+', color: '#00d97e', bg: 'rgba(0,217,126,0.12)' };
+            if (v >= 150) return { label: 'STRONG', color: '#00bfff', bg: 'rgba(0,191,255,0.10)' };
+            if (v >= 100) return { label: 'PROFIT', color: '#8a8a96', bg: 'rgba(138,138,150,0.08)' };
+            return { label: 'LOSS', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' };
           }
         }
       ];
