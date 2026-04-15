@@ -600,55 +600,6 @@
       </div>
     </div>
 
-    <!-- Futures-Driven Pressure Card -->
-    <div class="futures-pressure-card" id="futuresPressureCard">
-      <div class="futures-pressure-header">
-        <div>
-          <div class="futures-pressure-title">FUTURES-DRIVEN PRESSURE</div>
-          <div style="font-size:9px;color:var(--text-muted);margin-top:4px;">Quem está movendo o preço? Compradores ou vendedores nos futuros?</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;">Pressure Score</div>
-          <div class="futures-score-big" id="futuresScoreValue" style="font-size:36px;">--</div>
-        </div>
-      </div>
-      <div class="futures-metrics-grid">
-        <div class="futures-metric">
-          <div class="futures-metric-label">Funding Rate (8h)</div>
-          <div class="futures-metric-value" id="fpFunding">--</div>
-          <div class="futures-metric-sub" id="fpFundingSub">8h rate</div>
-        </div>
-        <div class="futures-metric">
-          <div class="futures-metric-label">Taker Buy/Sell</div>
-          <div class="futures-metric-value" id="fpTaker">--</div>
-          <div class="futures-metric-sub" id="fpTakerSub">volume ratio</div>
-        </div>
-        <div class="futures-metric">
-          <div class="futures-metric-label">OI Change 24h</div>
-          <div class="futures-metric-value" id="fpOiChange">--</div>
-          <div class="futures-metric-sub" id="fpOiChangeSub">% change</div>
-        </div>
-        <div class="futures-metric">
-          <div class="futures-metric-label">Liquidations 24h</div>
-          <div class="futures-metric-value" id="fpLiq">--</div>
-          <div class="futures-metric-sub" id="fpLiqSub">Long vs Short</div>
-        </div>
-        <div class="futures-metric">
-          <div class="futures-metric-label">Top Traders L/S</div>
-          <div class="futures-metric-value" id="fpTopTraders">--</div>
-          <div class="futures-metric-sub" id="fpTopTradersSub">position ratio</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:24px;justify-content:center;margin-bottom:14px;font-size:9px;font-family:'JetBrains Mono',monospace;">
-        <span style="color:var(--text-muted);">Funding ROC 7d: <strong id="fpFundingRoc7d" style="color:var(--text-secondary)">--</strong></span>
-        <span style="color:var(--text-muted);">OI ROC 7d: <strong id="fpOiRoc7d" style="color:var(--text-secondary)">--</strong></span>
-        <span style="color:var(--text-muted);">Taker ROC 7d: <strong id="fpTakerRoc7d" style="color:var(--text-secondary)">--</strong></span>
-      </div>
-      <div class="futures-verdict" id="futuresVerdict">
-        <div class="futures-verdict-icon">⏳</div>
-        <div>Carregando dados de futuros...</div>
-      </div>
-    </div>
 
   </div>
 
@@ -969,6 +920,58 @@
         <div class="sm-confidence-value" id="levRiskScore">--%</div>
         <div class="sm-confidence-bar"><div class="sm-confidence-fill" id="levRiskFill" style="width:0%;background:var(--accent-green)"></div></div>
         <div class="sm-confidence-desc" id="levRiskDesc">Analyzing derivatives data...</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:1400px;margin:0 auto;padding:20px 24px 0;">
+    <!-- Futures-Driven Pressure Card -->
+    <div class="futures-pressure-card" id="futuresPressureCard">
+      <div class="futures-pressure-header">
+        <div>
+          <div class="futures-pressure-title">FUTURES-DRIVEN PRESSURE</div>
+          <div style="font-size:9px;color:var(--text-muted);margin-top:4px;">Quem está movendo o preço? Compradores ou vendedores nos futuros?</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;">Pressure Score</div>
+          <div class="futures-score-big" id="futuresScoreValue" style="font-size:36px;">--</div>
+        </div>
+      </div>
+      <div class="futures-metrics-grid">
+        <div class="futures-metric">
+          <div class="futures-metric-label">Funding Rate (8h)</div>
+          <div class="futures-metric-value" id="fpFunding">--</div>
+          <div class="futures-metric-sub" id="fpFundingSub">8h rate</div>
+        </div>
+        <div class="futures-metric">
+          <div class="futures-metric-label">Taker Buy/Sell</div>
+          <div class="futures-metric-value" id="fpTaker">--</div>
+          <div class="futures-metric-sub" id="fpTakerSub">volume ratio</div>
+        </div>
+        <div class="futures-metric">
+          <div class="futures-metric-label">OI Change 24h</div>
+          <div class="futures-metric-value" id="fpOiChange">--</div>
+          <div class="futures-metric-sub" id="fpOiChangeSub">% change</div>
+        </div>
+        <div class="futures-metric">
+          <div class="futures-metric-label">Liquidations 24h</div>
+          <div class="futures-metric-value" id="fpLiq">--</div>
+          <div class="futures-metric-sub" id="fpLiqSub">Long vs Short</div>
+        </div>
+        <div class="futures-metric">
+          <div class="futures-metric-label">Top Traders L/S</div>
+          <div class="futures-metric-value" id="fpTopTraders">--</div>
+          <div class="futures-metric-sub" id="fpTopTradersSub">position ratio</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:24px;justify-content:center;margin-bottom:14px;font-size:9px;font-family:'JetBrains Mono',monospace;">
+        <span style="color:var(--text-muted);">Funding ROC 7d: <strong id="fpFundingRoc7d" style="color:var(--text-secondary)">--</strong></span>
+        <span style="color:var(--text-muted);">OI ROC 7d: <strong id="fpOiRoc7d" style="color:var(--text-secondary)">--</strong></span>
+        <span style="color:var(--text-muted);">Taker ROC 7d: <strong id="fpTakerRoc7d" style="color:var(--text-secondary)">--</strong></span>
+      </div>
+      <div class="futures-verdict" id="futuresVerdict">
+        <div class="futures-verdict-icon">⏳</div>
+        <div>Carregando dados de futuros...</div>
       </div>
     </div>
   </div>
