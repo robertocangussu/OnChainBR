@@ -6767,22 +6767,21 @@
       const fearGreed = state.rawValues?.fearGreed || 50;
       const funding = tradingState.funding || sentimentState.funding || 0;
     
-      // Phase 1: ACCUMULATION
-      // Z < -1, MVRV < 1.2, LTH accumulating, price < SMA200
+      // Phase 1: ACCUMULATION (deep vs light aligned with posture logic)
       if (z !== null && z < -0.5 && mvrv < 1.5 && lth30d > 0 && priceBelowSma200) {
+        const isDeep = z <= -1.5;
         return {
-          phase: 1, name: 'ACUMULAÇÃO',
-          nameEn: 'ACCUMULATION',
-          color: '#00d97e',
-          icon: '🟢',
-          description: z < -1.5
-            ? 'Deep accumulation zone. LTHs absorbing supply while price trades below SMA200. Historically the highest asymmetric return zone.'
-            : 'Early accumulation. Z-Score negative with LTH net buying. Price below SMA200 but on-chain suggests value.',
-          descPt: z < -1.5
+          phase: 1, name: isDeep ? 'ACUMULAÇÃO FORTE' : 'ACUMULAÇÃO LEVE',
+          nameEn: isDeep ? 'DEEP ACCUMULATION' : 'LIGHT ACCUMULATION',
+          color: isDeep ? '#00d97e' : '#84cc16',
+          icon: isDeep ? '🟢' : '🟡',
+          descPt: isDeep
             ? 'Zona profunda de acumulação. LTHs absorvendo oferta com preço abaixo da SMA200. Historicamente a zona de maior retorno assimétrico.'
             : 'Acumulação inicial. Z-Score negativo com LTHs comprando. Preço abaixo da SMA200 mas on-chain sugere valor.',
-          action: 'DCA agressivo (15-25% do capital disponível)',
-          transition: 'Transição para Markup quando: Z cruza -0.5 de baixo para cima OU preço recupera SMA200'
+          action: isDeep ? 'DCA agressivo (15-25% do capital disponível)' : 'DCA moderado (5-10% do capital disponível)',
+          transition: isDeep
+            ? 'Transição para Acumulação Leve quando: Z cruza -1.5 de baixo para cima'
+            : 'Transição para Markup quando: Z cruza -0.5 de baixo para cima OU preço recupera SMA200'
         };
       }
     
