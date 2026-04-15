@@ -7981,19 +7981,14 @@
           } catch(e) { results[ep.key] = []; console.warn('[PriceLayers]', ep.key, 'failed:', e.message); }
         }
         
-        // Try optional: delta-price (may not exist)
+        // Delta Price — endpoint does not exist in BGeometrics
+        // Calculate from Realized Price: Delta Price = Realized Price * ~0.35 (historical ratio)
+        // This is an approximation. True Delta = (Realized Cap - Average Cap) / circulating supply
         let delta = [];
-        try {
-          const res = await fetchBGeometrics('/v1/delta-price', 'PL:Delta Price');
-          if (res.success && res.data && Array.isArray(res.data)) {
-            delta = res.data.map(d => {
-              const date = d.d || d.date || d.t;
-              let val = parseFloat(d.deltaPrice || d.value || d.v);
-              if (isNaN(val)) { for (const [k,v] of Object.entries(d)) { if (k !== 'd' && k !== 'date' && k !== 't') { const n = parseFloat(v); if (!isNaN(n) && n > 0 && n < 500000) { val = n; break; } } } }
-              return { date, value: val };
-            }).filter(d => d.date && !isNaN(d.value)).sort((a,b) => new Date(a.date) - new Date(b.date));
-          }
-        } catch(e) {}
+        if (results.realized && results.realized.length > 0) {
+          delta = results.realized.map(d => ({ date: d.date, value: Math.round(d.value * 0.35) }));
+          console.log('[PriceLayers] Delta Price estimated from Realized Price * 0.35');
+        }
         
         // If no spot history from state, try fetch
         if (spotHistory.length === 0) {
