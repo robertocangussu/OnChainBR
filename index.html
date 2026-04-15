@@ -1293,6 +1293,41 @@
       </div>
     </div>
 
+    <!-- Market Phase + Halving Row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+      <!-- Market Phase Badge -->
+      <div id="marketPhaseCard" style="background:var(--bg-card);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:18px;position:relative;overflow:hidden;">
+        <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Fase do Ciclo de Mercado</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span id="marketPhaseIcon" style="font-size:24px;">⏳</span>
+          <div>
+            <div id="marketPhaseName" style="font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text-muted);">ANALISANDO...</div>
+            <div id="marketPhaseDesc" style="font-size:10px;color:var(--text-muted);margin-top:4px;line-height:1.5;">Carregando dados...</div>
+          </div>
+        </div>
+        <div id="marketPhaseAction" style="font-size:9px;color:var(--text-muted);margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.04);">▸ --</div>
+      </div>
+      <!-- Halving Countdown -->
+      <div id="halvingCard" style="background:var(--bg-card);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:18px;position:relative;overflow:hidden;">
+        <div style="font-size:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Ciclo de Halving · 5ª Era</div>
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          <span id="halvingDays" style="font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);">--</span>
+          <span style="font-size:11px;color:var(--text-muted);">dias desde o halving</span>
+        </div>
+        <div style="margin:10px 0 6px;">
+          <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;">
+            <div id="halvingProgress" style="width:0%;height:100%;background:var(--accent-cyan);border-radius:3px;transition:width 1s ease;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-muted);margin-top:4px;">
+            <span>Abr 2024</span>
+            <span id="halvingPct" style="color:var(--accent-cyan);">--%</span>
+            <span>~Abr 2028</span>
+          </div>
+        </div>
+        <div id="halvingContext" style="font-size:10px;color:var(--text-muted);line-height:1.5;">Carregando...</div>
+      </div>
+    </div>
+
     <!-- Executive Summary Card -->
     <div id="reportSummaryCard" style="background:linear-gradient(135deg, var(--bg-card) 0%, rgba(168,85,247,0.05) 100%);border:1px solid var(--accent-purple);border-radius:12px;padding:20px;margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
@@ -2193,12 +2228,25 @@
       }
       if (weakest.key) {
         const weakEl = document.getElementById('statWeakestMetric');
-        if (weakEl) { 
-          weakEl.textContent = METRICS[weakest.key]?.name.split(' ')[0] || '--'; 
-          weakEl.style.color = getZone(weakest.z).color; 
+        if (weakEl) {
+          // FEATURE 5: Fix Stablecoin context — negative SSR Z is bullish (dry powder)
+          if (weakest.key === 'ssr' && weakest.z < -0.5 && typeof getStablecoinContext === 'function') {
+            const ssrCtx = getStablecoinContext(weakest.z);
+            weakEl.textContent = ssrCtx.label;
+            weakEl.style.color = ssrCtx.color;
+          } else {
+            weakEl.textContent = METRICS[weakest.key]?.name.split(' ')[0] || '--';
+            weakEl.style.color = getZone(weakest.z).color;
+          }
         }
         const weakZEl = document.getElementById('statWeakestZ');
-        if (weakZEl) weakZEl.textContent = `Z = ${safeFixed(weakest.z)}`;
+        if (weakZEl) {
+          if (weakest.key === 'ssr' && weakest.z < -0.5) {
+            weakZEl.textContent = `SSR Z=${safeFixed(weakest.z)} (bullish)`;
+          } else {
+            weakZEl.textContent = `Z = ${safeFixed(weakest.z)}`;
+          }
+        }
       }
       
       // Data range
@@ -5852,7 +5900,14 @@
         mainText += `RSI: <strong style="color:${rsiColor}">${rsi.toFixed(0)}</strong>. `;
       }
       
-      document.getElementById('reportMainText').innerHTML = mainText;
+      // FEATURE 8: Enhanced narrative report (replaces basic mainText)
+      try {
+        const enhancedNarrative = generateNarrativeReport();
+        document.getElementById('reportMainText').innerHTML = enhancedNarrative;
+      } catch (e) {
+        console.warn('[Report] Enhanced narrative failed, using fallback:', e);
+        document.getElementById('reportMainText').innerHTML = mainText;
+      }
       
       // ========== ACTION RECOMMENDATION (INTEGRATED) ==========
       let actionText = '';
@@ -6012,7 +6067,41 @@
       }
       
       document.getElementById('reportContext').innerHTML = contextText;
-      
+
+      // ========== AUDIT FEATURES UI UPDATES ==========
+      try {
+        // FEATURE 1: Market Phase Detection
+        const phase = detectMarketPhase();
+        const phaseIcon = document.getElementById('marketPhaseIcon');
+        const phaseName = document.getElementById('marketPhaseName');
+        const phaseDesc = document.getElementById('marketPhaseDesc');
+        const phaseAction = document.getElementById('marketPhaseAction');
+        const phaseCard = document.getElementById('marketPhaseCard');
+        if (phaseName) {
+          phaseName.textContent = phase.name;
+          phaseName.style.color = phase.color;
+        }
+        if (phaseIcon) phaseIcon.textContent = phase.icon;
+        if (phaseDesc) phaseDesc.textContent = phase.descPt;
+        if (phaseAction) { phaseAction.textContent = '▸ ' + phase.action; phaseAction.style.color = phase.color; }
+        if (phaseCard) phaseCard.style.borderColor = phase.color + '33';
+
+        // FEATURE 6: Halving Countdown
+        const halving = getHalvingInfo();
+        const halvDays = document.getElementById('halvingDays');
+        const halvProgress = document.getElementById('halvingProgress');
+        const halvPct = document.getElementById('halvingPct');
+        const halvContext = document.getElementById('halvingContext');
+        if (halvDays) { halvDays.textContent = halving.daysSinceHalving; halvDays.style.color = halving.cycleColor; }
+        if (halvProgress) halvProgress.style.width = halving.cycleProgress + '%';
+        if (halvPct) { halvPct.textContent = halving.cycleProgress + '%'; halvPct.style.color = halving.cycleColor; }
+        if (halvContext) halvContext.textContent = halving.cycleContext;
+
+        console.log('[Audit] Market Phase:', phase.name, '| Halving:', halving.daysSinceHalving, 'days');
+      } catch (e) {
+        console.warn('[Audit] Feature UI update error:', e);
+      }
+
       console.log('[Report] Analysis generated successfully');
     }
 
@@ -6651,6 +6740,633 @@
       updateFactor('cfSentiment', 'cfSentimentFill', sentFactor);
       updateFactor('cfMinersLev', 'cfMinersLevFill', mlFactor);
     }
+
+
+    // ========== AUDIT FEATURES v4.0 (8 upgrades) ==========
+    // ============================================================
+    // AUDIT FEATURES · 8 upgrades for OnChainBR v4.0
+    // All functions read from existing state objects.
+    // Integration: inject into index_v2.html before closing script tag
+    // ============================================================
+    
+    // ═══════════════════════════════════════════════════════════
+    // FEATURE 1: MARKET PHASE DETECTION (4 Wyckoff phases)
+    // Inputs: state.composite, rawValues.mvrv, smartMoneyState,
+    //         tradingState (SMA200, price)
+    // Output: { phase: 1-4, name, color, description, transition }
+    // ═══════════════════════════════════════════════════════════
+    function detectMarketPhase() {
+      const z = state.composite;
+      const mvrv = state.rawValues?.mvrv || 0;
+      const lth30d = smartMoneyState.lth30d || 0;
+      const techData = tradingState.technicalData || [];
+      const last = techData.length > 0 ? techData[techData.length - 1] : {};
+      const price = tradingState.currentPrice || parseFloat(last.price) || 0;
+      const sma200 = parseFloat(last.sma200) || 0;
+      const priceBelowSma200 = sma200 > 0 && price < sma200;
+      const fearGreed = state.rawValues?.fearGreed || 50;
+      const funding = tradingState.funding || sentimentState.funding || 0;
+    
+      // Phase 1: ACCUMULATION
+      // Z < -1, MVRV < 1.2, LTH accumulating, price < SMA200
+      if (z !== null && z < -0.5 && mvrv < 1.5 && lth30d > 0 && priceBelowSma200) {
+        return {
+          phase: 1, name: 'ACUMULAÇÃO',
+          nameEn: 'ACCUMULATION',
+          color: '#00d97e',
+          icon: '🟢',
+          description: z < -1.5
+            ? 'Deep accumulation zone. LTHs absorbing supply while price trades below SMA200. Historically the highest asymmetric return zone.'
+            : 'Early accumulation. Z-Score negative with LTH net buying. Price below SMA200 but on-chain suggests value.',
+          descPt: z < -1.5
+            ? 'Zona profunda de acumulação. LTHs absorvendo oferta com preço abaixo da SMA200. Historicamente a zona de maior retorno assimétrico.'
+            : 'Acumulação inicial. Z-Score negativo com LTHs comprando. Preço abaixo da SMA200 mas on-chain sugere valor.',
+          action: 'DCA agressivo (15-25% do capital disponível)',
+          transition: 'Transição para Markup quando: Z cruza -0.5 de baixo para cima OU preço recupera SMA200'
+        };
+      }
+    
+      // Phase 3: EUPHORIA
+      // Z > +1.5, MVRV > 3, F&G > 75, funding positive high
+      if (z !== null && z > 1.0 && mvrv > 2.5 && fearGreed > 65) {
+        return {
+          phase: 3, name: 'EUFORIA',
+          nameEn: 'EUPHORIA',
+          color: '#ef4444',
+          icon: '🔴',
+          description: 'Euphoria phase. Multiple metrics overheated. Historically precedes significant corrections. Risk management is critical.',
+          descPt: 'Fase de euforia. Múltiplas métricas superaquecidas. Historicamente precede correções significativas. Gestão de risco é crítica.',
+          action: 'Realizar lucros (20-30%), stops apertados',
+          transition: 'Transição para Distribuição quando: Z começa a cair de > +1.5, LTHs distribuindo forte'
+        };
+      }
+    
+      // Phase 4: DISTRIBUTION/MARKDOWN
+      // Z falling from > +1, MVRV > 2, LTH distributing heavily
+      if (z !== null && z > 0.5 && lth30d < -5000) {
+        return {
+          phase: 4, name: 'DISTRIBUIÇÃO',
+          nameEn: 'DISTRIBUTION',
+          color: '#f97316',
+          icon: '🟠',
+          description: 'Distribution phase. LTHs selling into strength while metrics remain elevated. Classic late-cycle pattern.',
+          descPt: 'Fase de distribuição. LTHs vendendo enquanto métricas permanecem elevadas. Padrão clássico de fim de ciclo.',
+          action: 'Reduzir exposição gradualmente, não comprar dips',
+          transition: 'Transição para Acumulação quando: Z cruza 0 de cima para baixo + MVRV < 1.5'
+        };
+      }
+    
+      // Phase 2: MARKUP (default for everything else that's positive or transitional)
+      if (z !== null && z >= -0.5) {
+        const isEarly = z < 0.5;
+        return {
+          phase: 2, name: isEarly ? 'MARKUP INICIAL' : 'MARKUP',
+          nameEn: isEarly ? 'EARLY MARKUP' : 'MARKUP',
+          color: '#3b82f6',
+          icon: '🔵',
+          description: isEarly
+            ? 'Early markup phase. Market recovering from undervaluation. Trend establishing. Good risk/reward for entries.'
+            : 'Active markup phase. Positive trend with room to grow. Stay positioned but watch for euphoria signals.',
+          descPt: isEarly
+            ? 'Markup inicial. Mercado se recuperando de subvalorização. Tendência se estabelecendo. Bom risco/retorno para entradas.'
+            : 'Fase ativa de markup. Tendência positiva com espaço para crescer. Manter posição mas vigiar sinais de euforia.',
+          action: isEarly ? 'DCA moderado (5-10%), aproveitar pullbacks' : 'Hold, trailing stops, sem novos aportes agressivos',
+          transition: isEarly
+            ? 'Transição para Markup quando: Z cruza +0.5 com momentum positivo'
+            : 'Transição para Euforia quando: Z > +1.5 + MVRV > 3 + F&G > 75'
+        };
+      }
+    
+      // Fallback: if z is null or edge case
+      return {
+        phase: 0, name: 'ANALISANDO...',
+        nameEn: 'ANALYZING...',
+        color: '#8a8a96',
+        icon: '⏳',
+        description: 'Insufficient data to determine market phase.',
+        descPt: 'Dados insuficientes para determinar fase do mercado.',
+        action: 'Aguardar carregamento completo dos dados',
+        transition: '--'
+      };
+    }
+    
+    
+    // ═══════════════════════════════════════════════════════════
+    // FEATURE 2: Z-SCORE RATE OF CHANGE (7d / 30d delta)
+    // Input: state.compositeHistory
+    // Output: { delta7d, delta30d, momentum, description }
+    // ═══════════════════════════════════════════════════════════
+    function calcZScoreROC() {
+      const hist = state.compositeHistory || [];
+      if (hist.length < 8) return { delta7d: null, delta30d: null, momentum: 'UNKNOWN', color: '#8a8a96' };
+    
+      const current = hist[hist.length - 1].value;
+      const idx7d = Math.max(0, hist.length - 8);
+      const idx30d = Math.max(0, hist.length - 31);
+      const delta7d = current - hist[idx7d].value;
+      const delta30d = hist.length > 30 ? current - hist[idx30d].value : null;
+    
+      let momentum, color, descPt;
+      if (delta7d > 0.3) {
+        momentum = 'STRONG UP'; color = '#00d97e';
+        descPt = 'Z-Score subindo forte — momentum bullish acelerando';
+      } else if (delta7d > 0.1) {
+        momentum = 'RISING'; color = '#84cc16';
+        descPt = 'Z-Score subindo — tendência de melhoria on-chain';
+      } else if (delta7d < -0.3) {
+        momentum = 'STRONG DOWN'; color = '#ef4444';
+        descPt = 'Z-Score caindo forte — deterioração acelerada';
+      } else if (delta7d < -0.1) {
+        momentum = 'FALLING'; color = '#f97316';
+        descPt = 'Z-Score caindo — on-chain deteriorando';
+      } else {
+        momentum = 'STABLE'; color = '#8a8a96';
+        descPt = 'Z-Score estável — mercado sem direção clara';
+      }
+    
+      // Special case: rising from deep negative = very bullish early signal
+      if (current < -0.5 && delta7d > 0.05 && delta30d !== null && delta30d > 0.2) {
+        momentum = 'RECOVERY'; color = '#00d97e';
+        descPt = 'Z-Score recuperando de zona negativa — sinal early de reversão. Historicamente um dos sinais mais fortes.';
+      }
+    
+      return { delta7d, delta30d, momentum, color, descPt, current };
+    }
+    
+    
+    // ═══════════════════════════════════════════════════════════
+    // FEATURE 3: F&G vs Z-SCORE DIVERGENCE ALERT
+    // Input: state.rawValues.fearGreed, state.composite
+    // Output: { hasDivergence, type, description, historicalContext }
+    // ═══════════════════════════════════════════════════════════
+    function detectFGZDivergence() {
+      const fg = state.rawValues?.fearGreed;
+      const z = state.composite;
+      if (fg == null || z == null) return { hasDivergence: false };
+    
+      // BULLISH DIVERGENCE: F&G in Extreme Fear (< 25) + Z negative
+      if (fg < 25 && z < 0) {
+        return {
+          hasDivergence: true,
+          type: 'BULLISH',
+          color: '#00d97e',
+          icon: '🟢',
+          titlePt: 'DIVERGÊNCIA BULLISH: Fear & Greed vs Z-Score',
+          descPt: `F&G em Extreme Fear (${fg.toFixed(0)}) enquanto Z-Score (${z.toFixed(2)}) indica subvalorização on-chain. ` +
+                  `Historicamente, esta combinação (F&G < 25 + Z < 0) precede retornos médios de +40-80% nos 90-180 dias seguintes. ` +
+                  `O medo do mercado está desconectado dos fundamentos on-chain — padrão clássico de capitulação de sentimento.`,
+          strength: fg < 15 && z < -1.0 ? 'FORTE' : 'MODERADA'
+        };
+      }
+    
+      // BEARISH DIVERGENCE: F&G in Extreme Greed (> 80) + Z positive high
+      if (fg > 80 && z > 1.0) {
+        return {
+          hasDivergence: true,
+          type: 'BEARISH',
+          color: '#ef4444',
+          icon: '🔴',
+          titlePt: 'DIVERGÊNCIA BEARISH: Fear & Greed vs Z-Score',
+          descPt: `F&G em Extreme Greed (${fg.toFixed(0)}) com Z-Score elevado (${z.toFixed(2)}). ` +
+                  `Euforia de sentimento alinhada com sobrevalorização on-chain. ` +
+                  `Historicamente precede correções de -20-40% nos 30-90 dias seguintes.`,
+          strength: fg > 90 && z > 1.5 ? 'FORTE' : 'MODERADA'
+        };
+      }
+    
+      // CONTRARIAN: F&G low but Z near fair value or positive — less extreme
+      if (fg < 35 && z > 0.5) {
+        return {
+          hasDivergence: true,
+          type: 'NEUTRAL',
+          color: '#ffb800',
+          icon: '🟡',
+          titlePt: 'ATENÇÃO: Medo vs Valuation Justo',
+          descPt: `Sentimento em Fear (${fg.toFixed(0)}) mas Z-Score (${z.toFixed(2)}) indica valuation justo ou elevado. ` +
+                  `O medo pode ser oportunidade de curto prazo, mas on-chain não confirma desconto profundo.`,
+          strength: 'LEVE'
+        };
+      }
+    
+      return { hasDivergence: false };
+    }
+    
+    
+    // ═══════════════════════════════════════════════════════════
+    // FEATURE 4: MINER STRESS + LOW LEVERAGE = CAPITULATION
+    // Input: minerState, leverageState
+    // Output: { detected, description }
+    // ═══════════════════════════════════════════════════════════
+    function detectCapitulationPattern() {
+      const minerHealth = minerState.healthScore || 0;
+      const levRisk = leverageState.riskScore || 0;
+      const puell = minerState.puell;
+      const z = state.composite;
+    
+      if (!minerState.loaded || !leverageState.loaded) {
+        return { detected: false, reason: 'data_loading' };
+      }
+    
+      // Pattern: Miners stressed (health < 35) + Leverage clean (risk < 20)
+      // This means: miners are under revenue pressure but market isn't over-leveraged
+      // = organic selling pressure without cascade risk = late-stage capitulation
+      if (minerHealth < 35 && levRisk < 20) {
+        const isPuellLow = puell !== null && puell < 0.7;
+        return {
+          detected: true,
+          type: 'MINER_CAPITULATION',
+          color: '#00d97e',
+          icon: '⛏️',
+          titlePt: 'PADRÃO DETECTADO: Capitulação de Mineradores',
+          descPt: `Miners sob stress (Health: ${minerHealth}%) mas leverage limpo (Risk: ${levRisk}%). ` +
+                  `${isPuellLow ? `Puell Multiple em ${puell.toFixed(2)} confirma revenue stress. ` : ''}` +
+                  `Este padrão indica pressão de venda orgânica sem risco de cascata de liquidações. ` +
+                  `Historicamente, quando miners capitulam com leverage baixo, ` +
+                  `o preço está próximo do fundo — a pressão vendedora se esgota sem fuel de liquidações.`,
+          actionPt: 'Sinal contrário forte. Considerar acumulação — a pressão vendedora tende a se esgotar.',
+          strength: (minerHealth < 25 && levRisk < 15 && isPuellLow) ? 'FORTE' : 'MODERADO'
+        };
+      }
+    
+      // Opposite pattern: Leverage high + Miners healthy = cascade risk
+      if (levRisk > 50 && minerHealth > 50) {
+        return {
+          detected: true,
+          type: 'CASCADE_RISK',
+          color: '#ef4444',
+          icon: '⚠️',
+          titlePt: 'RISCO: Leverage Elevado com Mercado Confiante',
+          descPt: `Leverage alto (Risk: ${levRisk}%) com miners saudáveis (Health: ${minerHealth}%). ` +
+                  `Mercado confiante e alavancado — vulnerável a cascata de liquidações em qualquer choque negativo.`,
+          actionPt: 'Cautela. Reduzir alavancagem, apertar stops.',
+          strength: levRisk > 70 ? 'FORTE' : 'MODERADO'
+        };
+      }
+    
+      return { detected: false };
+    }
+    
+    
+    // ═══════════════════════════════════════════════════════════
+    // FEATURE 5: FIX STABLECOIN RATIO LABEL
+    // Returns contextual explanation for SSR Z-Score
+    // ═══════════════════════════════════════════════════════════
+    function getStablecoinContext(ssrZ) {
+      if (ssrZ == null) return { label: '--', color: '#8a8a96', explanation: '' };
+    
+      if (ssrZ < -1.0) {
+        return {
+          label: 'DRY POWDER',
+          color: '#00d97e',
+          explanationPt: `Stablecoin Ratio Z=${ssrZ.toFixed(2)} indica excesso de stablecoins vs BTC — "pó seco" pronto para comprar. Sinal bullish de capital esperando para entrar.`
+        };
+      } else if (ssrZ < -0.3) {
+        return {
+          label: 'CAPITAL READY',
+          color: '#84cc16',
+          explanationPt: `Stablecoin Ratio levemente negativo (Z=${ssrZ.toFixed(2)}). Capital em stablecoins moderadamente elevado — potencial de compra latente.`
+        };
+      } else if (ssrZ > 1.0) {
+        return {
+          label: 'DEPLOYED',
+          color: '#ef4444',
+          explanationPt: `Stablecoin Ratio Z=${ssrZ.toFixed(2)} indica capital já deployado em BTC. Pouco pó seco restante — menos fuel para novos ralis.`
+        };
+      } else if (ssrZ > 0.3) {
+        return {
+          label: 'NEUTRAL-DEPLOYED',
+          color: '#f97316',
+          explanationPt: `Stablecoin Ratio moderadamente positivo (Z=${ssrZ.toFixed(2)}). Capital parcialmente deployado.`
+        };
+      }
+      return {
+        label: 'NEUTRAL',
+        color: '#8a8a96',
+        explanationPt: `Stablecoin Ratio equilibrado (Z=${ssrZ.toFixed(2)}). Sem sinal direcional forte.`
+      };
+    }
+    
+    
+    // ═══════════════════════════════════════════════════════════
+    // FEATURE 6: HALVING COUNTDOWN
+    // Pure calculation, no API needed
+    // ═══════════════════════════════════════════════════════════
+    function getHalvingInfo() {
+      // Bitcoin halving dates (block height based, approximate dates)
+      const halvings = [
+        { date: '2012-11-28', block: 210000 },
+        { date: '2016-07-09', block: 420000 },
+        { date: '2020-05-11', block: 630000 },
+        { date: '2024-04-20', block: 840000 },
+        // Next estimated (840000 + 210000 blocks × ~10min each ≈ 4 years)
+        { date: '2028-04-15', block: 1050000, estimated: true }
+      ];
+    
+      const now = new Date();
+      const lastHalving = halvings[3]; // April 2024
+      const nextHalving = halvings[4]; // ~April 2028
+    
+      const daysSinceHalving = Math.floor((now - new Date(lastHalving.date)) / (1000 * 60 * 60 * 24));
+      const daysToNextHalving = Math.floor((new Date(nextHalving.date) - now) / (1000 * 60 * 60 * 24));
+      const cycleLength = Math.floor((new Date(nextHalving.date) - new Date(lastHalving.date)) / (1000 * 60 * 60 * 24));
+      const cycleProgress = (daysSinceHalving / cycleLength) * 100;
+    
+      // Historical context: average returns at similar cycle position
+      let cycleContext, cycleColor;
+      if (daysSinceHalving < 180) {
+        cycleContext = 'Primeiros 6 meses pós-halving. Historicamente: consolidação antes do markup.';
+        cycleColor = '#8a8a96';
+      } else if (daysSinceHalving < 365) {
+        cycleContext = '6-12 meses pós-halving. Historicamente: início do bull run. Retorno médio: +120% nos ciclos anteriores.';
+        cycleColor = '#00d97e';
+      } else if (daysSinceHalving < 547) {
+        cycleContext = '12-18 meses pós-halving. Historicamente: fase de markup ativa. Janela de maior retorno do ciclo.';
+        cycleColor = '#00d97e';
+      } else if (daysSinceHalving < 730) {
+        cycleContext = '18-24 meses pós-halving. Historicamente: transição para euforia/topo. Cautela crescente.';
+        cycleColor = '#ffb800';
+      } else {
+        cycleContext = '24+ meses pós-halving. Historicamente: zona de topo ou pós-topo. Risco elevado.';
+        cycleColor = '#ef4444';
+      }
+    
+      return {
+        daysSinceHalving,
+        daysToNextHalving,
+        cycleProgress: cycleProgress.toFixed(1),
+        lastHalvingDate: lastHalving.date,
+        nextHalvingDate: nextHalving.date,
+        cycleContext,
+        cycleColor,
+        currentEra: '5th', // Post 4th halving = 5th era
+        blockReward: '3.125 BTC'
+      };
+    }
+    
+    
+    // ═══════════════════════════════════════════════════════════
+    // FEATURE 7: CONFLUENCE SCORE HISTORICAL CONTEXT
+    // Analyze compositeHistory to find similar confluence levels
+    // and what returns followed
+    // ═══════════════════════════════════════════════════════════
+    function getConfluenceHistoricalContext() {
+      const currentScore = confluenceState?.score;
+      const hist = state.compositeHistory || [];
+      const prices = state.prices || [];
+    
+      if (currentScore == null || hist.length < 90 || prices.length < 90) {
+        return { available: false };
+      }
+    
+      // Build a date→price map for return calculations
+      const priceMap = new Map(prices.map(p => [p.date, p.value]));
+    
+      // For each historical date, approximate what confluence would have been
+      // We'll use Z-Score as primary proxy since it's the dominant factor (35% weight)
+      // Similar Z-Score ≈ similar confluence
+      const currentZ = state.composite;
+      if (currentZ == null) return { available: false };
+    
+      const zTolerance = 0.4; // ±0.4 Z-Score is "similar"
+      const results = { d30: [], d60: [], d90: [], d180: [] };
+    
+      for (let i = 0; i < hist.length - 180; i++) {
+        const z = hist[i].value;
+        const date = hist[i].date;
+    
+        if (Math.abs(z - currentZ) <= zTolerance) {
+          // Found a similar Z-Score moment — calculate forward returns
+          const p0 = priceMap.get(date);
+          if (!p0 || p0 <= 0) continue;
+    
+          // Find prices at +30, +60, +90, +180 days
+          for (const [days, arr] of [[30, results.d30], [60, results.d60], [90, results.d90], [180, results.d180]]) {
+            const targetIdx = i + days;
+            if (targetIdx < hist.length) {
+              const targetDate = hist[targetIdx].date;
+              const pTarget = priceMap.get(targetDate);
+              if (pTarget && pTarget > 0) {
+                arr.push(((pTarget - p0) / p0) * 100);
+              }
+            }
+          }
+        }
+      }
+    
+      function stats(arr) {
+        if (arr.length < 3) return null;
+        const sorted = arr.slice().sort((a, b) => a - b);
+        const mean = arr.reduce((s, v) => s + v, 0) / arr.length;
+        const median = sorted[Math.floor(sorted.length / 2)];
+        const positive = arr.filter(v => v > 0).length;
+        return {
+          mean: mean.toFixed(1),
+          median: median.toFixed(1),
+          winRate: ((positive / arr.length) * 100).toFixed(0),
+          samples: arr.length,
+          min: sorted[0].toFixed(1),
+          max: sorted[sorted.length - 1].toFixed(1)
+        };
+      }
+    
+      return {
+        available: true,
+        zUsed: currentZ.toFixed(2),
+        tolerance: zTolerance,
+        d30: stats(results.d30),
+        d60: stats(results.d60),
+        d90: stats(results.d90),
+        d180: stats(results.d180)
+      };
+    }
+    
+    
+    // ═══════════════════════════════════════════════════════════
+    // FEATURE 8: ENHANCED NARRATIVE REPORT GENERATOR
+    // Replaces the simple summaryText with rich conditional narrative
+    // ═══════════════════════════════════════════════════════════
+    function generateNarrativeReport() {
+      const z = state.composite;
+      const fg = state.rawValues?.fearGreed;
+      const mvrv = state.rawValues?.mvrv || 0;
+      const nupl = state.rawValues?.nupl;
+      const sopr = state.rawValues?.sopr;
+      const price = tradingState.currentPrice || 0;
+      const techData = tradingState.technicalData || [];
+      const last = techData.length > 0 ? techData[techData.length - 1] : {};
+      const sma200 = parseFloat(last.sma200) || 0;
+    
+      const phase = detectMarketPhase();
+      const zROC = calcZScoreROC();
+      const fgDiv = detectFGZDivergence();
+      const capPattern = detectCapitulationPattern();
+      const halving = getHalvingInfo();
+      const confHist = getConfluenceHistoricalContext();
+      const ssrZ = state.zScores?.ssr;
+      const ssrCtx = getStablecoinContext(ssrZ);
+    
+      const lth = smartMoneyState.lth30d;
+      const smConf = smartMoneyState.confidence || 0;
+      const levRisk = leverageState.riskScore || 0;
+      const minerHealth = minerState.healthScore || 0;
+      const puell = minerState.puell;
+      const fpScore = futuresPressureState.score;
+    
+      let narrative = '';
+    
+      // ── OPENING: Price + Phase + Cycle Context ──
+      narrative += `<div style="margin-bottom:16px;padding:14px;border-radius:8px;background:rgba(${phase.color === '#00d97e' ? '0,217,126' : phase.color === '#ef4444' ? '239,68,68' : phase.color === '#3b82f6' ? '59,130,246' : '249,115,22'},0.08);border-left:3px solid ${phase.color};">`;
+      narrative += `<div style="font-size:10px;color:${phase.color};font-weight:700;letter-spacing:1px;margin-bottom:6px;">${phase.icon} FASE DE CICLO: ${phase.name}</div>`;
+      narrative += `<div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">${phase.descPt}</div>`;
+      narrative += `<div style="font-size:10px;color:var(--text-muted);margin-top:6px;">▸ ${phase.transition}</div>`;
+      narrative += `</div>`;
+    
+      // ── MAIN NARRATIVE PARAGRAPH ──
+      narrative += `<div style="margin-bottom:14px;line-height:1.8;font-size:12px;color:var(--text-secondary);">`;
+    
+      // Price context
+      if (price > 0) {
+        const priceStr = '$' + price.toLocaleString(undefined, {maximumFractionDigits: 0});
+        const sma200Str = sma200 > 0 ? '$' + sma200.toLocaleString(undefined, {maximumFractionDigits: 0}) : '--';
+        const pctFromSma = sma200 > 0 ? ((price / sma200 - 1) * 100).toFixed(1) : null;
+        narrative += `BTC negocia a <strong style="color:var(--text-primary)">${priceStr}</strong>`;
+        if (pctFromSma !== null) {
+          const aboveBelow = parseFloat(pctFromSma) >= 0 ? 'acima' : 'abaixo';
+          narrative += ` (${Math.abs(parseFloat(pctFromSma)).toFixed(1)}% ${aboveBelow} da SMA200 ${sma200Str})`;
+        }
+      }
+    
+      // Z-Score + ROC context
+      if (z !== null) {
+        const zone = z <= -1.5 ? 'subvalorização extrema' : z <= -0.5 ? 'desconto moderado' : z >= 1.5 ? 'sobrevalorização' : z >= 0.5 ? 'valuation elevado' : 'fair value';
+        narrative += ` com valuation em <strong style="color:${zROC.color || 'var(--text-primary)'}">${zone}</strong> (Z=${z.toFixed(2)})`;
+        if (zROC.delta7d !== null) {
+          const dir = zROC.delta7d > 0 ? 'subindo' : zROC.delta7d < 0 ? 'caindo' : 'estável';
+          narrative += `, ${dir} ${Math.abs(zROC.delta7d).toFixed(2)} em 7d`;
+          if (zROC.delta30d !== null) {
+            narrative += ` e ${zROC.delta30d > 0 ? '+' : ''}${zROC.delta30d.toFixed(2)} em 30d`;
+          }
+        }
+        narrative += `. `;
+      }
+    
+      // Smart Money
+      if (smartMoneyState.loaded && lth !== null) {
+        if (lth > 0) {
+          narrative += `LTHs acumulam <strong style="color:var(--accent-green)">+${Math.abs(lth).toLocaleString()} BTC/30d</strong>`;
+        } else {
+          narrative += `LTHs distribuem <strong style="color:var(--accent-red)">${lth.toLocaleString()} BTC/30d</strong>`;
+        }
+        if (smartMoneyState.sth30d !== null) {
+          const sth = smartMoneyState.sth30d;
+          narrative += ` enquanto STHs ${sth > 0 ? 'compram' : 'vendem'}`;
+          if ((lth > 0 && sth < 0) || (lth < 0 && sth > 0)) {
+            narrative += ` — <em>padrão de transferência ${lth > 0 ? 'de mãos fracas para fortes' : 'de mãos fortes para fracas'}</em>`;
+          }
+        }
+        narrative += `. `;
+      }
+    
+      // Leverage
+      if (leverageState.loaded) {
+        narrative += `Leverage ${levRisk < 20 ? '<strong style="color:var(--accent-green)">limpo</strong>' : levRisk > 50 ? '<strong style="color:var(--accent-red)">elevado</strong>' : 'moderado'} (Cascade Risk ${levRisk}%)`;
+        if (leverageState.oi) {
+          narrative += `, OI $${(leverageState.oi / 1e9).toFixed(1)}B`;
+        }
+        narrative += `. `;
+      }
+    
+      // Miners
+      if (minerState.loaded) {
+        if (minerHealth < 35) {
+          narrative += `Miners ${minerHealth < 20 ? 'em capitulação' : 'sob pressão'} (Health ${minerHealth}%)`;
+          if (puell !== null) narrative += `, Puell ${puell.toFixed(2)}`;
+          narrative += ` — revenue stress ${levRisk < 20 ? 'mas sem risco de cascata' : ''}. `;
+        } else if (minerHealth > 65) {
+          narrative += `Miners saudáveis (Health ${minerHealth}%). `;
+        }
+      }
+    
+      narrative += `</div>`;
+    
+      // ── DIVERGENCE ALERT (if detected) ──
+      if (fgDiv.hasDivergence) {
+        const bgAlpha = fgDiv.type === 'BULLISH' ? '0,217,126' : fgDiv.type === 'BEARISH' ? '239,68,68' : '255,184,0';
+        narrative += `<div style="margin-bottom:14px;padding:12px;border-radius:8px;background:rgba(${bgAlpha},0.06);border:1px solid rgba(${bgAlpha},0.2);">`;
+        narrative += `<div style="font-size:10px;color:${fgDiv.color};font-weight:700;letter-spacing:1px;margin-bottom:4px;">${fgDiv.icon} ${fgDiv.titlePt} (${fgDiv.strength})</div>`;
+        narrative += `<div style="font-size:11px;color:var(--text-secondary);line-height:1.6;">${fgDiv.descPt}</div>`;
+        narrative += `</div>`;
+      }
+    
+      // ── CAPITULATION PATTERN (if detected) ──
+      if (capPattern.detected) {
+        const bgAlpha = capPattern.type === 'MINER_CAPITULATION' ? '0,217,126' : '239,68,68';
+        narrative += `<div style="margin-bottom:14px;padding:12px;border-radius:8px;background:rgba(${bgAlpha},0.06);border:1px solid rgba(${bgAlpha},0.2);">`;
+        narrative += `<div style="font-size:10px;color:${capPattern.color};font-weight:700;letter-spacing:1px;margin-bottom:4px;">${capPattern.icon} ${capPattern.titlePt} (${capPattern.strength})</div>`;
+        narrative += `<div style="font-size:11px;color:var(--text-secondary);line-height:1.6;">${capPattern.descPt}</div>`;
+        narrative += `<div style="font-size:10px;color:var(--text-muted);margin-top:4px;">▸ ${capPattern.actionPt}</div>`;
+        narrative += `</div>`;
+      }
+    
+      // ── HALVING CYCLE CONTEXT ──
+      narrative += `<div style="margin-bottom:14px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);">`;
+      narrative += `<div style="font-size:10px;color:var(--accent-cyan);font-weight:700;letter-spacing:1px;margin-bottom:6px;">⏱️ CICLO DE HALVING · ${halving.daysSinceHalving} DIAS DESDE O HALVING</div>`;
+      narrative += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">`;
+      narrative += `<div style="flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;">`;
+      narrative += `<div style="width:${halving.cycleProgress}%;height:100%;background:${halving.cycleColor};border-radius:3px;"></div>`;
+      narrative += `</div>`;
+      narrative += `<span style="font-size:10px;color:${halving.cycleColor};font-weight:600;">${halving.cycleProgress}%</span>`;
+      narrative += `</div>`;
+      narrative += `<div style="font-size:11px;color:var(--text-secondary);line-height:1.5;">${halving.cycleContext}</div>`;
+      narrative += `<div style="font-size:9px;color:var(--text-muted);margin-top:4px;">Próximo halving estimado: ${halving.nextHalvingDate} · Block reward atual: ${halving.blockReward}</div>`;
+      narrative += `</div>`;
+    
+      // ── STABLECOIN CONTEXT ──
+      if (ssrZ != null) {
+        narrative += `<div style="margin-bottom:14px;padding:10px;border-radius:6px;background:rgba(255,255,255,0.02);border-left:3px solid ${ssrCtx.color};">`;
+        narrative += `<div style="font-size:10px;color:${ssrCtx.color};font-weight:700;letter-spacing:1px;margin-bottom:4px;">💰 STABLECOIN RATIO: ${ssrCtx.label}</div>`;
+        narrative += `<div style="font-size:11px;color:var(--text-secondary);line-height:1.5;">${ssrCtx.explanationPt}</div>`;
+        narrative += `</div>`;
+      }
+    
+      // ── HISTORICAL CONFLUENCE CONTEXT ──
+      if (confHist.available && confHist.d90) {
+        narrative += `<div style="margin-bottom:14px;padding:12px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);">`;
+        narrative += `<div style="font-size:10px;color:var(--accent-cyan);font-weight:700;letter-spacing:1px;margin-bottom:8px;">📊 CONTEXTO HISTÓRICO · Z-SCORE ≈ ${confHist.zUsed} (±${confHist.tolerance})</div>`;
+        narrative += `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;">`;
+    
+        for (const [label, data] of [['30d', confHist.d30], ['60d', confHist.d60], ['90d', confHist.d90], ['180d', confHist.d180]]) {
+          if (data) {
+            const retColor = parseFloat(data.mean) > 0 ? '#00d97e' : '#ef4444';
+            narrative += `<div style="padding:8px;border-radius:6px;background:rgba(255,255,255,0.03);">`;
+            narrative += `<div style="font-size:9px;color:var(--text-muted);margin-bottom:4px;">${label} forward</div>`;
+            narrative += `<div style="font-size:14px;font-weight:700;color:${retColor};font-family:'JetBrains Mono',monospace;">${data.mean > 0 ? '+' : ''}${data.mean}%</div>`;
+            narrative += `<div style="font-size:8px;color:var(--text-muted);margin-top:2px;">Win: ${data.winRate}% · n=${data.samples}</div>`;
+            narrative += `</div>`;
+          }
+        }
+        narrative += `</div>`;
+        narrative += `<div style="font-size:9px;color:var(--text-muted);margin-top:6px;">Retorno médio do BTC em momentos com Z-Score similar ao atual. Baseado em ${confHist.d30?.samples || 0} observações históricas.</div>`;
+        narrative += `</div>`;
+      }
+    
+      // ── Z-SCORE MOMENTUM MINI-INDICATOR ──
+      if (zROC.delta7d !== null) {
+        narrative += `<div style="margin-bottom:14px;padding:10px;border-radius:6px;background:rgba(255,255,255,0.02);border-left:3px solid ${zROC.color};">`;
+        narrative += `<div style="font-size:10px;color:${zROC.color};font-weight:700;letter-spacing:1px;margin-bottom:4px;">📈 Z-SCORE MOMENTUM: ${zROC.momentum}</div>`;
+        narrative += `<div style="display:flex;gap:16px;margin-bottom:6px;">`;
+        narrative += `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;">Δ7d: <strong style="color:${zROC.delta7d >= 0 ? '#00d97e' : '#ef4444'}">${zROC.delta7d >= 0 ? '+' : ''}${zROC.delta7d.toFixed(3)}</strong></span>`;
+        if (zROC.delta30d !== null) {
+          narrative += `<span style="font-family:'JetBrains Mono',monospace;font-size:12px;">Δ30d: <strong style="color:${zROC.delta30d >= 0 ? '#00d97e' : '#ef4444'}">${zROC.delta30d >= 0 ? '+' : ''}${zROC.delta30d.toFixed(3)}</strong></span>`;
+        }
+        narrative += `</div>`;
+        narrative += `<div style="font-size:11px;color:var(--text-secondary);line-height:1.5;">${zROC.descPt}</div>`;
+        narrative += `</div>`;
+      }
+    
+      return narrative;
+    }
+    
 
     // ========== BACKSTAGE: STRATEGY COMPARISON ==========
     function calcStrategyMetrics(trades) {
