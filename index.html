@@ -7944,53 +7944,83 @@
     async function fetchPriceLayers() {
       console.log('[PriceLayers] Fetching data...');
       try {
-        const [spotRes, sthRPRes, lthRPRes, realizedRes] = await Promise.all([
-          fetchBGeometrics('/v1/btc-price', 'PL:Spot'),
-          fetchBGeometrics('/v1/sth-realized-price', 'PL:STH RP'),
-          fetchBGeometrics('/v1/lth-realized-price', 'PL:LTH RP'),
-          fetchBGeometrics('/v1/realized-price', 'PL:Realized Price'),
-        ]);
+        // Use existing price data from state if available
+        let spotHistory = (state.prices || []).map(d => ({ date: d.date, value: parseFloat(d.value) })).filter(d => !isNaN(d.value));
         
-        // Try optional endpoints (may not exist)
-        let deltaRes = { success: false }, tmmRes = { success: false };
-        try { deltaRes = await fetchBGeometrics('/v1/delta-price', 'PL:Delta Price'); } catch(e) {}
-        try { tmmRes = await fetchBGeometrics('/v1/true-market-mean', 'PL:TMM'); } catch(e) {}
+        // Fetch realized price layers via BGeometrics (same proxy as other tabs)
+        const endpoints = [
+          { key: 'sthRP', path: '/v1/sth-realized-price', label: 'PL:STH RP', fields: ['sthRealizedPrice','value','v'] },
+          { key: 'lthRP', path: '/v1/lth-realized-price', label: 'PL:LTH RP', fields: ['lthRealizedPrice','value','v'] },
+          { key: 'realized', path: '/v1/realized-price', label: 'PL:Realized Price', fields: ['realizedPrice','value','v'] },
+        ];
         
-        if (!spotRes.success || !sthRPRes.success || !lthRPRes.success) {
-          console.warn('[PriceLayers] Core endpoints failed');
-          return;
+        const results = {};
+        for (const ep of endpoints) {
+          try {
+            const res = await fetchBGeometrics(ep.path, ep.label);
+            if (res.success && res.data) {
+              const arr = Array.isArray(res.data) ? res.data : [];
+              results[ep.key] = arr.map(d => {
+                const date = d.d || d.date || d.t;
+                let val = null;
+                for (const f of ep.fields) { if (d[f] !== undefined) { val = parseFloat(d[f]); break; } }
+                if (val === null) {
+                  // Auto-detect: first numeric field that looks like a price (> 100 and < 500000)
+                  for (const [k, v] of Object.entries(d)) {
+                    if (k === 'd' || k === 'date' || k === 't') continue;
+                    const n = parseFloat(v);
+                    if (!isNaN(n) && n > 100 && n < 500000) { val = n; break; }
+                  }
+                }
+                return { date, value: val };
+              }).filter(d => d.date && d.value !== null && !isNaN(d.value)).sort((a,b) => new Date(a.date) - new Date(b.date));
+              console.log('[PriceLayers]', ep.key, 'loaded:', results[ep.key].length, 'points, latest:', results[ep.key][results[ep.key].length-1]?.value);
+            } else {
+              results[ep.key] = [];
+            }
+          } catch(e) { results[ep.key] = []; console.warn('[PriceLayers]', ep.key, 'failed:', e.message); }
         }
         
-        // Normalize data
-        const parseArr = (res, field) => {
-          if (!res.success || !res.data) return [];
-          const arr = Array.isArray(res.data) ? res.data : res.data.data || res.data.chart || [];
-          return arr.map(d => ({
-            date: d.d || d.date || d.t,
-            value: parseFloat(d[field] || d.value || d.price || d.v || Object.values(d).find(v => typeof v === 'number' && v > 100))
-          })).filter(d => d.date && !isNaN(d.value)).sort((a,b) => new Date(a.date) - new Date(b.date));
+        // Try optional: delta-price (may not exist)
+        let delta = [];
+        try {
+          const res = await fetchBGeometrics('/v1/delta-price', 'PL:Delta Price');
+          if (res.success && res.data && Array.isArray(res.data)) {
+            delta = res.data.map(d => {
+              const date = d.d || d.date || d.t;
+              let val = parseFloat(d.deltaPrice || d.value || d.v);
+              if (isNaN(val)) { for (const [k,v] of Object.entries(d)) { if (k !== 'd' && k !== 'date' && k !== 't') { const n = parseFloat(v); if (!isNaN(n) && n > 0 && n < 500000) { val = n; break; } } } }
+              return { date, value: val };
+            }).filter(d => d.date && !isNaN(d.value)).sort((a,b) => new Date(a.date) - new Date(b.date));
+          }
+        } catch(e) {}
+        
+        // If no spot history from state, try fetch
+        if (spotHistory.length === 0) {
+          try {
+            const res = await fetchBGeometrics('/v1/btc-price', 'PL:Spot');
+            if (res.success && res.data && Array.isArray(res.data)) {
+              spotHistory = res.data.map(d => ({ date: d.d || d.date || d.t, value: parseFloat(d.price || d.value || d.v) }))
+                .filter(d => d.date && !isNaN(d.value)).sort((a,b) => new Date(a.date) - new Date(b.date));
+            }
+          } catch(e) {}
+        }
+        
+        const latest = arr => arr.length > 0 ? arr[arr.length - 1].value : 0;
+        const latestSpot = tradingState.currentPrice || latest(spotHistory);
+        
+        priceLayersState.layers = {
+          spot: latestSpot,
+          sthRP: latest(results.sthRP || []),
+          lthRP: latest(results.lthRP || []),
+          realized: latest(results.realized || []),
+          deltaP: latest(delta),
+          tmm: 0
         };
-        
-        const spot = parseArr(spotRes, 'price');
-        const sthRP = parseArr(sthRPRes, 'value');
-        const lthRP = parseArr(lthRPRes, 'value');
-        const realized = parseArr(realizedRes, 'value');
-        const delta = parseArr(deltaRes, 'value');
-        const tmm = parseArr(tmmRes, 'value');
-        
-        // Get latest values
-        const latestSpot = spot.length > 0 ? spot[spot.length - 1].value : (tradingState.currentPrice || 0);
-        const latestSTH = sthRP.length > 0 ? sthRP[sthRP.length - 1].value : 0;
-        const latestLTH = lthRP.length > 0 ? lthRP[lthRP.length - 1].value : 0;
-        const latestRealized = realized.length > 0 ? realized[realized.length - 1].value : 0;
-        const latestDelta = delta.length > 0 ? delta[delta.length - 1].value : 0;
-        const latestTMM = tmm.length > 0 ? tmm[tmm.length - 1].value : 0;
-        
-        priceLayersState.layers = { spot: latestSpot, sthRP: latestSTH, lthRP: latestLTH, realized: latestRealized, deltaP: latestDelta, tmm: latestTMM };
-        priceLayersState.history = { spot, sthRP, lthRP, realized, delta, tmm };
+        priceLayersState.history = { spot: spotHistory, sthRP: results.sthRP || [], lthRP: results.lthRP || [], realized: results.realized || [], delta, tmm: [] };
         priceLayersState.loaded = true;
         
-        console.log('[PriceLayers] Data loaded:', priceLayersState.layers);
+        console.log('[PriceLayers] All data loaded:', priceLayersState.layers);
         renderPriceLayers();
       } catch (err) {
         console.error('[PriceLayers] Fetch error:', err);
@@ -8182,25 +8212,38 @@
       const days = priceLayersState.timeRange;
       
       const sliceEnd = (arr) => arr.slice(Math.max(0, arr.length - days));
-      const toXY = (arr) => arr.map(d => ({ x: d.date, y: d.value }));
+      
+      // Build unified date labels from spot data
+      const spotSlice = sliceEnd(spot);
+      const labels = spotSlice.map(d => {
+        try { return new Date(d.date).toLocaleDateString('en-US', { month:'short', year:'2-digit' }); }
+        catch { return d.date; }
+      });
+      
+      // Align each dataset to spot dates
+      const alignToLabels = (arr) => {
+        const map = {};
+        arr.forEach(d => { map[d.date] = d.value; });
+        return spotSlice.map(s => map[s.date] || null);
+      };
       
       const datasets = [
-        { label: 'BTC Spot', data: toXY(sliceEnd(spot)), borderColor: '#FFFFFF', borderWidth: 2, fill: false, pointRadius: 0, order: 0 },
-        { label: 'STH RP', data: toXY(sliceEnd(sthRP)), borderColor: '#E24B4A', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], order: 1 },
-        { label: 'Realized Price', data: toXY(sliceEnd(realized)), borderColor: '#888780', borderWidth: 1, fill: false, pointRadius: 0, borderDash: [2,3], order: 2 },
-        { label: 'LTH RP', data: toXY(sliceEnd(lthRP)), borderColor: '#1D9E75', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], order: 3 },
+        { label: 'BTC Spot', data: spotSlice.map(d => d.value), borderColor: '#FFFFFF', borderWidth: 2, fill: false, pointRadius: 0, order: 0, spanGaps: true },
+        { label: 'STH RP', data: alignToLabels(sliceEnd(sthRP)), borderColor: '#E24B4A', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], order: 1, spanGaps: true },
+        { label: 'Realized Price', data: alignToLabels(sliceEnd(realized)), borderColor: '#888780', borderWidth: 1, fill: false, pointRadius: 0, borderDash: [2,3], order: 2, spanGaps: true },
+        { label: 'LTH RP', data: alignToLabels(sliceEnd(lthRP)), borderColor: '#1D9E75', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], order: 3, spanGaps: true },
       ];
       if (delta.length > 0) {
-        datasets.push({ label: 'Delta Price', data: toXY(sliceEnd(delta)), borderColor: '#8B5CF6', borderWidth: 1, fill: false, pointRadius: 0, borderDash: [2,4], order: 4 });
+        datasets.push({ label: 'Delta Price', data: alignToLabels(sliceEnd(delta)), borderColor: '#8B5CF6', borderWidth: 1, fill: false, pointRadius: 0, borderDash: [2,4], order: 4, spanGaps: true });
       }
       
-      if (priceLayersState.chart) priceLayersState.chart.destroy();
+      if (priceLayersState.chart) { priceLayersState.chart.destroy(); priceLayersState.chart = null; }
       const ctx = document.getElementById('plLayersChart');
       if (!ctx) return;
       
       priceLayersState.chart = new Chart(ctx, {
         type: 'line',
-        data: { datasets },
+        data: { labels, datasets },
         options: {
           responsive: true, maintainAspectRatio: false,
           scales: {
@@ -8208,18 +8251,17 @@
               type: 'logarithmic',
               position: 'left',
               grid: { color: 'rgba(255,255,255,0.05)' },
-              ticks: { color: 'var(--text-muted)', font: { size: 10 }, callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v) }
+              ticks: { color: '#9a9aa6', font: { size: 10 }, callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v) }
             },
             x: {
-              type: 'time',
-              time: { unit: days > 400 ? 'month' : 'week' },
+              display: true,
               grid: { display: false },
-              ticks: { color: 'var(--text-muted)', font: { size: 9 }, maxTicksLimit: 12 }
+              ticks: { color: '#9a9aa6', font: { size: 9 }, maxTicksLimit: 12 }
             }
           },
           plugins: {
             legend: { display: true, position: 'top', labels: { color: '#999', font: { size: 10 }, boxWidth: 12, padding: 8 } },
-            tooltip: { mode: 'index', intersect: false, callbacks: { label: ctx => `${ctx.dataset.label}: $${ctx.parsed.y?.toLocaleString()}` } }
+            tooltip: { mode: 'index', intersect: false, callbacks: { label: item => item.dataset.label + ': $' + (item.parsed.y ? item.parsed.y.toLocaleString() : '--') } }
           },
           interaction: { mode: 'nearest', axis: 'x', intersect: false }
         }
@@ -8232,47 +8274,87 @@
     async function fetchCohortData() {
       console.log('[Cohort] Fetching data...');
       try {
-        const [sthRPRes, lthRPRes, mvrvSthRes, soprSthRes, supplyProfitRes, hodlWavesRes] = await Promise.all([
-          fetchBGeometrics('/v1/sth-realized-price', 'Cohort:STH RP'),
-          fetchBGeometrics('/v1/lth-realized-price', 'Cohort:LTH RP'),
-          fetchBGeometrics('/v1/sth-mvrv', 'Cohort:MVRV STH'),
-          fetchBGeometrics('/v1/sopr-sth', 'Cohort:SOPR STH'),
-          fetchBGeometrics('/v1/supply-in-profit', 'Cohort:Supply Profit'),
-          fetchBGeometrics('/v1/hodl-waves', 'Cohort:HODL Waves'),
-        ]);
-        
-        const parseVal = (res) => {
-          if (!res.success || !res.data) return null;
-          const arr = Array.isArray(res.data) ? res.data : res.data.data || res.data.chart || [];
-          if (arr.length === 0) return null;
-          const last = arr[arr.length - 1] || arr[0];
-          const val = last.value || last.v || Object.values(last).find(v => typeof v === 'number' && v !== 0);
-          return parseFloat(val);
+        // Helper to safely fetch and parse
+        const safeFetch = async (path, label, ...fields) => {
+          try {
+            const res = await fetchBGeometrics(path, label);
+            if (!res.success || !res.data) return { history: [], latest: null };
+            const arr = Array.isArray(res.data) ? res.data : [];
+            const history = arr.map(d => {
+              const date = d.d || d.date || d.t;
+              let val = null;
+              for (const f of fields) { if (d[f] !== undefined) { val = parseFloat(d[f]); break; } }
+              if (val === null) {
+                for (const [k, v] of Object.entries(d)) {
+                  if (k === 'd' || k === 'date' || k === 't') continue;
+                  const n = parseFloat(v);
+                  if (!isNaN(n)) { val = n; break; }
+                }
+              }
+              return { date, value: val };
+            }).filter(d => d.date && d.value !== null && !isNaN(d.value)).sort((a,b) => new Date(a.date) - new Date(b.date));
+            const latest = history.length > 0 ? history[history.length - 1].value : null;
+            console.log('[Cohort]', label, ':', latest, '(' + history.length + ' pts)');
+            return { history, latest };
+          } catch(e) { console.warn('[Cohort]', label, 'error:', e.message); return { history: [], latest: null }; }
         };
         
-        const parseHistory = (res) => {
-          if (!res.success || !res.data) return [];
-          const arr = Array.isArray(res.data) ? res.data : res.data.data || res.data.chart || [];
-          return arr.map(d => ({
-            date: d.d || d.date || d.t,
-            value: parseFloat(d.value || d.v || Object.values(d).find(v => typeof v === 'number'))
-          })).filter(d => d.date && !isNaN(d.value)).sort((a,b) => new Date(a.date) - new Date(b.date));
-        };
+        // Reuse Price Layers data for STH/LTH RP if already loaded
+        if (priceLayersState.loaded && priceLayersState.history) {
+          cohortState.sthRP = priceLayersState.history.sthRP;
+          cohortState.lthRP = priceLayersState.history.lthRP;
+          console.log('[Cohort] Reusing PriceLayers STH/LTH RP data');
+        } else {
+          const sth = await safeFetch('/v1/sth-realized-price', 'Cohort:STH RP', 'sthRealizedPrice', 'value', 'v');
+          const lth = await safeFetch('/v1/lth-realized-price', 'Cohort:LTH RP', 'lthRealizedPrice', 'value', 'v');
+          cohortState.sthRP = sth.history;
+          cohortState.lthRP = lth.history;
+        }
         
-        cohortState.sthRP = parseHistory(sthRPRes);
-        cohortState.lthRP = parseHistory(lthRPRes);
-        cohortState.sthMVRV = parseVal(mvrvSthRes);
-        cohortState.sthSOPR = parseVal(soprSthRes);
-        cohortState.supplyProfit = parseVal(supplyProfitRes);
+        // MVRV STH - use tradingState if available (already fetched by trading tab)
+        if (tradingState.mvrvSth !== null && tradingState.mvrvSth !== undefined) {
+          cohortState.sthMVRV = tradingState.mvrvSth;
+          console.log('[Cohort] Reusing tradingState MVRV STH:', cohortState.sthMVRV);
+        } else {
+          const mvrv = await safeFetch('/v1/sth-mvrv', 'Cohort:MVRV STH', 'sthMvrv', 'mvrv', 'value', 'v');
+          cohortState.sthMVRV = mvrv.latest;
+        }
         
-        // HODL waves - try to parse whatever structure comes back
-        if (hodlWavesRes.success && hodlWavesRes.data) {
-          const hd = Array.isArray(hodlWavesRes.data) ? hodlWavesRes.data[hodlWavesRes.data.length - 1] || hodlWavesRes.data[0] : hodlWavesRes.data;
-          cohortState.hodlWaves = hd;
+        // SOPR STH
+        const sopr = await safeFetch('/v1/sopr-sth', 'Cohort:SOPR STH', 'soprSth', 'sopr', 'value', 'v');
+        cohortState.sthSOPR = sopr.latest;
+        // If sopr-sth endpoint fails, try using main SOPR from state
+        if (cohortState.sthSOPR === null && state.rawValues?.sopr) {
+          cohortState.sthSOPR = state.rawValues.sopr;
+          console.log('[Cohort] Fallback: using main SOPR:', cohortState.sthSOPR);
+        }
+        
+        // Supply in Profit
+        const sp = await safeFetch('/v1/supply-in-profit', 'Cohort:Supply Profit', 'supplyInProfit', 'supplyProfit', 'value', 'v');
+        cohortState.supplyProfit = sp.latest;
+        // Fallback to existing supply profit metric
+        if (cohortState.supplyProfit === null && state.rawValues?.supplyProfit) {
+          cohortState.supplyProfit = state.rawValues.supplyProfit;
+          console.log('[Cohort] Fallback: using main Supply Profit:', cohortState.supplyProfit);
+        }
+        
+        // HODL Waves - optional, may not exist
+        try {
+          const res = await fetchBGeometrics('/v1/hodl-waves', 'Cohort:HODL Waves');
+          if (res.success && res.data) {
+            const hd = Array.isArray(res.data) ? res.data[res.data.length - 1] || res.data[0] : res.data;
+            cohortState.hodlWaves = hd;
+          }
+        } catch(e) { console.warn('[Cohort] HODL Waves not available'); }
+        
+        // Use HODL 1Y+ from smartMoneyState as fallback
+        if (!cohortState.hodlWaves && smartMoneyState.hodl1y) {
+          cohortState.hodlWaves = { _fallback: true, hodl1y: smartMoneyState.hodl1y };
+          console.log('[Cohort] Using smartMoneyState.hodl1y as fallback:', smartMoneyState.hodl1y);
         }
         
         cohortState.loaded = true;
-        console.log('[Cohort] Data loaded. MVRV STH:', cohortState.sthMVRV, 'SOPR STH:', cohortState.sthSOPR);
+        console.log('[Cohort] All data loaded. MVRV STH:', cohortState.sthMVRV, 'SOPR STH:', cohortState.sthSOPR, 'Supply Profit:', cohortState.supplyProfit);
         renderCohort();
       } catch (err) {
         console.error('[Cohort] Fetch error:', err);
@@ -8349,15 +8431,23 @@
       // HODL Waves (best-effort parsing)
       const hw = cohortState.hodlWaves;
       if (hw) {
-        // Try to find hodl wave buckets
-        const findVal = (...keys) => {
-          for (const k of keys) { if (hw[k] !== undefined) return parseFloat(hw[k]); }
-          return 0;
-        };
-        const maosF = findVal('1d','1w','1m','less_1m','less_3m','0_3m') || 0;
-        const trans = findVal('3m','6m','3_6m','3m_6m') || 0;
-        const lthJ = findVal('1y','2y','1_2y','1y_2y','12m_18m') || 0;
-        const diam = findVal('3y','5y','10y','3y_5y','5y_plus','3_plus','3y_plus') || 0;
+        let maosF = 0, trans = 0, lthJ = 0, diam = 0;
+        
+        if (hw._fallback && hw.hodl1y) {
+          // Fallback: we only have HODL 1Y+ percentage
+          const hodl1y = parseFloat(hw.hodl1y);
+          const rest = 100 - hodl1y;
+          maosF = rest * 0.35; trans = rest * 0.65; lthJ = hodl1y * 0.4; diam = hodl1y * 0.6;
+        } else {
+          const findVal = (...keys) => {
+            for (const k of keys) { if (hw[k] !== undefined) return parseFloat(hw[k]); }
+            return 0;
+          };
+          maosF = findVal('1d','1w','1m','less_1m','less_3m','0_3m') || 0;
+          trans = findVal('3m','6m','3_6m','3m_6m') || 0;
+          lthJ = findVal('1y','2y','1_2y','1y_2y','12m_18m') || 0;
+          diam = findVal('3y','5y','10y','3y_5y','5y_plus','3_plus','3y_plus') || 0;
+        }
         const total = maosF + trans + lthJ + diam;
         
         if (total > 0) {
@@ -8423,23 +8513,38 @@
     }
     
     function renderCohortChart() {
-      const spot90 = (priceLayersState.history?.spot || []).slice(-90).map(d => ({ x: d.date, y: d.value }));
-      const sth90 = cohortState.sthRP.slice(-90).map(d => ({ x: d.date, y: d.value }));
-      const lth90 = cohortState.lthRP.slice(-90).map(d => ({ x: d.date, y: d.value }));
+      const spotAll = (priceLayersState.history?.spot || []);
+      const spot90 = spotAll.slice(-90);
+      const sth90 = cohortState.sthRP.slice(-90);
+      const lth90 = cohortState.lthRP.slice(-90);
       
       if (spot90.length === 0 && sth90.length === 0) return;
       
-      if (cohortState.chart) cohortState.chart.destroy();
+      // Use spot dates as labels
+      const baseArr = spot90.length > 0 ? spot90 : sth90;
+      const labels = baseArr.map(d => {
+        try { return new Date(d.date).toLocaleDateString('en-US', { month:'short', day:'2-digit' }); }
+        catch { return d.date; }
+      });
+      
+      const alignData = (arr) => {
+        const map = {};
+        arr.forEach(d => { map[d.date] = d.value; });
+        return baseArr.map(s => map[s.date] || null);
+      };
+      
+      if (cohortState.chart) { cohortState.chart.destroy(); cohortState.chart = null; }
       const ctx = document.getElementById('cohortRPChart');
       if (!ctx) return;
       
       cohortState.chart = new Chart(ctx, {
         type: 'line',
         data: {
+          labels,
           datasets: [
-            { label: 'BTC Spot', data: spot90, borderColor: '#FFFFFF', borderWidth: 2, fill: false, pointRadius: 0 },
-            { label: 'STH RP', data: sth90, borderColor: '#E24B4A', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2] },
-            { label: 'LTH RP', data: lth90, borderColor: '#1D9E75', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2] },
+            { label: 'BTC Spot', data: spot90.length > 0 ? spot90.map(d => d.value) : alignData([]), borderColor: '#FFFFFF', borderWidth: 2, fill: false, pointRadius: 0, spanGaps: true },
+            { label: 'STH RP', data: alignData(sth90), borderColor: '#E24B4A', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], spanGaps: true },
+            { label: 'LTH RP', data: alignData(lth90), borderColor: '#1D9E75', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], spanGaps: true },
           ]
         },
         options: {
@@ -8447,18 +8552,17 @@
           scales: {
             y: {
               grid: { color: 'rgba(255,255,255,0.05)' },
-              ticks: { color: 'var(--text-muted)', font: { size: 10 }, callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v) }
+              ticks: { color: '#9a9aa6', font: { size: 10 }, callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'K' : v) }
             },
             x: {
-              type: 'time',
-              time: { unit: 'week' },
+              display: true,
               grid: { display: false },
-              ticks: { color: 'var(--text-muted)', font: { size: 9 }, maxTicksLimit: 10 }
+              ticks: { color: '#9a9aa6', font: { size: 9 }, maxTicksLimit: 10 }
             }
           },
           plugins: {
             legend: { display: true, position: 'top', labels: { color: '#999', font: { size: 10 }, boxWidth: 12 } },
-            tooltip: { mode: 'index', intersect: false }
+            tooltip: { mode: 'index', intersect: false, callbacks: { label: item => item.dataset.label + ': $' + (item.parsed.y ? item.parsed.y.toLocaleString() : '--') } }
           }
         }
       });
