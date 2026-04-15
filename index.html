@@ -4108,9 +4108,9 @@
       
       // 3. Miner Reserve Change 30d - try alternate endpoint if needed
       try {
-        let result = await fetchBGeometrics('/v1/miner-reserve-change-30d-pct', 'Miner Reserve Change 30d');
+        let result = await fetchBGeometrics('/v1/miner-reserve-change-30d-pct/10', 'Miner Reserve Change 30d');
         if (!result.success || !result.data || !result.data.length) {
-          result = await fetchBGeometrics('/v1/miner-reserve-change-pct', 'Miner Reserve Change');
+          result = await fetchBGeometrics('/v1/miner-reserve-change-pct/10', 'Miner Reserve Change');
         }
         if (result.success && result.data && result.data.length) {
           console.log('[Miner] Reserve Change sample:', JSON.stringify(result.data[result.data.length-1]));
@@ -4141,7 +4141,7 @@
       
       // 6. Difficulty
       try {
-        const result = await fetchBGeometrics('/v1/difficulty-BTC', 'Difficulty');
+        const result = await fetchBGeometrics('/v1/difficulty-BTC/10', 'Difficulty');
         if (result.success && result.data && result.data.length) {
           console.log('[Miner] Difficulty sample:', JSON.stringify(result.data[result.data.length-1]));
           minerData.difficulty = getLatest(result.data, 'difficultyBtc', 'difficulty', 'value');
