@@ -1452,7 +1452,7 @@
     <div class="section-header">
       <span class="section-num">10</span>
       <span class="section-title">Backstage</span>
-      <span class="section-sub">STRATEGY COMPARISON · EQUITY CURVES · DRAWDOWN · BACKTEST</span>
+      <span class="section-sub">STRATEGY COMPARISON · BACKTEST</span>
     </div>
 
     <!-- Section Title -->
@@ -1479,21 +1479,6 @@
           </tbody>
         </table>
       </div>
-    </div>
-
-    <!-- Dual Equity Curve (Full Width) -->
-    <div class="backstage-card-full" style="position:relative;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div class="backstage-title" style="margin:0;">Equity Curves — Strategy Comparison</div>
-        <div id="equityCurveLegend" style="display:flex;gap:16px;font-size:11px;font-family:'JetBrains Mono',monospace;"></div>
-      </div>
-      <div style="height:350px;position:relative;"><canvas id="equityCurveChart"></canvas></div>
-    </div>
-
-    <!-- Dual Underwater Curve -->
-    <div class="backstage-card-full" style="position:relative;">
-      <div class="backstage-title">Underwater Curves (Drawdown Comparison)</div>
-      <div style="height:200px;position:relative;"><canvas id="underwaterChart"></canvas></div>
     </div>
 
     <!-- When to Use Each -->
@@ -6821,54 +6806,59 @@
 
     // ========== BACKSTAGE: STRATEGY COMPARISON (DUAL) ==========
     function renderBackstageCharts() {
-      console.log('[Backstage] Rendering strategy comparison...');
+      if (!window._bsRetryZ) window._bsRetryZ = 0;
+      if (!window._bsRetryTR) window._bsRetryTR = 0;
+      console.log('[Backstage] Rendering strategy comparison... (Z retry:', window._bsRetryZ, '| TR retry:', window._bsRetryTR, ')');
 
       // ── GET Z-COMPOSITE TRADES ──
       const zTrades = window.signalTradesData;
       if (!zTrades || zTrades.length === 0) {
         console.log('[Backstage] No Z-Composite trades, will retry...');
-        if (!window._backstageRetry) window._backstageRetry = 0;
-        window._backstageRetry++;
-        if (window._backstageRetry < 10) setTimeout(renderBackstageCharts, 3000);
-        return;
-      }
-      // ── GET TREND & REVERSAL TRADES ──
-      const trSignals = (tradingState && tradingState.signals) ? tradingState.signals : [];
-      if (trSignals.length === 0) {
-        console.log('[Backstage] No Trend signals yet, will retry...');
-        if (!window._backstageRetry) window._backstageRetry = 0;
-        window._backstageRetry++;
-        if (window._backstageRetry < 15) setTimeout(renderBackstageCharts, 3000);
+        window._bsRetryZ++;
+        if (window._bsRetryZ < 20) setTimeout(renderBackstageCharts, 3000);
         return;
       }
 
-      // Normalize Trend trades to same format
-      const trTrades = trSignals.map(s => ({
-        entryDate: s.date,
-        exitDate: s.exitDate || '--',
-        entryPrice: s.entryPrice,
-        exitPrice: s.exitPrice,
-        returnPct: parseFloat(s.pnl || 0),
-        status: s.status || 'CLOSED',
-        signal: s.signal
-      }));
+      // ── GET TREND & REVERSAL TRADES ──
+      const trSignals = (tradingState && tradingState.signals) ? tradingState.signals : [];
+      let trTrades = [];
+      if (trSignals.length === 0) {
+        window._bsRetryTR++;
+        if (window._bsRetryTR < 20) {
+          console.log('[Backstage] No Trend signals yet, will retry (' + window._bsRetryTR + '/20)...');
+          setTimeout(renderBackstageCharts, 3000);
+          return;
+        }
+        console.log('[Backstage] Trend signals unavailable after 20 retries, rendering Z-Composite only');
+      } else {
+        // Normalize Trend trades to same format
+        trTrades = trSignals.map(s => ({
+          entryDate: s.date,
+          exitDate: s.exitDate || '--',
+          entryPrice: s.entryPrice,
+          exitPrice: s.exitPrice,
+          returnPct: parseFloat(s.pnl || 0),
+          status: s.status || 'CLOSED',
+          signal: s.signal
+        }));
+      }
 
       const trades = zTrades; // alias for backward compat in backtest table
       console.log('[Backstage] Z-Composite:', zTrades.length, 'trades | Trend:', trTrades.length, 'trades');
 
       // ── CALCULATE METRICS ──
       const zM = calcStrategyMetrics(zTrades);
-      const trM = calcStrategyMetrics(trTrades);
+      const trM = trTrades.length > 0 ? calcStrategyMetrics(trTrades) : null;
 
       // ── COMPARISON TABLE ──
       const compBody = document.getElementById('comparisonBody');
-      if (compBody && zM && trM) {
+      if (compBody && zM) {
         function compRow(label, zVal, trVal, format, higherIsBetter) {
-          const zStr = format(zVal);
-          const trStr = format(trVal);
+          const zStr = zVal != null ? format(zVal) : '--';
+          const trStr = trVal != null ? format(trVal) : '--';
           let adv = '--';
           let advColor = 'var(--text-muted)';
-          if (zVal !== null && trVal !== null) {
+          if (zVal != null && trVal != null) {
             const zBetter = higherIsBetter ? zVal > trVal : zVal < trVal;
             const trBetter = higherIsBetter ? trVal > zVal : trVal < zVal;
             if (zBetter) { adv = '◀ Z-Composite'; advColor = '#00d97e'; }
@@ -6886,238 +6876,54 @@
         const fmtNum = v => v === Infinity ? '∞' : v.toFixed(2);
         const fmtInt = v => v.toString();
 
+        const _tr = trM || {};
         compBody.innerHTML =
-          compRow('Total Return', zM.totalReturn, trM.totalReturn, fmtPct, true) +
-          compRow('Annual Return', zM.annualReturn, trM.annualReturn, fmtPct, true) +
-          compRow('Win Rate', zM.winRate, trM.winRate, v => v.toFixed(0) + '%', true) +
-          compRow('Avg Return / Trade', zM.avgReturn, trM.avgReturn, fmtPct, true) +
-          compRow('Avg Win', zM.avgWin, trM.avgWin, fmtPct, true) +
-          compRow('Avg Loss', zM.avgLoss, trM.avgLoss, v => '-' + v.toFixed(1) + '%', false) +
-          compRow('Profit Factor', zM.pf, trM.pf, fmtNum, true) +
-          compRow('Expectancy', zM.expectancy, trM.expectancy, fmtPct, true) +
-          compRow('Max Drawdown', zM.maxDD, trM.maxDD, fmtPct, false) +
-          compRow('Calmar Ratio', zM.calmar, trM.calmar, fmtNum, true) +
-          compRow('Current DD', zM.currentDD, trM.currentDD, fmtPct, false) +
-          compRow('Number of Trades', zM.total, trM.total, fmtInt, null);
+          compRow('Total Return', zM.totalReturn, _tr.totalReturn, fmtPct, true) +
+          compRow('Annual Return', zM.annualReturn, _tr.annualReturn, fmtPct, true) +
+          compRow('Win Rate', zM.winRate, _tr.winRate, v => v.toFixed(0) + '%', true) +
+          compRow('Avg Return / Trade', zM.avgReturn, _tr.avgReturn, fmtPct, true) +
+          compRow('Avg Win', zM.avgWin, _tr.avgWin, fmtPct, true) +
+          compRow('Avg Loss', zM.avgLoss, _tr.avgLoss, v => '-' + v.toFixed(1) + '%', false) +
+          compRow('Profit Factor', zM.pf, _tr.pf, fmtNum, true) +
+          compRow('Expectancy', zM.expectancy, _tr.expectancy, fmtPct, true) +
+          compRow('Max Drawdown', zM.maxDD, _tr.maxDD, fmtPct, false) +
+          compRow('Calmar Ratio', zM.calmar, _tr.calmar, fmtNum, true) +
+          compRow('Current DD', zM.currentDD, _tr.currentDD, fmtPct, false) +
+          compRow('Number of Trades', zM.total, _tr.total, fmtInt, null);
       }
 
-      // ── LEGEND ──
-      const legendEl = document.getElementById('equityCurveLegend');
-      if (legendEl && zM && trM) {
-        legendEl.innerHTML = `
-          <span style="color:#00d97e;font-weight:700;">● Z-Composite: ${zM.totalReturn > 0 ? '+' : ''}${zM.totalReturn.toFixed(0)}%</span>
-          <span style="color:#3b82f6;font-weight:700;">● Trend: ${trM.totalReturn > 0 ? '+' : ''}${trM.totalReturn.toFixed(0)}%</span>
-          <span style="color:#8a8a96;">|</span>
-          <span style="color:#8a8a96;">${zM.total} vs ${trM.total} trades</span>
-        `;
-      }
-
-      // ── MERGE DATES FOR ALIGNED X-AXIS ──
-      const allDatesSet = new Set();
-      if (zM) zM.equityPts.forEach(p => allDatesSet.add(p.date));
-      if (trM) trM.equityPts.forEach(p => allDatesSet.add(p.date));
-      const allDates = [...allDatesSet].sort();
-
-      function interpolate(pts, dates) {
-        const map = new Map(pts.map(p => [p.date, p.value]));
-        const result = [];
-        let lastVal = null;
-        dates.forEach(d => {
-          if (map.has(d)) { lastVal = map.get(d); result.push(lastVal); }
-          else { result.push(lastVal); }
-        });
-        return result;
-      }
-
-      const zEquity = zM ? interpolate(zM.equityPts, allDates) : allDates.map(() => null);
-      const trEquity = trM ? interpolate(trM.equityPts, allDates) : allDates.map(() => null);
-      const zDD = zM ? interpolate(zM.ddPts, allDates) : allDates.map(() => null);
-      const trDD = trM ? interpolate(trM.ddPts, allDates) : allDates.map(() => null);
-
-      // ── DUAL EQUITY CURVE ──
-      const eqCtx = document.getElementById('equityCurveChart')?.getContext('2d');
-      if (eqCtx) {
-        if (window._equityChart) window._equityChart.destroy();
-        window._equityChart = new Chart(eqCtx, {
-          type: 'line',
-          data: {
-            labels: allDates,
-            datasets: [
-              {
-                label: 'Z-Composite',
-                data: zEquity,
-                borderColor: '#00d97e',
-                backgroundColor: 'rgba(0,217,126,0.08)',
-                fill: true,
-                tension: 0.35,
-                borderWidth: 2.5,
-                pointRadius: zEquity.map((v, i) => {
-                  if (i === 0 || i === zEquity.length - 1) return 5;
-                  if (v !== zEquity[i-1]) return 3;
-                  return 0;
-                }),
-                pointBackgroundColor: '#00d97e',
-                pointBorderColor: 'rgba(0,0,0,0.5)',
-                pointBorderWidth: 1,
-                spanGaps: true
-              },
-              {
-                label: 'Trend & Reversal',
-                data: trEquity,
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59,130,246,0.06)',
-                fill: true,
-                tension: 0.35,
-                borderWidth: 2.5,
-                pointRadius: trEquity.map((v, i) => {
-                  if (i === 0 || i === trEquity.length - 1) return 5;
-                  if (v !== trEquity[i-1]) return 2;
-                  return 0;
-                }),
-                pointBackgroundColor: '#3b82f6',
-                pointBorderColor: 'rgba(0,0,0,0.5)',
-                pointBorderWidth: 1,
-                spanGaps: true
-              },
-              {
-                label: 'Baseline',
-                data: allDates.map(() => 100),
-                borderColor: 'rgba(255,255,255,0.1)',
-                borderDash: [6, 4],
-                borderWidth: 1,
-                pointRadius: 0,
-                fill: false
-              }
-            ]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                backgroundColor: 'rgba(15,15,20,0.95)',
-                borderColor: 'rgba(255,255,255,0.1)',
-                borderWidth: 1,
-                titleFont: { family: "'JetBrains Mono', monospace", size: 11 },
-                bodyFont: { family: "'JetBrains Mono', monospace", size: 12 },
-                padding: 12,
-                callbacks: {
-                  label: (ctx) => {
-                    if (ctx.datasetIndex === 2) return null;
-                    const v = ctx.parsed.y;
-                    if (v == null) return null;
-                    const name = ctx.datasetIndex === 0 ? 'Z-Composite' : 'Trend';
-                    return `${name}: ${v.toFixed(1)}% (${(v-100) >= 0 ? '+' : ''}${(v-100).toFixed(1)}%)`;
-                  }
-                },
-                filter: item => item.datasetIndex < 2
-              }
-            },
-            scales: {
-              x: { ticks: { color: '#6b6b78', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0, maxTicksLimit: 8 }, grid: { color: 'rgba(255,255,255,0.03)' } },
-              y: { ticks: { color: '#6b6b78', font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: v => v.toFixed(0) + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-            }
-          }
-        });
-      }
-
-      // ── DUAL UNDERWATER CHART ──
-      const uwCtx = document.getElementById('underwaterChart')?.getContext('2d');
-      if (uwCtx) {
-        if (window._underwaterChart) window._underwaterChart.destroy();
-        window._underwaterChart = new Chart(uwCtx, {
-          type: 'line',
-          data: {
-            labels: allDates,
-            datasets: [
-              {
-                label: 'Z-Composite DD',
-                data: zDD,
-                borderColor: '#00d97e',
-                backgroundColor: 'rgba(0,217,126,0.08)',
-                fill: true,
-                tension: 0.3,
-                borderWidth: 1.5,
-                pointRadius: 0,
-                spanGaps: true
-              },
-              {
-                label: 'Trend DD',
-                data: trDD,
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59,130,246,0.06)',
-                fill: true,
-                tension: 0.3,
-                borderWidth: 1.5,
-                pointRadius: 0,
-                spanGaps: true
-              },
-              {
-                label: 'Zero',
-                data: allDates.map(() => 0),
-                borderColor: 'rgba(255,255,255,0.1)',
-                borderDash: [4, 4],
-                borderWidth: 1,
-                pointRadius: 0,
-                fill: false
-              }
-            ]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-              legend: {
-                display: true,
-                position: 'top',
-                align: 'end',
-                labels: { color: '#8a8a96', font: { family: "'JetBrains Mono', monospace", size: 10 }, boxWidth: 12, padding: 12, filter: item => item.datasetIndex < 2 }
-              },
-              tooltip: {
-                backgroundColor: 'rgba(15,15,20,0.95)',
-                callbacks: {
-                  label: ctx => ctx.datasetIndex < 2 ? `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(1) || '--'}%` : null
-                },
-                filter: item => item.datasetIndex < 2
-              }
-            },
-            scales: {
-              x: { ticks: { color: '#6b6b78', font: { family: "'JetBrains Mono', monospace", size: 9 }, maxRotation: 0, maxTicksLimit: 8 }, grid: { color: 'rgba(255,255,255,0.03)' } },
-              y: { ticks: { color: '#6b6b78', font: { family: "'JetBrains Mono', monospace", size: 10 }, callback: v => v.toFixed(0) + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-            }
-          }
-        });
-      }
+      // ── (Charts removed — keeping comparison table + trade logs) ──
+      // (Charts removed — skipping to strategy advice)
+      // (Equity & Underwater charts removed)
 
       // ── STRATEGY ADVICE (data-driven) ──
-      if (zM && trM) {
+      if (zM) {
         const adZ = document.getElementById('adviceZComposite');
         const adTR = document.getElementById('adviceTrend');
         const adB = document.getElementById('adviceBoth');
         if (adZ) adZ.innerHTML = [
-          zM.avgReturn > trM.avgReturn ? `Higher avg return per trade (${zM.avgReturn.toFixed(1)}% vs ${trM.avgReturn.toFixed(1)}%)` : null,
-          zM.pf > trM.pf ? `Superior Profit Factor (${zM.pf === Infinity ? '∞' : zM.pf.toFixed(2)} vs ${trM.pf.toFixed(2)})` : null,
+          trM && zM.avgReturn > trM.avgReturn ? `Higher avg return per trade (${zM.avgReturn.toFixed(1)}% vs ${trM.avgReturn.toFixed(1)}%)` : null,
+          trM && zM.pf > trM.pf ? `Superior Profit Factor (${zM.pf === Infinity ? '∞' : zM.pf.toFixed(2)} vs ${trM.pf.toFixed(2)})` : null,
           'Cycle bottoms and macro regime changes',
           'Long-term accumulation phases (weeks to months)',
           'On-chain data confirms deep value (Z < -1.5)'
         ].filter(Boolean).map(s => `• ${s}`).join('<br>');
 
-        if (adTR) adTR.innerHTML = [
+        if (adTR) adTR.innerHTML = trM ? [
           trM.total > zM.total ? `More trading opportunities (${trM.total} vs ${zM.total} trades)` : null,
           Math.abs(trM.maxDD) < Math.abs(zM.maxDD) ? `Shallower drawdowns (${trM.maxDD.toFixed(1)}% vs ${zM.maxDD.toFixed(1)}%)` : null,
           'Trending markets with clear EMA structure',
           'Medium-term momentum plays (days to weeks)',
           'Technical breakouts with volume confirmation'
-        ].filter(Boolean).map(s => `• ${s}`).join('<br>');
+        ].filter(Boolean).map(s => `• ${s}`).join('<br>') : '<span style="color:var(--text-muted);">Trend data not available yet</span>';
 
         if (adB) adB.innerHTML = [
           'Z-Composite confirms macro bottom → Trend times the entry',
           'Z says ACCUMULATE + EMA21 crosses above EMA50 = high conviction',
           'Diversification: Z captures cycles, Trend captures momentum',
-          `Combined: ${zM.total + trM.total} signals covering both on-chain and technical`,
+          trM ? `Combined: ${zM.total + trM.total} signals covering both on-chain and technical` : null,
           'Use Z for position sizing, Trend for timing'
-        ].map(s => `• ${s}`).join('<br>');
+        ].filter(Boolean).map(s => `• ${s}`).join('<br>');
       }
 
       // ── Z-COMPOSITE BACKTEST TABLE ──
@@ -7183,6 +6989,9 @@
 
       // ── TREND & REVERSAL BACKTEST TABLE ──
       const trBody = document.getElementById('trendBacktestBody');
+      if (trBody && trTrades.length === 0) {
+        trBody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:20px;">Trend & Reversal data not available — check Trading section (page 08)</td></tr>';
+      }
       if (trBody && trTrades.length > 0) {
         let cumRet = 0;
         trBody.innerHTML = trTrades.map((t, i) => {
@@ -7236,13 +7045,17 @@
     // Schedule backstage rendering after signals are loaded (with smart retry)
     function initBackstage() {
       console.log('[v2.0] Initializing backstage analytics...');
-      renderBackstageCharts();
+      // Only start renderBackstageCharts if not already running retries
+      if (!window._bsRunning) {
+        window._bsRunning = true;
+        renderBackstageCharts();
+      }
       updateConfluenceScore();
     }
     setTimeout(initBackstage, 6000);
-    // Retry backstage at 12s and 18s in case data was slow
-    setTimeout(initBackstage, 12000);
-    setTimeout(initBackstage, 18000);
+    // Retry backstage at 15s and 25s in case data was slow
+    setTimeout(initBackstage, 15000);
+    setTimeout(initBackstage, 25000);
 
     // Periodic refresh for confluence score
     setTimeout(() => { updateConfluenceScore(); }, 10000);
