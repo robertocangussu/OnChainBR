@@ -8338,19 +8338,11 @@
           console.log('[Cohort] Fallback: using main Supply Profit:', cohortState.supplyProfit);
         }
         
-        // HODL Waves - optional, may not exist
-        try {
-          const res = await fetchBGeometrics('/v1/hodl-waves', 'Cohort:HODL Waves');
-          if (res.success && res.data) {
-            const hd = Array.isArray(res.data) ? res.data[res.data.length - 1] || res.data[0] : res.data;
-            cohortState.hodlWaves = hd;
-          }
-        } catch(e) { console.warn('[Cohort] HODL Waves not available'); }
-        
-        // Use HODL 1Y+ from smartMoneyState as fallback
-        if (!cohortState.hodlWaves && smartMoneyState.hodl1y) {
+        // HODL Waves — endpoint /v1/hodl-waves does not exist in BGeometrics
+        // Use HODL 1Y+ from Smart Money tab (already fetched via /v1/hodl-one-year)
+        if (smartMoneyState.hodl1y) {
           cohortState.hodlWaves = { _fallback: true, hodl1y: smartMoneyState.hodl1y };
-          console.log('[Cohort] Using smartMoneyState.hodl1y as fallback:', smartMoneyState.hodl1y);
+          console.log('[Cohort] HODL 1Y+ from Smart Money:', smartMoneyState.hodl1y);
         }
         
         cohortState.loaded = true;
@@ -8576,11 +8568,23 @@
     }
     // Start after main data loads (8s delay)
     setTimeout(initNewTabs, 8000);
-    // Retry at 18s in case of slow API
+    // Retry at 18s — by now smartMoneyState should be loaded (for HODL waves)
     setTimeout(() => {
       if (!priceLayersState.loaded) fetchPriceLayers();
-      if (!cohortState.loaded) fetchCohortData();
+      // Always re-fetch cohort to pick up smartMoneyState.hodl1y for HODL waves
+      if (!cohortState.loaded || !cohortState.hodlWaves) {
+        console.log('[Cohort] Retry: picking up Smart Money data for HODL Waves...');
+        fetchCohortData();
+      }
     }, 18000);
+    // Final retry at 28s for slow connections
+    setTimeout(() => {
+      if (!cohortState.hodlWaves && smartMoneyState.hodl1y) {
+        console.log('[Cohort] Late retry: HODL Waves from Smart Money');
+        cohortState.hodlWaves = { _fallback: true, hodl1y: smartMoneyState.hodl1y };
+        renderCohort();
+      }
+    }, 28000);
 
   </script>
 </body>
