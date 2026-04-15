@@ -4161,28 +4161,28 @@
         }
       } catch(e) { console.warn('Hashrate fetch error:', e); }
       
-      // 6. Difficulty - try multiple approaches
+      // 6. Difficulty - proxy returns 404 for /v1/difficulty-BTC, estimate from hashrate
       try {
         let result = await fetchBGeometrics('/v1/difficulty-BTC/10', 'Difficulty');
-        // Unwrap if needed
         if (result.success && result.data && !Array.isArray(result.data)) {
           if (result.data.data) result.data = result.data.data;
-          else if (typeof result.data === 'object' && (result.data.difficultyBtc != null || result.data.difficulty != null || result.data.value != null)) result.data = [result.data];
+          else if (typeof result.data === 'object' && (result.data.difficultyBtc != null || result.data.difficulty != null)) result.data = [result.data];
         }
-        if (!result.success || !result.data || !result.data.length) {
-          result = await fetchBGeometrics('/v1/difficulty-BTC', 'Difficulty (full)');
-          if (result.success && result.data && !Array.isArray(result.data)) {
-            if (result.data.data) result.data = result.data.data;
-            else if (typeof result.data === 'object') result.data = [result.data];
-          }
-        }
-        console.log('[Miner] Difficulty raw:', result.success, 'isArray:', Array.isArray(result.data), 'len:', result.data?.length, 'type:', typeof result.data);
         if (result.success && result.data && result.data.length) {
-          console.log('[Miner] Difficulty sample:', JSON.stringify(result.data[result.data.length-1]));
-          minerData.difficulty = getLatest(result.data, 'difficultyBtc', 'difficulty', 'value', 'diff');
-          console.log('✓ Difficulty:', minerData.difficulty);
+          minerData.difficulty = getLatest(result.data, 'difficultyBtc', 'difficulty', 'value');
+          console.log('✓ Difficulty from API:', minerData.difficulty);
         }
-      } catch(e) { console.warn('Difficulty fetch error:', e); }
+      } catch(e) { console.warn('Difficulty API error:', e); }
+      // Fallback: estimate difficulty from hashrate (difficulty ≈ hashrate_EH × 600 / 2^32 × 1e18)
+      if (minerData.difficulty === null && minerData.hashrate !== null) {
+        // Approximate: difficulty ≈ hashrate(EH/s) × 1.157e12 (empirical BTC relationship)
+        const hr = toNum(minerData.hashrate);
+        if (hr && hr > 0) {
+          minerData.difficulty = (hr * 1.157e12).toFixed(0);
+          minerData.difficultyEstimated = true;
+          console.log('✓ Difficulty estimated from hashrate:', minerData.difficulty);
+        }
+      }
       
       console.log('⛏️ Miner data collected:', minerData);
       renderMinerUI(minerData);
@@ -4286,8 +4286,13 @@
         const formatted = (diffVal / 1e12).toFixed(2) + 'T';
         diffEl.textContent = formatted;
         diffEl.style.color = 'var(--text-primary)';
-        diffStatusEl.textContent = 'CURRENT';
-        diffStatusEl.style.color = 'var(--text-muted)';
+        if (minerData.difficultyEstimated) {
+          diffStatusEl.textContent = '≈ FROM HASHRATE';
+          diffStatusEl.style.color = 'var(--accent-cyan)';
+        } else {
+          diffStatusEl.textContent = 'CURRENT';
+          diffStatusEl.style.color = 'var(--text-muted)';
+        }
       }
       
       // Checklist
