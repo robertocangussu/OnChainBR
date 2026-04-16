@@ -363,16 +363,16 @@
     <span class="nav-brand">ONCHAINBR</span>
     <div class="nav-sep"></div>
     <a href="#dashboard" class="active" onclick="setActiveNav(this)">01 · Dashboard</a>
-    <a href="#signals" onclick="setActiveNav(this)">02 · Trade Signals</a>
-    <a href="#flow" onclick="setActiveNav(this)">03 · Flow Analysis</a>
+    <a href="#signals" onclick="setActiveNav(this)">02 · Sinais</a>
+    <a href="#flow" onclick="setActiveNav(this)">03 · Fluxo</a>
     <a href="#smartmoney" onclick="setActiveNav(this)">04 · Smart Money</a>
-    <a href="#sentiment" onclick="setActiveNav(this)">05 · Sentiment</a>
-    <a href="#leverage" onclick="setActiveNav(this)">06 · Leverage Risk</a>
-    <a href="#miners" onclick="setActiveNav(this)">07 · Miners & Macro</a>
+    <a href="#sentiment" onclick="setActiveNav(this)">05 · Sentimento</a>
+    <a href="#leverage" onclick="setActiveNav(this)">06 · Alavancagem</a>
+    <a href="#miners" onclick="setActiveNav(this)">07 · Mineradores</a>
     <a href="#trading" onclick="setActiveNav(this)">08 · Trading</a>
     <a href="#report" onclick="setActiveNav(this)">09 · Relatório</a>
-    <a href="#backstage" onclick="setActiveNav(this)">10 · Backstage</a>
-    <a href="#pricelayers" onclick="setActiveNav(this)">11 · Price Layers</a>
+    <a href="#backstage" onclick="setActiveNav(this)">10 · Bastidores</a>
+    <a href="#pricelayers" onclick="setActiveNav(this)">11 · Camadas de Preço</a>
     <a href="#cohort" onclick="setActiveNav(this)">12 · Cohort</a>
   </nav>
   <div id="dashboard">
@@ -462,8 +462,8 @@
   <div class="section-wrap" id="signals" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">02</span>
-      <span class="section-title">Trade Signals</span>
-      <span class="section-sub">FULL HISTORY · BUY: Z exits ACCUMULATE zone (confirmed) · SELL: Z enters ELEVATED zone</span>
+      <span class="section-title">Sinais de Negociação</span>
+      <span class="section-sub">HISTÓRICO COMPLETO · COMPRA: Z sai da zona ACCUMULATE (confirmado) · VENDA: Z entra na zona ELEVATED</span>
     </div>
 
     <!-- Stats row -->
@@ -543,8 +543,8 @@
   <div class="section-wrap" id="flow" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">03</span>
-      <span class="section-title">Flow Analysis</span>
-      <span class="section-sub">ETF FLOWS · EXCHANGE RESERVE · WHALE ACTIVITY</span>
+      <span class="section-title">Análise de Fluxo</span>
+      <span class="section-sub">FLUXOS ETF · RESERVA EXCHANGE · ATIVIDADE BALEIAS</span>
     </div>
     <div class="flow-stats-row">
       <div class="flow-stat-item">
@@ -609,14 +609,14 @@
   <div class="section-wrap" id="smartmoney" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">04</span>
-      <span class="section-title">Smart Money Tracker</span>
-      <span class="section-sub">LTH/STH BEHAVIOR · ACCUMULATION · CONVICTION</span>
+      <span class="section-title">Rastreador de Smart Money</span>
+      <span class="section-sub">COMPORTAMENTO LTH/STH · ACUMULAÇÃO · CONVICÇÃO</span>
     </div>
     
     <!-- Top Row: Gauge + Chart -->
     <div class="smart-money-top">
       <div class="sm-gauge-card">
-        <div class="sm-gauge-label">Smart Money Behavior</div>
+        <div class="sm-gauge-label">Comportamento Smart Money</div>
         <div class="sm-gauge-status" id="smGaugeStatus">ANALYZING...</div>
         <div class="sm-gauge-value" id="smGaugeValue">--</div>
         <div class="sm-gauge-unit" id="smGaugeUnit">BTC / 30d</div>
@@ -638,13 +638,13 @@
     <!-- Stats Row -->
     <div class="sm-stats-row">
       <div class="sm-stat-card">
-        <div class="sm-stat-label">LTH 30d Change</div>
+        <div class="sm-stat-label">Variação LTH 30d</div>
         <div class="sm-stat-value" id="smLth30d">--</div>
         <div class="sm-stat-status" id="smLth30dStatus">--</div>
         <div class="sm-stat-raw" id="smLth30dRaw">BTC net position</div>
       </div>
       <div class="sm-stat-card">
-        <div class="sm-stat-label">STH 30d Change</div>
+        <div class="sm-stat-label">Variação STH 30d</div>
         <div class="sm-stat-value" id="smSth30d">--</div>
         <div class="sm-stat-status" id="smSth30dStatus">--</div>
         <div class="sm-stat-raw" id="smSth30dRaw">BTC net position</div>
@@ -677,36 +677,36 @@
     
     <!-- Checklist Card -->
     <div class="sm-checklist-card">
-      <div class="sm-checklist-title">Smart Money Accumulation Checklist</div>
+      <div class="sm-checklist-title">Checklist de Acumulação Smart Money</div>
       <div class="sm-checklist-grid" id="smChecklistGrid">
         <div class="sm-check-item neutral" id="smCheck1">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">LTH accumulating (net positive 30d)</span>
+          <span class="sm-check-text">LTH acumulando (posição net positiva 30d)</span>
         </div>
         <div class="sm-check-item neutral" id="smCheck2">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">STH/LTH ratio below 0.5</span>
+          <span class="sm-check-text">Ratio STH/LTH abaixo de 0.5</span>
         </div>
         <div class="sm-check-item neutral" id="smCheck3">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">1Y+ HODL supply above 65%</span>
+          <span class="sm-check-text">Supply HODL 1A+ acima de 65%</span>
         </div>
         <div class="sm-check-item neutral" id="smCheck4">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">LTH SOPR below 1.0</span>
+          <span class="sm-check-text">SOPR LTH abaixo de 1.0</span>
         </div>
         <div class="sm-check-item neutral" id="smCheck5">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">Reserve Risk below 0.005</span>
+          <span class="sm-check-text">Reserve Risk abaixo de 0.005</span>
         </div>
         <div class="sm-check-item neutral" id="smCheck6">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">STH distributing (net negative 30d)</span>
+          <span class="sm-check-text">STH distribuindo (posição net negativa 30d)</span>
         </div>
       </div>
       <div class="sm-confidence-section">
         <div class="sm-confidence-header">
-          <span class="sm-confidence-label">Accumulation Confidence Score</span>
+          <span class="sm-confidence-label">Score de Confiança na Acumulação</span>
           <span class="sm-confidence-value" id="smConfidenceValue">--%</span>
         </div>
         <div class="sm-confidence-bar">
@@ -775,8 +775,8 @@
   <div class="section-wrap" id="sentiment" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">05</span>
-      <span class="section-title">Sentiment Index</span>
-      <span class="section-sub">FEAR &amp; GREED · FUNDING RATES · COMPOSITE MOOD</span>
+      <span class="section-title">Índice de Sentimento</span>
+      <span class="section-sub">MEDO E GANÂNCIA · FUNDING · HUMOR COMPOSTO</span>
     </div>
     <div class="sentiment-grid">
       <div class="fg-dial-card">
@@ -829,14 +829,14 @@
   <div class="section-wrap" id="leverage" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">06</span>
-      <span class="section-title">Leverage Risk Meter</span>
-      <span class="section-sub">OPEN INTEREST · LIQUIDATIONS · FUNDING RATE · LONG/SHORT RATIO</span>
+      <span class="section-title">Medidor de Risco de Alavancagem</span>
+      <span class="section-sub">OPEN INTEREST · LIQUIDAÇÕES · FUNDING RATE · RATIO L/S</span>
     </div>
     
     <!-- Top Row: Gauge + Chart -->
     <div class="smart-money-top">
       <div class="sm-gauge-card">
-        <div class="sm-gauge-label">Leverage Risk Level</div>
+        <div class="sm-gauge-label">Nível de Risco de Alavancagem</div>
         <div class="sm-gauge-status" id="levGaugeStatus">ANALYZING...</div>
         <div class="sm-gauge-value" id="levGaugeValue">--</div>
         <div class="sm-gauge-unit" id="levGaugeUnit">Risk Score</div>
@@ -882,13 +882,13 @@
         <div class="sm-stat-raw">account ratio</div>
       </div>
       <div class="sm-stat-card">
-        <div class="sm-stat-label">Long Accounts</div>
+        <div class="sm-stat-label">Contas Long</div>
         <div class="sm-stat-value" id="levLongPct">--</div>
         <div class="sm-stat-status" id="levLongPctStatus">--</div>
         <div class="sm-stat-raw">% of traders</div>
       </div>
       <div class="sm-stat-card">
-        <div class="sm-stat-label">Short Accounts</div>
+        <div class="sm-stat-label">Contas Short</div>
         <div class="sm-stat-value" id="levShortPct">--</div>
         <div class="sm-stat-status" id="levShortPctStatus">--</div>
         <div class="sm-stat-raw">% of traders</div>
@@ -897,28 +897,28 @@
     
     <!-- Risk Assessment -->
     <div class="sm-checklist-card">
-      <div class="sm-checklist-title">Leverage Risk Assessment</div>
+      <div class="sm-checklist-title">Avaliação de Risco de Alavancagem</div>
       <div class="sm-checklist-grid">
         <div class="sm-check-item neutral" id="levCheck1">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">High Open Interest (elevated leverage)</span>
+          <span class="sm-check-text">Open Interest alto (alavancagem elevada)</span>
         </div>
         <div class="sm-check-item neutral" id="levCheck2">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">Extreme Funding Rate (imbalance)</span>
+          <span class="sm-check-text">Funding Rate extremo (desequilíbrio)</span>
         </div>
         <div class="sm-check-item neutral" id="levCheck3">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">Long/Short Ratio extreme (&gt;1.5 or &lt;0.7)</span>
+          <span class="sm-check-text">Ratio L/S extremo (&gt;1,5 ou &lt;0,7)</span>
         </div>
         <div class="sm-check-item neutral" id="levCheck4">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">Recent large liquidations</span>
+          <span class="sm-check-text">Liquidações recentes expressivas</span>
         </div>
       </div>
       
       <div class="sm-confidence-wrap" style="margin-top:20px;">
-        <div class="sm-confidence-label">CASCADE RISK SCORE</div>
+        <div class="sm-confidence-label">SCORE DE RISCO EM CASCATA</div>
         <div class="sm-confidence-value" id="levRiskScore">--%</div>
         <div class="sm-confidence-bar"><div class="sm-confidence-fill" id="levRiskFill" style="width:0%;background:var(--accent-green)"></div></div>
         <div class="sm-confidence-desc" id="levRiskDesc">Analyzing derivatives data...</div>
@@ -956,7 +956,7 @@
           <div class="futures-metric-sub" id="fpOiChangeSub">% change</div>
         </div>
         <div class="futures-metric">
-          <div class="futures-metric-label">Liquidations 24h</div>
+          <div class="futures-metric-label">Liq. 48h</div>
           <div class="futures-metric-value" id="fpLiq">--</div>
           <div class="futures-metric-sub" id="fpLiqSub">Long vs Short</div>
         </div>
@@ -982,14 +982,14 @@
   <div class="section-wrap" id="miners" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">07</span>
-      <span class="section-title">Miner & Macro Context</span>
-      <span class="section-sub">HASH RIBBONS · MINER RESERVES · PUELL MULTIPLE · DIFFICULTY</span>
+      <span class="section-title">Contexto de Mineradores</span>
+      <span class="section-sub">HASH RIBBONS · RESERVAS MINERS · PUELL MULTIPLE · DIFICULDADE</span>
     </div>
     
     <!-- Top Row: Gauge + Chart -->
     <div class="smart-money-top">
       <div class="sm-gauge-card">
-        <div class="sm-gauge-label">Miner Health Status</div>
+        <div class="sm-gauge-label">Status de Saúde dos Mineradores</div>
         <div class="sm-gauge-status" id="minerGaugeStatus">ANALYZING...</div>
         <div class="sm-gauge-value" id="minerGaugeValue">--</div>
         <div class="sm-gauge-unit" id="minerGaugeUnit">Position Index</div>
@@ -1011,19 +1011,19 @@
     <!-- Stats Row -->
     <div class="sm-stats-row">
       <div class="sm-stat-card">
-        <div class="sm-stat-label">Miner Position Index</div>
+        <div class="sm-stat-label">Índice de Posição dos Mineradores</div>
         <div class="sm-stat-value" id="minerPosIdx">--</div>
         <div class="sm-stat-status" id="minerPosIdxStatus">--</div>
         <div class="sm-stat-raw">accumulation signal</div>
       </div>
       <div class="sm-stat-card">
-        <div class="sm-stat-label">Miner Reserve</div>
+        <div class="sm-stat-label">Reserva dos Mineradores</div>
         <div class="sm-stat-value" id="minerReserve">--</div>
         <div class="sm-stat-status" id="minerReserveStatus">--</div>
         <div class="sm-stat-raw">BTC held</div>
       </div>
       <div class="sm-stat-card">
-        <div class="sm-stat-label">Reserve Change 30d</div>
+        <div class="sm-stat-label">Variação de Reserva 30d</div>
         <div class="sm-stat-value" id="minerReserveChg">--</div>
         <div class="sm-stat-status" id="minerReserveChgStatus">--</div>
         <div class="sm-stat-raw">% change</div>
@@ -1050,28 +1050,28 @@
     
     <!-- Miner Checklist -->
     <div class="sm-checklist-card">
-      <div class="sm-checklist-title">Miner Capitulation Checklist</div>
+      <div class="sm-checklist-title">Checklist de Capitulação dos Mineradores</div>
       <div class="sm-checklist-grid">
         <div class="sm-check-item neutral" id="minerCheck1">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">Miner Position Index negative (accumulating)</span>
+          <span class="sm-check-text">Índice de Posição negativo (acumulando)</span>
         </div>
         <div class="sm-check-item neutral" id="minerCheck2">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">Miner Reserve declining (selling pressure)</span>
+          <span class="sm-check-text">Reserva dos Mineradores caindo (pressão vendedora)</span>
         </div>
         <div class="sm-check-item neutral" id="minerCheck3">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">Puell Multiple below 0.5 (undervalued)</span>
+          <span class="sm-check-text">Puell Multiple abaixo de 0,5 (subvalorizado)</span>
         </div>
         <div class="sm-check-item neutral" id="minerCheck4">
           <span class="sm-check-icon">○</span>
-          <span class="sm-check-text">Hash Rate growing (network healthy)</span>
+          <span class="sm-check-text">Hash Rate crescendo (rede saudável)</span>
         </div>
       </div>
       
       <div class="sm-confidence-wrap" style="margin-top:20px;">
-        <div class="sm-confidence-label">MINER HEALTH SCORE</div>
+        <div class="sm-confidence-label">SCORE DE SAÚDE DOS MINERADORES</div>
         <div class="sm-confidence-value" id="minerHealthScore">--%</div>
         <div class="sm-confidence-bar"><div class="sm-confidence-fill" id="minerHealthFill" style="width:0%;background:var(--accent-green)"></div></div>
         <div class="sm-confidence-desc" id="minerHealthDesc">Analyzing miner data...</div>
@@ -1083,8 +1083,8 @@
   <div class="section-wrap" id="trading" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">08</span>
-      <span class="section-title">Trading Systems</span>
-      <span class="section-sub">TREND FOLLOWING · REVERSAL DETECTION · MOMENTUM</span>
+      <span class="section-title">Sistemas de Negociação</span>
+      <span class="section-sub">TENDÊNCIA · DETECÇÃO DE REVERSÃO · MOMENTUM</span>
     </div>
     
     <!-- Status Cards Row -->
@@ -1265,32 +1265,44 @@
         <div class="confluence-factor">
           <div class="confluence-factor-label">Z-Score</div>
           <div class="confluence-factor-value" id="cfZscore">--</div>
-          <div class="confluence-factor-weight">35% weight</div>
+          <div class="confluence-factor-weight">30% peso</div>
           <div class="confluence-factor-bar"><div class="confluence-factor-fill" id="cfZscoreFill" style="width:0%;background:var(--accent-cyan)"></div></div>
         </div>
         <div class="confluence-factor">
-          <div class="confluence-factor-label">Smart Money + Whales</div>
+          <div class="confluence-factor-label">Smart Money + Baleias</div>
           <div class="confluence-factor-value" id="cfSmartMoney">--</div>
-          <div class="confluence-factor-weight">25% weight</div>
+          <div class="confluence-factor-weight">22% peso</div>
           <div class="confluence-factor-bar"><div class="confluence-factor-fill" id="cfSmartMoneyFill" style="width:0%;background:var(--accent-green)"></div></div>
         </div>
         <div class="confluence-factor">
           <div class="confluence-factor-label">Futures Pressure</div>
           <div class="confluence-factor-value" id="cfFutures">--</div>
-          <div class="confluence-factor-weight">15% weight</div>
+          <div class="confluence-factor-weight">15% peso</div>
           <div class="confluence-factor-bar"><div class="confluence-factor-fill" id="cfFuturesFill" style="width:0%;background:var(--accent-orange)"></div></div>
         </div>
         <div class="confluence-factor">
-          <div class="confluence-factor-label">Sentiment + Funding</div>
+          <div class="confluence-factor-label">Sentimento + Funding</div>
           <div class="confluence-factor-value" id="cfSentiment">--</div>
-          <div class="confluence-factor-weight">15% weight</div>
+          <div class="confluence-factor-weight">15% peso</div>
           <div class="confluence-factor-bar"><div class="confluence-factor-fill" id="cfSentimentFill" style="width:0%;background:var(--accent-pink)"></div></div>
         </div>
         <div class="confluence-factor">
           <div class="confluence-factor-label">Miners + Leverage</div>
           <div class="confluence-factor-value" id="cfMinersLev">--</div>
-          <div class="confluence-factor-weight">10% weight</div>
+          <div class="confluence-factor-weight">10% peso</div>
           <div class="confluence-factor-bar"><div class="confluence-factor-fill" id="cfMinersLevFill" style="width:0%;background:var(--accent-purple)"></div></div>
+        </div>
+        <div class="confluence-factor">
+          <div class="confluence-factor-label">Camadas de Preço</div>
+          <div class="confluence-factor-value" id="cfPriceLayers">--</div>
+          <div class="confluence-factor-weight">5% peso</div>
+          <div class="confluence-factor-bar"><div class="confluence-factor-fill" id="cfPriceLayersFill" style="width:0%;background:var(--accent-cyan)"></div></div>
+        </div>
+        <div class="confluence-factor">
+          <div class="confluence-factor-label">Stress Coortes</div>
+          <div class="confluence-factor-value" id="cfCohort">--</div>
+          <div class="confluence-factor-weight">3% peso</div>
+          <div class="confluence-factor-bar"><div class="confluence-factor-fill" id="cfCohortFill" style="width:0%;background:var(--accent-teal)"></div></div>
         </div>
       </div>
     </div>
@@ -1484,6 +1496,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Resumo Integrado -->
+    <div style="background:var(--bg-card);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;margin-top:16px;">
+      <div style="font-size:10px;color:var(--accent-cyan);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">📋 Resumo Integrado</div>
+      <div id="reportIntegrated" style="font-size:12px;line-height:1.8;color:var(--text-secondary);">
+        Carregando resumo...
+      </div>
+    </div>
   </div>
 
 
@@ -1491,19 +1511,19 @@
   <div class="section-wrap" id="backstage" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">10</span>
-      <span class="section-title">Backstage</span>
-      <span class="section-sub">STRATEGY COMPARISON · BACKTEST</span>
+      <span class="section-title">Bastidores</span>
+      <span class="section-sub">COMPARATIVO DE ESTRATÉGIAS · BACKTEST</span>
     </div>
 
     <!-- Section Title -->
     <div style="text-align:center;margin-bottom:24px;">
-      <div style="font-size:16px;font-weight:700;color:var(--text-primary);letter-spacing:1px;text-transform:uppercase;">Strategy Comparison</div>
+      <div style="font-size:16px;font-weight:700;color:var(--text-primary);letter-spacing:1px;text-transform:uppercase;">Comparativo de Estratégias</div>
       <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">Z-Composite Signal System vs Trend & Reversal — Side by Side Performance Analysis</div>
     </div>
 
     <!-- Comparison Metrics Table -->
     <div class="backstage-card-full">
-      <div class="backstage-title">Performance Metrics — Head to Head</div>
+      <div class="backstage-title">Métricas de Performance — Frente a Frente</div>
       <div style="overflow-x:auto;">
         <table class="trades-extended-table" id="comparisonTable">
           <thead>
@@ -1523,18 +1543,18 @@
 
     <!-- When to Use Each -->
     <div class="backstage-card-full" id="strategyAdviceCard">
-      <div class="backstage-title">When to Use Each Strategy</div>
+      <div class="backstage-title">Quando Usar Cada Estratégia</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;" id="strategyAdvice">
         <div style="background:rgba(0,217,126,0.06);border:1px solid rgba(0,217,126,0.15);border-radius:8px;padding:16px;">
-          <div style="color:#00d97e;font-weight:700;font-size:12px;margin-bottom:8px;letter-spacing:0.5px;">Z-COMPOSITE IS BETTER WHEN...</div>
+          <div style="color:#00d97e;font-weight:700;font-size:12px;margin-bottom:8px;letter-spacing:0.5px;">Z-COMPOSITE É MELHOR QUANDO...</div>
           <div id="adviceZComposite" style="color:var(--text-secondary);font-size:11px;line-height:1.6;">Loading...</div>
         </div>
         <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:8px;padding:16px;">
-          <div style="color:#3b82f6;font-weight:700;font-size:12px;margin-bottom:8px;letter-spacing:0.5px;">TREND & REVERSAL IS BETTER WHEN...</div>
+          <div style="color:#3b82f6;font-weight:700;font-size:12px;margin-bottom:8px;letter-spacing:0.5px;">TREND & REVERSAL É MELHOR QUANDO...</div>
           <div id="adviceTrend" style="color:var(--text-secondary);font-size:11px;line-height:1.6;">Loading...</div>
         </div>
         <div style="background:rgba(255,184,0,0.06);border:1px solid rgba(255,184,0,0.15);border-radius:8px;padding:16px;">
-          <div style="color:#ffb800;font-weight:700;font-size:12px;margin-bottom:8px;letter-spacing:0.5px;">USE BOTH TOGETHER WHEN...</div>
+          <div style="color:#ffb800;font-weight:700;font-size:12px;margin-bottom:8px;letter-spacing:0.5px;">USE AMBAS JUNTAS QUANDO...</div>
           <div id="adviceBoth" style="color:var(--text-secondary);font-size:11px;line-height:1.6;">Loading...</div>
         </div>
       </div>
@@ -1542,7 +1562,7 @@
 
     <!-- Z-Composite Backtest Table -->
     <div class="backstage-card-full">
-      <div class="backstage-title">Z-Composite — Trade Log</div>
+      <div class="backstage-title">Z-Composite — Histórico de Operações</div>
       <div style="max-height:250px;overflow-y:auto;">
         <table class="trades-extended-table">
           <thead>
@@ -1561,7 +1581,7 @@
 
     <!-- Trend & Reversal Backtest Table -->
     <div class="backstage-card-full">
-      <div class="backstage-title">Trend & Reversal — Trade Log</div>
+      <div class="backstage-title">Trend & Reversal — Histórico de Operações</div>
       <div style="max-height:300px;overflow-y:auto;">
         <table class="trades-extended-table">
           <thead>
@@ -1583,8 +1603,8 @@
   <div class="section-wrap" id="pricelayers" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">11</span>
-      <span class="section-title">Realized Price Layers</span>
-      <span class="section-sub">COST BASIS BY COHORT · ON-CHAIN SUPPORT & RESISTANCE</span>
+      <span class="section-title">Camadas de Preço Realizado</span>
+      <span class="section-sub">CUSTO DE BASE POR COORTE · SUPORTE E RESISTÊNCIA ON-CHAIN</span>
     </div>
 
     <!-- Price Position Score KPI -->
@@ -1661,8 +1681,8 @@
   <div class="section-wrap" id="cohort" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">12</span>
-      <span class="section-title">Cohort Profitability</span>
-      <span class="section-sub">STH STRESS INDEX · UTXO AGE BANDS · ACCUMULATION CHECKLIST</span>
+      <span class="section-title">Lucratividade por Coorte</span>
+      <span class="section-sub">ÍNDICE DE STRESS STH · FAIXAS DE IDADE UTXO · CHECKLIST DE ACUMULAÇÃO</span>
     </div>
 
     <!-- STH Stress Index KPI + Supply in Profit -->
@@ -1715,6 +1735,10 @@
         <div style="color:var(--text-muted);font-size:11px;">Carregando HODL waves...</div>
       </div>
       <div style="margin-top:12px;height:32px;border-radius:6px;overflow:hidden;display:flex;" id="cohortHodlBar">
+      </div>
+      <div style="font-size:9px;color:var(--text-muted);margin-top:8px;text-align:center;line-height:1.5;">
+        * Definição LTH: moedas paradas há mais de 155 dias (~5 meses).<br>
+        A faixa "Transição STH→LTH" inclui coins parcialmente já classificados como LTH.
       </div>
     </div>
 
@@ -2868,7 +2892,7 @@
       document.querySelectorAll('.site-nav a').forEach(a => a.classList.remove('active'));
       el.classList.add('active');
     }
-    const _navSections = ['dashboard','signals','flow','sentiment'];
+    const _navSections = ['dashboard','signals','flow','smartmoney','sentiment','leverage','miners','trading','report','backstage','pricelayers','cohort'];
     const _navObserver = new IntersectionObserver((entries) => {
       entries.forEach(e => {
         if (e.isIntersecting) {
@@ -3478,15 +3502,15 @@
         if (ratio > 1.05) {
           pEl.style.color='var(--accent-green)'; lEl.textContent='BUY PRESSURE'; lEl.style.color='var(--accent-green)';
           fEl.style.cssText='background:var(--accent-green);width:' + Math.min(94, 50 + (ratio-1)*60) + '%';
-          dEl.textContent='Outflows exceed inflows — BTC leaving exchanges. Historically a bullish signal.';
+          dEl.textContent='Saídas superam entradas — BTC saindo das exchanges. Historicamente sinal de alta.';
         } else if (ratio < 0.95) {
           pEl.style.color='var(--accent-red)'; lEl.textContent='SELL PRESSURE'; lEl.style.color='var(--accent-red)';
           fEl.style.cssText='background:var(--accent-red);width:' + Math.max(6, 50 - (1-ratio)*60) + '%';
-          dEl.textContent='Inflows exceed outflows — BTC entering exchanges. Historically a bearish signal.';
+          dEl.textContent='Entradas superam saídas — BTC entrando nas exchanges. Historicamente sinal de baixa.';
         } else {
           pEl.style.color='var(--accent-yellow)'; lEl.textContent='NEUTRAL'; lEl.style.color='var(--accent-yellow)';
           fEl.style.cssText='background:var(--accent-yellow);width:50%';
-          dEl.textContent='Exchange flows are balanced. No strong directional signal from flow data.';
+          dEl.textContent='Fluxos de exchanges equilibrados. Sem sinal direcional forte dos fluxos.';
         }
       }
 
@@ -3813,19 +3837,19 @@
       let confColor, confDesc;
       if (confidence >= 80) {
         confColor = 'var(--accent-green)';
-        confDesc = 'Strong accumulation signals. LTH adding, STH distributing, low reserve risk. Historically favorable entry conditions.';
+        confDesc = 'Sinais fortes de acumulação. LTH adicionando, STH distribuindo, reserve risk baixo. Condições historicamente favoráveis para entrada.';
       } else if (confidence >= 60) {
         confColor = 'var(--accent-lime)';
-        confDesc = 'Moderate accumulation signals. Some smart money indicators positive. Consider scaling in.';
+        confDesc = 'Sinais moderados de acumulação. Alguns indicadores de smart money positivos. Considere entrar em etapas.';
       } else if (confidence >= 40) {
         confColor = 'var(--accent-yellow)';
-        confDesc = 'Mixed signals. Market in transition. Neither clear accumulation nor distribution.';
+        confDesc = 'Sinais mistos. Mercado em transição. Nem acumulação clara, nem distribuição clara.';
       } else if (confidence >= 20) {
         confColor = 'var(--accent-orange)';
-        confDesc = 'Distribution signals present. LTH taking profits. Exercise caution.';
+        confDesc = 'Sinais de distribuição presentes. LTH realizando lucros. Exerça cautela.';
       } else {
         confColor = 'var(--accent-red)';
-        confDesc = 'Heavy distribution. LTH selling aggressively. Risk elevated.';
+        confDesc = 'Distribuição pesada. LTH vendendo agressivamente. Risco elevado.';
       }
       
       confValueEl.style.color = confColor;
@@ -4165,16 +4189,16 @@
       let color, desc;
       if (riskScore >= 75) {
         color = 'var(--accent-red)';
-        desc = 'EXTREME RISK: High leverage, imbalanced positioning. Cascade liquidations likely.';
+        desc = 'EXTREME RISK: Alavancagem alta, posicionamento desequilibrado. Liquidações em cascata prováveis.';
       } else if (riskScore >= 50) {
         color = 'var(--accent-orange)';
-        desc = 'ELEVATED RISK: Multiple warning signs. Exercise caution with leveraged positions.';
+        desc = 'ELEVATED RISK: Múltiplos sinais de alerta. Exerça cautela com posições alavancadas.';
       } else if (riskScore >= 25) {
         color = 'var(--accent-yellow)';
-        desc = 'MODERATE: Some risk factors present but market relatively balanced.';
+        desc = 'MODERATE: Alguns fatores de risco presentes mas mercado relativamente equilibrado.';
       } else {
         color = 'var(--accent-green)';
-        desc = 'LOW RISK: Leverage metrics healthy. Market not over-extended.';
+        desc = 'LOW RISK: Métricas de alavancagem saudáveis. Mercado não superestendido.';
       }
       
       scoreEl.style.color = color;
@@ -4525,16 +4549,16 @@
       let color, desc;
       if (healthScore >= 75) {
         color = 'var(--accent-green)';
-        desc = 'HEALTHY: Miners accumulating, Puell low. Historically favorable for price.';
+        desc = 'HEALTHY: Mineradores acumulando, Puell baixo. Historicamente favorável para o preço.';
       } else if (healthScore >= 50) {
         color = 'var(--accent-yellow)';
-        desc = 'NEUTRAL: Mixed signals from miner activity. Monitor closely.';
+        desc = 'NEUTRAL: Sinais mistos da atividade dos mineradores. Monitorar de perto.';
       } else if (healthScore >= 25) {
         color = 'var(--accent-orange)';
-        desc = 'STRESSED: Some capitulation signals. Miners under pressure.';
+        desc = 'STRESSED: Alguns sinais de capitulação. Mineradores sob pressão.';
       } else {
         color = 'var(--accent-red)';
-        desc = 'CAPITULATING: Miners selling heavily. Could signal bottom formation.';
+        desc = 'CAPITULATING: Mineradores vendendo pesado. Pode sinalizar formação de fundo.';
       }
       
       scoreEl.style.color = color;
@@ -6002,61 +6026,7 @@
         mainText += `. RSI: <span style="color:${rsiColor}">${rsi.toFixed(0)}</span>`;
       }
       mainText += `</div>`;
-      
-      // 5. MINERS
-      mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">⛏️ MINERS</strong></div>`;
-      if (minerState.healthScore !== undefined) {
-        const minerHealth = minerState.healthScore;
-        const minerColor = minerHealth >= 50 ? 'var(--accent-green)' : minerHealth >= 25 ? 'var(--accent-yellow)' : 'var(--accent-orange)';
-        mainText += `Health Score: <strong style="color:${minerColor}">${minerHealth}%</strong>. `;
-        
-        if (minerState.posIdx !== null) {
-          const mpi = minerState.posIdx;
-          if (mpi < 0) {
-            mainText += `Position Index <strong style="color:var(--accent-green)">${mpi.toFixed(2)}</strong> — miners acumulando. `;
-          } else if (mpi > 2) {
-            mainText += `Position Index <strong style="color:var(--accent-red)">${mpi.toFixed(2)}</strong> — miners vendendo pesado. `;
-          } else {
-            mainText += `Position Index <strong>${mpi.toFixed(2)}</strong> — neutro. `;
-          }
-        }
-        if (minerState.puell !== null) {
-          const puell = minerState.puell;
-          if (puell < 0.5) {
-            mainText += `Puell <strong style="color:var(--accent-green)">${puell.toFixed(2)}</strong> (undervalued). `;
-          } else if (puell > 4) {
-            mainText += `Puell <strong style="color:var(--accent-red)">${puell.toFixed(2)}</strong> (overheated). `;
-          }
-        }
-        if (minerState.reserveChg !== null) {
-          const chg = minerState.reserveChg;
-          mainText += `Reserve 30d: <strong style="color:${chg < 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">${chg > 0 ? '+' : ''}${chg.toFixed(2)}%</strong>. `;
-        }
-      } else {
-        mainText += `Dados carregando...`;
-      }
-      
-      // 6. SENTIMENT
-      mainText += `<br><br><div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan);font-size:11px;letter-spacing:1px;">😱 SENTIMENTO</strong></div>`;
-      if (fearGreed) {
-        const fg = fearGreed;
-        let fgLabel, fgColor;
-        if (fg <= 25) { fgLabel = 'Extreme Fear'; fgColor = 'var(--accent-green)'; }
-        else if (fg <= 45) { fgLabel = 'Fear'; fgColor = 'var(--accent-lime)'; }
-        else if (fg <= 55) { fgLabel = 'Neutral'; fgColor = 'var(--accent-yellow)'; }
-        else if (fg <= 75) { fgLabel = 'Greed'; fgColor = 'var(--accent-orange)'; }
-        else { fgLabel = 'Extreme Greed'; fgColor = 'var(--accent-red)'; }
-        mainText += `Fear & Greed: <strong style="color:${fgColor}">${fg.toFixed(0)}</strong> (${fgLabel}). `;
-      }
-      if (funding) {
-        const fundColor = funding > 0.01 ? 'var(--accent-red)' : funding < -0.01 ? 'var(--accent-green)' : 'var(--text-secondary)';
-        mainText += `Funding: <strong style="color:${fundColor}">${(funding*100).toFixed(4)}%</strong>. `;
-      }
-      if (rsi) {
-        const rsiColor = rsi > 70 ? 'var(--accent-red)' : rsi < 30 ? 'var(--accent-green)' : 'var(--accent-yellow)';
-        mainText += `RSI: <strong style="color:${rsiColor}">${rsi.toFixed(0)}</strong>. `;
-      }
-      
+
       // FEATURE 8: Enhanced narrative report (replaces basic mainText)
       try {
         const enhancedNarrative = generateNarrativeReport();
@@ -6224,6 +6194,33 @@
       }
       
       document.getElementById('reportContext').innerHTML = contextText;
+
+      // ========== RESUMO INTEGRADO ==========
+      try {
+        const phaseInfo = (typeof detectMarketPhase === 'function') ? detectMarketPhase() : null;
+        const halvInfo  = (typeof getHalvingInfo    === 'function') ? getHalvingInfo()    : null;
+        const bullCount = signals_bullish;
+        const bearCount = signals_bearish;
+        const viasGeral = bullCount > bearCount ? 'BULLISH' : bearCount > bullCount ? 'BEARISH' : 'NEUTRO';
+        const viasColor = viasGeral === 'BULLISH' ? 'var(--accent-green)'
+                        : viasGeral === 'BEARISH' ? 'var(--accent-red)'
+                        : 'var(--accent-yellow)';
+        const confluenceTxt = document.getElementById('confluenceScoreValue')?.textContent || '--';
+        const intEl = document.getElementById('reportIntegrated');
+        if (intEl) {
+          intEl.innerHTML =
+              `<div>• <strong>Viés Geral:</strong> <span style="color:${viasColor}">${viasGeral}</span>`
+            + ` (${bullCount} bullish / ${bearCount} bearish)</div>`
+            + `<div>• <strong>Nível de Confiança:</strong> `
+            + `Confluence ${confluenceTxt}`
+            + ` | SM ${smartMoneyState.confidence ?? '--'}%`
+            + ` | Lev ${leverageState.riskScore ?? '0'}% risco`
+            + ` | Miners ${minerState.healthScore ?? '--'}% saúde</div>`
+            + `<div>• <strong>Ciclo:</strong> ${phaseInfo?.name || '--'} — `
+            + `${halvInfo?.daysSinceHalving ?? '--'} dias desde o halving`
+            + ` (${halvInfo?.cycleProgress ?? '--'}% do ciclo)</div>`;
+        }
+      } catch (e) { console.warn('[Resumo Integrado]', e); }
 
       // ========== AUDIT FEATURES UI UPDATES ==========
       try {
@@ -6397,7 +6394,7 @@
           }
           if (Array.isArray(data) && data.length > 0) {
             console.log('[FP Liq] first record keys:', Object.keys(data[0]), 'sample:', JSON.stringify(data[data.length-1]));
-            const recent = data.slice(-24);
+            const recent = data; // todos os 48 candles = janela de 48h
             let longLiq = 0, shortLiq = 0, totalFromField = 0;
             recent.forEach(d => {
               const l = parseFloat(d.longLiquidationsUsd || d.longLiquidations || 0);
@@ -6414,7 +6411,7 @@
               longLiq = totalFromField * 0.5;
               shortLiq = totalFromField * 0.5;
             }
-            console.log('[FP Liq] 24h total:', total, 'long:', longLiq, 'short:', shortLiq, 'records:', recent.length);
+            console.log('[FP Liq] 48h total:', total, 'long:', longLiq, 'short:', shortLiq, 'records:', recent.length);
             futuresPressureState.liqLong = longLiq;
             futuresPressureState.liqShort = shortLiq;
             const el = document.getElementById('fpLiq');
@@ -6423,7 +6420,7 @@
               el.style.color = total > 100e6 ? 'var(--accent-red)' : total > 50e6 ? 'var(--accent-orange)' : 'var(--accent-green)';
             }
             const sub = document.getElementById('fpLiqSub');
-            if (sub) sub.textContent = `L: ${formatUSD(longLiq)} / S: ${formatUSD(shortLiq)}`;
+            if (sub) sub.textContent = `Long: ${formatUSD(longLiq)} · Short: ${formatUSD(shortLiq)} · 48h`;
           } else {
             console.warn('[FP Liq] Data not an array or empty after unwrapping:', typeof data, data);
           }
@@ -6792,28 +6789,29 @@
 
     // ========== CONFLUENCE SCORE ==========
     function updateConfluenceScore() {
-      // Weights: Z-Score 35%, Smart Money+Whales 25%, Futures 15%, Sentiment+Funding 15%, Miners+Leverage 10%
+      // Pesos: Z-Score 30%, Smart Money+Baleias 22%, Futures 15%, Sentimento+Funding 15%,
+      // Miners+Leverage 10%, Price Layers 5%, Cohort Stress 3% — Total: 100%
       let total = 0;
       let weights = 0;
 
-      // 1. Z-Score (35%) - map from [-3, +3] to [100, 0] (undervalued = high score = bullish)
-      const zFactor = { score: 50, weight: 35 };
+      // 1. Z-Score (30%) - map from [-3, +3] to [100, 0] (undervalued = high score = bullish)
+      const zFactor = { score: 50, weight: 30 };
       if (state.composite !== null) {
         // -3 = 100 (extremely bullish), +3 = 0 (extremely bearish)
         zFactor.score = Math.max(0, Math.min(100, ((state.composite * -1) + 3) / 6 * 100));
-        weights += 35;
-        total += zFactor.score * 0.35;
+        weights += 30;
+        total += zFactor.score * 0.30;
       }
 
-      // 2. Smart Money + Whales (25%)
-      const smFactor = { score: 50, weight: 25 };
+      // 2. Smart Money + Whales (22%)
+      const smFactor = { score: 50, weight: 22 };
       if (smartMoneyState.loaded) {
         smFactor.score = smartMoneyState.confidence || 50;
         // Boost/reduce based on whale data
         if (whaleState.whale10k30d > 5000) smFactor.score = Math.min(100, smFactor.score + 10);
         else if (whaleState.whale10k30d < -5000) smFactor.score = Math.max(0, smFactor.score - 10);
-        weights += 25;
-        total += smFactor.score * 0.25;
+        weights += 22;
+        total += smFactor.score * 0.22;
       }
 
       // 3. Futures Pressure (15%)
@@ -6849,6 +6847,36 @@
         mlFactor.score = (minerScore + levInverse) / 2;
         weights += 10;
         total += mlFactor.score * 0.10;
+      }
+
+      // 6. Price Layers (5%)
+      const plFactor = { score: 50, weight: 5 };
+      if (typeof priceLayersState !== 'undefined' && priceLayersState.loaded && priceLayersState.layers && priceLayersState.layers.positionScore != null) {
+        plFactor.score = priceLayersState.layers.positionScore; // 0-100
+        weights += 5;
+        total += plFactor.score * 0.05;
+      }
+
+      // 7. Cohort STH Stress (3%) — stress alto = bullish = score alto
+      const cohortFactor = { score: 50, weight: 3 };
+      if (typeof cohortState !== 'undefined' && cohortState.loaded) {
+        const spot = tradingState.currentPrice || 0;
+        const sthRP = (cohortState.sthRP && cohortState.sthRP.length > 0)
+          ? cohortState.sthRP[cohortState.sthRP.length - 1].value : 0;
+        let cStress = 0;
+        if (spot > 0 && sthRP > 0) {
+          const pDelta = (spot - sthRP) / sthRP;
+          cStress += Math.max(0, Math.min(40, (-pDelta) * 200));
+        }
+        if (cohortState.sthMVRV !== null && cohortState.sthMVRV !== undefined) {
+          cStress += Math.max(0, Math.min(30, (1 - cohortState.sthMVRV) * 150));
+        }
+        if (cohortState.sthSOPR !== null && cohortState.sthSOPR !== undefined) {
+          cStress += Math.max(0, Math.min(30, (1 - cohortState.sthSOPR) * 300));
+        }
+        cohortFactor.score = Math.min(100, Math.round(cStress));
+        weights += 3;
+        total += cohortFactor.score * 0.03;
       }
 
       // Normalize if not all weights present
@@ -6896,6 +6924,8 @@
       updateFactor('cfFutures', 'cfFuturesFill', fpFactor);
       updateFactor('cfSentiment', 'cfSentimentFill', sentFactor);
       updateFactor('cfMinersLev', 'cfMinersLevFill', mlFactor);
+      updateFactor('cfPriceLayers', 'cfPriceLayersFill', plFactor);
+      updateFactor('cfCohort', 'cfCohortFill', cohortFactor);
     }
 
 
@@ -7519,7 +7549,60 @@
         narrative += `<div style="font-size:11px;color:var(--text-secondary);line-height:1.5;">${zROC.descPt}</div>`;
         narrative += `</div>`;
       }
-    
+
+      // ── ESTRUTURA DE PREÇO REALIZADO ──
+      if (typeof priceLayersState !== 'undefined' && priceLayersState.loaded && priceLayersState.layers) {
+        const l = priceLayersState.layers;
+        const spot = l.spot || tradingState.currentPrice || 0;
+        const sthRP = l.sthRP || 0;
+        const lthRP = l.lthRP || 0;
+        const plScore = l.positionScore || 0;
+        const plZone = l.zone || '--';
+        if (spot > 0 && sthRP > 0 && lthRP > 0) {
+          const distSTH = ((spot - sthRP) / sthRP * 100).toFixed(1);
+          const distLTH = ((spot - lthRP) / lthRP * 100).toFixed(1);
+          const sthColor = parseFloat(distSTH) < 0 ? 'var(--accent-red)' : 'var(--accent-green)';
+          narrative += `<div style="margin-bottom:14px;padding:10px;border-radius:6px;background:rgba(255,255,255,0.02);border-left:3px solid var(--accent-cyan);">`;
+          narrative += `<div style="font-size:10px;color:var(--accent-cyan);font-weight:700;letter-spacing:1px;margin-bottom:4px;">📐 ESTRUTURA DE PREÇO: ${plZone} (${plScore}/100)</div>`;
+          narrative += `<div style="font-size:11px;color:var(--text-secondary);line-height:1.6;">`;
+          narrative += `STH RP $${(sthRP/1000).toFixed(1)}K — spot <strong style="color:${sthColor}">${distSTH}%</strong> `;
+          narrative += parseFloat(distSTH) < 0 ? '(resistência ativa).' : '(acima — estrutura bull).';
+          narrative += ` LTH RP $${(lthRP/1000).toFixed(1)}K — spot <strong style="color:var(--accent-green)">+${distLTH}%</strong>`;
+          narrative += ` (suporte estrutural).</div></div>`;
+        }
+      }
+
+      // ── STRESS DAS COORTES STH ──
+      if (typeof cohortState !== 'undefined' && cohortState.loaded) {
+        const spot = tradingState.currentPrice || 0;
+        const sthRP = (cohortState.sthRP && cohortState.sthRP.length > 0)
+          ? cohortState.sthRP[cohortState.sthRP.length - 1].value : 0;
+        const mvrvSTH = cohortState.sthMVRV;
+        const soprSTH = cohortState.sthSOPR;
+        const supProfit = cohortState.supplyProfit;
+        let stressScore = 0;
+        if (spot > 0 && sthRP > 0) {
+          const priceDelta = (spot - sthRP) / sthRP;
+          stressScore += Math.max(0, Math.min(40, (-priceDelta) * 200));
+        }
+        if (mvrvSTH !== null && mvrvSTH !== undefined) stressScore += Math.max(0, Math.min(30, (1 - mvrvSTH) * 150));
+        if (soprSTH !== null && soprSTH !== undefined) stressScore += Math.max(0, Math.min(30, (1 - soprSTH) * 300));
+        stressScore = Math.round(stressScore);
+        const stressZone = stressScore >= 75 ? 'Capitulação'
+          : stressScore >= 50 ? 'Stress Alto'
+          : stressScore >= 25 ? 'Stress Moderado' : 'Saudável';
+        const stressColor = stressScore >= 75 ? 'var(--accent-green)'
+          : stressScore >= 50 ? 'var(--accent-lime)'
+          : stressScore >= 25 ? 'var(--accent-yellow)' : 'var(--accent-cyan)';
+        narrative += `<div style="margin-bottom:14px;padding:10px;border-radius:6px;background:rgba(255,255,255,0.02);border-left:3px solid ${stressColor};">`;
+        narrative += `<div style="font-size:10px;color:${stressColor};font-weight:700;letter-spacing:1px;margin-bottom:4px;">🎯 COORTE STH: ${stressZone.toUpperCase()} (${stressScore}/100)</div>`;
+        narrative += `<div style="font-size:11px;color:var(--text-secondary);line-height:1.6;">`;
+        if (mvrvSTH !== null && mvrvSTH !== undefined) narrative += `MVRV STH ${mvrvSTH.toFixed(3)}`;
+        if (soprSTH !== null && soprSTH !== undefined) narrative += ` · SOPR STH ${soprSTH.toFixed(4)}`;
+        if (supProfit !== null && supProfit !== undefined) narrative += ` · Supply em lucro ${(supProfit * 100).toFixed(1)}%`;
+        narrative += `.</div></div>`;
+      }
+
       return narrative;
     }
     
@@ -7777,27 +7860,27 @@
         const adTR = document.getElementById('adviceTrend');
         const adB = document.getElementById('adviceBoth');
         if (adZ) adZ.innerHTML = [
-          trM && zM.avgReturn > trM.avgReturn ? `Higher avg return per trade (${zM.avgReturn.toFixed(1)}% vs ${trM.avgReturn.toFixed(1)}%)` : null,
-          trM && zM.pf > trM.pf ? `Superior Profit Factor (${zM.pf === Infinity ? '∞' : zM.pf.toFixed(2)} vs ${trM.pf.toFixed(2)})` : null,
-          'Cycle bottoms and macro regime changes',
-          'Long-term accumulation phases (weeks to months)',
-          'On-chain data confirms deep value (Z < -1.5)'
+          trM && zM.avgReturn > trM.avgReturn ? `Retorno médio maior por trade (${zM.avgReturn.toFixed(1)}% vs ${trM.avgReturn.toFixed(1)}%)` : null,
+          trM && zM.pf > trM.pf ? `Profit Factor superior (${zM.pf === Infinity ? '∞' : zM.pf.toFixed(2)} vs ${trM.pf.toFixed(2)})` : null,
+          'Fundos de ciclo e mudanças de regime macro',
+          'Fases de acumulação de longo prazo (semanas a meses)',
+          'Dados on-chain confirmam valor profundo (Z < -1.5)'
         ].filter(Boolean).map(s => `• ${s}`).join('<br>');
 
         if (adTR) adTR.innerHTML = trM ? [
-          trM.total > zM.total ? `More trading opportunities (${trM.total} vs ${zM.total} trades)` : null,
-          Math.abs(trM.maxDD) < Math.abs(zM.maxDD) ? `Shallower drawdowns (${trM.maxDD.toFixed(1)}% vs ${zM.maxDD.toFixed(1)}%)` : null,
-          'Trending markets with clear EMA structure',
-          'Medium-term momentum plays (days to weeks)',
-          'Technical breakouts with volume confirmation'
-        ].filter(Boolean).map(s => `• ${s}`).join('<br>') : '<span style="color:var(--text-muted);">Trend data not available yet</span>';
+          trM.total > zM.total ? `Mais oportunidades de trading (${trM.total} vs ${zM.total} trades)` : null,
+          Math.abs(trM.maxDD) < Math.abs(zM.maxDD) ? `Drawdowns menores (${trM.maxDD.toFixed(1)}% vs ${zM.maxDD.toFixed(1)}%)` : null,
+          'Mercados em tendência com estrutura EMA clara',
+          'Plays de momentum de médio prazo (dias a semanas)',
+          'Rompimentos técnicos com confirmação de volume'
+        ].filter(Boolean).map(s => `• ${s}`).join('<br>') : '<span style="color:var(--text-muted);">Dados de Trend ainda não disponíveis</span>';
 
         if (adB) adB.innerHTML = [
-          'Z-Composite confirms macro bottom → Trend times the entry',
-          'Z says ACCUMULATE + EMA21 crosses above EMA50 = high conviction',
-          'Diversification: Z captures cycles, Trend captures momentum',
-          trM ? `Combined: ${zM.total + trM.total} signals covering both on-chain and technical` : null,
-          'Use Z for position sizing, Trend for timing'
+          'Z-Composite confirma fundo macro → Trend faz o timing da entrada',
+          'Z indica ACCUMULATE + EMA21 cruza acima da EMA50 = alta convicção',
+          'Diversificação: Z captura ciclos, Trend captura momentum',
+          trM ? `Combinado: ${zM.total + trM.total} sinais cobrindo on-chain e técnico` : null,
+          'Use Z para position sizing, Trend para timing'
         ].filter(Boolean).map(s => `• ${s}`).join('<br>');
       }
 
@@ -8421,10 +8504,14 @@
         let maosF = 0, trans = 0, lthJ = 0, diam = 0;
         
         if (hw._fallback && hw.hodl1y) {
-          // Fallback: we only have HODL 1Y+ percentage
+          // Fallback: only have HODL 1Y+ percentage. Aproximação pelas faixas:
+          // 0-3m, 3-6m, 6m-3y (LTH Consolidado), 3y+ (Diamantes)
           const hodl1y = parseFloat(hw.hodl1y);
-          const rest = 100 - hodl1y;
-          maosF = rest * 0.35; trans = rest * 0.65; lthJ = hodl1y * 0.4; diam = hodl1y * 0.6;
+          const rest = 100 - hodl1y; // supply 0-1y
+          maosF = rest * 0.65;                 // 0-3m  (maior parte do <1y)
+          trans = rest * 0.20;                 // 3-6m  (transição STH→LTH ~155d)
+          lthJ  = rest * 0.15 + hodl1y * 0.35; // 6m-3y (LTH Consolidado)
+          diam  = hodl1y * 0.65;               // 3y+
         } else {
           const findVal = (...keys) => {
             for (const k of keys) { if (hw[k] !== undefined) return parseFloat(hw[k]); }
@@ -8432,17 +8519,19 @@
           };
           maosF = findVal('1d','1w','1m','less_1m','less_3m','0_3m') || 0;
           trans = findVal('3m','6m','3_6m','3m_6m') || 0;
-          lthJ = findVal('1y','2y','1_2y','1y_2y','12m_18m') || 0;
+          // LTH Consolidado: 6m-3y (combina 6m-1y + 1y-2y + 2y-3y se disponível)
+          lthJ = (findVal('6m_1y','6_12m','12m','6m_12m') || 0)
+               + (findVal('1y','2y','1_2y','1y_2y','12m_18m') || 0);
           diam = findVal('3y','5y','10y','3y_5y','5y_plus','3_plus','3y_plus') || 0;
         }
         const total = maosF + trans + lthJ + diam;
-        
+
         if (total > 0) {
           const groups = [
-            { label: 'Mãos Fracas', sub: '0-3 meses', value: maosF, pct: (maosF/total*100).toFixed(1), color: '#E24B4A' },
-            { label: 'Transição', sub: '3-12 meses', value: trans, pct: (trans/total*100).toFixed(1), color: '#F0A500' },
-            { label: 'LTH Jovem', sub: '1-3 anos', value: lthJ, pct: (lthJ/total*100).toFixed(1), color: '#378ADD' },
-            { label: 'Diamantes', sub: '3+ anos', value: diam, pct: (diam/total*100).toFixed(1), color: '#1D9E75' },
+            { label: 'Mãos Fracas',          sub: '0-3 meses',  value: maosF, pct: (maosF/total*100).toFixed(1), color: '#E24B4A' },
+            { label: 'Transição STH→LTH',    sub: '3-6 meses',  value: trans, pct: (trans/total*100).toFixed(1), color: '#F0A500' },
+            { label: 'LTH Consolidado',      sub: '6m - 3 anos',value: lthJ,  pct: (lthJ/total*100).toFixed(1),  color: '#378ADD' },
+            { label: 'Diamantes',            sub: '3+ anos',    value: diam,  pct: (diam/total*100).toFixed(1),  color: '#1D9E75' },
           ];
           
           setHTML('cohortHodlWaves', groups.map(g =>
