@@ -93,16 +93,71 @@
     .heatmap-dates { display: flex; justify-content: space-between; padding: 4px 0 0 98px; font-size: 8px; color: var(--text-muted); }
     .heatmap-tooltip { position: absolute; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; font-size: 9px; pointer-events: none; z-index: 100; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
     
-    @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } .top-stats { grid-template-columns: 1fr; } .stats-row { grid-template-columns: repeat(3, 1fr); } .sidebar { max-height: none; } }
+    @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } .top-stats { grid-template-columns: 1fr; } .stats-row { grid-template-columns: repeat(3, 1fr); } }
     @media (max-width: 600px) { .stats-row { grid-template-columns: repeat(2, 1fr); } .metrics-grid { grid-template-columns: 1fr; } }
 
-    /* ===== NAV BAR ===== */
-    .site-nav { position: sticky; top: 0; z-index: 200; background: rgba(10,10,11,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; gap: 2px; height: 40px; }
-    .site-nav a { font-size: 9px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted); text-decoration: none; padding: 6px 14px; border-radius: 4px; transition: all 0.15s; }
-    .site-nav a:hover, .site-nav a.active { color: var(--text-primary); background: rgba(255,255,255,0.06); }
-    .site-nav a.active { color: var(--accent-orange); }
-    .nav-brand { font-size: 10px; font-weight: 700; color: var(--accent-orange); margin-right: 16px; letter-spacing: 1px; }
-    .nav-sep { width: 1px; height: 16px; background: var(--border); margin: 0 6px; }
+    /* ===== SIDEBAR LAYOUT v23 ===== */
+    .site-nav { display: none !important; }
+    .app-layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+    .sidebar {
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+      background: rgba(10,10,11,0.98); backdrop-filter: blur(12px);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; z-index: 100;
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+    .sidebar-brand {
+      padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(249,115,22,0.05) 0%, transparent 100%);
+    }
+    .sb-brand-tag { font-size: 10px; font-weight: 600; color: var(--accent-orange); letter-spacing: 2px; text-transform: uppercase; }
+    .sb-brand-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; color: var(--text-primary); margin-top: 4px; letter-spacing: 0.5px; }
+    .sb-brand-sub { font-size: 9px; color: var(--text-muted); margin-top: 5px; letter-spacing: 0.3px; }
+    .sidebar-status { padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-size: 9px; }
+    .sidebar-nav { flex: 1; padding: 8px 0 20px; overflow-y: auto; }
+    .nav-group { margin-bottom: 4px; }
+    .nav-group-label {
+      font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--accent-orange); font-weight: 700; padding: 14px 20px 6px; opacity: 0.85;
+    }
+    .nav-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px 8px 24px; text-decoration: none; color: var(--text-muted);
+      font-size: 11px; font-weight: 500; letter-spacing: 0.3px;
+      border-left: 2px solid transparent; transition: all 0.15s ease; position: relative;
+    }
+    .nav-link .nav-num { font-size: 9px; font-weight: 700; color: var(--text-muted); min-width: 18px; letter-spacing: 0.5px; font-family: 'JetBrains Mono', monospace; }
+    .nav-link .nav-text { flex: 1; }
+    .nav-link .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); opacity: 0.2; transition: all 0.2s; flex-shrink: 0; }
+    .nav-link:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+    .nav-link:hover .nav-num { color: var(--text-secondary); }
+    .nav-link.active { color: var(--accent-orange); background: rgba(249,115,22,0.06); border-left-color: var(--accent-orange); }
+    .nav-link.active .nav-num { color: var(--accent-orange); }
+    .nav-link.active .nav-dot { background: var(--accent-orange); opacity: 1; box-shadow: 0 0 6px rgba(249,115,22,0.4); }
+    .nav-link.status-green .nav-dot { background: #00d97e; opacity: 0.8; }
+    .nav-link.status-yellow .nav-dot { background: #eab308; opacity: 0.8; }
+    .nav-link.status-red .nav-dot { background: #ef4444; opacity: 0.9; }
+    .sidebar-footer { padding: 12px 20px; border-top: 1px solid var(--border); font-size: 9px; color: var(--text-muted); }
+    .sidebar-footer a { color: var(--accent-blue); text-decoration: none; }
+    .main-content { min-width: 0; overflow-x: hidden; }
+    .sidebar-toggle {
+      display: none; position: fixed; top: 12px; left: 12px;
+      width: 38px; height: 38px; z-index: 300;
+      background: rgba(10,10,11,0.95); border: 1px solid var(--border);
+      border-radius: 6px; cursor: pointer; font-size: 18px; color: var(--text-primary);
+      align-items: center; justify-content: center;
+    }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 150; backdrop-filter: blur(4px); }
+    .sidebar-overlay.open { display: block; }
+    @media (max-width: 900px) {
+      .app-layout { grid-template-columns: 1fr; }
+      .sidebar { position: fixed; top: 0; left: 0; transform: translateX(-100%); transition: transform 0.25s ease; width: 260px; z-index: 200; }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-toggle { display: flex; }
+      .main-content { padding-top: 54px; }
+    }
 
     /* ===== SECTION DIVIDERS ===== */
     .section-wrap { padding-top: 32px; padding-bottom: 16px; }
@@ -359,22 +414,57 @@
   </style>
 </head>
 <body>
-  <nav class="site-nav">
-    <span class="nav-brand">ONCHAINBR</span>
-    <div class="nav-sep"></div>
-    <a href="#dashboard" class="active" onclick="setActiveNav(this)">01 · Dashboard</a>
-    <a href="#signals" onclick="setActiveNav(this)">02 · Sinais</a>
-    <a href="#flow" onclick="setActiveNav(this)">03 · Fluxo</a>
-    <a href="#smartmoney" onclick="setActiveNav(this)">04 · Smart Money</a>
-    <a href="#sentiment" onclick="setActiveNav(this)">05 · Sentimento</a>
-    <a href="#leverage" onclick="setActiveNav(this)">06 · Alavancagem</a>
-    <a href="#miners" onclick="setActiveNav(this)">07 · Mineradores</a>
-    <a href="#trading" onclick="setActiveNav(this)">08 · Trading</a>
-    <a href="#report" onclick="setActiveNav(this)">09 · Relatório</a>
-    <a href="#backstage" onclick="setActiveNav(this)">10 · Bastidores</a>
-    <a href="#pricelayers" onclick="setActiveNav(this)">11 · Camadas de Preço</a>
-    <a href="#cohort" onclick="setActiveNav(this)">12 · Cohort</a>
-  </nav>
+  <button class="sidebar-toggle" id="sidebarToggle" aria-label="Menu">&#9776;</button>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="sb-brand-tag">@ONCHAINBR</div>
+        <div class="sb-brand-title">BTC Valuation</div>
+        <div class="sb-brand-sub">Composite Z-Score · 365d · 9 Metrics</div>
+      </div>
+      <div class="sidebar-status">
+        <span class="status-ok" id="sidebarEndpoints" style="font-size:9px;">● 0/10</span>
+        <span id="sidebarLastData" style="font-size:9px;color:var(--text-muted);">--</span>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-group">
+          <div class="nav-group-label">Valuation</div>
+          <a href="#dashboard" class="nav-link active" data-sec="dashboard"><span class="nav-num">01</span><span class="nav-text">Dashboard</span><span class="nav-dot"></span></a>
+          <a href="#signals" class="nav-link" data-sec="signals"><span class="nav-num">02</span><span class="nav-text">Sinais</span><span class="nav-dot"></span></a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">Capital & Fluxo</div>
+          <a href="#flow" class="nav-link" data-sec="flow"><span class="nav-num">03</span><span class="nav-text">Fluxo</span><span class="nav-dot"></span></a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">Holders</div>
+          <a href="#smartmoney" class="nav-link" data-sec="smartmoney"><span class="nav-num">04</span><span class="nav-text">Smart Money</span><span class="nav-dot"></span></a>
+          <a href="#pricelayers" class="nav-link" data-sec="pricelayers"><span class="nav-num">11</span><span class="nav-text">Camadas de Preço</span><span class="nav-dot"></span></a>
+          <a href="#cohort" class="nav-link" data-sec="cohort"><span class="nav-num">12</span><span class="nav-text">Coortes STH</span><span class="nav-dot"></span></a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">Derivativos & Sentimento</div>
+          <a href="#sentiment" class="nav-link" data-sec="sentiment"><span class="nav-num">05</span><span class="nav-text">Sentimento</span><span class="nav-dot"></span></a>
+          <a href="#leverage" class="nav-link" data-sec="leverage"><span class="nav-num">06</span><span class="nav-text">Alavancagem</span><span class="nav-dot"></span></a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">Infraestrutura</div>
+          <a href="#miners" class="nav-link" data-sec="miners"><span class="nav-num">07</span><span class="nav-text">Mineradores</span><span class="nav-dot"></span></a>
+          <a href="#trading" class="nav-link" data-sec="trading"><span class="nav-num">08</span><span class="nav-text">Trading</span><span class="nav-dot"></span></a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label">Síntese</div>
+          <a href="#report" class="nav-link" data-sec="report"><span class="nav-num">09</span><span class="nav-text">Relatório</span><span class="nav-dot"></span></a>
+          <a href="#backstage" class="nav-link" data-sec="backstage"><span class="nav-num">10</span><span class="nav-text">Bastidores</span><span class="nav-dot"></span></a>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <span>v4.0 · Rolling 365d</span>
+        <a href="https://bitcoin-data.com" target="_blank">BGeometrics</a>
+      </div>
+    </aside>
+    <main class="main-content">
   <div id="dashboard">
   <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
@@ -1431,7 +1521,7 @@
       </div>
       
       <!-- Right: Data Cards -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
         <!-- On-Chain -->
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;">
           <div style="font-size:9px;color:var(--accent-cyan);text-transform:uppercase;margin-bottom:8px;font-weight:600;">⛓️ On-Chain</div>
@@ -1473,6 +1563,28 @@
             <div style="display:flex;justify-content:space-between;"><span>LTH 30d</span><span id="repLth30d">--</span></div>
             <div style="display:flex;justify-content:space-between;"><span>STH 30d</span><span id="repSth30d">--</span></div>
             <div style="display:flex;justify-content:space-between;"><span>Ratio</span><span id="repRatio">--</span></div>
+          </div>
+        </div>
+
+        <!-- Camadas de Preço Realizado -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-size:9px;color:var(--accent-cyan);text-transform:uppercase;margin-bottom:8px;font-weight:600;">📐 Camadas de Preço</div>
+          <div style="font-size:10px;line-height:1.9;color:var(--text-secondary);">
+            <div style="display:flex;justify-content:space-between;"><span>Position Score</span><span id="repPosScore" style="font-weight:600;">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Dist. STH RP</span><span id="repDistSth">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Dist. LTH RP</span><span id="repDistLth">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Estrutura</span><span id="repStructure">--</span></div>
+          </div>
+        </div>
+
+        <!-- Lucratividade por Coorte (STH Stress) -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;">
+          <div style="font-size:9px;color:#F0A500;text-transform:uppercase;margin-bottom:8px;font-weight:600;">🎯 Coortes STH</div>
+          <div style="font-size:10px;line-height:1.9;color:var(--text-secondary);">
+            <div style="display:flex;justify-content:space-between;"><span>STH Stress</span><span id="repCohortStress" style="font-weight:600;">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>MVRV STH</span><span id="repMvrvSth">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>SOPR STH</span><span id="repSoprSth">--</span></div>
+            <div style="display:flex;justify-content:space-between;"><span>Supply Profit</span><span id="repSupplyProfit">--</span></div>
           </div>
         </div>
       </div>
@@ -1762,6 +1874,8 @@
     <div>@ONCHAINBR · Z-Score Model · Rolling 365d · 9 Metrics · Signals · Flow · Sentiment · Trading · Relatório · Backstage · Price Layers · Cohort</div>
     <div>APIs: <a href="https://bitview.space" target="_blank">Bitview</a> + <a href="https://bitcoin-data.com" target="_blank">BGeometrics</a> + <a href="https://alternative.me" target="_blank">Alternative.me</a> + <a href="https://binance.com" target="_blank">Binance</a></div>
   </footer>
+    </main><!-- end .main-content -->
+  </div><!-- end .app-layout -->
 
   <script>
     // ========== STATE ==========
@@ -2887,23 +3001,93 @@
 
     // ========== INIT ==========
 
-    // ========== NAV ACTIVE STATE ==========
-    function setActiveNav(el) {
-      document.querySelectorAll('.site-nav a').forEach(a => a.classList.remove('active'));
-      el.classList.add('active');
-    }
+    // ========== SIDEBAR NAV + SCROLL-SPY + HAMBURGER ==========
     const _navSections = ['dashboard','signals','flow','smartmoney','sentiment','leverage','miners','trading','report','backstage','pricelayers','cohort'];
+
+    // Scroll-spy: highlight active section in sidebar
+    let _activeNavId = 'dashboard';
     const _navObserver = new IntersectionObserver((entries) => {
       entries.forEach(e => {
         if (e.isIntersecting) {
-          const id = e.target.id;
-          document.querySelectorAll('.site-nav a').forEach(a => {
-            a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+          _activeNavId = e.target.id;
+          document.querySelectorAll('.nav-link').forEach(a => {
+            a.classList.toggle('active', a.getAttribute('data-sec') === _activeNavId);
           });
+          // Update URL hash silently
+          if (history.replaceState) history.replaceState(null, null, '#' + _activeNavId);
         }
       });
-    }, { threshold: 0.15 });
+    }, { threshold: 0.12, rootMargin: '-10% 0px -60% 0px' });
     _navSections.forEach(id => { const el = document.getElementById(id); if (el) _navObserver.observe(el); });
+
+    // Sidebar link clicks — smooth scroll
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const sec = link.getAttribute('data-sec');
+        const target = document.getElementById(sec);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Close mobile sidebar
+        document.getElementById('sidebar')?.classList.remove('open');
+        document.getElementById('sidebarOverlay')?.classList.remove('open');
+      });
+    });
+
+    // Hamburger toggle (mobile)
+    document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+      document.getElementById('sidebar')?.classList.toggle('open');
+      document.getElementById('sidebarOverlay')?.classList.toggle('open');
+    });
+    document.getElementById('sidebarOverlay')?.addEventListener('click', () => {
+      document.getElementById('sidebar')?.classList.remove('open');
+      document.getElementById('sidebarOverlay')?.classList.remove('open');
+    });
+
+    // Hash navigation on page load
+    if (location.hash) {
+      const hashTarget = document.getElementById(location.hash.slice(1));
+      if (hashTarget) setTimeout(() => hashTarget.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    }
+
+    // Sync sidebar status indicators with main state
+    function updateSidebarStatus() {
+      const sbEp = document.getElementById('sidebarEndpoints');
+      const sbDate = document.getElementById('sidebarLastData');
+      const mainEp = document.getElementById('statusEndpoints');
+      const mainDate = document.getElementById('statusLastData');
+      if (sbEp && mainEp) sbEp.innerHTML = mainEp.innerHTML;
+      if (sbDate && mainDate) sbDate.textContent = mainDate.textContent;
+    }
+    setInterval(updateSidebarStatus, 3000);
+
+    // Section status dots (green/yellow/red) based on data state
+    function updateNavDots() {
+      const z = state.composite;
+      const links = document.querySelectorAll('.nav-link');
+      links.forEach(link => {
+        link.classList.remove('status-green','status-yellow','status-red');
+        const sec = link.getAttribute('data-sec');
+        if (sec === 'dashboard' && z !== null) {
+          link.classList.add(z <= -0.5 ? 'status-green' : z >= 1.5 ? 'status-red' : 'status-yellow');
+        }
+        if (sec === 'smartmoney' && smartMoneyState.confidence != null) {
+          link.classList.add(smartMoneyState.confidence >= 60 ? 'status-green' : smartMoneyState.confidence <= 30 ? 'status-red' : 'status-yellow');
+        }
+        if (sec === 'leverage' && typeof leverageState !== 'undefined' && leverageState.riskScore != null) {
+          link.classList.add(leverageState.riskScore < 30 ? 'status-green' : leverageState.riskScore >= 65 ? 'status-red' : 'status-yellow');
+        }
+        if (sec === 'miners' && typeof minerState !== 'undefined' && minerState.health != null) {
+          link.classList.add(minerState.health >= 60 ? 'status-green' : minerState.health <= 30 ? 'status-red' : 'status-yellow');
+        }
+        if (sec === 'pricelayers' && priceLayersState.loaded) {
+          const ps = priceLayersState.layers?.positionScore;
+          if (ps != null) link.classList.add(ps <= 30 ? 'status-green' : ps >= 70 ? 'status-red' : 'status-yellow');
+        }
+        if (sec === 'cohort' && cohortState.loaded) {
+          link.classList.add('status-green');
+        }
+      });
+    }
 
     // ========== SIGNAL DETECTION ==========
     let _signalChart = null;
@@ -6157,7 +6341,59 @@
         const ratio = smartMoneyState.ratio;
         repRatio.innerHTML = `<span style="color:${ratio < 0.5 ? 'var(--accent-green)' : 'var(--accent-yellow)'}">${ratio.toFixed(3)}</span>`;
       }
-      
+
+      // ========== PRICE LAYERS DATA (report card) ==========
+      if (typeof priceLayersState !== 'undefined' && priceLayersState.loaded && priceLayersState.layers) {
+        const pl = priceLayersState.layers;
+        const pScore = pl.positionScore;
+        const spot = pl.spot || 0;
+        const distSth = pl.sthRP ? ((spot - pl.sthRP) / pl.sthRP * 100) : null;
+        const distLth = pl.lthRP ? ((spot - pl.lthRP) / pl.lthRP * 100) : null;
+        const isBull = pl.sthRP && pl.lthRP && spot > pl.lthRP;
+        const repPS = document.getElementById('repPosScore');
+        const repDS = document.getElementById('repDistSth');
+        const repDL = document.getElementById('repDistLth');
+        const repST = document.getElementById('repStructure');
+        if (repPS && pScore != null) {
+          const pColor = pScore <= 30 ? 'var(--accent-green)' : pScore >= 70 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+          repPS.innerHTML = `<span style="color:${pColor}">${pScore}/100</span>`;
+        }
+        if (repDS && distSth !== null) {
+          repDS.innerHTML = `<span style="color:${distSth >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${distSth >= 0 ? '+' : ''}${distSth.toFixed(1)}%</span>`;
+        }
+        if (repDL && distLth !== null) {
+          repDL.innerHTML = `<span style="color:${distLth >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">${distLth >= 0 ? '+' : ''}${distLth.toFixed(1)}%</span>`;
+        }
+        if (repST) {
+          repST.innerHTML = isBull ? '<span style="color:var(--accent-green)">BULL</span>' : '<span style="color:var(--accent-red)">BEAR</span>';
+        }
+      }
+
+      // ========== COHORT STH DATA (report card) ==========
+      if (typeof cohortState !== 'undefined' && cohortState.loaded) {
+        const mvrvS = cohortState.sthMVRV;
+        const soprS = cohortState.sthSOPR;
+        const supP = cohortState.supplyProfit;
+        // Calculate stress (same formula as Confluence)
+        let cStress = 0;
+        if (mvrvS != null) cStress += Math.max(0, Math.min(40, (1 - mvrvS) * 150));
+        if (soprS != null) cStress += Math.max(0, Math.min(30, (1 - soprS) * 300));
+        if (supP != null) cStress += Math.max(0, Math.min(30, (0.55 - supP) * 200));
+        cStress = Math.round(Math.min(100, Math.max(0, cStress)));
+        const stColor = cStress <= 30 ? 'var(--accent-green)' : cStress >= 65 ? 'var(--accent-red)' : 'var(--accent-yellow)';
+        const repCS = document.getElementById('repCohortStress');
+        const repMS = document.getElementById('repMvrvSth');
+        const repSS = document.getElementById('repSoprSth');
+        const repSP = document.getElementById('repSupplyProfit');
+        if (repCS) repCS.innerHTML = `<span style="color:${stColor}">${cStress}/100</span>`;
+        if (repMS && mvrvS != null) repMS.innerHTML = `<span style="color:${mvrvS >= 1 ? 'var(--accent-green)' : 'var(--accent-red)'}">${mvrvS.toFixed(2)}</span>`;
+        if (repSS && soprS != null) repSS.innerHTML = `<span style="color:${soprS >= 1 ? 'var(--accent-green)' : 'var(--accent-red)'}">${soprS.toFixed(3)}</span>`;
+        if (repSP && supP != null) repSP.innerHTML = `<span style="color:${supP >= 0.5 ? 'var(--accent-green)' : 'var(--accent-red)'}">${(supP * 100).toFixed(1)}%</span>`;
+      }
+
+      // Update sidebar nav dots
+      if (typeof updateNavDots === 'function') updateNavDots();
+
       // ========== HISTORICAL CONTEXT ==========
       let contextText = '';
       
@@ -8344,8 +8580,9 @@
           interaction: { mode: 'nearest', axis: 'x', intersect: false }
         }
       });
+      if (typeof updateNavDots === 'function') updateNavDots();
     }
-    
+
     // ========== ABA 12: COHORT PROFITABILITY ==========
     const cohortState = { loaded: false, sthRP: [], lthRP: [], sthMVRV: null, sthSOPR: null, supplyProfit: null, hodlWaves: null, chart: null };
     
@@ -8586,8 +8823,9 @@
       
       // Render RP chart
       renderCohortChart();
+      if (typeof updateNavDots === 'function') updateNavDots();
     }
-    
+
     function renderCohortChart() {
       const spotAll = (priceLayersState.history?.spot || []);
       const spot90 = spotAll.slice(-90);
