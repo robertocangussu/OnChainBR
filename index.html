@@ -10,7 +10,119 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
   <style>
-    :root { --bg-primary: #0a0a0b; --bg-secondary: #111113; --bg-card: #161619; --border: #252528; --text-primary: #e8e8ed; --text-secondary: #b8b8c4; --text-muted: #8a8a96; --accent-green: #00d97e; --accent-lime: #84cc16; --accent-yellow: #eab308; --accent-orange: #f97316; --accent-red: #ef4444; --accent-blue: #3b82f6; --accent-purple: #a855f7; --accent-pink: #ec4899; --accent-cyan: #06b6d4; --accent-teal: #14b8a6; }
+    :root { --bg-primary: #0a0a0b; --bg-secondary: #111113; --bg-card: #161619; --border: #252528; --text-primary: #e8e8ed; --text-secondary: #b8b8c4; --text-muted: #8a8a96; --accent-green: #00d97e; --accent-lime: #84cc16; --accent-yellow: #eab308; --accent-orange: #f97316; --accent-red: #ef4444; --accent-blue: #3b82f6; --accent-purple: #a855f7; --accent-pink: #ec4899; --accent-cyan: #06b6d4; --accent-teal: #14b8a6;
+      /* === Tokens semânticos v5 (acabamento premium) === */
+      --sig-bull: #00d97e;        /* bullish / undervalued */
+      --sig-neutral: #eab308;     /* fair / hold */
+      --sig-bear: #ef4444;        /* bearish / overheated */
+      --border-subtle: rgba(255,255,255,0.06);
+      --border-strong: rgba(255,255,255,0.12);
+      --glow-primary: 0 0 24px rgba(249,115,22,0.12);
+      --glow-bull: 0 0 16px rgba(0,217,126,0.20);
+      --glow-bear: 0 0 16px rgba(239,68,68,0.20);
+      --shadow-card: inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 2px rgba(0,0,0,0.4);
+      --shadow-card-hover: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 18px rgba(0,0,0,0.5);
+      --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px;
+      --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px;
+    }
+
+    /* === Typography polish (tabular numerals para alinhamento perfeito) === */
+    .zscore-value, .price-value, .stat-value, .metric-value,
+    .confluence-score-big, #halvingDays, #halvingPct {
+      font-feature-settings: "tnum" 1, "ss01" 1;
+      letter-spacing: -0.02em;
+    }
+    /* Números em tabelas também */
+    table td, table th { font-feature-settings: "tnum" 1; }
+
+    /* === Card depth (gradient sutil + shadow + hover lift) === */
+    .stat-card, .zscore-card, .gauge-card, .price-card, .chart-section,
+    .sidebar-section, .backstage-card, .backstage-card-full,
+    .flow-card, .sig-stat-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 100%), var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-card);
+      transition: transform .18s cubic-bezier(.2,.8,.2,1), border-color .18s, box-shadow .18s;
+    }
+    .stat-card:hover, .zscore-card:hover, .price-card:hover, .flow-card:hover, .sig-stat-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(249,115,22,0.35);
+      box-shadow: var(--shadow-card-hover);
+    }
+
+    /* === Nav dot pulse quando ativo/live === */
+    .nav-link.active .nav-dot,
+    .nav-link.status-green .nav-dot { animation: obr-pulse 2.4s cubic-bezier(.4,0,.6,1) infinite; }
+    @keyframes obr-pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 6px currentColor; }
+      50% { opacity: 0.55; box-shadow: 0 0 2px currentColor; }
+    }
+
+    /* === Brand glow no sidebar (premium touch) === */
+    .sb-brand-tag { text-shadow: 0 0 10px rgba(249,115,22,0.25); }
+    .sb-brand-title { text-shadow: 0 0 18px rgba(232,232,237,0.08); }
+
+    /* === Halving cycle strip (topo do main-content) === */
+    .halving-strip {
+      position: relative; height: 3px; margin: 0 0 12px;
+      background: rgba(255,255,255,0.04); border-radius: 2px; overflow: visible;
+    }
+    .halving-strip-fill {
+      position: absolute; top: 0; left: 0; height: 100%;
+      background: linear-gradient(90deg, var(--sig-bear) 0%, var(--sig-neutral) 50%, var(--sig-bull) 100%);
+      border-radius: 2px;
+      filter: drop-shadow(0 0 6px rgba(249,115,22,0.3));
+    }
+    .halving-strip-marker {
+      position: absolute; top: -3px; width: 2px; height: 9px;
+      background: #fff; border-radius: 1px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.6);
+    }
+    .halving-strip-caption {
+      font-size: 9px; color: var(--text-muted); letter-spacing: 0.08em;
+      text-transform: uppercase; margin-bottom: 4px; display: flex; justify-content: space-between;
+    }
+
+    /* === Skeleton shimmer (substitui "Carregando...") === */
+    .obr-skeleton {
+      display: inline-block; min-width: 60px; height: 1em; border-radius: 3px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 100%);
+      background-size: 200% 100%;
+      animation: obr-shimmer 1.4s ease-in-out infinite;
+    }
+    @keyframes obr-shimmer {
+      0% { background-position: -150% 0; }
+      100% { background-position: 150% 0; }
+    }
+
+    /* === Tooltip premium do Chart.js (aplicado via Chart.defaults, mas a sombra vem do CSS) === */
+    canvas { filter: drop-shadow(0 1px 0 rgba(0,0,0,0.3)); }
+
+    /* === Mobile refinements === */
+    @media (max-width: 900px) {
+      .chart-container { height: 240px !important; }
+    }
+    @media (max-width: 480px) {
+      .price-value { font-size: 32px !important; }
+      .zscore-value { font-size: 36px !important; }
+      .confluence-score-big { font-size: 44px !important; }
+    }
+
+    /* === Multi-Rolling Comparison section styles === */
+    .rolling-compare-card { background: linear-gradient(135deg, var(--bg-card) 0%, rgba(249,115,22,0.05) 100%); border: 1px solid rgba(249,115,22,0.25); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px; }
+    .rolling-compare-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    @media (max-width: 900px) { .rolling-compare-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .rolling-compare-grid { grid-template-columns: 1fr; } }
+    .rolling-reading { background: var(--bg-card); border: 1px solid var(--border-subtle); border-left: 3px solid var(--accent-orange); border-radius: var(--radius-md); padding: 16px; transition: all .18s; }
+    .rolling-reading:hover { border-left-color: var(--sig-bull); transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+    .rolling-reading-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 6px; font-weight: 600; }
+    .rolling-reading-value { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; font-feature-settings: "tnum" 1; }
+    .rolling-reading-zone { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; margin-top: 4px; }
+    .rolling-reading-sub { font-size: 9px; color: var(--text-muted); margin-top: 6px; }
+    .rolling-status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+    .rolling-status-aligned { background: rgba(0,217,126,0.12); color: var(--sig-bull); border: 1px solid rgba(0,217,126,0.3); }
+    .rolling-status-mixed { background: rgba(234,179,8,0.12); color: var(--sig-neutral); border: 1px solid rgba(234,179,8,0.3); }
+    .rolling-status-diverged { background: rgba(239,68,68,0.12); color: var(--sig-bear); border: 1px solid rgba(239,68,68,0.3); }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'JetBrains Mono', monospace; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
     .container { max-width: 1400px; margin: 0 auto; padding: 16px 24px; }
@@ -432,6 +544,7 @@
           <div class="nav-group-label">Valuation</div>
           <a href="#dashboard" class="nav-link active" data-sec="dashboard"><span class="nav-num">01</span><span class="nav-text">Dashboard</span><span class="nav-dot"></span></a>
           <a href="#signals" class="nav-link" data-sec="signals"><span class="nav-num">02</span><span class="nav-text">Sinais</span><span class="nav-dot"></span></a>
+          <a href="#rolling" class="nav-link" data-sec="rolling"><span class="nav-num">13</span><span class="nav-text">Multi-Rolling</span><span class="nav-dot"></span></a>
         </div>
         <div class="nav-group">
           <div class="nav-group-label">Capital & Fluxo</div>
@@ -465,6 +578,17 @@
       </div>
     </aside>
     <main class="main-content">
+  <!-- Halving Cycle Strip (global, fixa no topo do conteúdo) -->
+  <div style="max-width:1400px;margin:0 auto;padding:12px 24px 0;">
+    <div class="halving-strip-caption">
+      <span>Ciclo Halving · <span id="hStripEra">5ª era</span></span>
+      <span><span id="hStripDays">--</span> / 1460 dias · <span id="hStripPct">--%</span></span>
+    </div>
+    <div class="halving-strip">
+      <div class="halving-strip-fill" id="hStripFill" style="width:0%"></div>
+      <div class="halving-strip-marker" id="hStripMarker" style="left:0%"></div>
+    </div>
+  </div>
   <div id="dashboard">
   <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
@@ -1823,6 +1947,95 @@
   </div>
 
 
+  <!-- ========== SECTION 13: MULTI-ROLLING COMPOSITE COMPARISON ========== -->
+  <div class="section-wrap" id="rolling" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">13</span>
+      <span class="section-title">Multi-Rolling Composite</span>
+      <span class="section-sub">365D · 2Y · 4Y · FULL-CYCLE · SIDE BY SIDE</span>
+    </div>
+
+    <div class="rolling-compare-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px;">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text-primary);letter-spacing:0.02em;">Quatro leituras do mesmo mercado</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.55;max-width:720px;">
+            O sistema principal continua usando <strong style="color:var(--accent-orange);">Rolling 365d</strong> (inalterado).
+            Abaixo, as mesmas 9 métricas ponderadas recalculadas em janelas diferentes — útil para <strong>detectar convergência/divergência</strong>:
+            quando as 4 apontam pra mesma zona, sinal é forte; quando divergem, metodologia importa.
+          </div>
+        </div>
+        <div class="rolling-status-pill" id="rollingStatusPill">
+          <span id="rollingStatusDot" style="width:6px;height:6px;border-radius:50%;background:currentColor;"></span>
+          <span id="rollingStatusText">calculando...</span>
+        </div>
+      </div>
+
+      <div class="rolling-compare-grid" id="rollingGrid">
+        <div class="rolling-reading" style="border-left-color:var(--accent-orange);">
+          <div class="rolling-reading-label">Rolling 365d <span style="color:var(--accent-orange);">★ PRIMÁRIO</span></div>
+          <div class="rolling-reading-value" id="r365Val" style="color:var(--text-primary);">--</div>
+          <div class="rolling-reading-zone" id="r365Zone">--</div>
+          <div class="rolling-reading-sub" id="r365Sub">O sinal que dirige o dashboard</div>
+        </div>
+        <div class="rolling-reading" style="border-left-color:var(--accent-cyan);">
+          <div class="rolling-reading-label">Rolling 2 anos <span style="color:var(--text-muted);">· médio prazo</span></div>
+          <div class="rolling-reading-value" id="r2yVal" style="color:var(--text-primary);">--</div>
+          <div class="rolling-reading-zone" id="r2yZone">--</div>
+          <div class="rolling-reading-sub" id="r2ySub">Janela de ~2 halvings parciais</div>
+        </div>
+        <div class="rolling-reading" style="border-left-color:var(--accent-blue);">
+          <div class="rolling-reading-label">Rolling 4 anos <span style="color:var(--text-muted);">· ciclo halving</span></div>
+          <div class="rolling-reading-value" id="r4yVal" style="color:var(--text-primary);">--</div>
+          <div class="rolling-reading-zone" id="r4yZone">--</div>
+          <div class="rolling-reading-sub" id="r4ySub">Captura o ciclo completo de 4 anos</div>
+        </div>
+        <div class="rolling-reading" style="border-left-color:var(--accent-purple);">
+          <div class="rolling-reading-label">Full Cycle <span style="color:var(--text-muted);">· toda a história</span></div>
+          <div class="rolling-reading-value" id="rAllVal" style="color:var(--text-primary);">--</div>
+          <div class="rolling-reading-zone" id="rAllZone">--</div>
+          <div class="rolling-reading-sub" id="rAllSub">Z contra a distribuição histórica inteira</div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;margin-top:18px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;">Diagnóstico de Convergência</div>
+        <div id="rollingDiagnosis" style="font-size:12px;color:var(--text-secondary);line-height:1.6;">Calculando spread entre janelas...</div>
+      </div>
+    </div>
+
+    <div class="backstage-card-full">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text-primary);">Histórico comparativo — quatro janelas sobrepostas</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Convergência = sinal forte · Divergência = metodologia em disputa</div>
+        </div>
+        <div style="display:flex;gap:6px;" id="rollingRangeButtons">
+          <button class="zoom-btn active" data-range="all" style="font-size:9px;padding:5px 10px;background:rgba(249,115,22,0.15);border:1px solid var(--accent-orange);color:var(--accent-orange);border-radius:4px;cursor:pointer;letter-spacing:0.06em;">ALL</button>
+          <button class="zoom-btn" data-range="4y" style="font-size:9px;padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;cursor:pointer;letter-spacing:0.06em;">4Y</button>
+          <button class="zoom-btn" data-range="2y" style="font-size:9px;padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;cursor:pointer;letter-spacing:0.06em;">2Y</button>
+          <button class="zoom-btn" data-range="1y" style="font-size:9px;padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;cursor:pointer;letter-spacing:0.06em;">1Y</button>
+        </div>
+      </div>
+      <div style="height:420px;"><canvas id="rollingCompareChart"></canvas></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;font-size:9px;color:var(--text-muted);">
+        <div>📊 <strong style="color:var(--accent-orange);">Laranja</strong> = 365d (oficial)</div>
+        <div>📊 <strong style="color:var(--accent-cyan);">Ciano</strong> = 2 anos</div>
+        <div>📊 <strong style="color:var(--accent-blue);">Azul</strong> = 4 anos</div>
+        <div>📊 <strong style="color:var(--accent-purple);">Roxo</strong> = Full Cycle</div>
+      </div>
+    </div>
+
+    <!-- Stats footer -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px;">
+      <div class="stat-card"><div class="stat-label">Média 30d · 365d</div><div class="stat-value" id="rAvg365" style="color:var(--accent-orange);">--</div></div>
+      <div class="stat-card"><div class="stat-label">Média 30d · 2Y</div><div class="stat-value" id="rAvg2y" style="color:var(--accent-cyan);">--</div></div>
+      <div class="stat-card"><div class="stat-label">Média 30d · 4Y</div><div class="stat-value" id="rAvg4y" style="color:var(--accent-blue);">--</div></div>
+      <div class="stat-card"><div class="stat-label">Média 30d · FULL</div><div class="stat-value" id="rAvgAll" style="color:var(--accent-purple);">--</div></div>
+    </div>
+  </div>
+
+
   <!-- ========== SECTION 10: BACKSTAGE (Advanced Analytics) ========== -->
   <div class="section-wrap" id="backstage" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
@@ -1944,16 +2157,76 @@
     }
     
     // ========== CONFIG ==========
-    const CONFIG = { 
-      BGEOMETRICS_TOKEN: 'SahfZ2aHol', 
-      BGEOMETRICS_BASE: 'https://bitcoin-data.com', 
+    // DEBUG flag — ativa console.log detalhado via #debug na URL
+    const DEBUG = (typeof window !== 'undefined') && (window.location.hash.includes('debug') || window.location.search.includes('debug'));
+    const dlog = (...a) => { if (DEBUG) console.log(...a); };
+    const dwarn = (...a) => { if (DEBUG) console.warn(...a); };
+
+    const CONFIG = {
+      // TOKEN: mantenha o proxy Worker como camada de injeção em produção.
+      // Este valor é fallback apenas; o Worker injeta o token real server-side.
+      BGEOMETRICS_TOKEN: 'SahfZ2aHol',
+      BGEOMETRICS_BASE: 'https://bitcoin-data.com',
       BITVIEW_BASE: 'https://bitview.space/api',
       // Custom Cloudflare Worker proxy (no rate limits!)
       CORS_PROXY: 'https://bgeometrics-proxy.roberty-rockeiro.workers.dev/?url=',
       USE_CORS_PROXY: true,
-      ROLLING_WINDOW: 365, 
-      MIN_DATA_POINTS: 30
+      ROLLING_WINDOW: 365,
+      MIN_DATA_POINTS: 30,
+      // Cache local (localStorage) com TTL de 4h para evitar refetch em F5
+      CACHE_TTL_MS: 4 * 60 * 60 * 1000,
+      CACHE_ENABLED: true,
+      // Cobertura mínima de pesos para o Confluence Score ser publicado
+      MIN_CONFLUENCE_COVERAGE: 0.80
     };
+
+    // ========== FAMILY WEIGHTS (para composite ponderado) ==========
+    // Metas: Valuation 40% / Momentum 30% / Liquidity 30%
+    // Mantém soma = 1.00 com redistribuição dinâmica quando métricas faltam.
+    const METRIC_WEIGHTS = {
+      mvrv: 0.10, nupl: 0.10, mayer: 0.10, supplyProfit: 0.10,   // Valuation: 40%
+      rsi: 0.15,  sopr: 0.15,                                     // Momentum: 30%
+      ssr: 0.10,  fearGreed: 0.10, puell: 0.10                    // Liquidity: 30%
+    };
+
+    // ========== CACHE LOCAL (localStorage com TTL) ==========
+    const OBR_CACHE = {
+      get(key) {
+        if (!CONFIG.CACHE_ENABLED) return null;
+        try {
+          const raw = localStorage.getItem('obr_' + key);
+          if (!raw) return null;
+          const { ts, data } = JSON.parse(raw);
+          if (Date.now() - ts > CONFIG.CACHE_TTL_MS) return null;
+          return data;
+        } catch (_) { return null; }
+      },
+      set(key, data) {
+        if (!CONFIG.CACHE_ENABLED) return;
+        try { localStorage.setItem('obr_' + key, JSON.stringify({ ts: Date.now(), data })); } catch (_) {}
+      },
+      clear() {
+        try {
+          Object.keys(localStorage).filter(k => k.startsWith('obr_')).forEach(k => localStorage.removeItem(k));
+        } catch (_) {}
+      }
+    };
+
+    // ========== DEMO MODE BANNER ==========
+    function showDemoModeBanner() {
+      if (document.getElementById('demo-banner')) return;
+      const b = document.createElement('div');
+      b.id = 'demo-banner';
+      b.innerHTML = '<span style="font-weight:700;">⚠ MODO DEMO</span> · dados sintéticos (APIs indisponíveis) · <a href="#" onclick="OBR_CACHE.clear();location.reload();return false;" style="color:#fff;text-decoration:underline;">tentar reconectar</a>';
+      b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:linear-gradient(90deg,#ef4444 0%,#b91c1c 100%);color:#fff;padding:10px 16px;text-align:center;font-size:11px;font-weight:500;font-family:"JetBrains Mono",monospace;letter-spacing:0.5px;box-shadow:0 2px 12px rgba(239,68,68,0.4);';
+      document.body.appendChild(b);
+      document.body.style.paddingTop = '36px';
+    }
+
+    function hideDemoModeBanner() {
+      const b = document.getElementById('demo-banner');
+      if (b) { b.remove(); document.body.style.paddingTop = ''; }
+    }
 
     // ========== METRICS CONFIG ==========
     // Bitview API: MVRV + RSI (calculate Z locally)
@@ -2261,13 +2534,48 @@
       if (dateEl) dateEl.textContent = 'DEMO — ~10yr synthetic data';
     }
     // ========== FETCH ALL DATA ==========
+    // ========== CHART.JS DEFAULTS (premium tooltip, grid discreto, fonts) ==========
+    (function applyChartDefaults() {
+      if (typeof Chart === 'undefined') return;
+      Chart.defaults.font.family = "'JetBrains Mono', 'SF Mono', monospace";
+      Chart.defaults.font.size = 10;
+      Chart.defaults.color = '#8b8b95';
+      Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+      Chart.defaults.elements.line.borderWidth = 1.5;
+      Chart.defaults.elements.line.tension = 0.25;
+      Chart.defaults.elements.point.radius = 0;
+      Chart.defaults.elements.point.hoverRadius = 4;
+      Chart.defaults.elements.point.hoverBorderWidth = 2;
+      Chart.defaults.plugins.legend.labels.boxWidth = 8;
+      Chart.defaults.plugins.legend.labels.boxHeight = 8;
+      Chart.defaults.plugins.legend.labels.padding = 12;
+      Chart.defaults.plugins.legend.labels.font = { size: 10, weight: '500', family: "'JetBrains Mono', monospace" };
+      Object.assign(Chart.defaults.plugins.tooltip, {
+        backgroundColor: 'rgba(8,8,10,0.96)',
+        borderColor: 'rgba(255,255,255,0.14)',
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 8,
+        titleFont: { size: 11, weight: '600', family: "'Space Grotesk', sans-serif" },
+        bodyFont: { size: 10, family: "'JetBrains Mono', monospace" },
+        displayColors: true,
+        usePointStyle: true,
+        boxPadding: 4,
+        titleColor: '#e8e8ed',
+        bodyColor: '#b8b8c4',
+        titleMarginBottom: 6
+      });
+    })();
+
     async function fetchAllData() {
       state.endpointsLoaded = 0;
       state.errors = [];
 
       // Instant demo for local file:// (no CORS, no waiting)
       if (window.location.protocol === 'file:') {
-        console.warn('Local file detected — instant DEMO MODE');
+        dwarn('Local file detected — instant DEMO MODE');
+        state.isDemoMode = true;
+        showDemoModeBanner();
         state.endpointsLoaded = 10;
         const prog = document.getElementById('loadingProgress');
         if (prog) prog.textContent = '10 / 10 endpoints';
@@ -2280,42 +2588,45 @@
         return;
       }
       
-      // Fetch BTC Price
-      const priceResult = await fetchBGeometrics('/v1/btc-price', 'BTC Price');
+      // PARALELIZAÇÃO: disparar preço + todas as métricas simultaneamente
+      // Reduz tempo de load em ~75% em conexões lentas.
+      const pricePromise = fetchBGeometrics('/v1/btc-price', 'BTC Price');
+      const metricPromises = Object.entries(METRICS).map(([key, metric]) => {
+        const p = metric.api === 'bitview'
+          ? fetchBitview(metric.endpoint, metric.name)
+          : fetchBGeometrics(metric.endpoint, metric.name);
+        return p.then(result => ({ key, metric, result }));
+      });
+
+      const [priceResult, ...metricResults] = await Promise.all([pricePromise, ...metricPromises]);
+
       state.apiStatus['price'] = priceResult.success;
       if (priceResult.success) {
         state.prices = normalizeBGeometricsData(priceResult.data, 'btcPrice');
       }
-      
-      // Fetch all metrics
-      for (const [key, metric] of Object.entries(METRICS)) {
-        let result;
-        
-        if (metric.api === 'bitview') {
-          result = await fetchBitview(metric.endpoint, metric.name);
-          if (result.success) {
-            // Pass the index type from the response for correct date calculation
+
+      for (const { key, metric, result } of metricResults) {
+        if (result.success) {
+          if (metric.api === 'bitview') {
             const indexType = result.data?.index || (metric.endpoint.includes('week') ? 'week1' : 'day1');
             const parsed = normalizeBitviewData(result.data, indexType);
             state.metricHistory[key] = parsed;
-            console.log(`${key}: ${parsed.length} data points`);
-          }
-        } else {
-          result = await fetchBGeometrics(metric.endpoint, metric.name);
-          if (result.success) {
+            dlog(`${key}: ${parsed.length} data points`);
+          } else {
             let hist = normalizeBGeometricsData(result.data, metric.field);
             if (metric.transform) hist = hist.map(d => ({ date: d.date, value: metric.transform(d.value) }));
             state.metricHistory[key] = hist;
           }
         }
-        
         state.apiStatus[key] = result.success;
       }
       
       // If all APIs failed (local file / CORS), fall back to demo data
       const anySuccess = Object.values(state.apiStatus).some(v => v === true);
       if (!anySuccess) {
-        console.warn('All APIs failed — activating DEMO MODE');
+        dwarn('All APIs failed — activating DEMO MODE');
+        state.isDemoMode = true;
+        showDemoModeBanner();
         generateDemoData();
       }
 
@@ -2333,18 +2644,25 @@
     }
 
     // ========== Z-SCORE CALCULATION ==========
-    function calculateRollingZScore(values, index) {
-      const start = Math.max(0, index - CONFIG.ROLLING_WINDOW + 1);
+    // Rolling Z-Score com variância AMOSTRAL (n-1, correção de Bessel).
+    // `windowSize` opcional permite calcular o mesmo score com janelas diferentes
+    // para a seção de Multi-Rolling Comparison (365d / 2y / 4y / ALL) — sem
+    // alterar o composite principal que continua usando CONFIG.ROLLING_WINDOW.
+    function calculateRollingZScore(values, index, windowSize) {
+      const win = windowSize || CONFIG.ROLLING_WINDOW;
+      const start = win === Infinity ? 0 : Math.max(0, index - win + 1);
       const window = values.slice(start, index + 1);
       if (window.length < CONFIG.MIN_DATA_POINTS) return null;
-      
+
       const nums = window.filter(v => typeof v === 'number' && !isNaN(v) && isFinite(v));
       if (nums.length < CONFIG.MIN_DATA_POINTS) return null;
-      
+
       const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
-      const variance = nums.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / nums.length;
+      // Bessel: divide por (n-1) em vez de n para estimador não-enviesado
+      const denom = Math.max(1, nums.length - 1);
+      const variance = nums.map(x => (x - mean) ** 2).reduce((a, b) => a + b, 0) / denom;
       const std = Math.sqrt(variance);
-      
+
       if (std === 0 || !isFinite(std)) return 0;
       return Math.max(-5, Math.min(5, (values[index] - mean) / std));
     }
@@ -2381,44 +2699,52 @@
         console.log(`${key}: history=${history.length}, zHistory=${zHistory.length}, Z=${safeFixed(state.zScores[key], 4)}, raw=${safeFixed(state.rawValues[key], 4)}`);
       }
       
-      // Calculate composite (equal-weight average of all valid Z-scores)
-      let count = 0, sum = 0;
-      for (const z of Object.values(state.zScores)) {
-        if (z !== null && !isNaN(z) && isFinite(z)) { 
-          sum += z; 
-          count++; 
+      // Composite ponderado por família com redistribuição dinâmica de peso.
+      // Se uma métrica estiver null, seu peso é redistribuído proporcionalmente
+      // entre as demais — evita divisor inflado e mantém escala comparável.
+      let wSum = 0, sum = 0, count = 0;
+      for (const [key, z] of Object.entries(state.zScores)) {
+        if (z !== null && !isNaN(z) && isFinite(z)) {
+          const w = METRIC_WEIGHTS[key] ?? (1 / Object.keys(METRICS).length);
+          sum += z * w;
+          wSum += w;
+          count++;
         }
       }
-      state.composite = count > 0 ? sum / count : null;
-      console.log(`COMPOSITE: ${safeFixed(state.composite, 4)} (from ${count} metrics)`);
+      state.composite = wSum > 0 ? (sum / wSum) : null;
+      state.compositeCount = count;
+      state.compositeCoverage = wSum; // 0..1
+      dlog(`COMPOSITE (weighted): ${safeFixed(state.composite, 4)} (from ${count} metrics, coverage=${(wSum*100).toFixed(0)}%)`);
       setTimeout(logSignalDiagnostics, 500);
       // Log raw values for debugging
       for (const [k, v] of Object.entries(state.rawValues)) {
-        console.log(`  ${k}: raw=${safeFixed(v,4)}, Z=${safeFixed(state.zScores[k],4)}`);
+        dlog(`  ${k}: raw=${safeFixed(v,4)}, Z=${safeFixed(state.zScores[k],4)}`);
       }
     }
 
     function calculateCompositeHistory() {
       const allDates = new Set();
-      for (const history of Object.values(state.zScoreHistory)) {
-        if (history) history.forEach(d => allDates.add(d.date));
+      const histMap = {};
+      for (const [key, hist] of Object.entries(state.zScoreHistory)) {
+        if (!hist) continue;
+        histMap[key] = {};
+        hist.forEach(d => { histMap[key][d.date] = d.value; allDates.add(d.date); });
       }
       const sortedDates = Array.from(allDates).sort((a, b) => new Date(a) - new Date(b));
-      
+
       state.compositeHistory = [];
       for (const date of sortedDates) {
-        let count = 0, sum = 0;
-        for (const history of Object.values(state.zScoreHistory)) {
-          if (history) {
-            const item = history.find(d => d.date === date);
-            if (item && typeof item.value === 'number' && !isNaN(item.value)) { 
-              sum += item.value; 
-              count++; 
-            }
+        let wSum = 0, sum = 0, count = 0;
+        for (const [key, byDate] of Object.entries(histMap)) {
+          const v = byDate[date];
+          if (typeof v === 'number' && !isNaN(v) && isFinite(v)) {
+            const w = METRIC_WEIGHTS[key] ?? (1 / Object.keys(METRICS).length);
+            sum += v * w; wSum += w; count++;
           }
         }
-        if (count >= 5) {  // Require 5+ metrics for reliable composite
-          state.compositeHistory.push({ date, value: sum / count });
+        // Exige 5+ métricas e cobertura mínima de 50% do peso total para publicar o ponto
+        if (count >= 5 && wSum >= 0.5) {
+          state.compositeHistory.push({ date, value: sum / wSum });
         }
       }
     }
@@ -6542,6 +6868,233 @@
       console.log('[Report] Analysis generated successfully');
     }
 
+    // ========== MULTI-ROLLING COMPOSITE (365d / 2y / 4y / FULL) ==========
+    // Recalcula Z de todas as métricas em 4 janelas diferentes e monta um composite
+    // ponderado por família (mesma lógica do principal). PURAMENTE VISUAL — o sinal
+    // oficial do dashboard continua usando CONFIG.ROLLING_WINDOW (365d).
+    const ROLLING_WINDOWS = {
+      r365: { label: '365d',  days: 365,       color: '#f97316' },
+      r2y:  { label: '2Y',    days: 730,       color: '#06b6d4' },
+      r4y:  { label: '4Y',    days: 1460,      color: '#3b82f6' },
+      rAll: { label: 'FULL',  days: Infinity,  color: '#a855f7' }
+    };
+
+    let _rollingChart = null;
+    let _rollingRange = 'all';
+
+    function buildRollingComposite(winDays) {
+      const perMetric = {};
+      const allDates = new Set();
+
+      for (const [key, hist] of Object.entries(state.metricHistory || {})) {
+        if (!hist || !hist.length) continue;
+        const values = hist.map(d => d.value);
+        const zArr = [];
+        for (let i = 0; i < hist.length; i++) {
+          const z = calculateRollingZScore(values, i, winDays);
+          if (z !== null) {
+            zArr.push({ date: hist[i].date, value: z });
+            allDates.add(hist[i].date);
+          }
+        }
+        perMetric[key] = {};
+        zArr.forEach(d => { perMetric[key][d.date] = d.value; });
+      }
+
+      const sortedDates = Array.from(allDates).sort((a, b) => new Date(a) - new Date(b));
+      const composite = [];
+      for (const date of sortedDates) {
+        let wSum = 0, sum = 0, count = 0;
+        for (const [key, byDate] of Object.entries(perMetric)) {
+          const v = byDate[date];
+          if (typeof v === 'number' && isFinite(v)) {
+            const w = METRIC_WEIGHTS[key] ?? (1 / Object.keys(METRICS).length);
+            sum += v * w; wSum += w; count++;
+          }
+        }
+        if (count >= 5 && wSum >= 0.5) composite.push({ date, value: sum / wSum });
+      }
+      return composite;
+    }
+
+    function rollingZoneLabel(z) {
+      if (z == null || isNaN(z)) return { label: '--', color: 'var(--text-muted)' };
+      if (z <= -1.5) return { label: 'ACCUMULATE',  color: 'var(--sig-bull)' };
+      if (z <= -0.5) return { label: 'UNDERVALUED', color: 'var(--accent-lime)' };
+      if (z <=  0.5) return { label: 'FAIR VALUE',  color: 'var(--sig-neutral)' };
+      if (z <=  1.5) return { label: 'ELEVATED',    color: 'var(--accent-orange)' };
+      return { label: 'OVERHEATED', color: 'var(--sig-bear)' };
+    }
+
+    function renderRollingSection() {
+      if (!state.metricHistory || Object.keys(state.metricHistory).length === 0) return;
+
+      // 1) Calcular 4 séries
+      const series = {};
+      for (const [key, cfg] of Object.entries(ROLLING_WINDOWS)) {
+        series[key] = buildRollingComposite(cfg.days);
+      }
+
+      // 2) Readings atuais (último ponto) + médias 30d
+      const readings = {};
+      for (const [key, serie] of Object.entries(series)) {
+        if (!serie.length) { readings[key] = { latest: null, avg30: null }; continue; }
+        const latest = serie[serie.length - 1].value;
+        const last30 = serie.slice(-30).map(d => d.value);
+        const avg30 = last30.length ? last30.reduce((a,b) => a+b, 0) / last30.length : null;
+        readings[key] = { latest, avg30 };
+      }
+
+      // 3) Atualizar cards
+      const setReading = (valId, zoneId, subId, r) => {
+        const v = document.getElementById(valId);
+        const z = document.getElementById(zoneId);
+        if (r.latest == null) { if (v) v.textContent = 'N/A'; if (z) z.textContent = '--'; return; }
+        const zone = rollingZoneLabel(r.latest);
+        if (v) { v.textContent = (r.latest >= 0 ? '+' : '') + r.latest.toFixed(2) + 'σ'; v.style.color = zone.color; }
+        if (z) { z.textContent = zone.label; z.style.color = zone.color; }
+      };
+      setReading('r365Val', 'r365Zone', 'r365Sub', readings.r365);
+      setReading('r2yVal',  'r2yZone',  'r2ySub',  readings.r2y);
+      setReading('r4yVal',  'r4yZone',  'r4ySub',  readings.r4y);
+      setReading('rAllVal', 'rAllZone', 'rAllSub', readings.rAll);
+
+      const fmtAvg = v => v == null ? '--' : (v >= 0 ? '+' : '') + v.toFixed(2) + 'σ';
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+      set('rAvg365', fmtAvg(readings.r365.avg30));
+      set('rAvg2y',  fmtAvg(readings.r2y.avg30));
+      set('rAvg4y',  fmtAvg(readings.r4y.avg30));
+      set('rAvgAll', fmtAvg(readings.rAll.avg30));
+
+      // 4) Status pill + diagnóstico
+      const vals = Object.values(readings).map(r => r.latest).filter(v => v != null);
+      const spread = vals.length ? Math.max(...vals) - Math.min(...vals) : null;
+      const pill = document.getElementById('rollingStatusPill');
+      const pillTxt = document.getElementById('rollingStatusText');
+      const diag = document.getElementById('rollingDiagnosis');
+      if (pill && pillTxt && diag) {
+        pill.classList.remove('rolling-status-aligned', 'rolling-status-mixed', 'rolling-status-diverged');
+        if (spread == null) {
+          pillTxt.textContent = 'N/A';
+          diag.textContent = 'Dados insuficientes para comparar janelas.';
+        } else if (spread < 0.5) {
+          pill.classList.add('rolling-status-aligned');
+          pillTxt.textContent = `ALINHADO · Δ ${spread.toFixed(2)}σ`;
+          diag.innerHTML = `<strong style="color:var(--sig-bull);">Convergência forte.</strong> As quatro janelas concordam (spread ${spread.toFixed(2)}σ &lt; 0.50). O sinal primário de 365d é confirmado pelas outras metodologias — alta convicção.`;
+        } else if (spread < 1.2) {
+          pill.classList.add('rolling-status-mixed');
+          pillTxt.textContent = `MISTO · Δ ${spread.toFixed(2)}σ`;
+          diag.innerHTML = `<strong style="color:var(--sig-neutral);">Divergência moderada.</strong> Spread de ${spread.toFixed(2)}σ entre janelas. Média prazo (2Y) e ciclo (4Y) podem discordar do 365d — observar qual janela está mais alinhada com o contexto macro atual antes de agir.`;
+        } else {
+          pill.classList.add('rolling-status-diverged');
+          pillTxt.textContent = `DIVERGENTE · Δ ${spread.toFixed(2)}σ`;
+          diag.innerHTML = `<strong style="color:var(--sig-bear);">Divergência forte.</strong> Spread de ${spread.toFixed(2)}σ indica regime shift ou outlier. O sinal primário de 365d pode estar superestimando/subestimando a posição do mercado — cautela máxima.`;
+        }
+      }
+
+      // 5) Chart histórico
+      const canvas = document.getElementById('rollingCompareChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (_rollingChart) { _rollingChart.destroy(); _rollingChart = null; }
+
+      // Filtrar por range
+      const now = Date.now();
+      const rangeDays = { '1y': 365, '2y': 730, '4y': 1460, 'all': Infinity }[_rollingRange] || Infinity;
+      const cutoff = rangeDays === Infinity ? 0 : now - rangeDays * 86400000;
+
+      const buildDataset = (key, cfg) => {
+        const filtered = series[key].filter(d => new Date(d.date).getTime() >= cutoff);
+        // downsample se >1500 pontos
+        const maxPts = 1500;
+        const step = filtered.length > maxPts ? Math.ceil(filtered.length / maxPts) : 1;
+        const sampled = filtered.filter((_, i) => i % step === 0);
+        return {
+          label: cfg.label,
+          data: sampled.map(d => ({ x: d.date, y: d.value })),
+          borderColor: cfg.color,
+          backgroundColor: cfg.color + '10',
+          borderWidth: key === 'r365' ? 2 : 1.3,
+          tension: 0.28,
+          pointRadius: 0,
+          pointHoverRadius: 4
+        };
+      };
+
+      _rollingChart = new Chart(ctx, {
+        type: 'line',
+        data: { datasets: Object.entries(ROLLING_WINDOWS).map(([k, c]) => buildDataset(k, c)) },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', align: 'end' },
+            annotation: {
+              annotations: {
+                accZone: { type: 'box', yMin: -5, yMax: -1.5, backgroundColor: 'rgba(0,217,126,0.04)', borderWidth: 0 },
+                undZone: { type: 'box', yMin: -1.5, yMax: -0.5, backgroundColor: 'rgba(132,204,22,0.03)', borderWidth: 0 },
+                elevZone:{ type: 'box', yMin:  0.5, yMax:  1.5, backgroundColor: 'rgba(249,115,22,0.03)', borderWidth: 0 },
+                hotZone: { type: 'box', yMin:  1.5, yMax:  5,   backgroundColor: 'rgba(239,68,68,0.04)',  borderWidth: 0 },
+                zeroLine: { type: 'line', yMin: 0, yMax: 0, borderColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderDash: [4,4] }
+              }
+            }
+          },
+          scales: {
+            x: { type: 'time', time: { unit: 'year' }, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6b7280', font: { size: 9 } } },
+            y: { min: -3, max: 3, grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#6b7280', font: { size: 9 }, callback: v => (v >= 0 ? '+' : '') + v + 'σ' } }
+          }
+        }
+      });
+    }
+
+    // Hook: quando CompositeHistory é recalculado, também renderiza a nova seção
+    (function patchCalcHook() {
+      const original = calculateAllZScores;
+      window.calculateAllZScores = function() {
+        const r = original.apply(this, arguments);
+        try { setTimeout(renderRollingSection, 200); } catch (e) { dwarn('[Rolling] render err', e); }
+        return r;
+      };
+    })();
+
+    // Botões de range
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest('#rollingRangeButtons .zoom-btn');
+      if (!btn) return;
+      document.querySelectorAll('#rollingRangeButtons .zoom-btn').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.borderColor = 'var(--border)';
+        b.style.color = 'var(--text-secondary)';
+      });
+      btn.classList.add('active');
+      btn.style.background = 'rgba(249,115,22,0.15)';
+      btn.style.borderColor = 'var(--accent-orange)';
+      btn.style.color = 'var(--accent-orange)';
+      _rollingRange = btn.dataset.range;
+      renderRollingSection();
+    });
+
+    // ========== HALVING STRIP (topo global) ==========
+    function updateHalvingStrip() {
+      const halvingDate = new Date('2024-04-20T00:00:00Z');
+      const nextHalving = new Date('2028-04-15T00:00:00Z');
+      const now = new Date();
+      const daysSince = Math.floor((now - halvingDate) / (1000 * 60 * 60 * 24));
+      const cycleLen = Math.floor((nextHalving - halvingDate) / (1000 * 60 * 60 * 24));
+      const pct = Math.min(100, Math.max(0, (daysSince / cycleLen) * 100));
+      const fill = document.getElementById('hStripFill');
+      const marker = document.getElementById('hStripMarker');
+      const days = document.getElementById('hStripDays');
+      const pctEl = document.getElementById('hStripPct');
+      if (fill) fill.style.width = pct + '%';
+      if (marker) marker.style.left = pct + '%';
+      if (days) days.textContent = daysSince;
+      if (pctEl) pctEl.textContent = pct.toFixed(1) + '%';
+    }
+    updateHalvingStrip();
+    setInterval(updateHalvingStrip, 60 * 60 * 1000); // atualiza 1x/h
+
     // ========== INIT ==========
     fetchAllData();
     
@@ -7162,31 +7715,45 @@
         total += cohortFactor.score * 0.03;
       }
 
-      // Normalize if not all weights present
-      const finalScore = weights > 0 ? Math.round((total / weights) * 100) : 50;
+      // Normalize apenas se cobertura >= 80%. Abaixo disso, publicar "N/A"
+      // para evitar que o usuário opere num score que na prática é só 1-2
+      // sub-fatores "inflados" para simular 100%.
+      const coverage = weights / 100;
+      const hasEnough = coverage >= CONFIG.MIN_CONFLUENCE_COVERAGE;
+      const finalScore = hasEnough ? Math.round((total / weights) * 100) : null;
       confluenceState.score = finalScore;
+      confluenceState.coverage = coverage;
       confluenceState.loaded = true;
+      if (!hasEnough) {
+        dwarn(`Confluence cobertura ${(coverage*100).toFixed(0)}% abaixo de ${CONFIG.MIN_CONFLUENCE_COVERAGE*100}% — publicando N/A`);
+      }
 
       // Update UI
       const scoreEl = document.getElementById('confluenceScoreValue');
       const labelEl = document.getElementById('confluenceScoreLabel');
       if (scoreEl) {
-        scoreEl.textContent = finalScore;
-        let color;
-        if (finalScore >= 70) color = 'var(--accent-green)';
-        else if (finalScore >= 55) color = 'var(--accent-cyan)';
-        else if (finalScore <= 30) color = 'var(--accent-red)';
-        else if (finalScore <= 45) color = 'var(--accent-orange)';
-        else color = 'var(--accent-yellow)';
-        scoreEl.style.color = color;
+        if (finalScore === null) {
+          scoreEl.textContent = 'N/A';
+          scoreEl.style.color = 'var(--text-muted)';
+          if (labelEl) { labelEl.textContent = `DADOS INSUFICIENTES (${Math.round(coverage*100)}%)`; labelEl.style.color = 'var(--text-muted)'; }
+        } else {
+          scoreEl.textContent = finalScore;
+          let color;
+          if (finalScore >= 70) color = 'var(--accent-green)';
+          else if (finalScore >= 55) color = 'var(--accent-cyan)';
+          else if (finalScore <= 30) color = 'var(--accent-red)';
+          else if (finalScore <= 45) color = 'var(--accent-orange)';
+          else color = 'var(--accent-yellow)';
+          scoreEl.style.color = color;
 
-        let label;
-        if (finalScore >= 75) label = 'STRONG BULLISH CONFLUENCE';
-        else if (finalScore >= 60) label = 'MODERATE BULLISH';
-        else if (finalScore <= 25) label = 'STRONG BEARISH CONFLUENCE';
-        else if (finalScore <= 40) label = 'MODERATE BEARISH';
-        else label = 'NEUTRAL';
-        if (labelEl) { labelEl.textContent = label; labelEl.style.color = color; }
+          let label;
+          if (finalScore >= 75) label = 'STRONG BULLISH CONFLUENCE';
+          else if (finalScore >= 60) label = 'MODERATE BULLISH';
+          else if (finalScore <= 25) label = 'STRONG BEARISH CONFLUENCE';
+          else if (finalScore <= 40) label = 'MODERATE BEARISH';
+          else label = 'NEUTRAL';
+          if (labelEl) { labelEl.textContent = label; labelEl.style.color = color; }
+        }
       }
 
       // Update factor cards
