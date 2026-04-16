@@ -630,6 +630,15 @@
   </div>
 
   <!-- ========== SECTION 3: FLOW ANALYSIS ========== -->
+
+  <!-- ═══════ CATEGORY DIVIDER: CAPITAL & FLUXO ═══════ -->
+  <div style="max-width:1400px;margin:32px auto 0;padding:0 24px;">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
+      <span style="font-size:14px;">②</span>
+      <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Capital & Fluxo</span>
+      <span style="font-size:9px;color:var(--text-muted);letter-spacing:0.5px;">ETF · Exchange · Netflow</span>
+    </div>
+  </div>
   <div class="section-wrap" id="flow" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">03</span>
@@ -696,6 +705,15 @@
   </div>
 
   <!-- ========== SECTION 4: SMART MONEY TRACKER ========== -->
+
+  <!-- ═══════ CATEGORY DIVIDER: HOLDERS ═══════ -->
+  <div style="max-width:1400px;margin:32px auto 0;padding:0 24px;">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
+      <span style="font-size:14px;">③</span>
+      <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Holders</span>
+      <span style="font-size:9px;color:var(--text-muted);letter-spacing:0.5px;">LTH/STH · Camadas de Preço · Coortes</span>
+    </div>
+  </div>
   <div class="section-wrap" id="smartmoney" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">04</span>
@@ -862,6 +880,174 @@
   </div>
 
   <!-- ========== SECTION 5: SENTIMENT INDEX ========== -->
+
+  <!-- ========== SECTION 11: REALIZED PRICE LAYERS ========== -->
+  <div class="section-wrap" id="pricelayers" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">11</span>
+      <span class="section-title">Camadas de Preço Realizado</span>
+      <span class="section-sub">CUSTO DE BASE POR COORTE · SUPORTE E RESISTÊNCIA ON-CHAIN</span>
+    </div>
+
+    <!-- Price Position Score KPI -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Price Position Score</div>
+        <div id="plScoreValue" style="font-size:48px;font-weight:800;color:var(--accent-cyan);line-height:1;">--</div>
+        <div id="plScoreZone" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-top:8px;text-transform:uppercase;letter-spacing:1px;">Carregando...</div>
+        <div id="plScoreLabel" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">--</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Crossover Status</div>
+        <div id="plCrossoverStatus" style="font-size:20px;font-weight:700;color:var(--accent-cyan);line-height:1.2;">--</div>
+        <div id="plCrossoverSpread" style="font-size:14px;color:var(--text-muted);margin-top:8px;">STH/LTH Spread: --</div>
+        <div id="plCrossoverSignal" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">--</div>
+      </div>
+    </div>
+
+    <!-- 4 KPI Cards - Distance to each layer -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#E24B4A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">STH Realized Price</div>
+        <div id="plSthRP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="plDistSTH" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Resistência (custo STH)</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#378ADD;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Realized Price Global</div>
+        <div id="plRealizedP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="plDistRealized" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Custo médio global</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#1D9E75;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">LTH Realized Price</div>
+        <div id="plLthRP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="plDistLTH" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Suporte estrutural</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#8B5CF6;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Delta Price</div>
+        <div id="plDeltaP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="plDistDelta" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
+        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Floor histórico de ciclo</div>
+      </div>
+    </div>
+
+    <!-- Main Chart: 5 Layers -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;">BTC Spot vs Realized Price Layers</div>
+        <div style="display:flex;gap:8px;" id="plTimeButtons">
+          <button onclick="setPLTimeRange(365)" style="background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-muted);padding:4px 10px;border-radius:4px;font-size:10px;cursor:pointer;">1A</button>
+          <button onclick="setPLTimeRange(730)" class="active" style="background:var(--accent-cyan);border:1px solid var(--accent-cyan);color:#000;padding:4px 10px;border-radius:4px;font-size:10px;cursor:pointer;font-weight:700;">2A</button>
+        </div>
+      </div>
+      <div style="height:380px;">
+        <canvas id="plLayersChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Layer Analysis Checklist -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Layer Analysis Checklist</div>
+      <div id="plChecklist" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="color:var(--text-muted);font-size:11px;">Carregando checklist...</div>
+      </div>
+      <div id="plNarrative" style="margin-top:16px;padding:14px;background:var(--bg-secondary);border-radius:8px;font-size:11px;line-height:1.7;color:var(--text-secondary);">
+        Carregando narrativa...
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SECTION 12: COHORT PROFITABILITY ========== -->
+  <div class="section-wrap" id="cohort" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">12</span>
+      <span class="section-title">Lucratividade por Coorte</span>
+      <span class="section-sub">ÍNDICE DE STRESS STH · FAIXAS DE IDADE UTXO · CHECKLIST DE ACUMULAÇÃO</span>
+    </div>
+
+    <!-- STH Stress Index KPI + Supply in Profit -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">STH Stress Index</div>
+        <div id="cohortStressValue" style="font-size:48px;font-weight:800;color:var(--accent-orange);line-height:1;">--</div>
+        <div id="cohortStressZone" style="font-size:12px;font-weight:600;margin-top:8px;text-transform:uppercase;letter-spacing:1px;">Carregando...</div>
+        <div id="cohortStressSignal" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">--</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Supply in Profit</div>
+        <div id="cohortSupplyProfit" style="font-size:48px;font-weight:800;color:var(--accent-cyan);line-height:1;">--</div>
+        <div id="cohortSupplyLabel" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-top:8px;">--</div>
+        <div id="cohortSupplyContext" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">--</div>
+      </div>
+    </div>
+
+    <!-- 3 Component Cards for STH Stress -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#E24B4A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Dist. Spot vs STH RP</div>
+        <div id="cohortPriceDelta" style="font-size:18px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="cohortPriceScore" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Score: --/40</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#F0A500;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">MVRV STH</div>
+        <div id="cohortMvrvSTH" style="font-size:18px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="cohortMvrvScore" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Score: --/30</div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#8B5CF6;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">SOPR STH (7d avg)</div>
+        <div id="cohortSoprSTH" style="font-size:18px;font-weight:700;color:var(--text-primary);">--</div>
+        <div id="cohortSoprScore" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Score: --/30</div>
+      </div>
+    </div>
+
+    <!-- Realized Price Chart (90d) -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Spot vs STH RP vs LTH RP — 90 dias</div>
+      <div style="height:300px;">
+        <canvas id="cohortRPChart"></canvas>
+      </div>
+    </div>
+
+    <!-- HODL Waves Simplificadas -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">HODL Waves — Distribuição por Idade</div>
+      <div id="cohortHodlWaves" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+        <div style="color:var(--text-muted);font-size:11px;">Carregando HODL waves...</div>
+      </div>
+      <div style="margin-top:12px;height:32px;border-radius:6px;overflow:hidden;display:flex;" id="cohortHodlBar">
+      </div>
+      <div style="font-size:9px;color:var(--text-muted);margin-top:8px;text-align:center;line-height:1.5;">
+        * Definição LTH: moedas paradas há mais de 155 dias (~5 meses).<br>
+        A faixa "Transição STH→LTH" inclui coins parcialmente já classificados como LTH.
+      </div>
+    </div>
+
+    <!-- Accumulation Checklist -->
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;">Accumulation Checklist</div>
+        <div id="cohortAccScore" style="font-size:14px;font-weight:700;color:var(--accent-cyan);">--</div>
+      </div>
+      <div id="cohortChecklist" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="color:var(--text-muted);font-size:11px;">Carregando checklist...</div>
+      </div>
+      <div id="cohortNarrative" style="margin-top:16px;padding:14px;background:var(--bg-secondary);border-radius:8px;font-size:11px;line-height:1.7;color:var(--text-secondary);">
+        Carregando narrativa...
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════ CATEGORY DIVIDER: DERIVATIVOS & SENTIMENTO ═══════ -->
+  <div style="max-width:1400px;margin:32px auto 0;padding:0 24px;">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
+      <span style="font-size:14px;">④</span>
+      <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Derivativos & Sentimento</span>
+      <span style="font-size:9px;color:var(--text-muted);letter-spacing:0.5px;">F&G · Funding · Leverage</span>
+    </div>
+  </div>
   <div class="section-wrap" id="sentiment" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">05</span>
@@ -1069,6 +1255,15 @@
   </div>
 
   <!-- ========== SECTION 7: MINER & MACRO CONTEXT ========== -->
+
+  <!-- ═══════ CATEGORY DIVIDER: INFRAESTRUTURA ═══════ -->
+  <div style="max-width:1400px;margin:32px auto 0;padding:0 24px;">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
+      <span style="font-size:14px;">⑤</span>
+      <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Infraestrutura</span>
+      <span style="font-size:9px;color:var(--text-muted);letter-spacing:0.5px;">Hash · Puell · Trading Systems</span>
+    </div>
+  </div>
   <div class="section-wrap" id="miners" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
       <span class="section-num">07</span>
@@ -1334,6 +1529,15 @@
   </div>
 
   <!-- ========== SECTION 09: REPORT ========== -->
+
+  <!-- ═══════ CATEGORY DIVIDER: SÍNTESE ═══════ -->
+  <div style="max-width:1400px;margin:32px auto 0;padding:0 24px;">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
+      <span style="font-size:14px;">⑥</span>
+      <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Síntese</span>
+      <span style="font-size:9px;color:var(--text-muted);letter-spacing:0.5px;">Relatório · Bastidores</span>
+    </div>
+  </div>
   <div class="section-wrap" id="report" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
       <span class="section-num">09</span>
@@ -1711,163 +1915,6 @@
   </div>
 
 
-  <!-- ========== SECTION 11: REALIZED PRICE LAYERS ========== -->
-  <div class="section-wrap" id="pricelayers" style="max-width:1400px;margin:0 auto;padding:0 24px;">
-    <div class="section-header">
-      <span class="section-num">11</span>
-      <span class="section-title">Camadas de Preço Realizado</span>
-      <span class="section-sub">CUSTO DE BASE POR COORTE · SUPORTE E RESISTÊNCIA ON-CHAIN</span>
-    </div>
-
-    <!-- Price Position Score KPI -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
-        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Price Position Score</div>
-        <div id="plScoreValue" style="font-size:48px;font-weight:800;color:var(--accent-cyan);line-height:1;">--</div>
-        <div id="plScoreZone" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-top:8px;text-transform:uppercase;letter-spacing:1px;">Carregando...</div>
-        <div id="plScoreLabel" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">--</div>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
-        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Crossover Status</div>
-        <div id="plCrossoverStatus" style="font-size:20px;font-weight:700;color:var(--accent-cyan);line-height:1.2;">--</div>
-        <div id="plCrossoverSpread" style="font-size:14px;color:var(--text-muted);margin-top:8px;">STH/LTH Spread: --</div>
-        <div id="plCrossoverSignal" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">--</div>
-      </div>
-    </div>
-
-    <!-- 4 KPI Cards - Distance to each layer -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:9px;color:#E24B4A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">STH Realized Price</div>
-        <div id="plSthRP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
-        <div id="plDistSTH" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
-        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Resistência (custo STH)</div>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:9px;color:#378ADD;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Realized Price Global</div>
-        <div id="plRealizedP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
-        <div id="plDistRealized" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
-        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Custo médio global</div>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:9px;color:#1D9E75;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">LTH Realized Price</div>
-        <div id="plLthRP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
-        <div id="plDistLTH" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
-        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Suporte estrutural</div>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:9px;color:#8B5CF6;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Delta Price</div>
-        <div id="plDeltaP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
-        <div id="plDistDelta" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
-        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Floor histórico de ciclo</div>
-      </div>
-    </div>
-
-    <!-- Main Chart: 5 Layers -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;">BTC Spot vs Realized Price Layers</div>
-        <div style="display:flex;gap:8px;" id="plTimeButtons">
-          <button onclick="setPLTimeRange(365)" style="background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-muted);padding:4px 10px;border-radius:4px;font-size:10px;cursor:pointer;">1A</button>
-          <button onclick="setPLTimeRange(730)" class="active" style="background:var(--accent-cyan);border:1px solid var(--accent-cyan);color:#000;padding:4px 10px;border-radius:4px;font-size:10px;cursor:pointer;font-weight:700;">2A</button>
-        </div>
-      </div>
-      <div style="height:380px;">
-        <canvas id="plLayersChart"></canvas>
-      </div>
-    </div>
-
-    <!-- Layer Analysis Checklist -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Layer Analysis Checklist</div>
-      <div id="plChecklist" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div style="color:var(--text-muted);font-size:11px;">Carregando checklist...</div>
-      </div>
-      <div id="plNarrative" style="margin-top:16px;padding:14px;background:var(--bg-secondary);border-radius:8px;font-size:11px;line-height:1.7;color:var(--text-secondary);">
-        Carregando narrativa...
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== SECTION 12: COHORT PROFITABILITY ========== -->
-  <div class="section-wrap" id="cohort" style="max-width:1400px;margin:0 auto;padding:0 24px;">
-    <div class="section-header">
-      <span class="section-num">12</span>
-      <span class="section-title">Lucratividade por Coorte</span>
-      <span class="section-sub">ÍNDICE DE STRESS STH · FAIXAS DE IDADE UTXO · CHECKLIST DE ACUMULAÇÃO</span>
-    </div>
-
-    <!-- STH Stress Index KPI + Supply in Profit -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
-        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">STH Stress Index</div>
-        <div id="cohortStressValue" style="font-size:48px;font-weight:800;color:var(--accent-orange);line-height:1;">--</div>
-        <div id="cohortStressZone" style="font-size:12px;font-weight:600;margin-top:8px;text-transform:uppercase;letter-spacing:1px;">Carregando...</div>
-        <div id="cohortStressSignal" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">--</div>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;">
-        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Supply in Profit</div>
-        <div id="cohortSupplyProfit" style="font-size:48px;font-weight:800;color:var(--accent-cyan);line-height:1;">--</div>
-        <div id="cohortSupplyLabel" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-top:8px;">--</div>
-        <div id="cohortSupplyContext" style="font-size:11px;color:var(--text-secondary);margin-top:4px;">--</div>
-      </div>
-    </div>
-
-    <!-- 3 Component Cards for STH Stress -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:9px;color:#E24B4A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Dist. Spot vs STH RP</div>
-        <div id="cohortPriceDelta" style="font-size:18px;font-weight:700;color:var(--text-primary);">--</div>
-        <div id="cohortPriceScore" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Score: --/40</div>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:9px;color:#F0A500;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">MVRV STH</div>
-        <div id="cohortMvrvSTH" style="font-size:18px;font-weight:700;color:var(--text-primary);">--</div>
-        <div id="cohortMvrvScore" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Score: --/30</div>
-      </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:9px;color:#8B5CF6;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">SOPR STH (7d avg)</div>
-        <div id="cohortSoprSTH" style="font-size:18px;font-weight:700;color:var(--text-primary);">--</div>
-        <div id="cohortSoprScore" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Score: --/30</div>
-      </div>
-    </div>
-
-    <!-- Realized Price Chart (90d) -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Spot vs STH RP vs LTH RP — 90 dias</div>
-      <div style="height:300px;">
-        <canvas id="cohortRPChart"></canvas>
-      </div>
-    </div>
-
-    <!-- HODL Waves Simplificadas -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">HODL Waves — Distribuição por Idade</div>
-      <div id="cohortHodlWaves" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
-        <div style="color:var(--text-muted);font-size:11px;">Carregando HODL waves...</div>
-      </div>
-      <div style="margin-top:12px;height:32px;border-radius:6px;overflow:hidden;display:flex;" id="cohortHodlBar">
-      </div>
-      <div style="font-size:9px;color:var(--text-muted);margin-top:8px;text-align:center;line-height:1.5;">
-        * Definição LTH: moedas paradas há mais de 155 dias (~5 meses).<br>
-        A faixa "Transição STH→LTH" inclui coins parcialmente já classificados como LTH.
-      </div>
-    </div>
-
-    <!-- Accumulation Checklist -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:700;color:var(--text-primary);text-transform:uppercase;letter-spacing:1px;">Accumulation Checklist</div>
-        <div id="cohortAccScore" style="font-size:14px;font-weight:700;color:var(--accent-cyan);">--</div>
-      </div>
-      <div id="cohortChecklist" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div style="color:var(--text-muted);font-size:11px;">Carregando checklist...</div>
-      </div>
-      <div id="cohortNarrative" style="margin-top:16px;padding:14px;background:var(--bg-secondary);border-radius:8px;font-size:11px;line-height:1.7;color:var(--text-secondary);">
-        Carregando narrativa...
-      </div>
-    </div>
-  </div>
 
   <!-- ========== GLOBAL FOOTER ========== -->
   <footer class="footer" style="max-width:1400px;margin:0 auto;padding:12px 24px 24px;">
