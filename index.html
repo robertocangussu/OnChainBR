@@ -4154,14 +4154,36 @@
         }
       } catch(e) { console.warn('HODL 1Y fetch error:', e); }
       
-      // 4. SOPR (general - should work)
-      try {
-        const result = await fetchBGeometrics('/v1/sopr', 'SOPR');
-        if (result.success && result.data && result.data.length) {
-          smData.lthSopr = getLatest(result.data, 'sopr', 'value', 'v');
-          console.log('✓ SOPR:', smData.lthSopr);
-        }
-      } catch(e) { console.warn('SOPR fetch error:', e); }
+      // 4. LTH SOPR — tenta endpoints LTH-específicos primeiro, fallback para SOPR geral.
+      //    Cobertura defensiva: bitcoin-data.com às vezes devolve 200+vazio,
+      //    às vezes muda o nome do campo entre releases.
+      const soprAttempts = [
+        { url: '/v1/sopr-lth',        fields: ['soprLth', 'lthSopr', 'sopr', 'value', 'v'], label: 'LTH-SOPR (direto)' },
+        { url: '/v1/lth-sopr',        fields: ['lthSopr', 'soprLth', 'sopr', 'value', 'v'], label: 'LTH-SOPR (alt)' },
+        { url: '/v1/sopr',            fields: ['sopr', 'value', 'v'],                        label: 'SOPR (geral, fallback)' },
+        { url: '/v1/sopr-sma-10d',    fields: ['sopr', 'value', 'v', 'sma'],                 label: 'SOPR SMA 10d (último fallback)' },
+      ];
+      for (const att of soprAttempts) {
+        if (smData.lthSopr !== null && smData.lthSopr !== undefined) break;
+        try {
+          const result = await fetchBGeometrics(att.url, att.label);
+          if (result.success && Array.isArray(result.data) && result.data.length) {
+            const v = getLatest(result.data, ...att.fields);
+            if (v !== null && v !== undefined && !isNaN(parseFloat(v))) {
+              smData.lthSopr = parseFloat(v);
+              console.log('✓ ' + att.label + ':', smData.lthSopr, '(from ' + att.url + ')');
+              break;
+            } else {
+              console.warn('[SOPR] ' + att.label + ' returned data but no recognizable field');
+            }
+          } else {
+            console.warn('[SOPR] ' + att.label + ' empty or failed');
+          }
+        } catch (e) { console.warn('[SOPR] ' + att.label + ' fetch error:', e.message); }
+      }
+      if (smData.lthSopr === null || smData.lthSopr === undefined) {
+        console.warn('[SOPR] All endpoints failed — LTH SOPR card will show "--"');
+      }
       
       // 5. Reserve Risk
       try {
