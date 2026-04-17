@@ -836,10 +836,10 @@
 
     <!-- Stats footer -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px;">
-      <div class="stat-card"><div class="stat-label">Δ 30d · 365d</div><div class="stat-value" id="rAvg365" style="color:var(--accent-orange);">--</div><div style="font-size:8px;color:var(--text-muted);margin-top:4px;letter-spacing:0.08em;text-transform:uppercase;">Momentum (σ vs 30d atrás)</div></div>
-      <div class="stat-card"><div class="stat-label">Δ 30d · 2Y</div><div class="stat-value" id="rAvg2y" style="color:var(--accent-cyan);">--</div><div style="font-size:8px;color:var(--text-muted);margin-top:4px;letter-spacing:0.08em;text-transform:uppercase;">Momentum (σ vs 30d atrás)</div></div>
-      <div class="stat-card"><div class="stat-label">Δ 30d · 4Y</div><div class="stat-value" id="rAvg4y" style="color:var(--accent-blue);">--</div><div style="font-size:8px;color:var(--text-muted);margin-top:4px;letter-spacing:0.08em;text-transform:uppercase;">Momentum (σ vs 30d atrás)</div></div>
-      <div class="stat-card"><div class="stat-label">Δ 30d · FULL</div><div class="stat-value" id="rAvgAll" style="color:var(--accent-purple);">--</div><div style="font-size:8px;color:var(--text-muted);margin-top:4px;letter-spacing:0.08em;text-transform:uppercase;">Momentum (σ vs 30d atrás)</div></div>
+      <div class="stat-card"><div class="stat-label">Z há 30 dias · 365d</div><div class="stat-value" id="rAvg365" style="color:var(--text-primary);">--</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;">onde o sinal estava há um mês</div></div>
+      <div class="stat-card"><div class="stat-label">Z há 30 dias · 2Y</div><div class="stat-value" id="rAvg2y" style="color:var(--text-primary);">--</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;">onde o sinal estava há um mês</div></div>
+      <div class="stat-card"><div class="stat-label">Z há 30 dias · 4Y</div><div class="stat-value" id="rAvg4y" style="color:var(--text-primary);">--</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;">onde o sinal estava há um mês</div></div>
+      <div class="stat-card"><div class="stat-label">Z há 30 dias · FULL</div><div class="stat-value" id="rAvgAll" style="color:var(--text-primary);">--</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;">onde o sinal estava há um mês</div></div>
     </div>
   </div>
 
@@ -6960,15 +6960,22 @@
         dlog('[Rolling] rebuilt series, cache key:', cacheKey);
       }
 
-      // 2) Readings: valor atual + Δ 30d (momentum) — mais útil e não confunde com o valor atual do card
+      // 2) Readings: valor atual + Z há 30 dias (absoluto, não momentum)
+      //    O 365d usa state.composite (mesma fonte do dashboard principal) para garantir
+      //    bater exatamente com o número do topo. As outras janelas usam o último ponto
+      //    da sua série, já que não existem equivalentes "ao vivo" fora do 365d.
       const readings = {};
       for (const [key, serie] of Object.entries(series)) {
-        if (!serie.length) { readings[key] = { latest: null, delta30: null }; continue; }
-        const latest = serie[serie.length - 1].value;
-        // Δ 30d = valor atual − valor de 30 dias atrás
-        const prior = serie.length >= 31 ? serie[serie.length - 31].value : (serie.length > 1 ? serie[0].value : latest);
-        const delta30 = latest - prior;
-        readings[key] = { latest, delta30 };
+        if (!serie.length) { readings[key] = { latest: null, prior30: null }; continue; }
+        const fallbackLatest = serie[serie.length - 1].value;
+        const latest = (key === 'r365' && typeof state.composite === 'number' && isFinite(state.composite))
+                       ? state.composite
+                       : fallbackLatest;
+        // Z há 30 dias — valor absoluto, simples de interpretar
+        const prior30 = serie.length >= 31 ? serie[serie.length - 31].value
+                      : serie.length > 1   ? serie[0].value
+                                           : latest;
+        readings[key] = { latest, prior30 };
       }
 
       // 3) Atualizar cards
@@ -6985,23 +6992,18 @@
       setReading('r4yVal',  'r4yZone',  'r4ySub',  readings.r4y);
       setReading('rAllVal', 'rAllZone', 'rAllSub', readings.rAll);
 
-      // Δ 30d formatado com sinal explícito; cor indica direção (verde = subindo, vermelho = caindo)
-      const fmtDelta = v => v == null ? '--' : (v >= 0 ? '+' : '') + v.toFixed(2) + 'σ';
-      const setDelta = (id, v) => {
+      // Z há 30 dias — valor absoluto (não é variação). Cor pela mesma escala de zona do card principal.
+      const fmtZ = v => v == null ? '--' : (v >= 0 ? '+' : '') + v.toFixed(2) + 'σ';
+      const setPrior = (id, v) => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.textContent = fmtDelta(v);
-        if (v != null) {
-          // tom sutil: verde se Z está caindo (mais barato); vermelho se subindo
-          if (v < -0.1)      el.style.color = 'var(--sig-bull)';
-          else if (v > 0.1)  el.style.color = 'var(--sig-bear)';
-          else               el.style.color = 'var(--text-secondary)';
-        }
+        el.textContent = fmtZ(v);
+        if (v != null) el.style.color = rollingZoneLabel(v).color;
       };
-      setDelta('rAvg365', readings.r365.delta30);
-      setDelta('rAvg2y',  readings.r2y.delta30);
-      setDelta('rAvg4y',  readings.r4y.delta30);
-      setDelta('rAvgAll', readings.rAll.delta30);
+      setPrior('rAvg365', readings.r365.prior30);
+      setPrior('rAvg2y',  readings.r2y.prior30);
+      setPrior('rAvg4y',  readings.r4y.prior30);
+      setPrior('rAvgAll', readings.rAll.prior30);
 
       // 4) Status pill + diagnóstico
       const vals = Object.values(readings).map(r => r.latest).filter(v => v != null);
