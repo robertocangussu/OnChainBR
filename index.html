@@ -4154,35 +4154,31 @@
         }
       } catch(e) { console.warn('HODL 1Y fetch error:', e); }
       
-      // 4. LTH SOPR — tenta endpoints LTH-específicos primeiro, fallback para SOPR geral.
-      //    Cobertura defensiva: bitcoin-data.com às vezes devolve 200+vazio,
-      //    às vezes muda o nome do campo entre releases.
-      const soprAttempts = [
-        { url: '/v1/sopr-lth',        fields: ['soprLth', 'lthSopr', 'sopr', 'value', 'v'], label: 'LTH-SOPR (direto)' },
-        { url: '/v1/lth-sopr',        fields: ['lthSopr', 'soprLth', 'sopr', 'value', 'v'], label: 'LTH-SOPR (alt)' },
-        { url: '/v1/sopr',            fields: ['sopr', 'value', 'v'],                        label: 'SOPR (geral, fallback)' },
-        { url: '/v1/sopr-sma-10d',    fields: ['sopr', 'value', 'v', 'sma'],                 label: 'SOPR SMA 10d (último fallback)' },
-      ];
-      for (const att of soprAttempts) {
-        if (smData.lthSopr !== null && smData.lthSopr !== undefined) break;
-        try {
-          const result = await fetchBGeometrics(att.url, att.label);
-          if (result.success && Array.isArray(result.data) && result.data.length) {
-            const v = getLatest(result.data, ...att.fields);
-            if (v !== null && v !== undefined && !isNaN(parseFloat(v))) {
-              smData.lthSopr = parseFloat(v);
-              console.log('✓ ' + att.label + ':', smData.lthSopr, '(from ' + att.url + ')');
-              break;
-            } else {
-              console.warn('[SOPR] ' + att.label + ' returned data but no recognizable field');
-            }
-          } else {
-            console.warn('[SOPR] ' + att.label + ' empty or failed');
-          }
-        } catch (e) { console.warn('[SOPR] ' + att.label + ' fetch error:', e.message); }
-      }
+      // 4. LTH SOPR — prioriza endpoint LTH-específico confirmado pela spec OpenAPI,
+      //    com fallback pro SOPR geral (como antes). Log detalhado pra DevTools.
+      try {
+        const r = await fetchBGeometrics('/v1/lth-sopr', 'LTH SOPR');
+        if (r.success && r.data && r.data.length) {
+          // Per spec schema { d, unixTs, lthSopr } — toNum aceita string
+          smData.lthSopr = getLatest(r.data, 'lthSopr', 'sopr', 'value', 'v');
+          console.log('✓ LTH SOPR (/v1/lth-sopr):', smData.lthSopr);
+        } else {
+          console.warn('[LTH SOPR] /v1/lth-sopr vazio ou falhou, tentando /v1/sopr geral');
+        }
+      } catch(e) { console.warn('[LTH SOPR] /v1/lth-sopr erro:', e.message); }
+
       if (smData.lthSopr === null || smData.lthSopr === undefined) {
-        console.warn('[SOPR] All endpoints failed — LTH SOPR card will show "--"');
+        try {
+          const r = await fetchBGeometrics('/v1/sopr', 'SOPR (fallback)');
+          if (r.success && r.data && r.data.length) {
+            smData.lthSopr = getLatest(r.data, 'sopr', 'value', 'v');
+            console.log('✓ SOPR geral (/v1/sopr, fallback):', smData.lthSopr);
+          }
+        } catch(e) { console.warn('[SOPR fallback] erro:', e.message); }
+      }
+
+      if (smData.lthSopr === null || smData.lthSopr === undefined) {
+        console.warn('[LTH SOPR] Todos endpoints falharam — card mostrará "--". Verifique bitcoin-data.com ou o CORS proxy Cloudflare.');
       }
       
       // 5. Reserve Risk
