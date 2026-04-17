@@ -2312,25 +2312,57 @@
     // ========== API FUNCTIONS ==========
     async function fetchBGeometrics(endpoint, label) {
       const baseUrl = `${CONFIG.BGEOMETRICS_BASE}${endpoint}?token=${CONFIG.BGEOMETRICS_TOKEN}`;
-      
-      // Try with CORS proxy first (needed for GitHub Pages)
+
+      // Helper: retry proxy fetch with exponential backoff on 5xx/network errors (not on 4xx).
+      // Rationale: DevTools console confirmed the Cloudflare Worker proxy returns transient HTTP 500
+      // for several endpoints (Miner Reserve, LTH SOPR, Difficulty, etc.). Retrying 2x with backoff
+      // often recovers those without user-visible failure. 404 = permanent: don't waste time retrying.
+      async function tryProxy(url, maxAttempts) {
+        let lastErr = null;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 12000);
+            const response = await fetch(url, { signal: ctrl.signal });
+            clearTimeout(timer);
+            if (response.ok) {
+              const data = await response.json();
+              return { ok: true, data, attempt };
+            }
+            // Permanent 4xx → abort retries immediately
+            if (response.status >= 400 && response.status < 500) {
+              return { ok: false, permanent: true, status: response.status, error: `HTTP ${response.status}` };
+            }
+            // Transient 5xx → backoff and retry
+            lastErr = `HTTP ${response.status}`;
+          } catch (e) {
+            lastErr = e.message || String(e);
+          }
+          if (attempt < maxAttempts) {
+            const delay = 250 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 150);
+            await new Promise(r => setTimeout(r, delay));
+          }
+        }
+        return { ok: false, permanent: false, error: lastErr };
+      }
+
+      // Try with CORS proxy first (needed for GitHub Pages) — with retry on 5xx
       if (CONFIG.USE_CORS_PROXY) {
-        try {
-          const proxyUrl = `${CONFIG.CORS_PROXY}${encodeURIComponent(baseUrl)}`;
-          const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 12000);
-          const response = await fetch(proxyUrl, { signal: ctrl.signal });
-          clearTimeout(timer);
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const data = await response.json();
-          console.log(`✓ ${label} via BGeometrics (proxy)`);
+        const proxyUrl = `${CONFIG.CORS_PROXY}${encodeURIComponent(baseUrl)}`;
+        const result = await tryProxy(proxyUrl, 3);
+        if (result.ok) {
+          const suffix = result.attempt > 1 ? ` (attempt ${result.attempt})` : '';
+          console.log(`✓ ${label} via BGeometrics (proxy)${suffix}`);
           updateLoadingProgress(label);
-          return { success: true, data };
-        } catch (proxyError) {
-          console.warn(`[${label}] Proxy failed (${proxyError.message}), trying direct...`);
+          return { success: true, data: result.data };
+        }
+        if (result.permanent) {
+          console.warn(`[${label}] Proxy ${result.error} (permanent), trying direct...`);
+        } else {
+          console.warn(`[${label}] Proxy failed after retries (${result.error}), trying direct...`);
         }
       }
-      
+
       // Try direct connection as fallback
       try {
         const ctrl = new AbortController();
