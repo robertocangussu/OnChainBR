@@ -6992,7 +6992,7 @@
         }
       }
 
-      // 5) Chart histórico
+      // 5) Chart histórico — usa axis de categoria (labels) para não depender de date-adapter
       const canvas = document.getElementById('rollingCompareChart');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
@@ -7003,48 +7003,106 @@
       const rangeDays = { '1y': 365, '2y': 730, '4y': 1460, 'all': Infinity }[_rollingRange] || Infinity;
       const cutoff = rangeDays === Infinity ? 0 : now - rangeDays * 86400000;
 
-      const buildDataset = (key, cfg) => {
-        const filtered = series[key].filter(d => new Date(d.date).getTime() >= cutoff);
-        // downsample se >1500 pontos
-        const maxPts = 1500;
-        const step = filtered.length > maxPts ? Math.ceil(filtered.length / maxPts) : 1;
-        const sampled = filtered.filter((_, i) => i % step === 0);
-        return {
-          label: cfg.label,
-          data: sampled.map(d => ({ x: d.date, y: d.value })),
-          borderColor: cfg.color,
-          backgroundColor: cfg.color + '10',
-          borderWidth: key === 'r365' ? 2 : 1.3,
-          tension: 0.28,
-          pointRadius: 0,
-          pointHoverRadius: 4
-        };
+      // 5a) União de datas (eixo compartilhado)
+      const dateSet = new Set();
+      for (const key of Object.keys(ROLLING_WINDOWS)) {
+        for (const d of series[key]) {
+          if (new Date(d.date).getTime() >= cutoff) dateSet.add(d.date);
+        }
+      }
+      let sharedDates = Array.from(dateSet).sort();
+      if (!sharedDates.length) { dwarn('[Rolling] no dates in range'); return; }
+
+      // 5b) Downsample se >1500 pontos
+      const maxPts = 1500;
+      const step = sharedDates.length > maxPts ? Math.ceil(sharedDates.length / maxPts) : 1;
+      if (step > 1) sharedDates = sharedDates.filter((_, i) => i % step === 0 || i === sharedDates.length - 1);
+
+      // 5c) Mapa por janela: date -> value
+      const mapFor = key => {
+        const m = new Map();
+        series[key].forEach(d => m.set(d.date, d.value));
+        return m;
+      };
+      const maps = Object.fromEntries(Object.keys(ROLLING_WINDOWS).map(k => [k, mapFor(k)]));
+
+      const buildDataset = (key, cfg) => ({
+        label: cfg.label,
+        data: sharedDates.map(date => {
+          const v = maps[key].get(date);
+          return (typeof v === 'number' && isFinite(v)) ? v : null;
+        }),
+        borderColor: cfg.color,
+        backgroundColor: cfg.color + '12',
+        borderWidth: key === 'r365' ? 2.2 : 1.4,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        spanGaps: true,
+        fill: false
+      });
+
+      // Formata label do eixo: "YYYY-MM-DD" -> "MMM YY"
+      const monthLabels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      const fmtX = iso => {
+        const parts = iso.split('-');
+        const m = parseInt(parts[1], 10) - 1;
+        const y = parts[0].slice(2);
+        return (monthLabels[m] || '') + ' ' + y;
       };
 
       _rollingChart = new Chart(ctx, {
         type: 'line',
-        data: { datasets: Object.entries(ROLLING_WINDOWS).map(([k, c]) => buildDataset(k, c)) },
+        data: {
+          labels: sharedDates,
+          datasets: Object.entries(ROLLING_WINDOWS).map(([k, c]) => buildDataset(k, c))
+        },
         options: {
           responsive: true, maintainAspectRatio: false,
+          animation: false,
           interaction: { mode: 'index', intersect: false },
           plugins: {
-            legend: { position: 'top', align: 'end' },
+            legend: {
+              position: 'top', align: 'end',
+              labels: { color: '#b8b8c4', font: { size: 11 }, boxWidth: 14, boxHeight: 2, usePointStyle: false }
+            },
+            tooltip: {
+              callbacks: {
+                title: items => items.length ? fmtX(items[0].label) : '',
+                label: item => {
+                  const v = item.parsed.y;
+                  return ' ' + item.dataset.label + ': ' + (v >= 0 ? '+' : '') + v.toFixed(2) + 'σ';
+                }
+              }
+            },
             annotation: {
               annotations: {
-                accZone: { type: 'box', yMin: -5, yMax: -1.5, backgroundColor: 'rgba(0,217,126,0.04)', borderWidth: 0 },
-                undZone: { type: 'box', yMin: -1.5, yMax: -0.5, backgroundColor: 'rgba(132,204,22,0.03)', borderWidth: 0 },
-                elevZone:{ type: 'box', yMin:  0.5, yMax:  1.5, backgroundColor: 'rgba(249,115,22,0.03)', borderWidth: 0 },
-                hotZone: { type: 'box', yMin:  1.5, yMax:  5,   backgroundColor: 'rgba(239,68,68,0.04)',  borderWidth: 0 },
-                zeroLine: { type: 'line', yMin: 0, yMax: 0, borderColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderDash: [4,4] }
+                accZone: { type: 'box', yMin: -5, yMax: -1.5, backgroundColor: 'rgba(0,217,126,0.05)', borderWidth: 0 },
+                undZone: { type: 'box', yMin: -1.5, yMax: -0.5, backgroundColor: 'rgba(132,204,22,0.035)', borderWidth: 0 },
+                elevZone:{ type: 'box', yMin:  0.5, yMax:  1.5, backgroundColor: 'rgba(249,115,22,0.035)', borderWidth: 0 },
+                hotZone: { type: 'box', yMin:  1.5, yMax:  5,   backgroundColor: 'rgba(239,68,68,0.05)',  borderWidth: 0 },
+                zeroLine: { type: 'line', yMin: 0, yMax: 0, borderColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderDash: [4,4] }
               }
             }
           },
           scales: {
-            x: { type: 'time', time: { unit: 'year' }, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#6b7280', font: { size: 9 } } },
-            y: { min: -3, max: 3, grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#6b7280', font: { size: 9 }, callback: v => (v >= 0 ? '+' : '') + v + 'σ' } }
+            x: {
+              grid: { color: 'rgba(255,255,255,0.03)', display: false },
+              ticks: {
+                color: '#6b7280', font: { size: 9 },
+                maxTicksLimit: 10, autoSkip: true,
+                callback: function(v) { return fmtX(this.getLabelForValue(v)); }
+              }
+            },
+            y: {
+              min: -3, max: 3,
+              grid: { color: 'rgba(255,255,255,0.06)' },
+              ticks: { color: '#6b7280', font: { size: 9 }, callback: v => (v >= 0 ? '+' : '') + v + 'σ' }
+            }
           }
         }
       });
+      dlog('[Rolling] chart rendered with', sharedDates.length, 'dates');
     }
 
     // Hook: quando CompositeHistory é recalculado, também renderiza a nova seção
