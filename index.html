@@ -5775,20 +5775,21 @@
       let position = null;
       
       /*
-       * EMA CROSSOVER + FILTERS v22
+       * EMA CROSSOVER + FILTERS v23
        * ===================================
        *
-       * Base: EMA21 cruza EMA50 = entrada imediata
+       * Base: EMA21 cruza EMA50 = entrada
        *
        * Filtros para aumentar win rate:
        *   - SMA50 > SMA200 (bull market)
-       *   - SMA200 em alta (slope > 0 nas ult. 20 barras)  [v22: filtro A]
-       *   - RSI > 50 (momentum real, antes era >45)        [v22: filtro D]
+       *   - EMA50 inclinada (slope > 0.3% em 10 barras)  [v23: anti-chop]
+       *   - RSI > 45 (momentum minimo, original v20)
        *   - Price < 12% acima EMA50 (nao esticado)
        *
-       * Motivacao v22: as perdas historicas (Jun/2023, Mai+Jul/2024, Set/2025)
-       * ocorreram em (a) inicio de ciclo com SMA200 ainda plana, e
-       * (b) fases de lateralizacao com RSI travado em 45-55.
+       * v22 (SMA200 rising + RSI>50) foi tentado e falhou:
+       * filtrou vencedoras, nenhuma perdedora. SMA200 lenta demais
+       * pra detectar chop. v23 usa slope da EMA50 direto -
+       * em chop a EMA50 fica plana; em tendencia inclina.
        *
        * EXIT:
        *   - EMA21 cruza abaixo EMA50
@@ -5851,18 +5852,22 @@
         // ========================================
         
         const inBullMarket = sma50 > sma200;
-        const rsiOk = rsi > 50; // [v22 filtro D] era >45, subido para filtrar chop
+        const rsiOk = rsi > 45;
         const distFromEma50 = ((price / currentEma50) - 1) * 100;
         const notStretched = distFromEma50 < 12;
 
-        // [v22 filtro A] SMA200 precisa estar em alta (slope positivo nas ult. 20 barras)
-        // Evita entradas "inicio de ciclo" onde SMA50>SMA200 acabou de acontecer
-        // mas a SMA200 ainda esta plana/descendente (ex: falha de Jun/2023 @ $29.9k).
-        const SMA200_SLOPE_LOOKBACK = 20;
-        let sma200Rising = false;
-        if (i >= SMA200_SLOPE_LOOKBACK) {
-          const sma200Past = parseFloat(data[i - SMA200_SLOPE_LOOKBACK].sma200) || 0;
-          sma200Rising = sma200Past > 0 && sma200 > sma200Past;
+        // [v23] EMA50 slope filter - anti-chop
+        // Em lateralizacao a EMA50 fica plana; em tendencia sobe >=0.3%/10d.
+        // Filtra falhas tipo 2024-05, 2024-07, 2025-09 (cruzamento em chop).
+        const EMA50_SLOPE_LOOKBACK = 10;
+        const EMA50_SLOPE_MIN = 0.3; // %
+        let ema50Rising = false;
+        if (i >= EMA50_SLOPE_LOOKBACK) {
+          const ema50Past = ema50[i - EMA50_SLOPE_LOOKBACK];
+          if (ema50Past && ema50Past > 0) {
+            const slopePct = ((currentEma50 - ema50Past) / ema50Past) * 100;
+            ema50Rising = slopePct > EMA50_SLOPE_MIN;
+          }
         }
 
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
@@ -5906,7 +5911,7 @@
         // ===== ENTRY LOGIC =====
         if (!position && canTrade) {
           
-          if (bullishCross && inBullMarket && sma200Rising && rsiOk && notStretched) {
+          if (bullishCross && inBullMarket && ema50Rising && rsiOk && notStretched) {
 
             position = {
               signal: 'LONG',
@@ -5915,9 +5920,11 @@
               entryIndex: i
             };
             lastTradeIndex = i;
-            console.log('[v22] LONG @', date, '| $' + price.toFixed(0),
+            const ema50PastDbg = i >= EMA50_SLOPE_LOOKBACK ? ema50[i - EMA50_SLOPE_LOOKBACK] : currentEma50;
+            const slopeDbg = ((currentEma50 - ema50PastDbg) / ema50PastDbg * 100).toFixed(2);
+            console.log('[v23] LONG @', date, '| $' + price.toFixed(0),
                        '| RSI:', rsi.toFixed(0), '| Dist:', distFromEma50.toFixed(1) + '%',
-                       '| SMA200 rising');
+                       '| EMA50 slope:', slopeDbg + '%');
           }
         }
       }
@@ -5949,7 +5956,7 @@
       const winRate = closed.length > 0 ? (wins.length / closed.length * 100).toFixed(0) : 0;
       const totalProfit = wins.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
       const totalLoss = losses.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
-      console.log('[Trading] v22:', signals.length, 'trades |', winRate + '% win |',
+      console.log('[Trading] v23:', signals.length, 'trades |', winRate + '% win |',
                   '+' + totalProfit.toFixed(0) + '% / ' + totalLoss.toFixed(0) + '%');
     }
 
