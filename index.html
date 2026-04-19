@@ -6006,13 +6006,47 @@
         default: startDate.setFullYear(now.getFullYear() - 4);
       }
       
-      const filtered = data.filter(d => new Date(d.day || d.d) >= startDate);
-      
-      // Sample for performance (adjust based on range)
+      // === FIX (v21): EMA21/EMA50 sobre historico COMPLETO, nunca sobre subset ===
+      // EMAs sao filtros recursivos com memoria. Calcular sobre uma janela filtrada
+      // + downsampled produz valores diferentes por timeframe (um "EMA21" de amostras
+      // a cada 7 dias vira uma EMA efetiva de ~147 dias). Computamos UMA vez sobre
+      // todos os dados, depois filtramos/amostramos - isso mantem o grafico coerente
+      // com os cruzamentos detectados em generateSignalHistory().
+      const fullPrices = data.map(d => parseFloat(d.price) || 0);
+      const computeFullEMA = (period) => {
+        const mult = 2 / (period + 1);
+        const out = new Array(fullPrices.length);
+        let ema = fullPrices[0] || 0;
+        for (let i = 0; i < fullPrices.length; i++) {
+          const p = fullPrices[i];
+          if (i === 0) ema = p;
+          else ema = (p - ema) * mult + ema;
+          out[i] = (i < period) ? null : ema;
+        }
+        return out;
+      };
+      const fullEma21 = computeFullEMA(21);
+      const fullEma50 = computeFullEMA(50);
+
+      // Filtra por janela de data carregando as EMAs alinhadas aos indices originais
+      const filtered = [];
+      const filteredEma21 = [];
+      const filteredEma50 = [];
+      for (let i = 0; i < data.length; i++) {
+        if (new Date(data[i].day || data[i].d) >= startDate) {
+          filtered.push(data[i]);
+          filteredEma21.push(fullEma21[i]);
+          filteredEma50.push(fullEma50[i]);
+        }
+      }
+
+      // Amostragem para performance (ajusta por range)
       const maxPoints = _tradingChartRange === 'all' ? 600 : _tradingChartRange === '3m' ? 100 : 400;
       const sampleRate = filtered.length > maxPoints ? Math.ceil(filtered.length / maxPoints) : 1;
       const sampled = filtered.filter((_, i) => i % sampleRate === 0);
-      
+      const ema21s = filteredEma21.filter((_, i) => i % sampleRate === 0);
+      const ema50s = filteredEma50.filter((_, i) => i % sampleRate === 0);
+
       const labels = sampled.map(d => {
         const date = new Date(d.day || d.d);
         if (_tradingChartRange === '3m' || _tradingChartRange === '6m') {
@@ -6023,61 +6057,14 @@
       const prices = sampled.map(d => parseFloat(d.price) || parseFloat(d.sma200) * 1.1);
       const sma50s = sampled.map(d => parseFloat(d.sma50));
       const sma200s = sampled.map(d => parseFloat(d.sma200));
-      
-      // Calculate SMA20 for chart (legacy)
+
+      // SMA20 legacy (mantido por compat)
       const sma20s = [];
       for (let i = 0; i < sampled.length; i++) {
-        if (i < 19) {
-          sma20s.push(null);
-          continue;
-        }
+        if (i < 19) { sma20s.push(null); continue; }
         let sum = 0;
-        for (let j = i - 19; j <= i; j++) {
-          sum += prices[j] || 0;
-        }
+        for (let j = i - 19; j <= i; j++) sum += prices[j] || 0;
         sma20s.push(sum / 20);
-      }
-      
-      // Calculate EMA21 and EMA50 (the actual trading signals)
-      const ema21s = [];
-      const ema50s = [];
-      const ema21Mult = 2 / (21 + 1);
-      const ema50Mult = 2 / (50 + 1);
-      let ema21 = null, ema50 = null;
-      
-      for (let i = 0; i < sampled.length; i++) {
-        const price = prices[i];
-        if (price === null || price === undefined) {
-          ema21s.push(null);
-          ema50s.push(null);
-          continue;
-        }
-        
-        if (i < 21) {
-          ema21s.push(null);
-          ema50s.push(null);
-          // Initialize with SMA
-          if (i === 20) {
-            let sum = 0;
-            for (let j = 0; j <= 20; j++) sum += prices[j] || 0;
-            ema21 = sum / 21;
-          }
-        } else {
-          ema21 = (price - ema21) * ema21Mult + ema21;
-          ema21s.push(ema21);
-        }
-        
-        if (i < 50) {
-          if (ema50s.length < 50) ema50s.push(null);
-          if (i === 49) {
-            let sum = 0;
-            for (let j = 0; j <= 49; j++) sum += prices[j] || 0;
-            ema50 = sum / 50;
-          }
-        } else {
-          ema50 = (price - ema50) * ema50Mult + ema50;
-          ema50s.push(ema50);
-        }
       }
 
       // Build annotations for signals - smaller, cleaner style
@@ -6274,14 +6261,30 @@
               }
             },
             zoom: {
+              // v21: pan/zoom livres em XY. Arraste para deslocar, scroll para zoom,
+              // Shift+arraste = zoom por caixa, duplo-clique = reset.
               pan: {
                 enabled: true,
-                mode: 'x'
+                mode: 'xy',
+                threshold: 5,
+                modifierKey: null
               },
               zoom: {
-                wheel: { enabled: true },
+                wheel: { enabled: true, speed: 0.08, modifierKey: null },
                 pinch: { enabled: true },
-                mode: 'x'
+                drag: {
+                  enabled: true,
+                  modifierKey: 'shift',
+                  backgroundColor: 'rgba(168,85,247,0.12)',
+                  borderColor: 'rgba(168,85,247,0.55)',
+                  borderWidth: 1,
+                  threshold: 8
+                },
+                mode: 'xy'
+              },
+              limits: {
+                x: { minRange: 5 },
+                y: { minRange: 10 }
               }
             }
           },
@@ -6305,6 +6308,13 @@
           }
         }
       });
+
+      // v21: duplo-clique para resetar zoom/pan do chart
+      ctx.canvas.ondblclick = () => {
+        if (_tradingChart && typeof _tradingChart.resetZoom === 'function') {
+          _tradingChart.resetZoom();
+        }
+      };
     }
 
     // ========== PUBLIC updateUI (alias for compatibility) ==========
