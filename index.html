@@ -5775,22 +5775,16 @@
       let position = null;
       
       /*
-       * EMA CROSSOVER + FILTERS v23
+       * EMA CROSSOVER + LIGHT FILTERS v20
        * ===================================
-       *
-       * Base: EMA21 cruza EMA50 = entrada
-       *
-       * Filtros para aumentar win rate:
+       * 
+       * Base: EMA21 cruza EMA50 = entrada imediata
+       * 
+       * Filtros leves para aumentar win rate:
        *   - SMA50 > SMA200 (bull market)
-       *   - EMA50 inclinada (slope > 0.3% em 10 barras)  [v23: anti-chop]
-       *   - RSI > 45 (momentum minimo, original v20)
-       *   - Price < 12% acima EMA50 (nao esticado)
-       *
-       * v22 (SMA200 rising + RSI>50) foi tentado e falhou:
-       * filtrou vencedoras, nenhuma perdedora. SMA200 lenta demais
-       * pra detectar chop. v23 usa slope da EMA50 direto -
-       * em chop a EMA50 fica plana; em tendencia inclina.
-       *
+       *   - RSI > 45 (momentum mínimo)
+       *   - Price < 12% acima EMA50 (não esticado)
+       * 
        * EXIT:
        *   - EMA21 cruza abaixo EMA50
        *   - OU Stop Loss -10%
@@ -5855,21 +5849,7 @@
         const rsiOk = rsi > 45;
         const distFromEma50 = ((price / currentEma50) - 1) * 100;
         const notStretched = distFromEma50 < 12;
-
-        // [v23] EMA50 slope filter - anti-chop
-        // Em lateralizacao a EMA50 fica plana; em tendencia sobe >=0.3%/10d.
-        // Filtra falhas tipo 2024-05, 2024-07, 2025-09 (cruzamento em chop).
-        const EMA50_SLOPE_LOOKBACK = 10;
-        const EMA50_SLOPE_MIN = 0.3; // %
-        let ema50Rising = false;
-        if (i >= EMA50_SLOPE_LOOKBACK) {
-          const ema50Past = ema50[i - EMA50_SLOPE_LOOKBACK];
-          if (ema50Past && ema50Past > 0) {
-            const slopePct = ((currentEma50 - ema50Past) / ema50Past) * 100;
-            ema50Rising = slopePct > EMA50_SLOPE_MIN;
-          }
-        }
-
+        
         const canTrade = (i - lastTradeIndex) >= MIN_BARS_BETWEEN_TRADES;
         
         // ===== EXIT LOGIC =====
@@ -5911,8 +5891,8 @@
         // ===== ENTRY LOGIC =====
         if (!position && canTrade) {
           
-          if (bullishCross && inBullMarket && ema50Rising && rsiOk && notStretched) {
-
+          if (bullishCross && inBullMarket && rsiOk && notStretched) {
+            
             position = {
               signal: 'LONG',
               entryPrice: price,
@@ -5920,11 +5900,8 @@
               entryIndex: i
             };
             lastTradeIndex = i;
-            const ema50PastDbg = i >= EMA50_SLOPE_LOOKBACK ? ema50[i - EMA50_SLOPE_LOOKBACK] : currentEma50;
-            const slopeDbg = ((currentEma50 - ema50PastDbg) / ema50PastDbg * 100).toFixed(2);
-            console.log('[v23] LONG @', date, '| $' + price.toFixed(0),
-                       '| RSI:', rsi.toFixed(0), '| Dist:', distFromEma50.toFixed(1) + '%',
-                       '| EMA50 slope:', slopeDbg + '%');
+            console.log('[v20] LONG @', date, '| $' + price.toFixed(0), 
+                       '| RSI:', rsi.toFixed(0), '| Dist:', distFromEma50.toFixed(1) + '%');
           }
         }
       }
@@ -5956,7 +5933,7 @@
       const winRate = closed.length > 0 ? (wins.length / closed.length * 100).toFixed(0) : 0;
       const totalProfit = wins.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
       const totalLoss = losses.reduce((sum, s) => sum + parseFloat(s.pnl), 0);
-      console.log('[Trading] v23:', signals.length, 'trades |', winRate + '% win |',
+      console.log('[Trading] v20:', signals.length, 'trades |', winRate + '% win |', 
                   '+' + totalProfit.toFixed(0) + '% / ' + totalLoss.toFixed(0) + '%');
     }
 
