@@ -607,6 +607,7 @@
         <div class="status-ok" id="statusEndpoints">● 0/10 ENDPOINTS</div>
         <div class="status-date" id="statusDate">--</div>
         <div class="status-date" id="statusLastData">LAST DATA: --</div>
+        <button type="button" id="btnForceRefresh" title="Limpa o cache local e recarrega os dados da API (use se dados parecerem velhos)" onclick="if(window.OBR_CACHE){OBR_CACHE.clear();}location.reload();" style="margin-top:6px;padding:4px 10px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.5px;background:transparent;color:#14b8a6;border:1px solid rgba(20,184,166,0.4);border-radius:3px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(20,184,166,0.12)';this.style.borderColor='#14b8a6';" onmouseout="this.style.background='transparent';this.style.borderColor='rgba(20,184,166,0.4)';">↻ FORCE REFRESH</button>
       </div>
     </header>
     
@@ -2170,9 +2171,16 @@
       USE_CORS_PROXY: true,
       ROLLING_WINDOW: 365,
       MIN_DATA_POINTS: 30,
-      // Cache local (localStorage) com TTL de 4h para evitar refetch em F5
-      CACHE_TTL_MS: 4 * 60 * 60 * 1000,
+      // Cache local (localStorage) com TTL diferenciado por categoria de endpoint.
+      // Cache-first: se hit dentro do TTL, nao bate na API (economiza rate limit).
+      // Stale-while-revalidate: se cache expirou E API falhar, retorna stale ate CACHE_STALE_MAX_MS.
+      CACHE_TTL_MS:          4 * 60 * 60 * 1000,  // default/fallback 4h
+      CACHE_TTL_ONCHAIN_MS:  6 * 60 * 60 * 1000,  // MVRV/NUPL/SOPR/etc - daily data
+      CACHE_TTL_FUTURES_MS:  30 * 60 * 1000,      // OI/funding/liq - intraday
+      CACHE_TTL_PRICE_MS:    5 * 60 * 1000,       // BTC price - volatil
+      CACHE_STALE_MAX_MS:    48 * 60 * 60 * 1000, // aceita stale ate 48h se API off
       CACHE_ENABLED: true,
+      FETCH_THROTTLE_MS: 80,                       // delay entre requests p/ evitar 429 burst
       // Cobertura mínima de pesos para o Confluence Score ser publicado
       MIN_CONFLUENCE_COVERAGE: 0.80
     };
@@ -2186,16 +2194,46 @@
       ssr: 0.10,  fearGreed: 0.10, puell: 0.10                    // Liquidity: 30%
     };
 
-    // ========== CACHE LOCAL (localStorage com TTL) ==========
+    // ========== CACHE LOCAL (localStorage com TTL + stale-while-revalidate) ==========
+    // Resolve TTL baseado no endpoint (onchain 6h, futuros 30min, price 5min, default 4h).
+    function resolveTTL(endpoint) {
+      if (!endpoint) return CONFIG.CACHE_TTL_MS;
+      const e = String(endpoint).toLowerCase();
+      if (/(btc-price|price-usd)/.test(e)) return CONFIG.CACHE_TTL_PRICE_MS;
+      if (/(open-interest|funding-rate|liquidat|futures|taker|long-short|top-trader)/.test(e)) return CONFIG.CACHE_TTL_FUTURES_MS;
+      // default onchain (daily metrics)
+      return CONFIG.CACHE_TTL_ONCHAIN_MS;
+    }
+
+    // Pequeno helper de throttle entre requests (para evitar burst 429 no proxy).
+    const _sleep = ms => new Promise(r => setTimeout(r, ms));
+
     const OBR_CACHE = {
-      get(key) {
+      // get: cache-hit puro (dentro do TTL). Retorna null se expirado ou inexistente.
+      get(key, endpoint) {
         if (!CONFIG.CACHE_ENABLED) return null;
         try {
           const raw = localStorage.getItem('obr_' + key);
           if (!raw) return null;
           const { ts, data } = JSON.parse(raw);
-          if (Date.now() - ts > CONFIG.CACHE_TTL_MS) return null;
+          const ttl = resolveTTL(endpoint || key);
+          if (Date.now() - ts > ttl) return null;
           return data;
+        } catch (_) { return null; }
+      },
+      // getWithMeta: retorna {data, stale, age} — inclui stale se dentro de CACHE_STALE_MAX_MS.
+      // Usado no fallback stale-while-revalidate quando a API falha.
+      getWithMeta(key, endpoint) {
+        if (!CONFIG.CACHE_ENABLED) return null;
+        try {
+          const raw = localStorage.getItem('obr_' + key);
+          if (!raw) return null;
+          const { ts, data } = JSON.parse(raw);
+          const age = Date.now() - ts;
+          const ttl = resolveTTL(endpoint || key);
+          if (age <= ttl) return { data, stale: false, age };
+          if (age <= CONFIG.CACHE_STALE_MAX_MS) return { data, stale: true, age };
+          return null; // stale demais — descarta
         } catch (_) { return null; }
       },
       set(key, data) {
@@ -2206,6 +2244,22 @@
         try {
           Object.keys(localStorage).filter(k => k.startsWith('obr_')).forEach(k => localStorage.removeItem(k));
         } catch (_) {}
+      },
+      // stats: retorna {count, totalBytes, oldestAgeMs} — util pra debug no console.
+      stats() {
+        let count = 0, bytes = 0, oldest = 0;
+        try {
+          Object.keys(localStorage).filter(k => k.startsWith('obr_')).forEach(k => {
+            const v = localStorage.getItem(k) || '';
+            count++;
+            bytes += v.length;
+            try {
+              const age = Date.now() - JSON.parse(v).ts;
+              if (age > oldest) oldest = age;
+            } catch(_) {}
+          });
+        } catch(_) {}
+        return { count, totalBytes: bytes, oldestAgeMs: oldest };
       }
     };
 
@@ -2310,7 +2364,32 @@
     }
 
     // ========== API FUNCTIONS ==========
+    // Tracking de requests em voo p/ throttle sequencial.
+    let _lastFetchAt = 0;
+    // Cache hits e stale counters para log final.
+    const _fetchStats = { hits: 0, misses: 0, stale: 0, failed: 0 };
+    window.OBR_FETCH_STATS = _fetchStats;
+
     async function fetchBGeometrics(endpoint, label) {
+      const cacheKey = endpoint.replace(/^\//, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+
+      // --- CACHE-FIRST: se hit dentro do TTL, nao bate na API ---
+      const fresh = OBR_CACHE.get(cacheKey, endpoint);
+      if (fresh) {
+        _fetchStats.hits++;
+        console.log(`✓ ${label} via CACHE (hit)`);
+        updateLoadingProgress(label);
+        return { success: true, data: fresh, cached: true };
+      }
+      _fetchStats.misses++;
+
+      // --- Throttle suave entre requests ---
+      const since = Date.now() - _lastFetchAt;
+      if (since < CONFIG.FETCH_THROTTLE_MS) {
+        await _sleep(CONFIG.FETCH_THROTTLE_MS - since);
+      }
+      _lastFetchAt = Date.now();
+
       const baseUrl = `${CONFIG.BGEOMETRICS_BASE}${endpoint}?token=${CONFIG.BGEOMETRICS_TOKEN}`;
 
       // Helper: retry proxy fetch with exponential backoff on 5xx/network errors (not on 4xx).
@@ -2354,6 +2433,7 @@
           const suffix = result.attempt > 1 ? ` (attempt ${result.attempt})` : '';
           console.log(`✓ ${label} via BGeometrics (proxy)${suffix}`);
           updateLoadingProgress(label);
+          OBR_CACHE.set(cacheKey, result.data);
           return { success: true, data: result.data };
         }
         if (result.permanent) {
@@ -2373,8 +2453,19 @@
         const data = await response.json();
         console.log(`✓ ${label} via BGeometrics (direct)`);
         updateLoadingProgress(label);
+        OBR_CACHE.set(cacheKey, data);
         return { success: true, data };
       } catch (e) {
+        // --- STALE-WHILE-REVALIDATE: API falhou, tenta usar cache stale ---
+        const staleEntry = OBR_CACHE.getWithMeta(cacheKey, endpoint);
+        if (staleEntry && staleEntry.data) {
+          _fetchStats.stale++;
+          const ageMin = Math.round(staleEntry.age / 60000);
+          console.warn(`⚠ ${label} API failed (${e.message}) → using STALE cache (age ${ageMin}min)`);
+          updateLoadingProgress(label);
+          return { success: true, data: staleEntry.data, stale: true, ageMs: staleEntry.age };
+        }
+        _fetchStats.failed++;
         console.error(`✗ ${label}:`, e.message);
         updateLoadingProgress(label);
         state.errors.push(label);
