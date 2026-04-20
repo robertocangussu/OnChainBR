@@ -1474,7 +1474,7 @@
         <!-- Backtest table -->
         <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <span style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">BACKTEST RETROSPECTIVO &middot; ÚLTIMOS SINAIS (90D)</span>
+            <span style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">BACKTEST RETROSPECTIVO &middot; CICLO COMPLETO (top 15 recentes)</span>
             <span id="divWinRate" style="font-size:11px;color:#9a9aa6;">Win rate: --</span>
           </div>
           <div style="overflow-x:auto;">
@@ -4766,24 +4766,30 @@
       };
       
       // 1. Open Interest - use correct field names
+      // Divergence Estagio D: tenta endpoint DAILY primeiro (mais historico,
+      // permite backtest do ciclo todo). Cai pro -1h (horario, ~75d) se nao existir.
       try {
-        let result = await fetchBGeometrics('/v1/open-interest-1h', 'Open Interest 1h');
-        if (!result.success || !result.data || !result.data.length) {
+        let result = await fetchBGeometrics('/v1/open-interest-1d', 'Open Interest 1d');
+        let sourceIsDaily = result && result.success && Array.isArray(result.data) && result.data.length > 0;
+        if (!sourceIsDaily) {
+          result = await fetchBGeometrics('/v1/open-interest-1h', 'Open Interest 1h');
+        }
+        if (!result || !result.success || !result.data || !result.data.length) {
           result = await fetchBGeometrics('/v1/open-interest-futures', 'Open Interest Futures');
         }
         if (result.success && result.data && result.data.length) {
           const data = result.data;
-          console.log('[Leverage] OI sample:', JSON.stringify(data[data.length-1]));
-          // Divergence Estagio A: endpoint /v1/open-interest-1h eh horario.
-          // Pega 1800 pontos (~75 dias horarios) p/ agregar em ~75 daily points,
-          // suficiente p/ Z-score rolling 60d.
-          const histSlice = data.slice(-1800);
+          console.log('[Leverage] OI sample (' + (sourceIsDaily ? 'daily' : 'hourly') + '):', JSON.stringify(data[data.length-1]));
+          // Se veio daily, pega tudo (pode ser anos). Se horario, limita a 1800 (~75d)
+          // pra evitar payload gigante — aggregateOIDaily no divergence dedupa em ambos casos.
+          const histSlice = sourceIsDaily ? data : data.slice(-1800);
           levData.oiHistory = histSlice.map(d => ({
             date: d.d || d.day || d.date || d.t,
             value: toNum(d.sumOpenInterestValue || d.sumOpenInterest || d.openInterest || d.value) || 0
           }));
+          levData.oiHistorySource = sourceIsDaily ? 'daily' : 'hourly';
           levData.openInterest = getLatest(data, 'sumOpenInterestValue', 'sumOpenInterest', 'openInterest', 'value');
-          console.log('✓ Open Interest:', levData.openInterest);
+          console.log('✓ Open Interest:', levData.openInterest, 'history:', levData.oiHistory.length, 'points (' + levData.oiHistorySource + ')');
         }
       } catch(e) { console.warn('OI fetch error:', e); }
       
@@ -5201,11 +5207,11 @@
         };
       }
 
-      // --- Historico de sinais extremos (ultimos 90 dias) ---
-      // Para cada dia i, testa classify(zAt[i-1], price7d(i)). So registra quando nao-null.
+      // --- Historico de sinais extremos (CICLO TODO) ---
+      // Estagio D: itera todo o aligned (nao mais so os 91 ultimos dias).
+      // warmup: Z-score precisa de 60d de janela, entao chgIdx>=60.
       const signals = [];
-      const start = Math.max(0, aligned.length - 91);
-      for (let i = start; i < aligned.length; i++) {
+      for (let i = 0; i < aligned.length; i++) {
         const chgIdx = i - 1;
         if (chgIdx < 60) continue;
         const zVal = zAt[chgIdx];
@@ -5316,12 +5322,23 @@
         }
       }
 
+      // Coverage meta p/ UI
+      const coverage = {
+        daysAnalyzed: aligned.length,
+        firstDate: aligned[0] && aligned[0].date,
+        lastDate: aligned[aligned.length - 1] && aligned[aligned.length - 1].date,
+        signalsTotal: signals.length,
+        signalsTop: signals.filter(s => s.cat === 'TOP').length,
+        signalsBottom: signals.filter(s => s.cat === 'BOTTOM').length
+      };
+
       return {
         current,
         signals,
         backtest,
         confirmers,
         confirmScore,
+        coverage,
         chart: { labels: chartLabels, prices: chartPrices, oi: chartOI, markers, markerMeta }
       };
     }
@@ -5413,7 +5430,7 @@
             const sub  = r.subLabel ? '<div style="font-size:9px;color:#888;margin-top:1px;">' + r.subLabel + '</div>' : '';
             return head + sub;
           };
-          const rows = div.backtest.rows.slice(0, 8).map(r => {
+          const rows = div.backtest.rows.slice(0, 15).map(r => {
             return '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">'
                  + '<td style="padding:6px 4px;color:#ccc;">' + r.date + '</td>'
                  + '<td style="padding:6px 4px;">' + fmtType(r) + '</td>'
@@ -5429,12 +5446,16 @@
       }
       if ($wr) {
         const bt = div.backtest || {};
+        const cov = div.coverage || {};
+        const covStr = cov.daysAnalyzed
+          ? cov.daysAnalyzed + 'd · ' + (cov.signalsTotal||0) + ' sinais (' + (cov.signalsTop||0) + '▼/' + (cov.signalsBottom||0) + '▲)'
+          : '';
         if (bt.hitRate != null) {
-          $wr.textContent = 'Win rate: ' + bt.hitRate.toFixed(0) + '% (' + bt.hits + '/' + bt.total + ' judged)';
-          $wr.style.color = bt.hitRate >= 60 ? 'var(--accent-green)' : bt.hitRate >= 40 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+          $wr.innerHTML = '<span style="color:' + (bt.hitRate >= 60 ? 'var(--accent-green)' : bt.hitRate >= 40 ? 'var(--accent-yellow)' : 'var(--accent-red)') + ';">Win rate: ' + bt.hitRate.toFixed(0) + '% (' + bt.hits + '/' + bt.total + ' judged)</span>'
+                     + (covStr ? '<span style="color:#777;margin-left:10px;font-size:9px;">' + covStr + '</span>' : '');
         } else {
-          $wr.textContent = 'Win rate: sem sinais julgados ainda';
-          $wr.style.color = '#9a9aa6';
+          $wr.innerHTML = '<span style="color:#9a9aa6;">Win rate: sem sinais julgados</span>'
+                     + (covStr ? '<span style="color:#777;margin-left:10px;font-size:9px;">' + covStr + '</span>' : '');
         }
       }
 
