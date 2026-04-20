@@ -1447,13 +1447,11 @@
         <!-- Chart card with legend -->
         <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;">
-            <span>BTC PRICE (solid teal) + OI (dashed gray) &middot; SIGNALS WHEN |Z|≥2σ</span>
+            <span>BTC PRICE (solid teal) + OI (dashed gray) &middot; SIGNALS WHEN |Z|≥2.5σ + momentum 7d</span>
           </div>
-          <div style="display:flex;gap:14px;font-size:8.5px;letter-spacing:0.5px;margin-bottom:8px;flex-wrap:wrap;">
-            <span style="color:#ef4444;">▼ TOP WARNING</span>
-            <span style="color:#84cc16;">▲ CONTRARIAN BUY</span>
-            <span style="color:#00d97e;">▲ STRONG BUY</span>
-            <span style="color:#eab308;">▼ HEALTHY RESET</span>
+          <div style="display:flex;gap:16px;font-size:9px;letter-spacing:0.5px;margin-bottom:8px;flex-wrap:wrap;">
+            <span style="color:#ef4444;font-weight:600;">▼ TOP</span><span style="color:#888;">= venda forte (euforia alavancada)</span>
+            <span style="color:#00d97e;font-weight:600;margin-left:10px;">▲ BOTTOM</span><span style="color:#888;">= acumulacao (shorts presos / spot / capitulacao)</span>
           </div>
           <div style="height:180px;"><canvas id="divPriceChart"></canvas></div>
         </div>
@@ -5113,55 +5111,121 @@
       const priceChange24h = prev.price > 0 ? ((last.price - prev.price) / prev.price) * 100 : 0;
       const zOI = zAt[zAt.length - 1] != null ? zAt[zAt.length - 1] : 0;
 
-      // Classifica quadrante
-      function classify(zVal, priceUp, oiUp) {
-        const extreme = Math.abs(zVal) >= 2;
-        if (extreme && zVal > 0 && priceUp)  return { q: 'TOP WARNING',    key: 'TOP_WARNING',    tone: 'red',    label: 'OI subindo forte junto com preco - alavancagem euforica, risco de reversao.' };
-        if (extreme && zVal > 0 && !priceUp) return { q: 'CONTRARIAN BUY', key: 'CONTRARIAN_BUY', tone: 'green-light', label: 'OI subindo forte com preco caindo - shorts se empilhando, fundo provavel.' };
-        if (extreme && zVal < 0 && priceUp)  return { q: 'STRONG BUY',     key: 'STRONG_BUY',     tone: 'green',  label: 'Preco subindo SEM alavancagem - compra spot real, movimento sustentavel.' };
-        if (extreme && zVal < 0 && !priceUp) return { q: 'HEALTHY RESET',  key: 'HEALTHY_RESET',  tone: 'yellow', label: 'OI caindo junto com preco - desalavancagem completa, reset saudavel.' };
-        if (priceUp && oiUp)                 return { q: 'BULL LEVERAGE',  key: 'BULL_LEVERAGE',  tone: 'green',  label: 'Preco e OI subindo em ritmo normal - tendencia alinhada.' };
-        if (priceUp && !oiUp)                return { q: 'SHORT SQUEEZE',  key: 'SHORT_SQUEEZE',  tone: 'green',  label: 'Preco sobe enquanto OI cai - possivel short squeeze em curso.' };
-        if (!priceUp && oiUp)                return { q: 'SHORTING DIP',   key: 'SHORTING_DIP',   tone: 'yellow', label: 'Preco cai e OI sobe - traders apostando na queda (monitorar).' };
-        return { q: 'DELEVERAGING', key: 'DELEVERAGING', tone: 'neutral', label: 'Preco e OI em queda - correcao tecnica sem excesso.' };
+      // Threshold de extremo: 2.5σ (~1% das obs, mais seletivo que 2σ=~5%)
+      const Z_TRIGGER = 2.5;
+      // Momentum filter: precisa de +/-3% em 7d pra confirmar reversao
+      const MOMENTUM_PCT = 3;
+
+      // Helper: price change 7d pra um indice `i` em aligned (%). Null se sem janela.
+      function price7d(idx) {
+        if (idx < 7) return null;
+        const now = aligned[idx].price, then = aligned[idx - 7].price;
+        if (!now || !then) return null;
+        return ((now - then) / then) * 100;
       }
 
-      const currentCls = classify(zOI, priceChange24h > 0, oiChange24h >= 0);
-      const current = {
-        quadrant: currentCls.q,
-        key: currentCls.key,
-        label: currentCls.label,
-        tone: currentCls.tone,
-        oiChange24h, priceChange24h, zOI
-      };
+      // Classifica em 2 categorias visuais (TOP/BOTTOM) com subtipo.
+      // Retorna null quando nao atende o threshold ou filtro de momentum.
+      function classify(zVal, price7dPct) {
+        if (zVal == null || !isFinite(zVal)) return null;
+        if (Math.abs(zVal) < Z_TRIGGER) return null;
+        if (price7dPct == null || !isFinite(price7dPct)) return null;
+
+        // Z alto (OI subindo muito)
+        if (zVal > 0) {
+          if (price7dPct > MOMENTUM_PCT) {
+            return {
+              q: 'TOP', cat: 'TOP',
+              key: 'EUPHORIC_LEVERAGE', subLabel: 'Euphoric Leverage',
+              tone: 'red',
+              label: 'OI subindo forte apos rally de 7d - alavancagem euforica, risco alto de reversao.'
+            };
+          }
+          if (price7dPct < -MOMENTUM_PCT) {
+            return {
+              q: 'BOTTOM', cat: 'BOTTOM',
+              key: 'SHORTS_TRAPPED', subLabel: 'Shorts Trapped',
+              tone: 'green',
+              label: 'OI subindo forte apos queda de 7d - shorts se empilhando, pressao spot tende a causar squeeze.'
+            };
+          }
+          return null; // ambiguo, sem sinal
+        }
+
+        // Z negativo (OI caindo muito) - flush/deleveraging
+        if (price7dPct > 0) {
+          return {
+            q: 'BOTTOM', cat: 'BOTTOM',
+            key: 'SPOT_ACCUMULATION', subLabel: 'Spot Accumulation',
+            tone: 'green',
+            label: 'Preco subindo enquanto OI colapsa - compra spot real, sem alavancagem, base solida.'
+          };
+        }
+        return {
+          q: 'BOTTOM', cat: 'BOTTOM',
+          key: 'CAPITULATION_RESET', subLabel: 'Capitulation Reset',
+          tone: 'green',
+          label: 'OI e preco colapsando juntos - desalavancagem completa, fundo de capitulacao.'
+        };
+      }
+
+      const currentPrice7d = price7d(aligned.length - 1);
+      const currentCls = classify(zOI, currentPrice7d);
+
+      let current;
+      if (currentCls) {
+        current = {
+          quadrant: currentCls.q,
+          cat: currentCls.cat,
+          key: currentCls.key,
+          subLabel: currentCls.subLabel,
+          label: currentCls.label,
+          tone: currentCls.tone,
+          oiChange24h, priceChange24h, zOI,
+          price7d: currentPrice7d
+        };
+      } else {
+        // Sem sinal ativo: classificacao leve apenas p/ contexto
+        const ambient = Math.abs(zOI) >= 1
+          ? { q: 'ELEVATED', tone: 'yellow', label: 'OI Z-score elevado (|Z|>=1σ) mas abaixo do threshold de 2.5σ, ou momentum insuficiente.' }
+          : { q: 'NEUTRAL',  tone: 'neutral', label: 'Sem divergencia extrema no momento - OI e preco em regime normal.' };
+        current = {
+          quadrant: ambient.q,
+          cat: 'NEUTRAL',
+          key: ambient.q,
+          subLabel: null,
+          label: ambient.label,
+          tone: ambient.tone,
+          oiChange24h, priceChange24h, zOI,
+          price7d: currentPrice7d
+        };
+      }
 
       // --- Historico de sinais extremos (ultimos 90 dias) ---
-      // Para cada dia i (>=60), se |zAt[i]|>=2 e o tipo for um dos 4 "extremos", registra sinal.
+      // Para cada dia i, testa classify(zAt[i-1], price7d(i)). So registra quando nao-null.
       const signals = [];
       const start = Math.max(0, aligned.length - 91);
-      for (let i = start; i < aligned.length - 1; i++) {
+      for (let i = start; i < aligned.length; i++) {
         const chgIdx = i - 1;
         if (chgIdx < 60) continue;
         const zVal = zAt[chgIdx];
-        if (zVal == null || Math.abs(zVal) < 2) continue;
+        const p7 = price7d(i);
+        const cls = classify(zVal, p7);
+        if (!cls) continue;
         const a = aligned[i];
-        const prevA = aligned[i-1];
-        const pUp = a.price > prevA.price;
-        const oUp = oiChanges[chgIdx] >= 0;
-        const cls = classify(zVal, pUp, oUp);
-        // So conta os 4 extremos (pois sao os relevantes pra backtest)
-        if (['TOP_WARNING','CONTRARIAN_BUY','STRONG_BUY','HEALTHY_RESET'].includes(cls.key)) {
-          signals.push({
-            date: a.date,
-            type: cls.key,
-            typeLabel: cls.q,
-            tone: cls.tone,
-            price: a.price,
-            oiChange: oiChanges[chgIdx],
-            zOI: zVal,
-            idx: i // posicao no aligned p/ facilitar backtest
-          });
-        }
+        signals.push({
+          date: a.date,
+          cat: cls.cat,             // 'TOP' | 'BOTTOM'
+          type: cls.key,            // subtipo (EUPHORIC_LEVERAGE etc)
+          typeLabel: cls.q,         // 'TOP' ou 'BOTTOM' (curto)
+          subLabel: cls.subLabel,   // 'Euphoric Leverage' etc
+          tone: cls.tone,
+          price: a.price,
+          oiChange: oiChanges[chgIdx],
+          zOI: zVal,
+          price7d: p7,
+          idx: i
+        });
       }
 
       // --- Backtest retrospectivo ---
@@ -5181,9 +5245,9 @@
         row.r14 = getRet(14);
         row.r30 = getRet(30);
 
-        // Direcao esperada
-        const bullish = s.type === 'CONTRARIAN_BUY' || s.type === 'STRONG_BUY' || s.type === 'HEALTHY_RESET';
-        const bearish = s.type === 'TOP_WARNING';
+        // Direcao esperada (agora via categoria simplificada)
+        const bullish = s.cat === 'BOTTOM';
+        const bearish = s.cat === 'TOP';
         // Hit = direcao em +7d bate com expectativa (se nao tem r7, fallback pra r14)
         const judgeRet = row.r7 != null ? row.r7 : (row.r14 != null ? row.r14 : null);
         if (judgeRet != null) {
@@ -5234,16 +5298,22 @@
       const chartLabels = chartSlice.map(a => a.date);
       const chartPrices = chartSlice.map(a => a.price);
       const chartOI = chartSlice.map(a => a.oi);
-      // Marcadores por tipo — array do mesmo tamanho que labels, null onde nao tem sinal
+      // Marcadores por categoria (TOP/BOTTOM) — arrays do mesmo tamanho que labels,
+      // null onde nao tem sinal. Subtipo preservado em `markerMeta` pra tooltip.
       const markers = {
-        TOP_WARNING:    new Array(chartSlice.length).fill(null),
-        CONTRARIAN_BUY: new Array(chartSlice.length).fill(null),
-        STRONG_BUY:     new Array(chartSlice.length).fill(null),
-        HEALTHY_RESET:  new Array(chartSlice.length).fill(null)
+        TOP:    new Array(chartSlice.length).fill(null),
+        BOTTOM: new Array(chartSlice.length).fill(null)
+      };
+      const markerMeta = {
+        TOP:    new Array(chartSlice.length).fill(null),
+        BOTTOM: new Array(chartSlice.length).fill(null)
       };
       for (const s of signals) {
         const idxInChart = chartLabels.indexOf(s.date);
-        if (idxInChart >= 0 && markers[s.type]) markers[s.type][idxInChart] = s.price;
+        if (idxInChart >= 0 && markers[s.cat]) {
+          markers[s.cat][idxInChart] = s.price;
+          markerMeta[s.cat][idxInChart] = s.subLabel || s.type;
+        }
       }
 
       return {
@@ -5252,7 +5322,7 @@
         backtest,
         confirmers,
         confirmScore,
-        chart: { labels: chartLabels, prices: chartPrices, oi: chartOI, markers }
+        chart: { labels: chartLabels, prices: chartPrices, oi: chartOI, markers, markerMeta }
       };
     }
 
@@ -5305,7 +5375,7 @@
       }
       if ($z) {
         $z.textContent = (c.zOI >= 0 ? '+' : '') + c.zOI.toFixed(2) + 'σ';
-        $z.style.color = Math.abs(c.zOI) >= 2 ? 'var(--accent-red)' : '#14b8a6';
+        $z.style.color = Math.abs(c.zOI) >= 2.5 ? 'var(--accent-red)' : Math.abs(c.zOI) >= 1.5 ? 'var(--accent-yellow)' : '#14b8a6';
       }
       if ($u) $u.textContent = 'updated ' + new Date().toLocaleTimeString('pt-BR');
 
@@ -5329,20 +5399,24 @@
       // --- Backtest table ---
       if ($btBody) {
         if (!div.backtest || !div.backtest.rows || !div.backtest.rows.length) {
-          $btBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text-muted);">Nenhum sinal extremo (|Z|≥2σ) nos ultimos 90 dias</td></tr>';
+          $btBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text-muted);">Nenhum sinal extremo (|Z|≥2.5σ + momentum 7d) nos ultimos 90 dias</td></tr>';
         } else {
-          const TYPE_COLOR = {
-            TOP_WARNING: '#ef4444',
-            CONTRARIAN_BUY: '#84cc16',
-            STRONG_BUY: '#00d97e',
-            HEALTHY_RESET: '#eab308'
+          const CAT_COLOR = {
+            TOP: '#ef4444',
+            BOTTOM: '#00d97e'
           };
           const fmtRet = r => r == null ? '<span style="color:#555;">--</span>' : '<span style="color:' + (r >= 0 ? '#00d97e' : '#ef4444') + ';">' + (r >= 0 ? '+' : '') + r.toFixed(1) + '%</span>';
           const fmtHit = h => h == null ? '<span style="color:#555;">PEND</span>' : h ? '<span style="color:#00d97e;font-weight:700;">HIT</span>' : '<span style="color:#ef4444;font-weight:700;">MISS</span>';
+          const fmtType = r => {
+            const color = CAT_COLOR[r.cat] || '#9a9aa6';
+            const head = '<span style="color:' + color + ';font-weight:700;">' + (r.cat || '--') + '</span>';
+            const sub  = r.subLabel ? '<div style="font-size:9px;color:#888;margin-top:1px;">' + r.subLabel + '</div>' : '';
+            return head + sub;
+          };
           const rows = div.backtest.rows.slice(0, 8).map(r => {
             return '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">'
                  + '<td style="padding:6px 4px;color:#ccc;">' + r.date + '</td>'
-                 + '<td style="padding:6px 4px;color:' + (TYPE_COLOR[r.type] || '#9a9aa6') + ';font-weight:600;">' + r.typeLabel + '</td>'
+                 + '<td style="padding:6px 4px;">' + fmtType(r) + '</td>'
                  + '<td style="padding:6px 4px;text-align:right;color:#ccc;">$' + (r.price ? r.price.toLocaleString('en-US',{maximumFractionDigits:0}) : '--') + '</td>'
                  + '<td style="padding:6px 4px;text-align:right;">' + fmtRet(r.r7) + '</td>'
                  + '<td style="padding:6px 4px;text-align:right;">' + fmtRet(r.r14) + '</td>'
@@ -5400,66 +5474,38 @@
               order: 4
             },
             {
-              label: 'TOP WARNING',
-              data: chartData.markers.TOP_WARNING,
+              label: 'TOP',
+              data: chartData.markers.TOP,
               yAxisID: 'y',
               borderColor: 'transparent',
               backgroundColor: '#ef4444',
               pointStyle: 'triangle',
               rotation: 180,
-              pointRadius: 7,
-              pointHoverRadius: 9,
+              pointRadius: 9,
+              pointHoverRadius: 12,
               pointBorderColor: '#fff',
-              pointBorderWidth: 1.2,
+              pointBorderWidth: 1.6,
               showLine: false,
               spanGaps: false,
-              order: 1
+              order: 1,
+              // meta p/ tooltip
+              _meta: chartData.markerMeta ? chartData.markerMeta.TOP : null
             },
             {
-              label: 'CONTRARIAN BUY',
-              data: chartData.markers.CONTRARIAN_BUY,
-              yAxisID: 'y',
-              borderColor: 'transparent',
-              backgroundColor: '#84cc16',
-              pointStyle: 'triangle',
-              pointRadius: 7,
-              pointHoverRadius: 9,
-              pointBorderColor: '#fff',
-              pointBorderWidth: 1.2,
-              showLine: false,
-              spanGaps: false,
-              order: 1
-            },
-            {
-              label: 'STRONG BUY',
-              data: chartData.markers.STRONG_BUY,
+              label: 'BOTTOM',
+              data: chartData.markers.BOTTOM,
               yAxisID: 'y',
               borderColor: 'transparent',
               backgroundColor: '#00d97e',
               pointStyle: 'triangle',
-              pointRadius: 7,
-              pointHoverRadius: 9,
+              pointRadius: 9,
+              pointHoverRadius: 12,
               pointBorderColor: '#fff',
-              pointBorderWidth: 1.2,
+              pointBorderWidth: 1.6,
               showLine: false,
               spanGaps: false,
-              order: 1
-            },
-            {
-              label: 'HEALTHY RESET',
-              data: chartData.markers.HEALTHY_RESET,
-              yAxisID: 'y',
-              borderColor: 'transparent',
-              backgroundColor: '#eab308',
-              pointStyle: 'triangle',
-              rotation: 180,
-              pointRadius: 7,
-              pointHoverRadius: 9,
-              pointBorderColor: '#fff',
-              pointBorderWidth: 1.2,
-              showLine: false,
-              spanGaps: false,
-              order: 1
+              order: 1,
+              _meta: chartData.markerMeta ? chartData.markerMeta.BOTTOM : null
             }
           ]
         },
@@ -5476,7 +5522,11 @@
                   if (v == null) return null;
                   if (item.dataset.label === 'BTC Price') return 'BTC: $' + Number(v).toLocaleString('en-US',{maximumFractionDigits:0});
                   if (item.dataset.label === 'Open Interest') return 'OI: $' + (v/1e9).toFixed(2) + 'B';
-                  return item.dataset.label + ' @ $' + Number(v).toLocaleString('en-US',{maximumFractionDigits:0});
+                  // Markers: mostra subtipo + preco
+                  const meta = item.dataset._meta;
+                  const sub = meta && meta[item.dataIndex] ? meta[item.dataIndex] : null;
+                  const head = sub ? (item.dataset.label + ' · ' + sub) : item.dataset.label;
+                  return head + ' @ $' + Number(v).toLocaleString('en-US',{maximumFractionDigits:0});
                 }
               }
             }
