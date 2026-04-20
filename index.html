@@ -7297,7 +7297,7 @@
           fetchBGeometrics('/v1/funding-rate', 'FP: Funding Rate'),
           fetchBGeometrics('/v1/taker-vol-1h', 'FP: Taker Vol'),
           fetchBGeometrics('/v1/open-interest-1h', 'FP: OI 1h'),
-          fetchBGeometrics('/v1/btc-liquidations-1h/48', 'FP: Liquidations'),
+          fetchBGeometrics('/v1/btc-liquidations-1d', 'FP: Liquidations'),
           fetchBGeometrics('/v1/top-trader-position-1h', 'FP: Top Traders')
         ]);
 
@@ -7369,27 +7369,26 @@
           }
         }
 
-        // Process Liquidations
+        // Process Liquidations — usa endpoint diario /v1/btc-liquidations-1d (horario /48 retornava apenas 1 candle)
         console.log('[FP Liq] status:', liqRes.status, 'success:', liqRes.status === 'fulfilled' ? liqRes.value?.success : 'N/A');
         if (liqRes.status === 'fulfilled' && liqRes.value.success) {
           let data = liqRes.value.data;
-          console.log('[FP Liq] raw type:', typeof data, 'isArray:', Array.isArray(data), 'keys:', data && typeof data === 'object' ? Object.keys(data).slice(0,10) : 'N/A');
-          // Handle case where data might be wrapped in an object
+          // Unwrap se vier dentro de objeto
           if (!Array.isArray(data) && data && typeof data === 'object') {
-            // Try common wrapper keys
             if (data.data && Array.isArray(data.data)) data = data.data;
             else if (data.result && Array.isArray(data.result)) data = data.result;
             else if (data.items && Array.isArray(data.items)) data = data.items;
-            // If it's a single object with liquidation fields, wrap in array
             else if (data.totalLiquidationsUsd || data.longLiquidationsUsd || data.shortLiquidationsUsd) {
               data = [data];
             }
           }
           if (Array.isArray(data) && data.length > 0) {
-            console.log('[FP Liq] first record keys:', Object.keys(data[0]), 'sample:', JSON.stringify(data[data.length-1]));
-            const recent = data; // todos os 48 candles = janela de 48h
+            console.log('[FP Liq] daily records received:', data.length, 'last:', JSON.stringify(data[data.length-1]));
+            // Soma ultimos 2 pontos diarios = janela ~48h. Garante matematicamente que 48h >= 24h
+            // (antes somava 1 registro do endpoint /1h/48 que colapsava pra ~1h).
+            const last2 = data.slice(-2);
             let longLiq = 0, shortLiq = 0, totalFromField = 0;
-            recent.forEach(d => {
+            last2.forEach(d => {
               const l = parseFloat(d.longLiquidationsUsd || d.longLiquidations || 0);
               const s = parseFloat(d.shortLiquidationsUsd || d.shortLiquidations || 0);
               const t = parseFloat(d.totalLiquidationsUsd || 0);
@@ -7397,14 +7396,13 @@
               shortLiq += isNaN(s) ? 0 : s;
               totalFromField += isNaN(t) ? 0 : t;
             });
-            // Use long+short if available, otherwise fall back to totalLiquidationsUsd
             let total = longLiq + shortLiq;
             if (total === 0 && totalFromField > 0) {
               total = totalFromField;
               longLiq = totalFromField * 0.5;
               shortLiq = totalFromField * 0.5;
             }
-            console.log('[FP Liq] 48h total:', total, 'long:', longLiq, 'short:', shortLiq, 'records:', recent.length);
+            console.log('[FP Liq] 48h (2x daily) total:', total, 'long:', longLiq, 'short:', shortLiq, 'days:', last2.length);
             futuresPressureState.liqLong = longLiq;
             futuresPressureState.liqShort = shortLiq;
             const el = document.getElementById('fpLiq');
