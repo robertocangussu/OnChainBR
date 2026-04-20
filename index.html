@@ -1439,7 +1439,7 @@
               <div id="divOiChg" style="font-size:14px;font-weight:700;margin-top:2px;">--</div>
             </div>
             <div>
-              <div style="font-size:8px;color:var(--text-muted);letter-spacing:1px;">OI Z 60D</div>
+              <div id="divOiZLabel" style="font-size:8px;color:var(--text-muted);letter-spacing:1px;">REGIME</div>
               <div id="divOiZ" style="font-size:14px;font-weight:700;margin-top:2px;">--</div>
             </div>
           </div>
@@ -1447,11 +1447,12 @@
         <!-- Chart card with legend -->
         <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;">
-            <span>BTC PRICE (solid teal) + OI (dashed gray) &middot; SIGNALS WHEN |Z|≥2.5σ + momentum 7d</span>
+            <span>BTC PRICE (solid teal) + OI (dashed gray) &middot; ALERTS ON ΔOI 24H &gt; +5% (▼ SELL) / &lt; -4% (▲ BUY) &middot; Maartun logic</span>
           </div>
-          <div style="display:flex;gap:16px;font-size:9px;letter-spacing:0.5px;margin-bottom:8px;flex-wrap:wrap;">
-            <span style="color:#ef4444;font-weight:600;">▼ TOP</span><span style="color:#888;">= venda forte (euforia alavancada)</span>
-            <span style="color:#00d97e;font-weight:600;margin-left:10px;">▲ BOTTOM</span><span style="color:#888;">= acumulacao (shorts presos / spot / capitulacao)</span>
+          <div style="display:flex;gap:14px;font-size:9px;letter-spacing:0.5px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
+            <span style="color:#ef4444;font-weight:600;">▼ SELL</span><span style="color:#888;">ΔOI &gt; +5% (leverage up)</span>
+            <span style="color:#00d97e;font-weight:600;margin-left:6px;">▲ BUY</span><span style="color:#888;">ΔOI &lt; -4% (deleverage)</span>
+            <span style="color:#888;margin-left:10px;">marker grande com borda branca = alert mais recente</span>
           </div>
           <div style="height:180px;"><canvas id="divPriceChart"></canvas></div>
         </div>
@@ -5061,25 +5062,36 @@
     }
 
     function computeOIPriceDivergence(oiHistory, priceHistory, levState) {
+      // Estagio E (Maartun replica): triggers binarios sobre delta OI 24h daily.
+      // SEM Z-SCORE neste bloco. Confidence = cluster density (7d) + regime (SMA20/50).
+      //   ALERT SELL  quando dOI 24h > +5%  (leverage subindo rapido)
+      //   ALERT BUY   quando dOI 24h < -4%  (deleveraging rapido)
+      // Thresholds vindos da query do Maartun (@JA_Maartun no CryptoQuant).
       if (!oiHistory || !oiHistory.length) return null;
       if (!priceHistory || priceHistory.length < 2) return null;
 
-      // Agrega OI horario em daily (ultimo valor do dia)
-      const oiDaily = aggregateOIDaily(oiHistory);
-      if (oiDaily.length < 62) {
-        console.warn('[Divergence] insufficient daily points:', oiDaily.length);
-        return null;
-      }
+      const TH_SELL = 5;
+      const TH_BUY = -4;
+      const CLUSTER_WINDOW = 7;
+      const CLUSTER_MIN = 4;
+      const BUILDING_MIN = 2;
+      const SMA_SHORT = 20;
+      const SMA_LONG = 50;
 
-      // Monta mapa de preco daily (date -> value). Se priceHistory ja for daily, key direto.
+      // Agrega OI pra daily (dedupa hourly/daily endpoints)
+      const oiDaily = aggregateOIDaily(oiHistory);
+      if (oiDaily.length < 2) return null;
+
+      // Price map por data
       const priceMap = new Map();
       for (const p of priceHistory) {
-        if (!p || typeof p.value !== 'number') continue;
-        const key = typeof p.date === 'string' ? p.date.slice(0,10) : '';
-        if (key) priceMap.set(key, p.value);
+        if (!p) continue;
+        const d = p.date || p.day;
+        if (typeof d === 'string' && typeof p.value === 'number' && p.value > 0) {
+          priceMap.set(d.slice(0, 10), p.value);
+        }
       }
-
-      // Alinha daily series — so usa dias com OI E price conhecidos
+      // Alinha OI com Price (intersecao por data)
       const aligned = [];
       for (const o of oiDaily) {
         const pv = priceMap.get(o.date);
@@ -5087,250 +5099,196 @@
           aligned.push({ date: o.date, oi: o.value, price: pv });
         }
       }
-      if (aligned.length < 62) {
-        console.warn('[Divergence] aligned daily points too few:', aligned.length);
+      if (aligned.length < 2) {
+        console.warn('[Divergence-E] aligned daily points too few:', aligned.length);
         return null;
       }
 
-      // Deltas % do OI entre dias consecutivos
-      const oiChanges = [];
-      for (let i = 1; i < aligned.length; i++) {
-        const c = ((aligned[i].oi - aligned[i-1].oi) / aligned[i-1].oi) * 100;
-        oiChanges.push(isFinite(c) ? c : 0);
-      }
-
-      // Z-score de cada OI change usando janela rolling 60 dias anteriores.
-      // zAt[i] corresponde ao OI change do dia aligned[i+1] vs aligned[i].
-      const zAt = new Array(oiChanges.length).fill(null);
-      for (let i = 60; i < oiChanges.length; i++) {
-        const w = oiChanges.slice(i - 60, i);
-        const m = w.reduce((a,b) => a+b, 0) / w.length;
-        const v = w.reduce((a,b) => a + (b-m)*(b-m), 0) / w.length;
-        const s = Math.sqrt(v) || 1;
-        zAt[i] = (oiChanges[i] - m) / s;
-      }
-
-      // Ultimo dia + 24h atual
-      const last = aligned[aligned.length - 1];
-      const prev = aligned[aligned.length - 2];
-      const oiChange24h = oiChanges[oiChanges.length - 1] || 0;
-      const priceChange24h = prev.price > 0 ? ((last.price - prev.price) / prev.price) * 100 : 0;
-      const zOI = zAt[zAt.length - 1] != null ? zAt[zAt.length - 1] : 0;
-
-      // Threshold de extremo: 2.5σ (~1% das obs, mais seletivo que 2σ=~5%)
-      const Z_TRIGGER = 2.5;
-      // Momentum filter: precisa de +/-3% em 7d pra confirmar reversao
-      const MOMENTUM_PCT = 3;
-
-      // Helper: price change 7d pra um indice `i` em aligned (%). Null se sem janela.
-      function price7d(idx) {
-        if (idx < 7) return null;
-        const now = aligned[idx].price, then = aligned[idx - 7].price;
-        if (!now || !then) return null;
-        return ((now - then) / then) * 100;
-      }
-
-      // Classifica em 2 categorias visuais (TOP/BOTTOM) com subtipo.
-      // Retorna null quando nao atende o threshold ou filtro de momentum.
-      function classify(zVal, price7dPct) {
-        if (zVal == null || !isFinite(zVal)) return null;
-        if (Math.abs(zVal) < Z_TRIGGER) return null;
-        if (price7dPct == null || !isFinite(price7dPct)) return null;
-
-        // Z alto (OI subindo muito)
-        if (zVal > 0) {
-          if (price7dPct > MOMENTUM_PCT) {
-            return {
-              q: 'TOP', cat: 'TOP',
-              key: 'EUPHORIC_LEVERAGE', subLabel: 'Euphoric Leverage',
-              tone: 'red',
-              label: 'OI subindo forte apos rally de 7d - alavancagem euforica, risco alto de reversao.'
-            };
-          }
-          if (price7dPct < -MOMENTUM_PCT) {
-            return {
-              q: 'BOTTOM', cat: 'BOTTOM',
-              key: 'SHORTS_TRAPPED', subLabel: 'Shorts Trapped',
-              tone: 'green',
-              label: 'OI subindo forte apos queda de 7d - shorts se empilhando, pressao spot tende a causar squeeze.'
-            };
-          }
-          return null; // ambiguo, sem sinal
-        }
-
-        // Z negativo (OI caindo muito) - flush/deleveraging
-        if (price7dPct > 0) {
-          return {
-            q: 'BOTTOM', cat: 'BOTTOM',
-            key: 'SPOT_ACCUMULATION', subLabel: 'Spot Accumulation',
-            tone: 'green',
-            label: 'Preco subindo enquanto OI colapsa - compra spot real, sem alavancagem, base solida.'
-          };
-        }
-        return {
-          q: 'BOTTOM', cat: 'BOTTOM',
-          key: 'CAPITULATION_RESET', subLabel: 'Capitulation Reset',
-          tone: 'green',
-          label: 'OI e preco colapsando juntos - desalavancagem completa, fundo de capitulacao.'
-        };
-      }
-
-      const currentPrice7d = price7d(aligned.length - 1);
-      const currentCls = classify(zOI, currentPrice7d);
-
-      let current;
-      if (currentCls) {
-        current = {
-          quadrant: currentCls.q,
-          cat: currentCls.cat,
-          key: currentCls.key,
-          subLabel: currentCls.subLabel,
-          label: currentCls.label,
-          tone: currentCls.tone,
-          oiChange24h, priceChange24h, zOI,
-          price7d: currentPrice7d
-        };
-      } else {
-        // Sem sinal ativo: classificacao leve apenas p/ contexto
-        const ambient = Math.abs(zOI) >= 1
-          ? { q: 'ELEVATED', tone: 'yellow', label: 'OI Z-score elevado (|Z|>=1σ) mas abaixo do threshold de 2.5σ, ou momentum insuficiente.' }
-          : { q: 'NEUTRAL',  tone: 'neutral', label: 'Sem divergencia extrema no momento - OI e preco em regime normal.' };
-        current = {
-          quadrant: ambient.q,
-          cat: 'NEUTRAL',
-          key: ambient.q,
-          subLabel: null,
-          label: ambient.label,
-          tone: ambient.tone,
-          oiChange24h, priceChange24h, zOI,
-          price7d: currentPrice7d
-        };
-      }
-
-      // --- Historico de sinais extremos (CICLO TODO) ---
-      // Estagio D: itera todo o aligned (nao mais so os 91 ultimos dias).
-      // warmup: Z-score precisa de 60d de janela, entao chgIdx>=60.
-      const signals = [];
+      // Monta dailyData com dOI, dPrice e alert binario
+      const dailyData = [];
       for (let i = 0; i < aligned.length; i++) {
-        const chgIdx = i - 1;
-        if (chgIdx < 60) continue;
-        const zVal = zAt[chgIdx];
-        const p7 = price7d(i);
-        const cls = classify(zVal, p7);
-        if (!cls) continue;
-        const a = aligned[i];
-        signals.push({
-          date: a.date,
-          cat: cls.cat,             // 'TOP' | 'BOTTOM'
-          type: cls.key,            // subtipo (EUPHORIC_LEVERAGE etc)
-          typeLabel: cls.q,         // 'TOP' ou 'BOTTOM' (curto)
-          subLabel: cls.subLabel,   // 'Euphoric Leverage' etc
-          tone: cls.tone,
-          price: a.price,
-          oiChange: oiChanges[chgIdx],
-          zOI: zVal,
-          price7d: p7,
-          idx: i
-        });
+        const cur = aligned[i];
+        let oiPct = null, pricePct = null, alert = null;
+        if (i >= 1) {
+          const prev = aligned[i - 1];
+          oiPct = prev.oi > 0 ? ((cur.oi - prev.oi) / prev.oi) * 100 : 0;
+          pricePct = prev.price > 0 ? ((cur.price - prev.price) / prev.price) * 100 : 0;
+          if (oiPct > TH_SELL) alert = 'SELL';
+          else if (oiPct < TH_BUY) alert = 'BUY';
+        }
+        dailyData.push({ idx: i, date: cur.date, price: cur.price, oi: cur.oi, oiPct, pricePct, alert });
       }
 
-      // --- Backtest retrospectivo ---
-      // Pra cada sinal, busca preco em +7d/+14d/+30d no `aligned`.
-      const backtest = { rows: [], hitRate: null };
-      let hits = 0, total = 0;
+      // Regime: SMA20 vs SMA50 do preco daily
+      const priceVals = aligned.map(a => a.price);
+      function sma(n, i) {
+        if (i < n - 1) return null;
+        let sum = 0;
+        for (let k = i - n + 1; k <= i; k++) sum += priceVals[k];
+        return sum / n;
+      }
+      for (const d of dailyData) {
+        const s20 = sma(SMA_SHORT, d.idx);
+        const s50 = sma(SMA_LONG, d.idx);
+        d.sma20 = s20;
+        d.sma50 = s50;
+        if (s20 == null || s50 == null) {
+          d.regime = 'UNKNOWN';
+        } else if (s20 > s50 * 1.005) {
+          d.regime = 'UPTREND';
+        } else if (s20 < s50 * 0.995) {
+          d.regime = 'DOWNTREND';
+        } else {
+          d.regime = 'RANGE';
+        }
+      }
+
+      // Cluster density: conta alerts na MESMA direcao nos ultimos 7 dias
+      for (let i = 0; i < dailyData.length; i++) {
+        const d = dailyData[i];
+        if (!d.alert) { d.cluster = null; d.clusterSize = 0; continue; }
+        let count = 0;
+        for (let j = Math.max(0, i - CLUSTER_WINDOW + 1); j <= i; j++) {
+          if (dailyData[j].alert === d.alert) count++;
+        }
+        d.clusterSize = count;
+        if (count >= CLUSTER_MIN) d.cluster = 'CLUSTER';
+        else if (count >= BUILDING_MIN) d.cluster = 'BUILDING';
+        else d.cluster = 'ISOLATED';
+      }
+
+      // Confidence: cluster + alinhamento com regime
+      //   CLUSTER + qualquer regime        -> HIGH
+      //   BUILDING + contra-regime         -> LOW
+      //   BUILDING + aligned/range/unknown -> MEDIUM
+      //   ISOLATED + contra-regime         -> AVOID  (descartar)
+      //   ISOLATED + qualquer outro        -> LOW
+      for (const d of dailyData) {
+        if (!d.alert) { d.confidence = null; continue; }
+        const contra = (d.alert === 'SELL' && d.regime === 'DOWNTREND')
+                    || (d.alert === 'BUY'  && d.regime === 'UPTREND');
+        if (d.cluster === 'CLUSTER') d.confidence = 'HIGH';
+        else if (d.cluster === 'BUILDING') d.confidence = contra ? 'LOW' : 'MEDIUM';
+        else d.confidence = contra ? 'AVOID' : 'LOW';
+      }
+
+      // Current state (ultima barra alinhada)
+      const last = dailyData[dailyData.length - 1];
+      const current = {
+        date: last.date,
+        price: last.price,
+        oi: last.oi,
+        oiChange24h: last.oiPct != null ? last.oiPct : 0,
+        priceChange24h: last.pricePct != null ? last.pricePct : 0,
+        alert: last.alert,
+        cluster: last.cluster,
+        clusterSize: last.clusterSize,
+        regime: last.regime,
+        confidence: last.confidence
+      };
+
+      // Historico completo de alerts (ciclo todo)
+      const signals = dailyData.filter(d => d.alert).map(d => ({
+        date: d.date,
+        idx: d.idx,
+        alert: d.alert,
+        price: d.price,
+        oiPct: d.oiPct,
+        pricePct: d.pricePct,
+        cluster: d.cluster,
+        clusterSize: d.clusterSize,
+        regime: d.regime,
+        confidence: d.confidence
+      }));
+
+      // Backtest: +7d/+14d/+30d
+      const backtest = { rows: [] };
+      let hits = 0, total = 0, cHits = 0, cTotal = 0;
       for (const s of signals) {
         const p0 = s.price;
         const row = { ...s, r7: null, r14: null, r30: null, hit: null };
-        const idx = s.idx;
-        const getRet = (offset) => {
-          const target = aligned[idx + offset];
-          if (!target || typeof target.price !== 'number' || !p0) return null;
-          return ((target.price - p0) / p0) * 100;
+        const getRet = (off) => {
+          const t = aligned[s.idx + off];
+          if (!t || typeof t.price !== 'number' || !p0) return null;
+          return ((t.price - p0) / p0) * 100;
         };
         row.r7 = getRet(7);
         row.r14 = getRet(14);
         row.r30 = getRet(30);
-
-        // Direcao esperada (agora via categoria simplificada)
-        const bullish = s.cat === 'BOTTOM';
-        const bearish = s.cat === 'TOP';
-        // Hit = direcao em +7d bate com expectativa (se nao tem r7, fallback pra r14)
         const judgeRet = row.r7 != null ? row.r7 : (row.r14 != null ? row.r14 : null);
         if (judgeRet != null) {
-          if (bullish) row.hit = judgeRet > 0;
-          else if (bearish) row.hit = judgeRet < 0;
-          if (row.hit != null) { total++; if (row.hit) hits++; }
+          if (s.alert === 'BUY') row.hit = judgeRet > 0;
+          else if (s.alert === 'SELL') row.hit = judgeRet < 0;
+          if (row.hit != null) {
+            total++; if (row.hit) hits++;
+            if (s.cluster === 'CLUSTER') { cTotal++; if (row.hit) cHits++; }
+          }
         }
         backtest.rows.push(row);
       }
-      backtest.hitRate = total > 0 ? (hits / total) * 100 : null;
       backtest.hits = hits;
       backtest.total = total;
-      backtest.rows.sort((a,b) => b.date.localeCompare(a.date));
+      backtest.hitRate = total > 0 ? (hits / total) * 100 : null;
+      backtest.clusterHits = cHits;
+      backtest.clusterTotal = cTotal;
+      backtest.clusterHitRate = cTotal > 0 ? (cHits / cTotal) * 100 : null;
+      backtest.rows.sort((a, b) => b.date.localeCompare(a.date));
 
-      // --- Confirmadores (baseados no leverageState + zOI atual) ---
+      // Confirmadores (4o agora = cluster status atual em vez de OI Z-score)
       const confirmers = [];
       const ls = levState && levState.longShort;
       const fr = levState && levState.funding;
       const liq = levState && levState.liq24h;
-      // 1. Funding rate extremo (8h): |fr| > 0.01% eh extremo em direction qualquer
       if (typeof fr === 'number' && Math.abs(fr) > 0.0001) {
         confirmers.push({ key: 'funding', active: true, label: 'Funding rate extremo', value: (fr*100).toFixed(4) + '%' });
       } else {
         confirmers.push({ key: 'funding', active: false, label: 'Funding rate extremo', value: fr != null ? (fr*100).toFixed(4) + '%' : '--' });
       }
-      // 2. Long/Short ratio extremo
       if (typeof ls === 'number' && (ls > 1.5 || ls < 0.7)) {
         confirmers.push({ key: 'ls', active: true, label: 'Long/Short ratio extremo', value: ls.toFixed(2) });
       } else {
         confirmers.push({ key: 'ls', active: false, label: 'Long/Short ratio extremo', value: ls != null ? ls.toFixed(2) : '--' });
       }
-      // 3. Liquidacoes 24h > $50M
       if (typeof liq === 'number' && liq > 50e6) {
         confirmers.push({ key: 'liq', active: true, label: 'Liquidacoes 24h > $50M', value: '$' + (liq/1e6).toFixed(1) + 'M' });
       } else {
         confirmers.push({ key: 'liq', active: false, label: 'Liquidacoes 24h > $50M', value: liq != null ? '$' + (liq/1e6).toFixed(1) + 'M' : '--' });
       }
-      // 4. OI Z-score forte (|z|>=1 mesmo sem atingir 2)
-      if (Math.abs(zOI) >= 1) {
-        confirmers.push({ key: 'oiz', active: true, label: 'OI Z-score > |1σ|', value: zOI.toFixed(2) + 'σ' });
-      } else {
-        confirmers.push({ key: 'oiz', active: false, label: 'OI Z-score > |1σ|', value: zOI.toFixed(2) + 'σ' });
-      }
+      const inCluster = current.cluster === 'CLUSTER' || current.cluster === 'BUILDING';
+      confirmers.push({ key: 'cluster', active: inCluster, label: 'Alerts em cluster (≥2 em 7d)', value: (current.clusterSize || 0) + '/7d' });
       const confirmScore = confirmers.filter(c => c.active).length;
 
-      // --- Chart data (ultimos 90 dias alinhados) ---
-      const chartSlice = aligned.slice(-90);
-      const chartLabels = chartSlice.map(a => a.date);
-      const chartPrices = chartSlice.map(a => a.price);
-      const chartOI = chartSlice.map(a => a.oi);
-      // Marcadores por categoria (TOP/BOTTOM) — arrays do mesmo tamanho que labels,
-      // null onde nao tem sinal. Subtipo preservado em `markerMeta` pra tooltip.
-      const markers = {
-        TOP:    new Array(chartSlice.length).fill(null),
-        BOTTOM: new Array(chartSlice.length).fill(null)
-      };
-      const markerMeta = {
-        TOP:    new Array(chartSlice.length).fill(null),
-        BOTTOM: new Array(chartSlice.length).fill(null)
-      };
-      for (const s of signals) {
-        const idxInChart = chartLabels.indexOf(s.date);
-        if (idxInChart >= 0 && markers[s.cat]) {
-          markers[s.cat][idxInChart] = s.price;
-          markerMeta[s.cat][idxInChart] = s.subLabel || s.type;
-        }
-      }
-
-      // Coverage meta p/ UI
+      // Coverage meta
       const coverage = {
         daysAnalyzed: aligned.length,
         firstDate: aligned[0] && aligned[0].date,
         lastDate: aligned[aligned.length - 1] && aligned[aligned.length - 1].date,
         signalsTotal: signals.length,
-        signalsTop: signals.filter(s => s.cat === 'TOP').length,
-        signalsBottom: signals.filter(s => s.cat === 'BOTTOM').length
+        signalsSell: signals.filter(s => s.alert === 'SELL').length,
+        signalsBuy: signals.filter(s => s.alert === 'BUY').length,
+        clusterCount: signals.filter(s => s.cluster === 'CLUSTER').length
       };
+
+      // Chart data (ultimos 90 dias alinhados)
+      const chartSlice = aligned.slice(-90);
+      const chartDates = chartSlice.map(a => a.date);
+      const chartPrices = chartSlice.map(a => a.price);
+      const chartOI = chartSlice.map(a => a.oi);
+      const markers = {
+        SELL: new Array(chartSlice.length).fill(null),
+        BUY:  new Array(chartSlice.length).fill(null)
+      };
+      const markerMeta = {
+        SELL: new Array(chartSlice.length).fill(null),
+        BUY:  new Array(chartSlice.length).fill(null)
+      };
+      for (const s of signals) {
+        const idx = chartDates.indexOf(s.date);
+        if (idx >= 0) {
+          markers[s.alert][idx] = s.price;
+          markerMeta[s.alert][idx] = s.cluster + ' · ' + s.regime + ' · ΔOI ' + (s.oiPct >= 0 ? '+' : '') + s.oiPct.toFixed(1) + '%';
+        }
+      }
 
       return {
         current,
@@ -5339,7 +5297,7 @@
         confirmers,
         confirmScore,
         coverage,
-        chart: { labels: chartLabels, prices: chartPrices, oi: chartOI, markers, markerMeta }
+        chart: { labels: chartDates, prices: chartPrices, oi: chartOI, markers, markerMeta }
       };
     }
 
@@ -5349,7 +5307,8 @@
       const $l = document.getElementById('divLabel');
       const $p = document.getElementById('divPriceChg');
       const $o = document.getElementById('divOiChg');
-      const $z = document.getElementById('divOiZ');
+      const $z = document.getElementById('divOiZ');          // reused: agora mostra REGIME
+      const $zLabel = document.getElementById('divOiZLabel'); // label do 3o stat
       const $u = document.getElementById('divergenceUpdated');
       const $cList = document.getElementById('divConfirmersList');
       const $cScore = document.getElementById('divConfirmScore');
@@ -5360,7 +5319,7 @@
       if (!div || !div.current) {
         $q.textContent = 'INSUFFICIENT DATA';
         $q.style.color = '#666';
-        if ($l) $l.textContent = 'Aguardando 60+ dias de historico de OI alinhado com price';
+        if ($l) $l.textContent = 'Aguardando historico OI + price alinhado';
         if ($p) $p.textContent = '--';
         if ($o) $o.textContent = '--';
         if ($z) $z.textContent = '--';
@@ -5371,16 +5330,41 @@
       }
 
       const c = div.current;
-      const toneColor = tone => tone === 'red' ? 'var(--accent-red)'
-                         : tone === 'green' ? 'var(--accent-green)'
-                         : tone === 'green-light' ? '#84cc16'
-                         : tone === 'yellow' ? 'var(--accent-yellow)'
-                         : '#9a9aa6';
 
-      $q.textContent = c.quadrant;
-      $q.style.color = toneColor(c.tone);
-      if ($l) $l.textContent = c.label;
+      // --- Estado current ---
+      // Converte alert + cluster em label e cor
+      let quadrant, label, color;
+      if (!c.alert) {
+        quadrant = 'NEUTRAL';
+        color = '#9a9aa6';
+        label = 'Sem alert ativo (ΔOI 24h ' + (c.oiChange24h >= 0 ? '+' : '') + c.oiChange24h.toFixed(2) + '% entre thresholds -4% / +5%)';
+      } else {
+        const dir = c.alert === 'BUY' ? 'BUY' : 'SELL';
+        const tagCluster = c.cluster || 'ISOLATED';
+        quadrant = dir + ' ' + tagCluster;
+        const isConfAvoid = c.confidence === 'AVOID';
+        if (isConfAvoid) quadrant += ' (AVOID)';
+        if (c.confidence === 'HIGH')         color = c.alert === 'BUY' ? '#00d97e' : '#ef4444';
+        else if (c.confidence === 'MEDIUM')  color = c.alert === 'BUY' ? '#84cc16' : '#f59e0b';
+        else if (c.confidence === 'LOW')     color = '#eab308';
+        else                                 color = '#9a9aa6';
+        const regimeDesc = c.regime === 'UPTREND' ? 'em uptrend (SMA20>SMA50)'
+                        : c.regime === 'DOWNTREND' ? 'em downtrend (SMA20<SMA50)'
+                        : c.regime === 'RANGE' ? 'em range'
+                        : 'regime indefinido';
+        if (c.alert === 'BUY') {
+          label = 'Deleveraging forte (ΔOI ' + c.oiChange24h.toFixed(1) + '%) · ' + c.clusterSize + ' alert(s) em 7d · ' + regimeDesc
+                + (isConfAvoid ? ' — sinal contra-regime sem cluster, descartar.' : '');
+        } else {
+          label = 'Leverage buildup (ΔOI +' + c.oiChange24h.toFixed(1) + '%) · ' + c.clusterSize + ' alert(s) em 7d · ' + regimeDesc
+                + (isConfAvoid ? ' — sinal contra-regime sem cluster, descartar.' : '');
+        }
+      }
+      $q.textContent = quadrant;
+      $q.style.color = color;
+      if ($l) $l.textContent = label;
 
+      // --- Stats ---
       const fmtPct = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
       if ($p) {
         $p.textContent = fmtPct(c.priceChange24h);
@@ -5388,21 +5372,27 @@
       }
       if ($o) {
         $o.textContent = fmtPct(c.oiChange24h);
-        $o.style.color = c.oiChange24h >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+        $o.style.color = c.oiChange24h >= 5 ? 'var(--accent-red)'
+                        : c.oiChange24h <= -4 ? 'var(--accent-green)'
+                        : '#ccc';
       }
       if ($z) {
-        $z.textContent = (c.zOI >= 0 ? '+' : '') + c.zOI.toFixed(2) + 'σ';
-        $z.style.color = Math.abs(c.zOI) >= 2.5 ? 'var(--accent-red)' : Math.abs(c.zOI) >= 1.5 ? 'var(--accent-yellow)' : '#14b8a6';
+        $z.textContent = c.regime || '--';
+        $z.style.color = c.regime === 'UPTREND' ? 'var(--accent-green)'
+                       : c.regime === 'DOWNTREND' ? 'var(--accent-red)'
+                       : c.regime === 'RANGE' ? 'var(--accent-yellow)'
+                       : '#888';
       }
+      if ($zLabel) $zLabel.textContent = 'REGIME';
       if ($u) $u.textContent = 'updated ' + new Date().toLocaleTimeString('pt-BR');
 
       // --- Confirmadores ---
       if ($cList && div.confirmers) {
         $cList.innerHTML = div.confirmers.map(cf => {
           const icon = cf.active ? '✓' : '✕';
-          const color = cf.active ? 'var(--accent-green)' : '#555';
+          const col = cf.active ? 'var(--accent-green)' : '#555';
           return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;padding:4px 6px;border-radius:3px;background:rgba(255,255,255,0.015);">'
-               + '<span style="color:' + color + ';"><span style="margin-right:6px;">' + icon + '</span>' + cf.label + '</span>'
+               + '<span style="color:' + col + ';"><span style="margin-right:6px;">' + icon + '</span>' + cf.label + '</span>'
                + '<span style="color:' + (cf.active ? '#fff' : '#777') + ';font-family:\'JetBrains Mono\',monospace;">' + cf.value + '</span>'
                + '</div>';
         }).join('');
@@ -5416,24 +5406,20 @@
       // --- Backtest table ---
       if ($btBody) {
         if (!div.backtest || !div.backtest.rows || !div.backtest.rows.length) {
-          $btBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text-muted);">Nenhum sinal extremo (|Z|≥2.5σ + momentum 7d) nos ultimos 90 dias</td></tr>';
+          $btBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text-muted);">Nenhum alert (ΔOI 24h > +5% / < -4%) no historico</td></tr>';
         } else {
-          const CAT_COLOR = {
-            TOP: '#ef4444',
-            BOTTOM: '#00d97e'
-          };
+          const ALERT_COLOR = { SELL: '#ef4444', BUY: '#00d97e' };
+          const CLUSTER_COLOR = { CLUSTER: '#00d97e', BUILDING: '#eab308', ISOLATED: '#888' };
           const fmtRet = r => r == null ? '<span style="color:#555;">--</span>' : '<span style="color:' + (r >= 0 ? '#00d97e' : '#ef4444') + ';">' + (r >= 0 ? '+' : '') + r.toFixed(1) + '%</span>';
           const fmtHit = h => h == null ? '<span style="color:#555;">PEND</span>' : h ? '<span style="color:#00d97e;font-weight:700;">HIT</span>' : '<span style="color:#ef4444;font-weight:700;">MISS</span>';
-          const fmtType = r => {
-            const color = CAT_COLOR[r.cat] || '#9a9aa6';
-            const head = '<span style="color:' + color + ';font-weight:700;">' + (r.cat || '--') + '</span>';
-            const sub  = r.subLabel ? '<div style="font-size:9px;color:#888;margin-top:1px;">' + r.subLabel + '</div>' : '';
-            return head + sub;
-          };
           const rows = div.backtest.rows.slice(0, 15).map(r => {
+            const alertBlock = '<span style="color:' + (ALERT_COLOR[r.alert] || '#9a9aa6') + ';font-weight:700;">' + r.alert + '</span>'
+                             + '<div style="font-size:9px;color:' + (CLUSTER_COLOR[r.cluster] || '#888') + ';margin-top:1px;">'
+                               + r.cluster + ' (' + r.clusterSize + '/7d) · ' + r.regime
+                             + '</div>';
             return '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">'
                  + '<td style="padding:6px 4px;color:#ccc;">' + r.date + '</td>'
-                 + '<td style="padding:6px 4px;">' + fmtType(r) + '</td>'
+                 + '<td style="padding:6px 4px;">' + alertBlock + '</td>'
                  + '<td style="padding:6px 4px;text-align:right;color:#ccc;">$' + (r.price ? r.price.toLocaleString('en-US',{maximumFractionDigits:0}) : '--') + '</td>'
                  + '<td style="padding:6px 4px;text-align:right;">' + fmtRet(r.r7) + '</td>'
                  + '<td style="padding:6px 4px;text-align:right;">' + fmtRet(r.r14) + '</td>'
@@ -5447,24 +5433,45 @@
       if ($wr) {
         const bt = div.backtest || {};
         const cov = div.coverage || {};
-        const covStr = cov.daysAnalyzed
-          ? cov.daysAnalyzed + 'd · ' + (cov.signalsTotal||0) + ' sinais (' + (cov.signalsTop||0) + '▼/' + (cov.signalsBottom||0) + '▲)'
-          : '';
+        let total = '';
         if (bt.hitRate != null) {
-          $wr.innerHTML = '<span style="color:' + (bt.hitRate >= 60 ? 'var(--accent-green)' : bt.hitRate >= 40 ? 'var(--accent-yellow)' : 'var(--accent-red)') + ';">Win rate: ' + bt.hitRate.toFixed(0) + '% (' + bt.hits + '/' + bt.total + ' judged)</span>'
-                     + (covStr ? '<span style="color:#777;margin-left:10px;font-size:9px;">' + covStr + '</span>' : '');
+          const color = bt.hitRate >= 60 ? 'var(--accent-green)' : bt.hitRate >= 40 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+          total = '<span style="color:' + color + ';">Total: ' + bt.hitRate.toFixed(0) + '% (' + bt.hits + '/' + bt.total + ')</span>';
         } else {
-          $wr.innerHTML = '<span style="color:#9a9aa6;">Win rate: sem sinais julgados</span>'
-                     + (covStr ? '<span style="color:#777;margin-left:10px;font-size:9px;">' + covStr + '</span>' : '');
+          total = '<span style="color:#9a9aa6;">Total: sem julgados</span>';
         }
+        let cluster = '';
+        if (bt.clusterHitRate != null) {
+          const col = bt.clusterHitRate >= 60 ? 'var(--accent-green)' : bt.clusterHitRate >= 40 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+          cluster = '<span style="color:' + col + ';margin-left:10px;">CLUSTER: ' + bt.clusterHitRate.toFixed(0) + '% (' + bt.clusterHits + '/' + bt.clusterTotal + ')</span>';
+        } else {
+          cluster = '<span style="color:#777;margin-left:10px;">CLUSTER: --</span>';
+        }
+        const covStr = cov.daysAnalyzed
+          ? '<span style="color:#777;margin-left:10px;font-size:9px;">' + cov.daysAnalyzed + 'd · ' + (cov.signalsTotal||0) + ' alerts (' + (cov.signalsSell||0) + '▼/' + (cov.signalsBuy||0) + '▲)</span>'
+          : '';
+        $wr.innerHTML = total + cluster + covStr;
       }
 
-      // --- Chart Price+OI+markers ---
+      // --- Chart Price + OI + markers ---
       const ctx = document.getElementById('divPriceChart');
       if (!ctx || !div.chart || !div.chart.labels.length) return;
       if (_divPriceChart) _divPriceChart.destroy();
 
       const chartData = div.chart;
+      // Highlight LAST alert: cria datasets extra com o ultimo ponto real pra destaque.
+      let lastSellIdx = -1, lastBuyIdx = -1;
+      for (let i = chartData.markers.SELL.length - 1; i >= 0; i--) {
+        if (chartData.markers.SELL[i] != null) { lastSellIdx = i; break; }
+      }
+      for (let i = chartData.markers.BUY.length - 1; i >= 0; i--) {
+        if (chartData.markers.BUY[i] != null) { lastBuyIdx = i; break; }
+      }
+      const lastSell = new Array(chartData.labels.length).fill(null);
+      const lastBuy  = new Array(chartData.labels.length).fill(null);
+      if (lastSellIdx >= 0) lastSell[lastSellIdx] = chartData.markers.SELL[lastSellIdx];
+      if (lastBuyIdx  >= 0) lastBuy[lastBuyIdx]   = chartData.markers.BUY[lastBuyIdx];
+
       _divPriceChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -5480,7 +5487,7 @@
               pointRadius: 0,
               tension: 0.15,
               fill: true,
-              order: 3
+              order: 4
             },
             {
               label: 'Open Interest',
@@ -5492,41 +5499,70 @@
               pointRadius: 0,
               tension: 0.15,
               fill: false,
-              order: 4
+              order: 5
             },
             {
-              label: 'TOP',
-              data: chartData.markers.TOP,
+              label: 'SELL',
+              data: chartData.markers.SELL,
               yAxisID: 'y',
               borderColor: 'transparent',
               backgroundColor: '#ef4444',
               pointStyle: 'triangle',
               rotation: 180,
-              pointRadius: 9,
-              pointHoverRadius: 12,
-              pointBorderColor: '#fff',
-              pointBorderWidth: 1.6,
+              pointRadius: 5,
+              pointHoverRadius: 8,
+              pointBorderColor: 'rgba(255,255,255,0.5)',
+              pointBorderWidth: 1,
               showLine: false,
               spanGaps: false,
-              order: 1,
-              // meta p/ tooltip
-              _meta: chartData.markerMeta ? chartData.markerMeta.TOP : null
+              order: 3,
+              _meta: chartData.markerMeta ? chartData.markerMeta.SELL : null
             },
             {
-              label: 'BOTTOM',
-              data: chartData.markers.BOTTOM,
+              label: 'BUY',
+              data: chartData.markers.BUY,
               yAxisID: 'y',
               borderColor: 'transparent',
               backgroundColor: '#00d97e',
               pointStyle: 'triangle',
-              pointRadius: 9,
-              pointHoverRadius: 12,
-              pointBorderColor: '#fff',
-              pointBorderWidth: 1.6,
+              pointRadius: 5,
+              pointHoverRadius: 8,
+              pointBorderColor: 'rgba(255,255,255,0.5)',
+              pointBorderWidth: 1,
               showLine: false,
               spanGaps: false,
-              order: 1,
-              _meta: chartData.markerMeta ? chartData.markerMeta.BOTTOM : null
+              order: 3,
+              _meta: chartData.markerMeta ? chartData.markerMeta.BUY : null
+            },
+            // Destaque do ultimo alert (emula o "Scale: 50" do Maartun = indica "agora")
+            {
+              label: 'SELL (now)',
+              data: lastSell,
+              yAxisID: 'y',
+              borderColor: '#fff',
+              backgroundColor: '#ef4444',
+              pointStyle: 'triangle',
+              rotation: 180,
+              pointRadius: 10,
+              pointHoverRadius: 12,
+              pointBorderWidth: 2,
+              showLine: false,
+              spanGaps: false,
+              order: 1
+            },
+            {
+              label: 'BUY (now)',
+              data: lastBuy,
+              yAxisID: 'y',
+              borderColor: '#fff',
+              backgroundColor: '#00d97e',
+              pointStyle: 'triangle',
+              pointRadius: 10,
+              pointHoverRadius: 12,
+              pointBorderWidth: 2,
+              showLine: false,
+              spanGaps: false,
+              order: 1
             }
           ]
         },
@@ -5543,7 +5579,6 @@
                   if (v == null) return null;
                   if (item.dataset.label === 'BTC Price') return 'BTC: $' + Number(v).toLocaleString('en-US',{maximumFractionDigits:0});
                   if (item.dataset.label === 'Open Interest') return 'OI: $' + (v/1e9).toFixed(2) + 'B';
-                  // Markers: mostra subtipo + preco
                   const meta = item.dataset._meta;
                   const sub = meta && meta[item.dataIndex] ? meta[item.dataIndex] : null;
                   const head = sub ? (item.dataset.label + ' · ' + sub) : item.dataset.label;
