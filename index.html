@@ -1414,6 +1414,41 @@
         <div class="sm-confidence-desc" id="levRiskDesc">Analyzing derivatives data...</div>
       </div>
     </div>
+
+    <!-- Divergence Signals (OI vs Price) - Estagio A -->
+    <div class="sm-checklist-card" style="margin-top:20px;" id="divergenceCard">
+      <div class="sm-checklist-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>DIVERGENCE SIGNAL &middot; Open Interest vs Price (24h)</span>
+        <span id="divergenceUpdated" style="font-size:9px;color:var(--text-muted);font-weight:400;letter-spacing:0.5px;">--</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:20px;margin-top:14px;">
+        <!-- Signal card -->
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
+          <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">CURRENT QUADRANT</div>
+          <div id="divQuadrant" style="font-size:14px;font-weight:700;margin-top:4px;color:#9a9aa6;letter-spacing:0.5px;">--</div>
+          <div id="divLabel" style="font-size:10.5px;color:var(--text-muted);margin-top:8px;line-height:1.4;min-height:28px;">aguardando dados...</div>
+          <div style="display:flex;gap:18px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
+            <div>
+              <div style="font-size:8px;color:var(--text-muted);letter-spacing:1px;">PRICE 24H</div>
+              <div id="divPriceChg" style="font-size:14px;font-weight:700;margin-top:2px;">--</div>
+            </div>
+            <div>
+              <div style="font-size:8px;color:var(--text-muted);letter-spacing:1px;">OI 24H</div>
+              <div id="divOiChg" style="font-size:14px;font-weight:700;margin-top:2px;">--</div>
+            </div>
+            <div>
+              <div style="font-size:8px;color:var(--text-muted);letter-spacing:1px;">OI Z 60D</div>
+              <div id="divOiZ" style="font-size:14px;font-weight:700;margin-top:2px;">--</div>
+            </div>
+          </div>
+        </div>
+        <!-- Sparkline card -->
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
+          <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">OI Z-SCORE &middot; ROLLING 60D &middot; ±2σ = SINAL EXTREMO</div>
+          <div style="height:140px;margin-top:8px;"><canvas id="divZChart"></canvas></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div style="max-width:1400px;margin:0 auto;padding:20px 24px 0;">
@@ -2141,7 +2176,7 @@
     
     // Global states for report integration
     const smartMoneyState = { lth30d: null, sth30d: null, ratio: null, hodl1y: null, lthSopr: null, reserveRisk: null, confidence: 0, loaded: false };
-    const leverageState = { oi: null, liq24h: null, funding: null, longShort: null, longPct: null, shortPct: null, riskScore: 0, loaded: false };
+    const leverageState = { oi: null, liq24h: null, funding: null, longShort: null, longPct: null, shortPct: null, riskScore: 0, divergence: null, loaded: false };
     const minerState = { posIdx: null, reserve: null, reserveChg: null, puell: null, hashrate: null, difficulty: null, healthScore: 0, loaded: false };
     const sentimentState = { fearGreed: null, funding: null, loaded: false };
     
@@ -4690,8 +4725,9 @@
         if (result.success && result.data && result.data.length) {
           const data = result.data;
           console.log('[Leverage] OI sample:', JSON.stringify(data[data.length-1]));
-          const last30 = data.slice(-30);
-          levData.oiHistory = last30.map(d => ({
+          // Estagio A: manter 120 pontos p/ Z-score rolling 60d (antes era 30, nao dava baseline)
+          const last120 = data.slice(-120);
+          levData.oiHistory = last120.map(d => ({
             date: d.d || d.day || d.date || d.t,
             value: toNum(d.sumOpenInterestValue || d.sumOpenInterest || d.openInterest || d.value) || 0
           }));
@@ -4923,12 +4959,223 @@
       leverageState.loaded = true;
       checkReportReady();
       
-      // Chart
+      // Chart (mostra ultimos 30 dias, mas oiHistory agora tem 120 p/ divergence calc)
       if (levData.oiHistory && levData.oiHistory.length > 0) {
-        renderLevOiChart(levData.oiHistory);
+        renderLevOiChart(levData.oiHistory.slice(-30));
       }
+
+      // Estagio A: compute OI/Price divergence e renderiza
+      try {
+        const priceHist = (typeof state !== 'undefined' && state.prices) ? state.prices : [];
+        const div = computeOIPriceDivergence(levData.oiHistory, priceHist);
+        leverageState.divergence = div;
+        renderDivergenceSignal(div);
+      } catch(e) { console.warn('[Divergence] compute error:', e); }
     }
     
+    // ========== OI/PRICE DIVERGENCE (Estagio A) ==========
+    // Detecta 4+4 quadrantes de divergencia entre OI e Price.
+    // Usa Z-score rolling 60d do OI change pra decidir "extremo" (contextual, nao threshold fixo).
+    // Evita overfit: +-2sigma = ~5% das observacoes, padrao estatistico.
+    // Retorna null se dados insuficientes (< 62 pontos de OI).
+    function computeOIPriceDivergence(oiHistory, priceHistory) {
+      if (!oiHistory || oiHistory.length < 62) return null;
+      if (!priceHistory || priceHistory.length < 2) return null;
+
+      const n = Math.min(oiHistory.length, 90);
+      const oi = oiHistory.slice(-n);
+      const oiVals = oi.map(d => d.value).filter(v => v > 0);
+      if (oiVals.length < 62) return null;
+
+      // Deltas % do OI entre pontos consecutivos
+      const changes = [];
+      for (let i = 1; i < oiVals.length; i++) {
+        const c = ((oiVals[i] - oiVals[i-1]) / oiVals[i-1]) * 100;
+        if (isFinite(c)) changes.push(c);
+      }
+      if (changes.length < 60) return null;
+
+      // OI change 24h = ultimo delta
+      const oiChange24h = changes[changes.length - 1];
+
+      // Price change 24h (ultimos 2 pontos de state.prices)
+      const pLast = priceHistory[priceHistory.length - 1];
+      const pPrev = priceHistory[priceHistory.length - 2];
+      const priceChange24h = (pLast && pPrev && pPrev.value)
+        ? ((pLast.value - pPrev.value) / pPrev.value) * 100
+        : 0;
+
+      // Z-score do ultimo OI change vs baseline 60d
+      const last60 = changes.slice(-61, -1); // 60 pontos anteriores ao atual
+      const mean60 = last60.reduce((a,b) => a+b, 0) / last60.length;
+      const var60 = last60.reduce((a,b) => a + (b-mean60)*(b-mean60), 0) / last60.length;
+      const std60 = Math.sqrt(var60) || 1;
+      const zOI = (oiChange24h - mean60) / std60;
+
+      // Logica de quadrantes
+      let quadrant, label, tone;
+      const priceUp = priceChange24h > 0;
+      const oiExtreme = Math.abs(zOI) >= 2;
+
+      if (oiExtreme && zOI > 0 && priceUp) {
+        quadrant = 'TOP WARNING';
+        label = 'OI subindo forte junto com preco - alavancagem euforica, risco de reversao.';
+        tone = 'red';
+      } else if (oiExtreme && zOI > 0 && !priceUp) {
+        quadrant = 'CONTRARIAN BUY';
+        label = 'OI subindo forte com preco caindo - shorts se empilhando, fundo provavel.';
+        tone = 'green';
+      } else if (oiExtreme && zOI < 0 && priceUp) {
+        quadrant = 'STRONG BUY';
+        label = 'Preco subindo SEM alavancagem - compra spot real, movimento sustentavel.';
+        tone = 'green';
+      } else if (oiExtreme && zOI < 0 && !priceUp) {
+        quadrant = 'HEALTHY RESET';
+        label = 'OI caindo junto com preco - desalavancagem completa, reset saudavel.';
+        tone = 'yellow';
+      } else if (priceUp && oiChange24h >= 0) {
+        quadrant = 'BULL LEVERAGE';
+        label = 'Preco e OI subindo em ritmo normal - tendencia alinhada.';
+        tone = 'green';
+      } else if (priceUp && oiChange24h < 0) {
+        quadrant = 'SHORT SQUEEZE';
+        label = 'Preco sobe enquanto OI cai - possivel short squeeze em curso.';
+        tone = 'green';
+      } else if (!priceUp && oiChange24h >= 0) {
+        quadrant = 'SHORTING DIP';
+        label = 'Preco cai e OI sobe - traders apostando na queda (monitorar).';
+        tone = 'yellow';
+      } else {
+        quadrant = 'DELEVERAGING';
+        label = 'Preco e OI em queda - correcao tecnica sem excesso.';
+        tone = 'neutral';
+      }
+
+      // Sparkline: serie de Z-scores ao longo de 30 pontos anteriores (rolling 60d)
+      // Para cada ponto i (a partir de 60), calcula Z usando janela [i-60, i)
+      const sparkZ = [];
+      for (let i = 60; i < changes.length; i++) {
+        const w = changes.slice(i - 60, i);
+        const m = w.reduce((a,b) => a+b, 0) / w.length;
+        const v = w.reduce((a,b) => a + (b-m)*(b-m), 0) / w.length;
+        const s = Math.sqrt(v) || 1;
+        const z = (changes[i] - m) / s;
+        const dateIdx = i + 1; // changes[i] eh entre oiVals[i] e oiVals[i+1]
+        sparkZ.push({
+          date: (oi[dateIdx] && oi[dateIdx].date) || '',
+          z: isFinite(z) ? z : 0
+        });
+      }
+
+      return { quadrant, label, tone, oiChange24h, priceChange24h, zOI, sparkZ };
+    }
+
+    let _divZChart = null;
+    function renderDivergenceSignal(div) {
+      const $q = document.getElementById('divQuadrant');
+      const $l = document.getElementById('divLabel');
+      const $p = document.getElementById('divPriceChg');
+      const $o = document.getElementById('divOiChg');
+      const $z = document.getElementById('divOiZ');
+      const $u = document.getElementById('divergenceUpdated');
+      if (!$q) return;
+
+      if (!div) {
+        $q.textContent = 'INSUFFICIENT DATA';
+        $q.style.color = '#666';
+        if ($l) $l.textContent = 'Aguardando 60+ dias de historico de Open Interest';
+        if ($p) $p.textContent = '--';
+        if ($o) $o.textContent = '--';
+        if ($z) $z.textContent = '--';
+        if ($u) $u.textContent = '';
+        return;
+      }
+
+      const toneColor = div.tone === 'red'    ? 'var(--accent-red)'
+                      : div.tone === 'green'  ? 'var(--accent-green)'
+                      : div.tone === 'yellow' ? 'var(--accent-yellow)'
+                      : '#9a9aa6';
+
+      $q.textContent = div.quadrant;
+      $q.style.color = toneColor;
+      if ($l) $l.textContent = div.label;
+
+      const fmtPct = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+      if ($p) {
+        $p.textContent = fmtPct(div.priceChange24h);
+        $p.style.color = div.priceChange24h >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      }
+      if ($o) {
+        $o.textContent = fmtPct(div.oiChange24h);
+        $o.style.color = div.oiChange24h >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      }
+      if ($z) {
+        $z.textContent = (div.zOI >= 0 ? '+' : '') + div.zOI.toFixed(2) + 'σ';
+        $z.style.color = Math.abs(div.zOI) >= 2 ? 'var(--accent-red)' : '#14b8a6';
+      }
+      if ($u) $u.textContent = 'updated ' + new Date().toLocaleTimeString('pt-BR');
+
+      // Sparkline
+      const ctx = document.getElementById('divZChart');
+      if (!ctx || !div.sparkZ || !div.sparkZ.length) return;
+      if (_divZChart) _divZChart.destroy();
+
+      const labels = div.sparkZ.map(p => p.date);
+      const values = div.sparkZ.map(p => p.z);
+      // Point colors: vermelho acima +2, verde abaixo -2, teal no meio
+      const pointColors = values.map(v => v >= 2 ? '#ef4444' : v <= -2 ? '#00d97e' : 'rgba(20,184,166,0.6)');
+
+      _divZChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            borderColor: '#14b8a6',
+            backgroundColor: 'rgba(20,184,166,0.08)',
+            borderWidth: 1.5,
+            fill: true,
+            pointRadius: values.map(v => Math.abs(v) >= 2 ? 2.5 : 0),
+            pointBackgroundColor: pointColors,
+            pointBorderColor: pointColors,
+            tension: 0.25
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: items => items[0].label,
+                label: c => 'Z: ' + c.raw.toFixed(2) + 'σ'
+              }
+            }
+          },
+          scales: {
+            x: { display: false },
+            y: {
+              display: true,
+              suggestedMin: -3, suggestedMax: 3,
+              grid: {
+                color: c => {
+                  const v = c.tick.value;
+                  if (v === 0) return 'rgba(255,255,255,0.18)';
+                  if (v === 2 || v === -2) return 'rgba(239,68,68,0.22)';
+                  return 'rgba(255,255,255,0.04)';
+                }
+              },
+              ticks: {
+                color: '#9a9aa6', font: { size: 8 }, stepSize: 1,
+                callback: v => v + 'σ'
+              }
+            }
+          }
+        }
+      });
+    }
+
     function renderLevOiChart(data) {
       const ctx = document.getElementById('levOiChart');
       if (!ctx) return;
