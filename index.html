@@ -4725,9 +4725,11 @@
         if (result.success && result.data && result.data.length) {
           const data = result.data;
           console.log('[Leverage] OI sample:', JSON.stringify(data[data.length-1]));
-          // Estagio A: manter 120 pontos p/ Z-score rolling 60d (antes era 30, nao dava baseline)
-          const last120 = data.slice(-120);
-          levData.oiHistory = last120.map(d => ({
+          // Divergence Estagio A: endpoint /v1/open-interest-1h eh horario.
+          // Pega 1800 pontos (~75 dias horarios) p/ agregar em ~75 daily points,
+          // suficiente p/ Z-score rolling 60d.
+          const histSlice = data.slice(-1800);
+          levData.oiHistory = histSlice.map(d => ({
             date: d.d || d.day || d.date || d.t,
             value: toNum(d.sumOpenInterestValue || d.sumOpenInterest || d.openInterest || d.value) || 0
           }));
@@ -4977,17 +4979,49 @@
     // Detecta 4+4 quadrantes de divergencia entre OI e Price.
     // Usa Z-score rolling 60d do OI change pra decidir "extremo" (contextual, nao threshold fixo).
     // Evita overfit: +-2sigma = ~5% das observacoes, padrao estatistico.
-    // Retorna null se dados insuficientes (< 62 pontos de OI).
+    // FIX 20/04: endpoint /v1/open-interest-1h eh HORARIO, entao agregamos p/ daily (1 ponto por dia,
+    // ultimo valor do dia) antes de calcular changes. Antes, tudo era em escala horaria (bug).
+    // Retorna null se dados insuficientes (< 62 daily points).
+
+    // Agrega serie horaria (ou ja-daily) em daily: um ponto por dia (ultimo valor do dia).
+    function aggregateOIDaily(oiHistory) {
+      if (!oiHistory || !oiHistory.length) return [];
+      const byDay = new Map();
+      for (const p of oiHistory) {
+        if (!p || typeof p.value !== 'number' || p.value <= 0) continue;
+        let d = p.date;
+        // Normaliza p/ YYYY-MM-DD
+        let key = '';
+        if (typeof d === 'string') {
+          key = d.slice(0, 10);
+        } else if (typeof d === 'number') {
+          const ms = d < 1e12 ? d * 1000 : d;
+          try { key = new Date(ms).toISOString().slice(0, 10); } catch(_) { key = ''; }
+        }
+        if (!key) continue;
+        // Last wins (iteracao in-order, entao fica o ultimo horario do dia)
+        byDay.set(key, { date: key, value: p.value });
+      }
+      return Array.from(byDay.values()).sort((a, b) => a.date.localeCompare(b.date));
+    }
+
     function computeOIPriceDivergence(oiHistory, priceHistory) {
-      if (!oiHistory || oiHistory.length < 62) return null;
+      if (!oiHistory || !oiHistory.length) return null;
       if (!priceHistory || priceHistory.length < 2) return null;
 
-      const n = Math.min(oiHistory.length, 90);
-      const oi = oiHistory.slice(-n);
+      // Agrega pra daily antes de qualquer calculo (endpoint 1h poluia Z-score antes)
+      const daily = aggregateOIDaily(oiHistory);
+      if (daily.length < 62) {
+        console.warn('[Divergence] insufficient daily points after aggregation:', daily.length);
+        return null;
+      }
+
+      const n = Math.min(daily.length, 90);
+      const oi = daily.slice(-n);
       const oiVals = oi.map(d => d.value).filter(v => v > 0);
       if (oiVals.length < 62) return null;
 
-      // Deltas % do OI entre pontos consecutivos
+      // Deltas % do OI entre dias consecutivos (agora realmente daily)
       const changes = [];
       for (let i = 1; i < oiVals.length; i++) {
         const c = ((oiVals[i] - oiVals[i-1]) / oiVals[i-1]) * 100;
@@ -4995,7 +5029,7 @@
       }
       if (changes.length < 60) return null;
 
-      // OI change 24h = ultimo delta
+      // OI change 24h = ultimo delta daily = hoje vs ontem
       const oiChange24h = changes[changes.length - 1];
 
       // Price change 24h (ultimos 2 pontos de state.prices)
