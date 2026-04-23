@@ -1415,84 +1415,114 @@
       </div>
     </div>
 
-    <!-- Divergence Signals (OI vs Price) - Estagio B -->
+    <!-- Flow Scalper · Intraday Entry System (1h) - Estagio G -->
     <div class="sm-checklist-card" style="margin-top:20px;" id="divergenceCard">
       <div class="sm-checklist-title" style="display:flex;justify-content:space-between;align-items:center;">
-        <span>DIVERGENCE SIGNAL &middot; Price + OI + Historical Signals (90d)</span>
-        <span id="divergenceUpdated" style="font-size:9px;color:var(--text-muted);font-weight:400;letter-spacing:0.5px;">--</span>
+        <span>FLOW SCALPER &middot; INTRADAY ENTRY SYSTEM (1H)</span>
+        <span style="display:flex;gap:12px;align-items:center;">
+          <span id="fsLiveDot" style="font-size:9px;color:#666;font-weight:600;letter-spacing:0.5px;">&#9679; ...</span>
+          <span id="fsLivePrice" style="font-size:12px;font-weight:700;color:#8b5cf6;font-family:'JetBrains Mono',monospace;">--</span>
+          <span id="fsUpdated" style="font-size:9px;color:var(--text-muted);font-weight:400;letter-spacing:0.5px;">--</span>
+        </span>
       </div>
 
-      <!-- Top row: current signal + price/OI chart with markers -->
+      <!-- Row 1: stat boxes + chart -->
       <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-top:14px;">
-        <!-- Current signal card -->
-        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
-          <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">CURRENT QUADRANT</div>
-          <div id="divQuadrant" style="font-size:14px;font-weight:700;margin-top:4px;color:#9a9aa6;letter-spacing:0.5px;">--</div>
-          <div id="divLabel" style="font-size:10.5px;color:var(--text-muted);margin-top:8px;line-height:1.4;min-height:42px;">aguardando dados...</div>
-          <div style="display:flex;gap:18px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
-            <div>
-              <div style="font-size:8px;color:var(--text-muted);letter-spacing:1px;">PRICE 24H</div>
-              <div id="divPriceChg" style="font-size:14px;font-weight:700;margin-top:2px;">--</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <!-- Current score -->
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:14px;">
+            <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">CURRENT SIGNAL</div>
+            <div id="fsScore" style="font-size:22px;font-weight:700;margin-top:4px;color:#9a9aa6;letter-spacing:0.5px;">--</div>
+            <div id="fsScoreDesc" style="font-size:10px;color:var(--text-muted);margin-top:4px;line-height:1.4;min-height:28px;">aguardando dados...</div>
+          </div>
+          <!-- Momentum -->
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:14px;">
+            <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">MOMENTUM</div>
+            <div style="display:flex;gap:14px;margin-top:6px;">
+              <div>
+                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">RSI 1H</div>
+                <div id="fsRsi1h" style="font-size:13px;font-weight:700;margin-top:2px;">--</div>
+              </div>
+              <div>
+                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">RSI 4H</div>
+                <div id="fsRsi4h" style="font-size:13px;font-weight:700;margin-top:2px;">--</div>
+              </div>
+              <div>
+                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">MACD</div>
+                <div id="fsMacd" style="font-size:13px;font-weight:700;margin-top:2px;">--</div>
+              </div>
             </div>
-            <div>
-              <div style="font-size:8px;color:var(--text-muted);letter-spacing:1px;">OI 24H</div>
-              <div id="divOiChg" style="font-size:14px;font-weight:700;margin-top:2px;">--</div>
-            </div>
-            <div>
-              <div id="divOiZLabel" style="font-size:8px;color:var(--text-muted);letter-spacing:1px;">REGIME</div>
-              <div id="divOiZ" style="font-size:14px;font-weight:700;margin-top:2px;">--</div>
+          </div>
+          <!-- Flow -->
+          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:14px;">
+            <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">FLOW</div>
+            <div style="display:flex;gap:14px;margin-top:6px;">
+              <div>
+                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">FUNDING</div>
+                <div id="fsFund" style="font-size:13px;font-weight:700;margin-top:2px;">--</div>
+              </div>
+              <div>
+                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">&Delta;OI 12H</div>
+                <div id="fsOi12h" style="font-size:13px;font-weight:700;margin-top:2px;">--</div>
+              </div>
+              <div>
+                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">CVD 4H</div>
+                <div id="fsCvd" style="font-size:13px;font-weight:700;margin-top:2px;">--</div>
+              </div>
             </div>
           </div>
         </div>
-        <!-- Chart card with legend -->
+        <!-- Chart -->
         <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;">
-            <span>BTC PRICE (purple) + OI (yellow) &middot; ΔOI 24H &gt; +5% ▼ SELL / &lt; -4% ▲ BUY &middot; Maartun + RSI 12h gate (&ge;70 / &le;30)</span>
+            <span>BTC 1H &middot; EMA 9 + EMA 21 &middot; &#9650; LONG / &#9660; SHORT entries &middot; 120 velas</span>
           </div>
           <div style="display:flex;gap:14px;font-size:9px;letter-spacing:0.5px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
-            <span style="color:#ef4444;font-weight:600;">▼ SELL</span><span style="color:#888;">ΔOI &gt; +5% (leverage up)</span>
-            <span style="color:#00d97e;font-weight:600;margin-left:6px;">▲ BUY</span><span style="color:#888;">ΔOI &lt; -4% (deleverage)</span>
-            <span style="color:#888;margin-left:10px;">RSI 12h gate: SELL exige >=70, BUY exige <=30</span>
+            <span style="color:#8b5cf6;">&#9473; PRICE</span>
+            <span style="color:#eab308;">&#9473; EMA9</span>
+            <span style="color:#a78bfa;">&#9473; EMA21</span>
+            <span style="color:#22c55e;font-weight:600;margin-left:10px;">&#9650; LONG entry</span>
+            <span style="color:#ef4444;font-weight:600;">&#9660; SHORT entry</span>
           </div>
-          <div style="height:180px;"><canvas id="divPriceChart"></canvas></div>
+          <div style="height:240px;"><canvas id="fsChart"></canvas></div>
         </div>
       </div>
 
-      <!-- Bottom row: confirmers + backtest -->
+      <!-- Row 2: factors breakdown + backtest table -->
       <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:20px;margin-top:20px;">
-        <!-- Confirmadores -->
+        <!-- Factors -->
         <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <span style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">CONFIRMADORES ATIVOS</span>
-            <span id="divConfirmScore" style="font-size:12px;font-weight:700;color:#9a9aa6;">0 / 4</span>
+            <span style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">7 FATORES &middot; <span id="fsFactorsSide">--</span></span>
+            <span id="fsFactorsScore" style="font-size:12px;font-weight:700;color:#9a9aa6;">0 / 7</span>
           </div>
-          <div id="divConfirmersList" style="display:flex;flex-direction:column;gap:6px;"></div>
+          <div id="fsFactorsList" style="display:flex;flex-direction:column;gap:6px;"></div>
           <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);font-size:9px;color:var(--text-muted);line-height:1.4;">
-            Sinais com &ge;2 confirmadores tem historico de maior convergencia.
+            Entra LONG/SHORT com score &ge; 5/7. Target &plusmn;5% / Stop &#8723;3% / Max 48h / Cooldown 6h.
           </div>
         </div>
-
-        <!-- Backtest table -->
+        <!-- Backtest -->
         <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <span style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">BACKTEST RETROSPECTIVO &middot; CICLO COMPLETO (top 15 recentes)</span>
-            <span id="divWinRate" style="font-size:11px;color:#9a9aa6;">Win rate: --</span>
+            <span style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">BACKTEST 1H &middot; <span id="fsBacktestWindow">--</span></span>
+            <span id="fsStats" style="font-size:11px;color:#9a9aa6;">--</span>
           </div>
           <div style="overflow-x:auto;">
-            <table id="divBacktestTable" style="width:100%;border-collapse:collapse;font-size:10px;font-family:'JetBrains Mono',monospace;">
+            <table style="width:100%;border-collapse:collapse;font-size:10px;font-family:'JetBrains Mono',monospace;">
               <thead>
                 <tr style="color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,0.08);">
                   <th style="text-align:left;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">DATE</th>
-                  <th style="text-align:left;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">TYPE</th>
+                  <th style="text-align:center;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">SIDE</th>
+                  <th style="text-align:center;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">SCORE</th>
                   <th style="text-align:right;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">ENTRY</th>
-                  <th style="text-align:right;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">+7D</th>
-                  <th style="text-align:right;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">+14D</th>
-                  <th style="text-align:right;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">+30D</th>
+                  <th style="text-align:right;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">EXIT</th>
+                  <th style="text-align:right;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">P&amp;L</th>
+                  <th style="text-align:center;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">BARS</th>
                   <th style="text-align:center;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">RESULT</th>
                 </tr>
               </thead>
-              <tbody id="divBacktestBody">
-                <tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text-muted);">Aguardando dados...</td></tr>
+              <tbody id="fsBacktestBody">
+                <tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text-muted);">Aguardando dados...</td></tr>
               </tbody>
             </table>
           </div>
@@ -5022,21 +5052,789 @@
         renderLevOiChart(levData.oiHistory.slice(-30));
       }
 
-      // Divergence Estagio F: RSI 12h gate + Maartun visual. renderLeverageUI nao e async,
-      // entao usamos .then() em vez de await pra nao quebrar o escopo.
+      // Flow Scalper (Estagio G): intraday entry system 1h.
+      // renderLeverageUI nao e async, usamos Promise.all + .then() pra fazer fetches paralelos.
       try {
-        const priceHist = (typeof state !== 'undefined' && state.prices) ? state.prices : [];
-        fetchBinanceRSI12h().then(rsi12hMap => {
+        Promise.all([
+          fetchBinanceKlines('1h', 500),
+          fetchBinanceKlines('4h', 500),
+          fetchBGeometrics('/v1/taker-vol-1h', 'FS: Taker Vol').catch(() => ({ success: false }))
+        ]).then(([k1h, k4h, takerRes]) => {
           try {
-            const div = computeOIPriceDivergence(levData.oiHistory, priceHist, leverageState, rsi12hMap);
-            leverageState.divergence = div;
-            leverageState.rsi12hCount = rsi12hMap.size;
-            renderDivergenceSignal(div);
-          } catch(e2) { console.warn('[Divergence] inner compute error:', e2); }
-        }).catch(e => console.warn('[Divergence] RSI fetch chain error:', e));
-      } catch(e) { console.warn('[Divergence] setup error:', e); }
+            const takerHistory = (takerRes && takerRes.success && Array.isArray(takerRes.data))
+              ? takerRes.data.map(d => ({
+                  date: d.d || d.date || d.t,
+                  buy: parseFloat(d.takerBuyVolume || d.buyVolume || d.buy || 0),
+                  sell: parseFloat(d.takerSellVolume || d.sellVolume || d.sell || 0)
+                }))
+              : [];
+            const fs = computeFlowScalperSignal(k1h, k4h, levData.oiHistory || [], takerHistory, levData.fundingRate);
+            leverageState.flowScalper = fs;
+            renderFlowScalperUI(fs);
+            openFlowScalperWebSocket();
+          } catch(eInner) { console.warn('[FlowScalper] compute/render error:', eInner); }
+        }).catch(e => console.warn('[FlowScalper] fetch chain error:', e));
+      } catch(e) { console.warn('[FlowScalper] setup error:', e); }
     }
     
+
+    // ============================================================
+    // FLOW SCALPER (Estagio G) - Intraday Entry System 1h
+    // Scoring 0-7: EMA cross + RSI 1h + RSI 4h + MACD + Funding + OI + CVD
+    // Entra LONG/SHORT se score >= 5. Target +5%/-5%, stop -3%/+3%, max 48h, cooldown 6h.
+    // WebSocket live: wss://stream.binance.com:9443/ws/btcusdt@kline_1h
+    // ============================================================
+
+    // Helper: EMA classica com seed SMA do periodo
+    function computeEMA(closes, period) {
+      const n = closes.length;
+      const out = new Array(n).fill(null);
+      if (n < period) return out;
+      const k = 2 / (period + 1);
+      let seed = 0;
+      for (let i = 0; i < period; i++) seed += closes[i];
+      seed /= period;
+      out[period - 1] = seed;
+      let ema = seed;
+      for (let i = period; i < n; i++) {
+        ema = closes[i] * k + ema * (1 - k);
+        out[i] = ema;
+      }
+      return out;
+    }
+
+    // Helper: MACD 12/26/9 retorna {line, signal, hist}
+    function computeMACD(closes, fast, slow, signalPer) {
+      fast = fast || 12; slow = slow || 26; signalPer = signalPer || 9;
+      const n = closes.length;
+      const emaFast = computeEMA(closes, fast);
+      const emaSlow = computeEMA(closes, slow);
+      const line = new Array(n).fill(null);
+      for (let i = 0; i < n; i++) {
+        if (emaFast[i] != null && emaSlow[i] != null) line[i] = emaFast[i] - emaSlow[i];
+      }
+      const firstValid = line.findIndex(v => v != null);
+      const signalSerie = new Array(n).fill(null);
+      if (firstValid >= 0) {
+        const compact = line.slice(firstValid).filter(v => v != null);
+        if (compact.length >= signalPer) {
+          const sigCompact = computeEMA(compact, signalPer);
+          for (let i = 0; i < sigCompact.length; i++) {
+            if (sigCompact[i] != null) signalSerie[firstValid + i] = sigCompact[i];
+          }
+        }
+      }
+      const hist = new Array(n).fill(null);
+      for (let i = 0; i < n; i++) {
+        if (line[i] != null && signalSerie[i] != null) hist[i] = line[i] - signalSerie[i];
+      }
+      return { line, signal: signalSerie, hist };
+    }
+
+    // Fetch Binance klines generico. Retorna array de {openTime, open, high, low, close, volume, closeTime, closed}
+    async function fetchBinanceKlines(interval, limit) {
+      limit = limit || 500;
+      const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=' + interval + '&limit=' + limit;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('Binance klines ' + interval + ' HTTP ' + r.status);
+      const data = await r.json();
+      if (!Array.isArray(data)) throw new Error('Binance klines invalid data');
+      const now = Date.now();
+      return data.map(function(k) {
+        return {
+          openTime: Number(k[0]),
+          open: parseFloat(k[1]),
+          high: parseFloat(k[2]),
+          low: parseFloat(k[3]),
+          close: parseFloat(k[4]),
+          volume: parseFloat(k[5]),
+          closeTime: Number(k[6]),
+          closed: Number(k[6]) <= now
+        };
+      });
+    }
+
+    // Simula gestao de trade: target +/-5%, stop +/-3%, timeout 48 velas
+    function fsSimulateTrade(entryIdx, side, klines1h) {
+      const entry = klines1h[entryIdx] && klines1h[entryIdx].close;
+      if (!entry) return null;
+      const TARGET_PCT = 5, STOP_PCT = 3, MAX_BARS = 48;
+      const target = side === 'LONG' ? entry * (1 + TARGET_PCT/100) : entry * (1 - TARGET_PCT/100);
+      const stop = side === 'LONG' ? entry * (1 - STOP_PCT/100) : entry * (1 + STOP_PCT/100);
+      for (let i = 1; i <= MAX_BARS; i++) {
+        const j = entryIdx + i;
+        if (j >= klines1h.length) break;
+        const hi = klines1h[j].high, lo = klines1h[j].low;
+        if (side === 'LONG') {
+          if (hi >= target) return { result: 'HIT_TARGET', bars: i, exit: target, pnl: TARGET_PCT };
+          if (lo <= stop) return { result: 'HIT_STOP', bars: i, exit: stop, pnl: -STOP_PCT };
+        } else {
+          if (lo <= target) return { result: 'HIT_TARGET', bars: i, exit: target, pnl: TARGET_PCT };
+          if (hi >= stop) return { result: 'HIT_STOP', bars: i, exit: stop, pnl: -STOP_PCT };
+        }
+      }
+      const exitIdx = Math.min(entryIdx + MAX_BARS, klines1h.length - 1);
+      if (exitIdx <= entryIdx) return null;
+      const exitPrice = klines1h[exitIdx].close;
+      const pnl = side === 'LONG' ? ((exitPrice - entry) / entry) * 100 : ((entry - exitPrice) / entry) * 100;
+      return { result: 'TIMEOUT', bars: exitIdx - entryIdx, exit: exitPrice, pnl: pnl };
+    }
+
+    // Computa score LONG e SHORT no idx dado; retorna o lado com maior score
+    function fsComputeScore(idx, ctx) {
+      const ema9 = ctx.ema9, ema21 = ctx.ema21, macd = ctx.macd, rsi1h = ctx.rsi1h;
+      const rsi4h = ctx.rsi4hAligned, oi12 = ctx.oi12hPct, funding = ctx.funding, taker = ctx.takerRatio;
+
+      function longFactors() {
+        const out = [];
+        // 1. EMA9 > EMA21
+        {
+          const a = ema9[idx], b = ema21[idx];
+          const pass = a != null && b != null && a > b;
+          const recent = pass && (idx >= 3 && ema9[idx-3] != null && ema21[idx-3] != null && ema9[idx-3] <= ema21[idx-3]);
+          out.push({ id:'emaX', name:'EMA9 > EMA21', pass:pass,
+            value: (a!=null&&b!=null)?('+'+(a-b).toFixed(0)):'--',
+            desc: pass ? (recent ? 'cross recente' : 'alinhada bullish') : 'alinhada bearish' });
+        }
+        // 2. RSI 1h saindo de oversold
+        {
+          const r = rsi1h[idx];
+          let recentOS = false;
+          for (let i = Math.max(0, idx-5); i < idx; i++) {
+            if (rsi1h[i] != null && rsi1h[i] < 35) { recentOS = true; break; }
+          }
+          const inRange = r != null && r >= 35 && r <= 55;
+          const pass = inRange && recentOS;
+          out.push({ id:'rsi1h', name:'RSI 1h saindo OS', pass:pass,
+            value: r!=null ? r.toFixed(0) : '--',
+            desc: pass ? 'saiu de <35' : (inRange ? 'sem OS recente' : 'fora de 35-55') });
+        }
+        // 3. RSI 4h > 45
+        {
+          const r = rsi4h[idx];
+          const pass = r != null && r > 45;
+          out.push({ id:'rsi4h', name:'RSI 4h nao-bearish', pass:pass,
+            value: r!=null ? r.toFixed(0) : '--',
+            desc: pass ? '> 45' : '<= 45' });
+        }
+        // 4. MACD bullish
+        {
+          const h = macd.hist[idx];
+          const hPrev = idx >= 3 ? macd.hist[idx-3] : null;
+          const growing = h != null && hPrev != null && h > hPrev;
+          const pass = (h != null && h > 0) || growing;
+          out.push({ id:'macd', name:'MACD bullish', pass:pass,
+            value: h!=null ? h.toFixed(1) : '--',
+            desc: pass ? (h > 0 ? 'hist > 0' : 'hist crescendo') : 'hist bearish' });
+        }
+        // 5. Funding < 0.005%
+        {
+          const f = funding;
+          const pass = f != null && f < 0.00005;
+          out.push({ id:'fund', name:'Funding < 0.005%', pass:pass,
+            value: f!=null ? (f*100).toFixed(4)+'%' : '--',
+            desc: pass ? 'shorts pressionados' : 'funding normal/alto' });
+        }
+        // 6. OI 12h < -2%
+        {
+          const d = oi12[idx];
+          const pass = d != null && d < -2;
+          out.push({ id:'oi', name:'OI 12h < -2%', pass:pass,
+            value: d!=null ? d.toFixed(1)+'%' : '--',
+            desc: pass ? 'deleveraging' : 'OI estavel/subindo' });
+        }
+        // 7. Taker buy > 52%
+        {
+          const t = taker;
+          const pass = t != null && t > 0.52;
+          out.push({ id:'cvd', name:'Taker buy > 52%', pass:pass,
+            value: t!=null ? (t*100).toFixed(1)+'%' : '--',
+            desc: pass ? 'agressor comprador' : 'equilibrado/vendedor' });
+        }
+        return out;
+      }
+
+      function shortFactors() {
+        const out = [];
+        // 1. EMA9 < EMA21
+        {
+          const a = ema9[idx], b = ema21[idx];
+          const pass = a != null && b != null && a < b;
+          const recent = pass && (idx >= 3 && ema9[idx-3] != null && ema21[idx-3] != null && ema9[idx-3] >= ema21[idx-3]);
+          out.push({ id:'emaX', name:'EMA9 < EMA21', pass:pass,
+            value: (a!=null&&b!=null)?(a-b).toFixed(0):'--',
+            desc: pass ? (recent ? 'cross recente' : 'alinhada bearish') : 'alinhada bullish' });
+        }
+        // 2. RSI 1h saindo OB
+        {
+          const r = rsi1h[idx];
+          let recentOB = false;
+          for (let i = Math.max(0, idx-5); i < idx; i++) {
+            if (rsi1h[i] != null && rsi1h[i] > 65) { recentOB = true; break; }
+          }
+          const inRange = r != null && r >= 45 && r <= 65;
+          const pass = inRange && recentOB;
+          out.push({ id:'rsi1h', name:'RSI 1h saindo OB', pass:pass,
+            value: r!=null ? r.toFixed(0) : '--',
+            desc: pass ? 'saiu de >65' : (inRange ? 'sem OB recente' : 'fora de 45-65') });
+        }
+        // 3. RSI 4h < 55
+        {
+          const r = rsi4h[idx];
+          const pass = r != null && r < 55;
+          out.push({ id:'rsi4h', name:'RSI 4h nao-bullish', pass:pass,
+            value: r!=null ? r.toFixed(0) : '--',
+            desc: pass ? '< 55' : '>= 55' });
+        }
+        // 4. MACD bearish
+        {
+          const h = macd.hist[idx];
+          const hPrev = idx >= 3 ? macd.hist[idx-3] : null;
+          const falling = h != null && hPrev != null && h < hPrev;
+          const pass = (h != null && h < 0) || falling;
+          out.push({ id:'macd', name:'MACD bearish', pass:pass,
+            value: h!=null ? h.toFixed(1) : '--',
+            desc: pass ? (h < 0 ? 'hist < 0' : 'hist caindo') : 'hist bullish' });
+        }
+        // 5. Funding > 0.015%
+        {
+          const f = funding;
+          const pass = f != null && f > 0.00015;
+          out.push({ id:'fund', name:'Funding > 0.015%', pass:pass,
+            value: f!=null ? (f*100).toFixed(4)+'%' : '--',
+            desc: pass ? 'longs pagando caro' : 'funding normal/baixo' });
+        }
+        // 6. OI 12h > +3%
+        {
+          const d = oi12[idx];
+          const pass = d != null && d > 3;
+          out.push({ id:'oi', name:'OI 12h > +3%', pass:pass,
+            value: d!=null ? d.toFixed(1)+'%' : '--',
+            desc: pass ? 'leverage piling' : 'OI estavel/caindo' });
+        }
+        // 7. Taker buy < 48%
+        {
+          const t = taker;
+          const pass = t != null && t < 0.48;
+          out.push({ id:'cvd', name:'Taker buy < 48%', pass:pass,
+            value: t!=null ? (t*100).toFixed(1)+'%' : '--',
+            desc: pass ? 'agressor vendedor' : 'equilibrado/comprador' });
+        }
+        return out;
+      }
+
+      const lf = longFactors();
+      const sf = shortFactors();
+      const lScore = lf.filter(function(f){ return f.pass; }).length;
+      const sScore = sf.filter(function(f){ return f.pass; }).length;
+      if (lScore >= sScore) return { score: lScore, side:'LONG', factors: lf, opposite: sScore };
+      return { score: sScore, side:'SHORT', factors: sf, opposite: lScore };
+    }
+
+    // Engine principal: roda scoring + backtest em loop retroativo
+    function computeFlowScalperSignal(klines1h, klines4h, oiHistory, takerHistory, currentFunding) {
+      if (!klines1h || klines1h.length < 60 || !klines4h || klines4h.length < 20) {
+        return { current: null, signals: [], stats: null, chart: null, error: 'dados insuficientes' };
+      }
+      const closes1h = klines1h.map(function(k){ return k.close; });
+      const closes4h = klines4h.map(function(k){ return k.close; });
+      const ema9 = computeEMA(closes1h, 9);
+      const ema21 = computeEMA(closes1h, 21);
+      const macd = computeMACD(closes1h, 12, 26, 9);
+      const rsi1h = computeRSI14Wilder(closes1h);
+      const rsi4hRaw = computeRSI14Wilder(closes4h);
+
+      // Align RSI 4h ao 1h: pra cada 1h candle, acha ultima 4h candle com closeTime <= openTime
+      const rsi4hAligned = klines1h.map(function(k1) {
+        let latest = null;
+        for (let i = klines4h.length - 1; i >= 0; i--) {
+          if (klines4h[i].closeTime <= k1.openTime) {
+            latest = rsi4hRaw[i];
+            break;
+          }
+        }
+        return latest;
+      });
+
+      // Map OI por timestamp
+      const oiByTime = (oiHistory || []).map(function(p){
+        const t = (typeof p.date === 'string') ? new Date(p.date).getTime() : p.date;
+        return { t: t, v: p.value };
+      }).filter(function(p){ return p.v > 0 && !isNaN(p.t); }).sort(function(a,b){ return a.t - b.t; });
+
+      function oiAt(ts) {
+        if (!oiByTime.length) return null;
+        let lo = 0, hi = oiByTime.length - 1;
+        if (oiByTime[0].t > ts) return null;
+        while (lo < hi) {
+          const m = (lo + hi + 1) >> 1;
+          if (oiByTime[m].t <= ts) lo = m; else hi = m - 1;
+        }
+        return oiByTime[lo].v;
+      }
+
+      const oi12hPct = klines1h.map(function(k) {
+        const now = oiAt(k.openTime);
+        const before = oiAt(k.openTime - 12 * 3600 * 1000);
+        if (!now || !before) return null;
+        return ((now - before) / before) * 100;
+      });
+
+      // Taker ratio 4h rolling
+      const takerByTime = (takerHistory || []).map(function(p){
+        const t = (typeof p.date === 'string') ? new Date(p.date).getTime() : p.date;
+        return { t: t, buy: p.buy || 0, sell: p.sell || 0 };
+      }).filter(function(p){ return !isNaN(p.t); }).sort(function(a,b){ return a.t - b.t; });
+
+      function takerRatioAt(ts) {
+        if (!takerByTime.length) return null;
+        const startT = ts - 4 * 3600 * 1000;
+        let buy = 0, sell = 0;
+        for (let i = 0; i < takerByTime.length; i++) {
+          const p = takerByTime[i];
+          if (p.t >= startT && p.t <= ts) { buy += p.buy; sell += p.sell; }
+        }
+        if (buy + sell === 0) return null;
+        return buy / (buy + sell);
+      }
+
+      // Loop retroativo com cooldown
+      const signals = [];
+      const COOLDOWN_BARS = 6;
+      let lastL = -Infinity, lastS = -Infinity;
+      const MIN_IDX = 35;
+      for (let i = MIN_IDX; i < klines1h.length - 1; i++) {
+        const ctx = {
+          ema9: ema9, ema21: ema21, macd: macd, rsi1h: rsi1h, rsi4hAligned: rsi4hAligned,
+          oi12hPct: oi12hPct, funding: currentFunding,
+          takerRatio: takerRatioAt(klines1h[i].openTime)
+        };
+        const sc = fsComputeScore(i, ctx);
+        if (sc.score < 5) continue;
+        if (sc.side === 'LONG' && i - lastL < COOLDOWN_BARS) continue;
+        if (sc.side === 'SHORT' && i - lastS < COOLDOWN_BARS) continue;
+        const sim = fsSimulateTrade(i, sc.side, klines1h);
+        if (!sim) continue;
+        signals.push({
+          barIdx: i,
+          date: new Date(klines1h[i].openTime).toISOString(),
+          side: sc.side,
+          score: sc.score,
+          entry: klines1h[i].close,
+          exit: sim.exit,
+          pnl: sim.pnl,
+          bars: sim.bars,
+          result: sim.result
+        });
+        if (sc.side === 'LONG') lastL = i; else lastS = i;
+      }
+
+      // Stats
+      const total = signals.length;
+      const hits = signals.filter(function(s){ return s.result === 'HIT_TARGET'; }).length;
+      const winRate = total > 0 ? hits / total : 0;
+      const netPnl = signals.reduce(function(s, x){ return s + x.pnl; }, 0);
+      const byScore = {};
+      [5,6,7].forEach(function(k) {
+        const arr = signals.filter(function(x){ return x.score === k; });
+        const h = arr.filter(function(x){ return x.result === 'HIT_TARGET'; }).length;
+        byScore[k] = {
+          total: arr.length, hits: h,
+          winRate: arr.length ? h / arr.length : 0,
+          pnl: arr.reduce(function(a,b){ return a + b.pnl; }, 0)
+        };
+      });
+
+      // Current score (ultima kline disponivel)
+      const lastIdx = klines1h.length - 1;
+      const currentCtx = {
+        ema9: ema9, ema21: ema21, macd: macd, rsi1h: rsi1h, rsi4hAligned: rsi4hAligned,
+        oi12hPct: oi12hPct, funding: currentFunding,
+        takerRatio: takerRatioAt(klines1h[lastIdx].openTime)
+      };
+      const currentScore = fsComputeScore(lastIdx, currentCtx);
+
+      // Chart data: ultimas 120 barras
+      const chartStart = Math.max(0, klines1h.length - 120);
+      const chartLabels = klines1h.slice(chartStart).map(function(k){
+        const d = new Date(k.openTime);
+        const mm = String(d.getUTCMonth()+1).padStart(2,'0');
+        const dd = String(d.getUTCDate()).padStart(2,'0');
+        const hh = String(d.getUTCHours()).padStart(2,'0');
+        return mm+'/'+dd+' '+hh+'h';
+      });
+      const chartPrices = klines1h.slice(chartStart).map(function(k){ return k.close; });
+      const chartEma9 = ema9.slice(chartStart);
+      const chartEma21 = ema21.slice(chartStart);
+      const markers = signals.filter(function(s){ return s.barIdx >= chartStart; }).map(function(s){
+        return {
+          x: s.barIdx - chartStart,
+          y: s.entry,
+          side: s.side,
+          score: s.score,
+          result: s.result,
+          pnl: s.pnl,
+          date: s.date
+        };
+      });
+
+      const windowStart = klines1h[0] ? new Date(klines1h[0].openTime).toISOString().slice(0,10) : '--';
+      const windowEnd = klines1h[lastIdx] ? new Date(klines1h[lastIdx].openTime).toISOString().slice(0,10) : '--';
+
+      return {
+        current: {
+          score: currentScore.score,
+          side: currentScore.side,
+          factors: currentScore.factors,
+          opposite: currentScore.opposite,
+          price: klines1h[lastIdx].close,
+          rsi1h: rsi1h[lastIdx],
+          rsi4h: rsi4hAligned[lastIdx],
+          macdHist: macd.hist[lastIdx],
+          funding: currentFunding,
+          oi12hPct: oi12hPct[lastIdx],
+          takerRatio: currentCtx.takerRatio,
+          ema9: ema9[lastIdx],
+          ema21: ema21[lastIdx]
+        },
+        signals: signals,
+        stats: { total: total, hits: hits, winRate: winRate, netPnl: netPnl, byScore: byScore },
+        chart: {
+          labels: chartLabels,
+          prices: chartPrices,
+          ema9: chartEma9,
+          ema21: chartEma21,
+          markers: markers
+        },
+        window: { start: windowStart, end: windowEnd, bars: klines1h.length }
+      };
+    }
+
+    // WebSocket live: atualiza ultimo ponto do chart e o badge LIVE
+    let _fsWS = null;
+    let _fsChart = null;
+    let _fsReconnectTimer = null;
+
+    function openFlowScalperWebSocket() {
+      try { if (_fsWS && _fsWS.readyState !== 3) _fsWS.close(); } catch(e) {}
+      if (_fsReconnectTimer) { clearTimeout(_fsReconnectTimer); _fsReconnectTimer = null; }
+      try {
+        _fsWS = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_1h');
+        _fsWS.onopen = function() {
+          console.log('[FlowScalper] WS connected');
+          const dot = document.getElementById('fsLiveDot');
+          if (dot) { dot.style.color = '#22c55e'; dot.textContent = '\u25CF LIVE'; }
+        };
+        _fsWS.onmessage = function(ev) {
+          try {
+            const msg = JSON.parse(ev.data);
+            if (!msg.k) return;
+            const close = parseFloat(msg.k.c);
+            if (isNaN(close)) return;
+            const priceEl = document.getElementById('fsLivePrice');
+            if (priceEl) priceEl.textContent = '$' + close.toLocaleString('en-US', {maximumFractionDigits: 2});
+            if (_fsChart && _fsChart.data && _fsChart.data.datasets && _fsChart.data.datasets[0]) {
+              const ds = _fsChart.data.datasets[0];
+              if (ds.data && ds.data.length > 0) {
+                ds.data[ds.data.length - 1] = close;
+                _fsChart.update('none');
+              }
+            }
+          } catch(e) {}
+        };
+        _fsWS.onclose = function() {
+          const dot = document.getElementById('fsLiveDot');
+          if (dot) { dot.style.color = '#ef4444'; dot.textContent = '\u25CF OFFLINE'; }
+          console.log('[FlowScalper] WS closed, reconnecting in 3s...');
+          _fsReconnectTimer = setTimeout(openFlowScalperWebSocket, 3000);
+        };
+        _fsWS.onerror = function(e) { console.warn('[FlowScalper] WS error'); };
+      } catch(e) {
+        console.warn('[FlowScalper] WS init failed:', e);
+        _fsReconnectTimer = setTimeout(openFlowScalperWebSocket, 5000);
+      }
+    }
+
+    // Renderer principal
+    function renderFlowScalperUI(fs) {
+      if (!fs) return;
+      const fmt = function(n, d) { if (n == null || isNaN(n)) return '--'; return Number(n).toFixed(d != null ? d : 2); };
+      const fmtPct = function(n, d) { if (n == null || isNaN(n)) return '--'; return (n > 0 ? '+' : '') + Number(n).toFixed(d != null ? d : 2) + '%'; };
+      const fmtDollar = function(n) { if (n == null || isNaN(n)) return '--'; return '$' + Number(n).toLocaleString('en-US', {maximumFractionDigits: 0}); };
+
+      // Updated timestamp
+      const updEl = document.getElementById('fsUpdated');
+      if (updEl) {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2,'0');
+        const mm = String(now.getMinutes()).padStart(2,'0');
+        const ss = String(now.getSeconds()).padStart(2,'0');
+        updEl.textContent = 'UPDATED ' + hh + ':' + mm + ':' + ss;
+      }
+
+      if (fs.error || !fs.current) {
+        const scoreEl = document.getElementById('fsScore');
+        const descEl = document.getElementById('fsScoreDesc');
+        if (scoreEl) scoreEl.textContent = '--';
+        if (descEl) descEl.textContent = fs.error || 'sem dados';
+        return;
+      }
+
+      const cur = fs.current;
+
+      // Score box
+      const scoreEl = document.getElementById('fsScore');
+      const descEl = document.getElementById('fsScoreDesc');
+      if (scoreEl) {
+        const active = cur.score >= 5;
+        const sideTxt = cur.side === 'LONG' ? '\u25B2 LONG' : '\u25BC SHORT';
+        scoreEl.textContent = cur.score + '/7 ' + (active ? sideTxt : 'NEUTRAL');
+        if (active) scoreEl.style.color = cur.side === 'LONG' ? '#22c55e' : '#ef4444';
+        else if (cur.score >= 3) scoreEl.style.color = '#eab308';
+        else scoreEl.style.color = '#9a9aa6';
+      }
+      if (descEl) {
+        if (cur.score >= 5) {
+          descEl.textContent = 'Sinal ATIVO. Score dominante: ' + cur.side + ' (' + cur.score + '/7). Oposto: ' + cur.opposite + '/7.';
+        } else if (cur.score >= 3) {
+          descEl.textContent = 'Convergencia parcial (' + cur.score + '/7 ' + cur.side + '). Precisa 5+ pra disparar.';
+        } else {
+          descEl.textContent = 'Mercado lateral. Sem confluencia suficiente.';
+        }
+      }
+
+      // Momentum row
+      const rsi1hEl = document.getElementById('fsRsi1h');
+      if (rsi1hEl) {
+        rsi1hEl.textContent = fmt(cur.rsi1h, 0);
+        rsi1hEl.style.color = cur.rsi1h == null ? '#9a9aa6' : (cur.rsi1h >= 70 ? '#ef4444' : cur.rsi1h <= 30 ? '#22c55e' : '#e5e5ea');
+      }
+      const rsi4hEl = document.getElementById('fsRsi4h');
+      if (rsi4hEl) {
+        rsi4hEl.textContent = fmt(cur.rsi4h, 0);
+        rsi4hEl.style.color = cur.rsi4h == null ? '#9a9aa6' : (cur.rsi4h >= 70 ? '#ef4444' : cur.rsi4h <= 30 ? '#22c55e' : '#e5e5ea');
+      }
+      const macdEl = document.getElementById('fsMacd');
+      if (macdEl) {
+        macdEl.textContent = fmt(cur.macdHist, 1);
+        macdEl.style.color = cur.macdHist == null ? '#9a9aa6' : (cur.macdHist > 0 ? '#22c55e' : '#ef4444');
+      }
+
+      // Flow row
+      const fundEl = document.getElementById('fsFund');
+      if (fundEl) {
+        fundEl.textContent = cur.funding != null ? (cur.funding * 100).toFixed(4) + '%' : '--';
+        fundEl.style.color = cur.funding == null ? '#9a9aa6' : (cur.funding > 0.00015 ? '#ef4444' : cur.funding < 0.00005 ? '#22c55e' : '#e5e5ea');
+      }
+      const oi12hEl = document.getElementById('fsOi12h');
+      if (oi12hEl) {
+        oi12hEl.textContent = fmtPct(cur.oi12hPct, 1);
+        oi12hEl.style.color = cur.oi12hPct == null ? '#9a9aa6' : (cur.oi12hPct > 3 ? '#ef4444' : cur.oi12hPct < -2 ? '#22c55e' : '#e5e5ea');
+      }
+      const cvdEl = document.getElementById('fsCvd');
+      if (cvdEl) {
+        cvdEl.textContent = cur.takerRatio != null ? (cur.takerRatio * 100).toFixed(1) + '%' : '--';
+        cvdEl.style.color = cur.takerRatio == null ? '#9a9aa6' : (cur.takerRatio > 0.52 ? '#22c55e' : cur.takerRatio < 0.48 ? '#ef4444' : '#e5e5ea');
+      }
+
+      // Factors
+      const factorsSideEl = document.getElementById('fsFactorsSide');
+      if (factorsSideEl) factorsSideEl.textContent = cur.side + ' SIDE';
+      const factorsScoreEl = document.getElementById('fsFactorsScore');
+      if (factorsScoreEl) {
+        factorsScoreEl.textContent = cur.score + ' / 7';
+        factorsScoreEl.style.color = cur.score >= 5 ? (cur.side === 'LONG' ? '#22c55e' : '#ef4444') : cur.score >= 3 ? '#eab308' : '#9a9aa6';
+      }
+      const factorsListEl = document.getElementById('fsFactorsList');
+      if (factorsListEl) {
+        factorsListEl.innerHTML = '';
+        cur.factors.forEach(function(f) {
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,' + (f.pass ? '0.04' : '0.015') + ');border-radius:4px;font-size:10.5px;';
+          const left = document.createElement('span');
+          left.style.cssText = 'display:flex;gap:8px;align-items:center;';
+          const check = document.createElement('span');
+          check.textContent = f.pass ? '\u2713' : '\u2717';
+          check.style.cssText = 'color:' + (f.pass ? '#22c55e' : '#666') + ';font-weight:700;width:12px;';
+          const name = document.createElement('span');
+          name.textContent = f.name;
+          name.style.cssText = 'color:' + (f.pass ? '#e5e5ea' : '#9a9aa6') + ';';
+          left.appendChild(check); left.appendChild(name);
+          const right = document.createElement('span');
+          right.style.cssText = 'font-family:\'JetBrains Mono\',monospace;font-size:10px;color:' + (f.pass ? '#e5e5ea' : '#9a9aa6') + ';';
+          right.textContent = f.value;
+          row.appendChild(left); row.appendChild(right);
+          // tooltip via title
+          row.title = f.desc;
+          factorsListEl.appendChild(row);
+        });
+      }
+
+      // Backtest window label
+      const winEl = document.getElementById('fsBacktestWindow');
+      if (winEl && fs.window) winEl.textContent = fs.window.start + ' \u2192 ' + fs.window.end + ' (' + fs.window.bars + ' barras)';
+
+      // Backtest stats
+      const statsEl = document.getElementById('fsStats');
+      if (statsEl && fs.stats) {
+        const st = fs.stats;
+        const wr = (st.winRate * 100).toFixed(0);
+        const netSign = st.netPnl > 0 ? '+' : '';
+        let txt = 'Total: <b style="color:' + (st.winRate >= 0.5 ? '#22c55e' : '#ef4444') + ';">' + wr + '% (' + st.hits + '/' + st.total + ')</b> \u00b7 Net: <b>' + netSign + st.netPnl.toFixed(1) + '%</b>';
+        if (st.byScore && (st.byScore[6] || st.byScore[7])) {
+          const s67 = (st.byScore[6].total + st.byScore[7].total);
+          const h67 = (st.byScore[6].hits + st.byScore[7].hits);
+          if (s67 > 0) {
+            const wr67 = (h67 / s67 * 100).toFixed(0);
+            txt += ' \u00b7 6-7/7: <b style="color:' + (h67/s67 >= 0.5 ? '#22c55e' : '#ef4444') + ';">' + wr67 + '% (' + h67 + '/' + s67 + ')</b>';
+          }
+        }
+        statsEl.innerHTML = txt;
+      }
+
+      // Backtest table
+      const bodyEl = document.getElementById('fsBacktestBody');
+      if (bodyEl) {
+        const rows = (fs.signals || []).slice().reverse().slice(0, 20);
+        if (rows.length === 0) {
+          bodyEl.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text-muted);">Nenhum sinal disparado na janela.</td></tr>';
+        } else {
+          bodyEl.innerHTML = '';
+          rows.forEach(function(s) {
+            const tr = document.createElement('tr');
+            tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.04);';
+            const d = new Date(s.date);
+            const dateStr = d.toISOString().slice(5,16).replace('T',' ');
+            const sideColor = s.side === 'LONG' ? '#22c55e' : '#ef4444';
+            const sideIcon = s.side === 'LONG' ? '\u25B2' : '\u25BC';
+            const resColor = s.result === 'HIT_TARGET' ? '#22c55e' : s.result === 'HIT_STOP' ? '#ef4444' : '#eab308';
+            const resIcon = s.result === 'HIT_TARGET' ? '\u2713' : s.result === 'HIT_STOP' ? '\u2717' : '\u23f1';
+            const pnlColor = s.pnl > 0 ? '#22c55e' : '#ef4444';
+            tr.innerHTML =
+              '<td style="padding:5px 4px;color:var(--text-muted);">' + dateStr + '</td>' +
+              '<td style="padding:5px 4px;text-align:center;color:' + sideColor + ';font-weight:700;">' + sideIcon + ' ' + s.side + '</td>' +
+              '<td style="padding:5px 4px;text-align:center;color:' + (s.score >= 6 ? '#22c55e' : '#eab308') + ';font-weight:600;">' + s.score + '/7</td>' +
+              '<td style="padding:5px 4px;text-align:right;">' + fmtDollar(s.entry) + '</td>' +
+              '<td style="padding:5px 4px;text-align:right;">' + fmtDollar(s.exit) + '</td>' +
+              '<td style="padding:5px 4px;text-align:right;color:' + pnlColor + ';font-weight:700;">' + (s.pnl > 0 ? '+' : '') + s.pnl.toFixed(2) + '%</td>' +
+              '<td style="padding:5px 4px;text-align:center;color:var(--text-muted);">' + s.bars + 'h</td>' +
+              '<td style="padding:5px 4px;text-align:center;color:' + resColor + ';font-weight:700;">' + resIcon + ' ' + s.result.replace('HIT_','').replace('TIMEOUT','TIME') + '</td>';
+            bodyEl.appendChild(tr);
+          });
+        }
+      }
+
+      // Chart render
+      const canvas = document.getElementById('fsChart');
+      if (canvas && fs.chart) {
+        if (_fsChart) { try { _fsChart.destroy(); } catch(e) {} _fsChart = null; }
+        const ctx = canvas.getContext('2d');
+        const longMarkers = fs.chart.markers.filter(function(m){ return m.side === 'LONG'; }).map(function(m){ return { x: m.x, y: m.y, meta: m }; });
+        const shortMarkers = fs.chart.markers.filter(function(m){ return m.side === 'SHORT'; }).map(function(m){ return { x: m.x, y: m.y, meta: m }; });
+        _fsChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: fs.chart.labels,
+            datasets: [
+              {
+                label: 'BTC Price',
+                data: fs.chart.prices,
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139,92,246,0.08)',
+                borderWidth: 1.8,
+                pointRadius: 0,
+                tension: 0.15,
+                fill: false,
+                yAxisID: 'y'
+              },
+              {
+                label: 'EMA 9',
+                data: fs.chart.ema9,
+                borderColor: '#eab308',
+                borderWidth: 1.2,
+                pointRadius: 0,
+                tension: 0.2,
+                fill: false,
+                yAxisID: 'y'
+              },
+              {
+                label: 'EMA 21',
+                data: fs.chart.ema21,
+                borderColor: '#a78bfa',
+                borderWidth: 1.2,
+                pointRadius: 0,
+                tension: 0.2,
+                fill: false,
+                yAxisID: 'y'
+              },
+              {
+                label: 'LONG entries',
+                data: longMarkers,
+                type: 'scatter',
+                backgroundColor: '#22c55e',
+                borderColor: '#22c55e',
+                pointStyle: 'triangle',
+                pointRadius: 8,
+                pointHoverRadius: 10,
+                showLine: false,
+                yAxisID: 'y'
+              },
+              {
+                label: 'SHORT entries',
+                data: shortMarkers,
+                type: 'scatter',
+                backgroundColor: '#ef4444',
+                borderColor: '#ef4444',
+                pointStyle: 'triangle',
+                rotation: 180,
+                pointRadius: 8,
+                pointHoverRadius: 10,
+                showLine: false,
+                yAxisID: 'y'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(item) {
+                    const ds = item.dataset.label;
+                    if (ds === 'LONG entries' || ds === 'SHORT entries') {
+                      const m = item.raw && item.raw.meta;
+                      if (!m) return ds;
+                      return m.side + ' ' + m.score + '/7 \u00b7 ' + m.result + ' \u00b7 PnL ' + (m.pnl>0?'+':'') + m.pnl.toFixed(1) + '%';
+                    }
+                    return ds + ': $' + Number(item.parsed.y).toLocaleString('en-US', {maximumFractionDigits:0});
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: '#666', font: { size: 9 }, maxTicksLimit: 10, autoSkip: true },
+                grid: { color: 'rgba(255,255,255,0.03)' }
+              },
+              y: {
+                type: 'linear',
+                position: 'right',
+                ticks: {
+                  color: '#8b5cf6', font: { size: 9 },
+                  callback: function(v) { return '$' + Number(v/1000).toFixed(1) + 'k'; }
+                },
+                grid: { color: 'rgba(255,255,255,0.03)' }
+              }
+            }
+          }
+        });
+      }
+    }
+
+
     // ========== OI/PRICE DIVERGENCE (Estagio A) ==========
     // Detecta 4+4 quadrantes de divergencia entre OI e Price.
     // Usa Z-score rolling 60d do OI change pra decidir "extremo" (contextual, nao threshold fixo).
