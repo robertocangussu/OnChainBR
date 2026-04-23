@@ -1447,12 +1447,12 @@
         <!-- Chart card with legend -->
         <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;">
-            <span>BTC PRICE (solid teal) + OI (dashed gray) &middot; ALERTS ON ΔOI 24H &gt; +5% (▼ SELL) / &lt; -4% (▲ BUY) &middot; Maartun logic</span>
+            <span>BTC PRICE (purple) + OI (yellow) &middot; ΔOI 24H &gt; +5% ▼ SELL / &lt; -4% ▲ BUY &middot; Maartun + RSI 12h gate (&ge;70 / &le;30)</span>
           </div>
           <div style="display:flex;gap:14px;font-size:9px;letter-spacing:0.5px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
             <span style="color:#ef4444;font-weight:600;">▼ SELL</span><span style="color:#888;">ΔOI &gt; +5% (leverage up)</span>
             <span style="color:#00d97e;font-weight:600;margin-left:6px;">▲ BUY</span><span style="color:#888;">ΔOI &lt; -4% (deleverage)</span>
-            <span style="color:#888;margin-left:10px;">marker grande com borda branca = alert mais recente</span>
+            <span style="color:#888;margin-left:10px;">RSI 12h gate: SELL exige >=70, BUY exige <=30</span>
           </div>
           <div style="height:180px;"><canvas id="divPriceChart"></canvas></div>
         </div>
@@ -5022,13 +5022,19 @@
         renderLevOiChart(levData.oiHistory.slice(-30));
       }
 
-      // Divergence Estagio B: compute e renderiza (chart Price+OI+markers + confirmers + backtest)
+      // Divergence Estagio F: RSI 12h gate + Maartun visual. renderLeverageUI nao e async,
+      // entao usamos .then() em vez de await pra nao quebrar o escopo.
       try {
         const priceHist = (typeof state !== 'undefined' && state.prices) ? state.prices : [];
-        const div = computeOIPriceDivergence(levData.oiHistory, priceHist, leverageState);
-        leverageState.divergence = div;
-        renderDivergenceSignal(div);
-      } catch(e) { console.warn('[Divergence] compute error:', e); }
+        fetchBinanceRSI12h().then(rsi12hMap => {
+          try {
+            const div = computeOIPriceDivergence(levData.oiHistory, priceHist, leverageState, rsi12hMap);
+            leverageState.divergence = div;
+            leverageState.rsi12hCount = rsi12hMap.size;
+            renderDivergenceSignal(div);
+          } catch(e2) { console.warn('[Divergence] inner compute error:', e2); }
+        }).catch(e => console.warn('[Divergence] RSI fetch chain error:', e));
+      } catch(e) { console.warn('[Divergence] setup error:', e); }
     }
     
     // ========== OI/PRICE DIVERGENCE (Estagio A) ==========
@@ -5038,6 +5044,60 @@
     // FIX 20/04: endpoint /v1/open-interest-1h eh HORARIO, entao agregamos p/ daily (1 ponto por dia,
     // ultimo valor do dia) antes de calcular changes. Antes, tudo era em escala horaria (bug).
     // Retorna null se dados insuficientes (< 62 daily points).
+
+    // Divergence Estagio F: RSI 14 Wilder's smoothing.
+    // Input: array de closes. Output: array same length, null antes do warmup (idx<14).
+    function computeRSI14Wilder(closes) {
+      const n = closes.length;
+      const rsi = new Array(n).fill(null);
+      if (n < 15) return rsi;
+      let gain = 0, loss = 0;
+      for (let i = 1; i <= 14; i++) {
+        const ch = closes[i] - closes[i - 1];
+        if (ch >= 0) gain += ch; else loss -= ch;
+      }
+      gain /= 14; loss /= 14;
+      rsi[14] = loss === 0 ? 100 : 100 - (100 / (1 + gain / loss));
+      for (let i = 15; i < n; i++) {
+        const ch = closes[i] - closes[i - 1];
+        const up = ch > 0 ? ch : 0;
+        const dn = ch < 0 ? -ch : 0;
+        gain = (gain * 13 + up) / 14;
+        loss = (loss * 13 + dn) / 14;
+        rsi[i] = loss === 0 ? 100 : 100 - (100 / (1 + gain / loss));
+      }
+      return rsi;
+    }
+
+    // Divergence Estagio F: fetch Binance klines 12h + computa RSI + agrega por dia.
+    // Retorna Map<YYYY-MM-DD, rsi>. Em falha, retorna Map vazio (gate desligado).
+    // Binance /api/v3/klines: [[openTime, open, high, low, close, vol, closeTime, ...]]
+    async function fetchBinanceRSI12h() {
+      const out = new Map();
+      try {
+        const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=12h&limit=500';
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const data = await r.json();
+        if (!Array.isArray(data) || data.length < 20) throw new Error('klines data invalid: ' + (data && data.length));
+        const now = Date.now();
+        // Descarta candle possivelmente em aberto (closeTime > now)
+        const filtered = data.filter(k => Array.isArray(k) && k.length >= 7 && Number(k[6]) <= now);
+        const closes = filtered.map(k => parseFloat(k[4]));
+        const rsiArr = computeRSI14Wilder(closes);
+        for (let i = 0; i < filtered.length; i++) {
+          if (rsiArr[i] == null) continue;
+          // Agrupa por data do openTime (UTC). Ultima kline do dia (openTime 12:00) ganha.
+          const key = new Date(Number(filtered[i][0])).toISOString().slice(0, 10);
+          out.set(key, rsiArr[i]);
+        }
+        console.log('[Divergence-F] RSI 12h loaded: ' + out.size + ' days (latest: ' +
+          (out.size ? Array.from(out.values()).slice(-1)[0].toFixed(1) : 'n/a') + ')');
+      } catch (e) {
+        console.warn('[Divergence-F] RSI 12h fetch failed:', e.message, '— gate will be disabled (fallback to Estagio E behavior)');
+      }
+      return out;
+    }
 
     // Agrega serie horaria (ou ja-daily) em daily: um ponto por dia (ultimo valor do dia).
     function aggregateOIDaily(oiHistory) {
@@ -5061,12 +5121,15 @@
       return Array.from(byDay.values()).sort((a, b) => a.date.localeCompare(b.date));
     }
 
-    function computeOIPriceDivergence(oiHistory, priceHistory, levState) {
-      // Estagio E (Maartun replica): triggers binarios sobre delta OI 24h daily.
-      // SEM Z-SCORE neste bloco. Confidence = cluster density (7d) + regime (SMA20/50).
-      //   ALERT SELL  quando dOI 24h > +5%  (leverage subindo rapido)
-      //   ALERT BUY   quando dOI 24h < -4%  (deleveraging rapido)
-      // Thresholds vindos da query do Maartun (@JA_Maartun no CryptoQuant).
+    function computeOIPriceDivergence(oiHistory, priceHistory, levState, rsi12hMap) {
+      // Estagio F (Maartun + RSI 12h gate): triggers binarios sobre delta OI 24h daily,
+      // + filtro de momento via RSI 12h.
+      // SEM Z-SCORE neste bloco. Confidence = cluster density (7d only).
+      //   RAW TRIGGER  SELL quando dOI 24h > +5%  (leverage subindo rapido)
+      //   RAW TRIGGER  BUY  quando dOI 24h < -4%  (deleveraging rapido)
+      //   GATE RSI 12h SELL valida so se rsi12h >= 70 (overbought)
+      //   GATE RSI 12h BUY  valida so se rsi12h <= 30 (oversold)
+      // Thresholds vindos da query do Maartun (@JA_Maartun no CryptoQuant) + RSI filter proprio.
       if (!oiHistory || !oiHistory.length) return null;
       if (!priceHistory || priceHistory.length < 2) return null;
 
@@ -5077,6 +5140,10 @@
       const BUILDING_MIN = 2;
       const SMA_SHORT = 20;
       const SMA_LONG = 50;
+      const RSI_OVERBOUGHT = 70;
+      const RSI_OVERSOLD = 30;
+      const rsiMap = (rsi12hMap instanceof Map) ? rsi12hMap : new Map();
+      const rsiGateActive = rsiMap.size > 0;
 
       // Agrega OI pra daily (dedupa hourly/daily endpoints)
       const oiDaily = aggregateOIDaily(oiHistory);
@@ -5104,19 +5171,28 @@
         return null;
       }
 
-      // Monta dailyData com dOI, dPrice e alert binario
+      // Monta dailyData com dOI, dPrice, RSI 12h e alert binario (com gate RSI)
       const dailyData = [];
       for (let i = 0; i < aligned.length; i++) {
         const cur = aligned[i];
-        let oiPct = null, pricePct = null, alert = null;
+        let oiPct = null, pricePct = null, rawAlert = null, alert = null;
+        const rsi12h = rsiMap.has(cur.date) ? rsiMap.get(cur.date) : null;
         if (i >= 1) {
           const prev = aligned[i - 1];
           oiPct = prev.oi > 0 ? ((cur.oi - prev.oi) / prev.oi) * 100 : 0;
           pricePct = prev.price > 0 ? ((cur.price - prev.price) / prev.price) * 100 : 0;
-          if (oiPct > TH_SELL) alert = 'SELL';
-          else if (oiPct < TH_BUY) alert = 'BUY';
+          if (oiPct > TH_SELL) rawAlert = 'SELL';
+          else if (oiPct < TH_BUY) rawAlert = 'BUY';
+          // Gate: se RSI 12h carregou, exige confluencia. Se nao carregou, passa tudo (fallback).
+          if (rawAlert && rsiGateActive) {
+            if (rawAlert === 'SELL' && (rsi12h == null || rsi12h < RSI_OVERBOUGHT)) alert = null;
+            else if (rawAlert === 'BUY' && (rsi12h == null || rsi12h > RSI_OVERSOLD)) alert = null;
+            else alert = rawAlert;
+          } else {
+            alert = rawAlert;
+          }
         }
-        dailyData.push({ idx: i, date: cur.date, price: cur.price, oi: cur.oi, oiPct, pricePct, alert });
+        dailyData.push({ idx: i, date: cur.date, price: cur.price, oi: cur.oi, oiPct, pricePct, rawAlert, alert, rsi12h });
       }
 
       // Regime: SMA20 vs SMA50 do preco daily
@@ -5157,19 +5233,17 @@
         else d.cluster = 'ISOLATED';
       }
 
-      // Confidence: cluster + alinhamento com regime
-      //   CLUSTER + qualquer regime        -> HIGH
-      //   BUILDING + contra-regime         -> LOW
-      //   BUILDING + aligned/range/unknown -> MEDIUM
-      //   ISOLATED + contra-regime         -> AVOID  (descartar)
-      //   ISOLATED + qualquer outro        -> LOW
+      // Estagio F: Confidence baseado em cluster density APENAS.
+      // (Regime continua calculado pra debug/tabela, mas nao influencia confidence —
+      // o filtro de momento agora vem do RSI 12h no gate de entrada.)
+      //   CLUSTER  -> HIGH
+      //   BUILDING -> MEDIUM
+      //   ISOLATED -> LOW
       for (const d of dailyData) {
         if (!d.alert) { d.confidence = null; continue; }
-        const contra = (d.alert === 'SELL' && d.regime === 'DOWNTREND')
-                    || (d.alert === 'BUY'  && d.regime === 'UPTREND');
         if (d.cluster === 'CLUSTER') d.confidence = 'HIGH';
-        else if (d.cluster === 'BUILDING') d.confidence = contra ? 'LOW' : 'MEDIUM';
-        else d.confidence = contra ? 'AVOID' : 'LOW';
+        else if (d.cluster === 'BUILDING') d.confidence = 'MEDIUM';
+        else d.confidence = 'LOW';
       }
 
       // Current state (ultima barra alinhada)
@@ -5181,13 +5255,16 @@
         oiChange24h: last.oiPct != null ? last.oiPct : 0,
         priceChange24h: last.pricePct != null ? last.pricePct : 0,
         alert: last.alert,
+        rawAlert: last.rawAlert,
         cluster: last.cluster,
         clusterSize: last.clusterSize,
         regime: last.regime,
-        confidence: last.confidence
+        confidence: last.confidence,
+        rsi12h: last.rsi12h,
+        rsiGateActive
       };
 
-      // Historico completo de alerts (ciclo todo)
+      // Historico completo de alerts (ciclo todo) — ja filtrado pelo gate RSI
       const signals = dailyData.filter(d => d.alert).map(d => ({
         date: d.date,
         idx: d.idx,
@@ -5198,8 +5275,11 @@
         cluster: d.cluster,
         clusterSize: d.clusterSize,
         regime: d.regime,
-        confidence: d.confidence
+        confidence: d.confidence,
+        rsi12h: d.rsi12h
       }));
+      // Raw triggers (pre-gate) — uteis pra UI mostrar quantos foram descartados
+      const rawSignalsCount = dailyData.filter(d => d.rawAlert).length;
 
       // Backtest: +7d/+14d/+30d
       const backtest = { rows: [] };
@@ -5266,7 +5346,10 @@
         signalsTotal: signals.length,
         signalsSell: signals.filter(s => s.alert === 'SELL').length,
         signalsBuy: signals.filter(s => s.alert === 'BUY').length,
-        clusterCount: signals.filter(s => s.cluster === 'CLUSTER').length
+        clusterCount: signals.filter(s => s.cluster === 'CLUSTER').length,
+        rawSignalsCount,
+        rsiGateActive,
+        rsiDaysCovered: rsiMap.size
       };
 
       // Chart data (ultimos 90 dias alinhados)
@@ -5286,7 +5369,8 @@
         const idx = chartDates.indexOf(s.date);
         if (idx >= 0) {
           markers[s.alert][idx] = s.price;
-          markerMeta[s.alert][idx] = s.cluster + ' · ' + s.regime + ' · ΔOI ' + (s.oiPct >= 0 ? '+' : '') + s.oiPct.toFixed(1) + '%';
+          const rsiStr = (typeof s.rsi12h === 'number') ? ' · RSI ' + s.rsi12h.toFixed(0) : '';
+          markerMeta[s.alert][idx] = s.cluster + ' · ΔOI ' + (s.oiPct >= 0 ? '+' : '') + s.oiPct.toFixed(1) + '%' + rsiStr;
         }
       }
 
@@ -5331,33 +5415,37 @@
 
       const c = div.current;
 
-      // --- Estado current ---
-      // Converte alert + cluster em label e cor
+      // --- Estado current (Estagio F) ---
       let quadrant, label, color;
+      const rsiStr = (typeof c.rsi12h === 'number') ? c.rsi12h.toFixed(0) : '--';
       if (!c.alert) {
         quadrant = 'NEUTRAL';
         color = '#9a9aa6';
-        label = 'Sem alert ativo (ΔOI 24h ' + (c.oiChange24h >= 0 ? '+' : '') + c.oiChange24h.toFixed(2) + '% entre thresholds -4% / +5%)';
+        // Diferencia: tinha raw trigger mas foi barrado pelo RSI gate?
+        if (c.rawAlert && c.rsiGateActive) {
+          quadrant = 'BLOCKED BY RSI';
+          color = '#666';
+          const dir = c.rawAlert === 'BUY' ? 'BUY' : 'SELL';
+          const req = c.rawAlert === 'BUY' ? '<=30' : '>=70';
+          label = 'Trigger RAW ' + dir + ' (ΔOI ' + c.oiChange24h.toFixed(1) + '%) mas RSI 12h=' + rsiStr +
+                  ' nao atende o threshold ' + req + '. Sem confluencia de momento.';
+        } else {
+          label = 'Sem alert ativo (ΔOI 24h ' + (c.oiChange24h >= 0 ? '+' : '') + c.oiChange24h.toFixed(2) +
+                  '% entre thresholds -4% / +5%)';
+        }
       } else {
         const dir = c.alert === 'BUY' ? 'BUY' : 'SELL';
         const tagCluster = c.cluster || 'ISOLATED';
         quadrant = dir + ' ' + tagCluster;
-        const isConfAvoid = c.confidence === 'AVOID';
-        if (isConfAvoid) quadrant += ' (AVOID)';
         if (c.confidence === 'HIGH')         color = c.alert === 'BUY' ? '#00d97e' : '#ef4444';
         else if (c.confidence === 'MEDIUM')  color = c.alert === 'BUY' ? '#84cc16' : '#f59e0b';
-        else if (c.confidence === 'LOW')     color = '#eab308';
-        else                                 color = '#9a9aa6';
-        const regimeDesc = c.regime === 'UPTREND' ? 'em uptrend (SMA20>SMA50)'
-                        : c.regime === 'DOWNTREND' ? 'em downtrend (SMA20<SMA50)'
-                        : c.regime === 'RANGE' ? 'em range'
-                        : 'regime indefinido';
+        else                                 color = '#eab308';
         if (c.alert === 'BUY') {
-          label = 'Deleveraging forte (ΔOI ' + c.oiChange24h.toFixed(1) + '%) · ' + c.clusterSize + ' alert(s) em 7d · ' + regimeDesc
-                + (isConfAvoid ? ' — sinal contra-regime sem cluster, descartar.' : '');
+          label = 'Deleveraging (ΔOI ' + c.oiChange24h.toFixed(1) + '%) + RSI 12h=' + rsiStr +
+                  ' (oversold) · ' + c.clusterSize + ' alert(s) em 7d';
         } else {
-          label = 'Leverage buildup (ΔOI +' + c.oiChange24h.toFixed(1) + '%) · ' + c.clusterSize + ' alert(s) em 7d · ' + regimeDesc
-                + (isConfAvoid ? ' — sinal contra-regime sem cluster, descartar.' : '');
+          label = 'Leverage spike (ΔOI +' + c.oiChange24h.toFixed(1) + '%) + RSI 12h=' + rsiStr +
+                  ' (overbought) · ' + c.clusterSize + ' alert(s) em 7d';
         }
       }
       $q.textContent = quadrant;
@@ -5377,13 +5465,17 @@
                         : '#ccc';
       }
       if ($z) {
-        $z.textContent = c.regime || '--';
-        $z.style.color = c.regime === 'UPTREND' ? 'var(--accent-green)'
-                       : c.regime === 'DOWNTREND' ? 'var(--accent-red)'
-                       : c.regime === 'RANGE' ? 'var(--accent-yellow)'
-                       : '#888';
+        if (typeof c.rsi12h === 'number') {
+          $z.textContent = c.rsi12h.toFixed(0);
+          $z.style.color = c.rsi12h >= 70 ? 'var(--accent-red)'
+                         : c.rsi12h <= 30 ? 'var(--accent-green)'
+                         : '#ccc';
+        } else {
+          $z.textContent = '--';
+          $z.style.color = '#888';
+        }
       }
-      if ($zLabel) $zLabel.textContent = 'REGIME';
+      if ($zLabel) $zLabel.textContent = 'RSI 12H';
       if ($u) $u.textContent = 'updated ' + new Date().toLocaleTimeString('pt-BR');
 
       // --- Confirmadores ---
@@ -5413,9 +5505,10 @@
           const fmtRet = r => r == null ? '<span style="color:#555;">--</span>' : '<span style="color:' + (r >= 0 ? '#00d97e' : '#ef4444') + ';">' + (r >= 0 ? '+' : '') + r.toFixed(1) + '%</span>';
           const fmtHit = h => h == null ? '<span style="color:#555;">PEND</span>' : h ? '<span style="color:#00d97e;font-weight:700;">HIT</span>' : '<span style="color:#ef4444;font-weight:700;">MISS</span>';
           const rows = div.backtest.rows.slice(0, 15).map(r => {
+            const rsiCell = (typeof r.rsi12h === 'number') ? 'RSI ' + r.rsi12h.toFixed(0) : 'RSI --';
             const alertBlock = '<span style="color:' + (ALERT_COLOR[r.alert] || '#9a9aa6') + ';font-weight:700;">' + r.alert + '</span>'
                              + '<div style="font-size:9px;color:' + (CLUSTER_COLOR[r.cluster] || '#888') + ';margin-top:1px;">'
-                               + r.cluster + ' (' + r.clusterSize + '/7d) · ' + r.regime
+                               + r.cluster + ' (' + r.clusterSize + '/7d) · ' + rsiCell
                              + '</div>';
             return '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">'
                  + '<td style="padding:6px 4px;color:#ccc;">' + r.date + '</td>'
@@ -5459,19 +5552,7 @@
       if (_divPriceChart) _divPriceChart.destroy();
 
       const chartData = div.chart;
-      // Highlight LAST alert: cria datasets extra com o ultimo ponto real pra destaque.
-      let lastSellIdx = -1, lastBuyIdx = -1;
-      for (let i = chartData.markers.SELL.length - 1; i >= 0; i--) {
-        if (chartData.markers.SELL[i] != null) { lastSellIdx = i; break; }
-      }
-      for (let i = chartData.markers.BUY.length - 1; i >= 0; i--) {
-        if (chartData.markers.BUY[i] != null) { lastBuyIdx = i; break; }
-      }
-      const lastSell = new Array(chartData.labels.length).fill(null);
-      const lastBuy  = new Array(chartData.labels.length).fill(null);
-      if (lastSellIdx >= 0) lastSell[lastSellIdx] = chartData.markers.SELL[lastSellIdx];
-      if (lastBuyIdx  >= 0) lastBuy[lastBuyIdx]   = chartData.markers.BUY[lastBuyIdx];
-
+      // Estagio F: markers uniformes (sem highlight 10px). Cores Maartun: price roxo, OI amarelo.
       _divPriceChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -5481,8 +5562,8 @@
               label: 'BTC Price',
               data: chartData.prices,
               yAxisID: 'y',
-              borderColor: '#14b8a6',
-              backgroundColor: 'rgba(20,184,166,0.06)',
+              borderColor: '#8b5cf6',
+              backgroundColor: 'rgba(139,92,246,0.06)',
               borderWidth: 1.8,
               pointRadius: 0,
               tension: 0.15,
@@ -5493,9 +5574,9 @@
               label: 'Open Interest',
               data: chartData.oi,
               yAxisID: 'y1',
-              borderColor: 'rgba(180,180,200,0.45)',
-              borderWidth: 1,
-              borderDash: [3,3],
+              borderColor: 'rgba(234,179,8,0.75)',
+              backgroundColor: 'rgba(234,179,8,0.04)',
+              borderWidth: 1.2,
               pointRadius: 0,
               tension: 0.15,
               fill: false,
@@ -5509,8 +5590,8 @@
               backgroundColor: '#ef4444',
               pointStyle: 'triangle',
               rotation: 180,
-              pointRadius: 5,
-              pointHoverRadius: 8,
+              pointRadius: 6,
+              pointHoverRadius: 9,
               pointBorderColor: 'rgba(255,255,255,0.5)',
               pointBorderWidth: 1,
               showLine: false,
@@ -5525,44 +5606,14 @@
               borderColor: 'transparent',
               backgroundColor: '#00d97e',
               pointStyle: 'triangle',
-              pointRadius: 5,
-              pointHoverRadius: 8,
+              pointRadius: 6,
+              pointHoverRadius: 9,
               pointBorderColor: 'rgba(255,255,255,0.5)',
               pointBorderWidth: 1,
               showLine: false,
               spanGaps: false,
               order: 3,
               _meta: chartData.markerMeta ? chartData.markerMeta.BUY : null
-            },
-            // Destaque do ultimo alert (emula o "Scale: 50" do Maartun = indica "agora")
-            {
-              label: 'SELL (now)',
-              data: lastSell,
-              yAxisID: 'y',
-              borderColor: '#fff',
-              backgroundColor: '#ef4444',
-              pointStyle: 'triangle',
-              rotation: 180,
-              pointRadius: 10,
-              pointHoverRadius: 12,
-              pointBorderWidth: 2,
-              showLine: false,
-              spanGaps: false,
-              order: 1
-            },
-            {
-              label: 'BUY (now)',
-              data: lastBuy,
-              yAxisID: 'y',
-              borderColor: '#fff',
-              backgroundColor: '#00d97e',
-              pointStyle: 'triangle',
-              pointRadius: 10,
-              pointHoverRadius: 12,
-              pointBorderWidth: 2,
-              showLine: false,
-              spanGaps: false,
-              order: 1
             }
           ]
         },
@@ -5598,7 +5649,7 @@
               position: 'left',
               grid: { color: 'rgba(255,255,255,0.04)' },
               ticks: {
-                color: '#14b8a6', font: { size: 8 },
+                color: '#8b5cf6', font: { size: 8 },
                 callback: v => '$' + (v/1000).toFixed(0) + 'k'
               }
             },
@@ -5607,7 +5658,7 @@
               position: 'right',
               grid: { drawOnChartArea: false },
               ticks: {
-                color: '#9a9aa6', font: { size: 8 },
+                color: '#eab308', font: { size: 8 },
                 callback: v => '$' + (v/1e9).toFixed(0) + 'B'
               }
             }
