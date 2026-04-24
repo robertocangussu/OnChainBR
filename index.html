@@ -4784,36 +4784,52 @@
         }
       } catch(e) { console.warn('Reserve Risk fetch error:', e); }
       
+      // Defensive picker: try named fields, then any numeric field (skip timestamps)
+      const pickNum = (row, ...keys) => {
+        if (!row) return null;
+        for (const k of keys) { if (row[k] !== undefined && row[k] !== null) { const n = toNum(row[k]); if (n !== null) return n; } }
+        for (const [k, v] of Object.entries(row)) {
+          if (k === 'd' || k === 'date' || k === 't' || k === 'day') continue;
+          const n = toNum(v);
+          if (n !== null && !isNaN(n)) return n;
+        }
+        return null;
+      };
+
       // 6. LTH Supply (alternative to position change)
       try {
         const result = await fetchBGeometrics('/v1/long-term-hodler-supply-btc', 'LTH Supply');
         if (result.success && result.data && result.data.length) {
-          const latest = getLatest(result.data, 'longTermHodlerSupplyBtc', 'value', 'v');
-          // Also try to get previous value for delta
+          const latest = pickNum(result.data[result.data.length - 1], 'longTermHodlerSupplyBtc', 'value', 'v');
           if (result.data.length >= 30) {
-            const prev = toNum(result.data[result.data.length - 30].longTermHodlerSupplyBtc || 
-                               result.data[result.data.length - 30].value);
-            if (latest && prev) {
+            const prev = pickNum(result.data[result.data.length - 30], 'longTermHodlerSupplyBtc', 'value', 'v');
+            if (latest !== null && prev !== null) {
               smData.lth30d = latest - prev; // Delta over ~30 days
-              console.log('✓ LTH 30d Delta:', smData.lth30d);
+              console.log('✓ LTH 30d Delta:', smData.lth30d, '(latest=', latest, 'prev=', prev, ')');
+            } else {
+              console.warn('[LTH Supply] Could not extract delta. Sample row:', result.data[result.data.length - 1]);
             }
+          } else {
+            console.warn('[LTH Supply] Only', result.data.length, 'data points (need >=30 for 30d delta)');
           }
         }
       } catch(e) { console.warn('LTH Supply fetch error:', e); }
-      
+
       // 7. STH Supply (alternative to position change)
       try {
         const result = await fetchBGeometrics('/v1/short-term-hodler-supply-btc', 'STH Supply');
         if (result.success && result.data && result.data.length) {
-          const latest = getLatest(result.data, 'shortTermHodlerSupplyBtc', 'value', 'v');
-          // Also try to get previous value for delta
+          const latest = pickNum(result.data[result.data.length - 1], 'shortTermHodlerSupplyBtc', 'value', 'v');
           if (result.data.length >= 30) {
-            const prev = toNum(result.data[result.data.length - 30].shortTermHodlerSupplyBtc || 
-                               result.data[result.data.length - 30].value);
-            if (latest && prev) {
+            const prev = pickNum(result.data[result.data.length - 30], 'shortTermHodlerSupplyBtc', 'value', 'v');
+            if (latest !== null && prev !== null) {
               smData.sth30d = latest - prev; // Delta over ~30 days
-              console.log('✓ STH 30d Delta:', smData.sth30d);
+              console.log('✓ STH 30d Delta:', smData.sth30d, '(latest=', latest, 'prev=', prev, ')');
+            } else {
+              console.warn('[STH Supply] Could not extract delta. Sample row:', result.data[result.data.length - 1]);
             }
+          } else {
+            console.warn('[STH Supply] Only', result.data.length, 'data points (need >=30 for 30d delta)');
           }
         }
       } catch(e) { console.warn('STH Supply fetch error:', e); }
