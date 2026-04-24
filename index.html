@@ -5032,6 +5032,13 @@
       smartMoneyState.confidence = confidence;
       smartMoneyState.loaded = true;
       checkReportReady();
+
+      // Re-render Price Layers section now that HODL 1Y+ is available
+      try {
+        if (typeof priceLayersState !== 'undefined' && priceLayersState.loaded && typeof renderPriceLayers === 'function') {
+          renderPriceLayers();
+        }
+      } catch(e) { console.warn('[SmartMoney] PriceLayers re-render skip:', e.message); }
       
       // --- Render LTH History Chart ---
       if (smData.lthHistory && smData.lthHistory.length > 0) {
@@ -10681,6 +10688,13 @@
         cohortState.loaded = true;
         console.log('[Cohort] All data loaded. MVRV STH:', cohortState.sthMVRV, 'SOPR STH:', cohortState.sthSOPR, 'Supply Profit:', cohortState.supplyProfit);
         renderCohort();
+
+        // Re-render Price Layers section now that Supply in Profit is available
+        try {
+          if (typeof priceLayersState !== 'undefined' && priceLayersState.loaded && typeof renderPriceLayers === 'function') {
+            renderPriceLayers();
+          }
+        } catch(e) { console.warn('[Cohort] PriceLayers re-render skip:', e.message); }
       } catch (err) {
         console.error('[Cohort] Fetch error:', err);
       }
@@ -11058,3 +11072,4 @@
 </script>
 </body>
 </html>
+                                       
