@@ -3489,7 +3489,30 @@
             },
             y1: { display: true, position: 'right', min: -3, max: 3, grid: { display: false }, ticks: { color: '#9a9aa6', font: { size: 9 } } }
           }
-        }
+        },
+        plugins: [{
+          id: 'zcompositeZones',
+          beforeDatasetsDraw(chart) {
+            const { ctx: c, chartArea, scales } = chart;
+            const y1 = scales.y1;
+            if (!y1 || !chartArea) return;
+            const zones = [
+              { from:  1.5, to:  3.0, color: 'rgba(239, 68, 68, 0.14)' },   // OVERHEATED - red
+              { from:  0.5, to:  1.5, color: 'rgba(249,115, 22, 0.10)' },   // ELEVATED - orange
+              { from: -0.5, to:  0.5, color: 'rgba(59, 130, 246, 0.05)' },  // FAIR - soft blue
+              { from: -1.5, to: -0.5, color: 'rgba(132, 204, 22, 0.08)' },  // UNDERVALUED - lime
+              { from: -3.0, to: -1.5, color: 'rgba(0, 217, 126, 0.12)' }    // ACCUMULATE - green
+            ];
+            c.save();
+            zones.forEach(z => {
+              const yTop = y1.getPixelForValue(z.to);
+              const yBot = y1.getPixelForValue(z.from);
+              c.fillStyle = z.color;
+              c.fillRect(chartArea.left, Math.min(yTop, yBot), chartArea.right - chartArea.left, Math.abs(yBot - yTop));
+            });
+            c.restore();
+          }
+        }]
       });
       
       // Update badge to show actual years
@@ -4878,6 +4901,70 @@
 
     // ========== SECTION 06: LEVERAGE RISK METER ==========
     let _levOiChart = null;
+
+    function renderLevOiChart(data) {
+      const canvas = document.getElementById('levOiChart');
+      if (!canvas || !Array.isArray(data) || !data.length) return;
+      const ctx = canvas.getContext('2d');
+
+      const labels = data.map(d => {
+        const t = d.timestamp ?? d.date;
+        const dt = new Date(t);
+        return dt.toLocaleDateString('en', { month: 'short', day: '2-digit' });
+      });
+      const values = data.map(d => {
+        const v = Number(d.value ?? d.sumOpenInterest ?? 0);
+        return v / 1e9; // convert USD -> billions
+      });
+
+      if (_levOiChart) _levOiChart.destroy();
+
+      _levOiChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'OI',
+            data: values,
+            borderColor: '#a78bfa',
+            backgroundColor: 'rgba(167, 139, 250, 0.12)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.3,
+            pointRadius: 0,
+            pointHoverRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: c => `OI: $${c.parsed.y.toFixed(2)}B`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#9a9aa6', font: { size: 9 }, maxTicksLimit: 8 }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: {
+                color: '#9a9aa6',
+                font: { size: 9 },
+                callback: v => '$' + v.toFixed(1) + 'B'
+              }
+            }
+          }
+        }
+      });
+    }
+
     
     async function fetchLeverageData() {
       console.log('⚡ Fetching Leverage data...');
@@ -5217,10 +5304,8 @@
       leverageState.loaded = true;
       checkReportReady();
       
-      // Chart (mostra ultimos 30 dias). renderLevOiChart foi removido no cleanup
-      // do Flow Scalper/Divergence - typeof guard evita ReferenceError que quebrava
-      // toda a renderLeverageUI (incluindo Squeeze Radar downstream).
-      if (levData.oiHistory && levData.oiHistory.length > 0 && typeof renderLevOiChart === 'function') {
+      // Chart Open Interest 30 dias (restaurado apos cleanup Flow Scalper/Divergence).
+      if (levData.oiHistory && levData.oiHistory.length > 0) {
         renderLevOiChart(levData.oiHistory.slice(-30));
       }
 
