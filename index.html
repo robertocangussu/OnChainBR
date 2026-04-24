@@ -5146,11 +5146,43 @@
       }
 
       // Squeeze Radar: pressure + liquidation risk radar
+      // Defensive: compute and render wrapped separately, with verbose logging + fallback
+      console.log('[SqueezeRadar] input check:', {
+        oiHistory: Array.isArray(levData.oiHistory) ? levData.oiHistory.length : 'NOT_ARRAY',
+        liquidationsHistory: Array.isArray(levData.liquidationsHistory) ? levData.liquidationsHistory.length : 'NOT_ARRAY',
+        fundingHistory: Array.isArray(levData.fundingHistory) ? levData.fundingHistory.length : 'NOT_ARRAY',
+        funding: levData.fundingRate,
+        liq24h: levData.liquidations24h,
+        liq24hLong: levData.liquidations24hLong,
+        liq24hShort: levData.liquidations24hShort,
+        ls: levData.longShortRatio,
+        longPct: levData.longPct,
+        shortPct: levData.shortPct
+      });
+      let rad = null;
       try {
-        const rad = computeSqueezeRadar(levData);
+        rad = computeSqueezeRadar(levData);
         leverageState.squeezeRadar = rad;
+        console.log('[SqueezeRadar] computed:', { score: rad.score, state: rad.state, factors: rad.factors.length });
+      } catch(e) {
+        console.error('[SqueezeRadar] COMPUTE ERROR:', e, '\nstack:', e && e.stack);
+        // Fallback safe object so renderer still runs and shows the error state
+        rad = {
+          score: 0, state: 'ERROR', stateDesc: 'Erro no calculo - ver console (' + (e && e.message ? e.message : 'unknown') + ')',
+          longPressure: 0, shortPressure: 0, factors: [],
+          funding: levData.fundingRate || 0, fundingRegime: 'N/D',
+          liq24h: levData.liquidations24h || 0,
+          liq24hLong: levData.liquidations24hLong || 0,
+          liq24hShort: levData.liquidations24hShort || 0,
+          spotPerpProxy: 0, oiDelta7d: null, oiDelta30d: null,
+          netPositioningSeries: [], liqSeries: []
+        };
+      }
+      try {
         renderSqueezeRadar(rad, levData);
-      } catch(e) { console.warn('[SqueezeRadar] compute/render error:', e); }
+      } catch(e) {
+        console.error('[SqueezeRadar] RENDER ERROR:', e, '\nstack:', e && e.stack);
+      }
     }
     
     // Agrega serie horaria (ou ja-daily) em daily: um ponto por dia (ultimo valor do dia).
@@ -5395,17 +5427,26 @@
       else { out.state = 'NEUTRAL'; out.stateDesc = 'Mercado equilibrado, sem setup de squeeze claro. Range provavel.'; }
 
       // --- Net Positioning series (OI changes 30d, for mini chart) ---
-      if (oiHist.length >= 2) {
-        const slice = oiHist.slice(-30);
-        const base = slice[0].value;
-        out.netPositioningSeries = slice.map(p => ({
-          date: p.date,
-          delta: base > 0 ? ((p.value - base) / base) * 100 : 0
-        }));
+      try {
+        if (oiHist.length >= 2) {
+          const slice = oiHist.slice(-30);
+          const base = slice && slice[0] && typeof slice[0].value === 'number' ? slice[0].value : 0;
+          out.netPositioningSeries = slice.map(p => ({
+            date: (p && p.date) || '',
+            delta: (base > 0 && p && typeof p.value === 'number') ? ((p.value - base) / base) * 100 : 0
+          }));
+        }
+      } catch (e) {
+        console.warn('[SqueezeRadar] netPositioningSeries err:', e);
+        out.netPositioningSeries = [];
       }
 
       // --- Liquidation history for chart ---
-      out.liqSeries = liqHist.slice(-30);
+      try {
+        out.liqSeries = Array.isArray(liqHist) ? liqHist.slice(-30) : [];
+      } catch (e) {
+        out.liqSeries = [];
+      }
 
       out.factors = factors;
       return out;
