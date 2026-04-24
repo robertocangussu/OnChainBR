@@ -5140,8 +5140,10 @@
       leverageState.loaded = true;
       checkReportReady();
       
-      // Chart (mostra ultimos 30 dias, mas oiHistory agora tem 120 p/ divergence calc)
-      if (levData.oiHistory && levData.oiHistory.length > 0) {
+      // Chart (mostra ultimos 30 dias). renderLevOiChart foi removido no cleanup
+      // do Flow Scalper/Divergence - typeof guard evita ReferenceError que quebrava
+      // toda a renderLeverageUI (incluindo Squeeze Radar downstream).
+      if (levData.oiHistory && levData.oiHistory.length > 0 && typeof renderLevOiChart === 'function') {
         renderLevOiChart(levData.oiHistory.slice(-30));
       }
 
