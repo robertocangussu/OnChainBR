@@ -548,6 +548,10 @@
     .roc-badge-flat { background: rgba(255,255,255,0.06); color: var(--text-muted); }
 
     @media (max-width: 1200px) { .backstage-grid { grid-template-columns: 1fr; } .whale-grid { grid-template-columns: 1fr; } .futures-metrics-grid { grid-template-columns: repeat(3,1fr); } .backstage-metrics-row { grid-template-columns: repeat(3,1fr); } .confluence-breakdown { grid-template-columns: repeat(3,1fr); } }
+    .sr-tf-btn { font-size: 8px; font-family: 'JetBrains Mono', monospace; padding: 2px 7px; border-radius: 3px; background: rgba(255,255,255,0.04); color: #9a9aa6; border: 1px solid rgba(255,255,255,0.06); cursor: pointer; letter-spacing: 0.3px; transition: all 0.15s; }
+    .sr-tf-btn:hover { background: rgba(255,255,255,0.08); color: #d1d1d8; }
+    .sr-tf-btn.sr-tf-active { background: rgba(139,92,246,0.18); color: #c4b5fd; border-color: rgba(139,92,246,0.35); }
+
     @media (max-width: 700px) { .futures-metrics-grid { grid-template-columns: repeat(2,1fr); } .backstage-metrics-row { grid-template-columns: repeat(2,1fr); } .confluence-breakdown { grid-template-columns: repeat(2,1fr); } }
   </style>
 </head>
@@ -1533,11 +1537,18 @@
       <!-- ZONE 2: Headline stats (3 columns) -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
         <div style="background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.15);border-radius:8px;padding:14px;">
-          <div style="font-size:8.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:6px;">24H LIQUIDATIONS</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:8.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">24H LIQUIDATIONS</span>
+            <span id="srLiqVerdict" style="font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,0.04);color:#9a9aa6;letter-spacing:0.6px;font-weight:600;">--</span>
+          </div>
           <div id="srLiqTotal" style="font-size:22px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#fff;">$--</div>
-          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:9.5px;">
-            <span>LONGS: <strong id="srLiqLongs" style="color:#22c55e;">$--</strong></span>
-            <span>SHORTS: <strong id="srLiqShorts" style="color:#ef4444;">$--</strong></span>
+          <div style="margin-top:8px;height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;display:flex;">
+            <div id="srLiqSplitL" style="height:100%;background:#22c55e;width:0%;transition:width 0.3s;"></div>
+            <div id="srLiqSplitS" style="height:100%;background:#ef4444;width:0%;transition:width 0.3s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--text-muted);">
+            <span>LONGS <strong id="srLiqLongs" style="color:#22c55e;">$--</strong> <span id="srLiqLongs7d" style="opacity:0.55;">7d --</span></span>
+            <span>SHORTS <strong id="srLiqShorts" style="color:#ef4444;">$--</strong> <span id="srLiqShorts7d" style="opacity:0.55;">7d --</span></span>
           </div>
         </div>
         <div style="background:rgba(139,92,246,0.04);border:1px solid rgba(139,92,246,0.15);border-radius:8px;padding:14px;">
@@ -1589,11 +1600,18 @@
       <!-- ZONE 5: Charts (Liquidations 30d + Net Positioning 7d) -->
       <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:12px;">
         <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:12px 14px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <span style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;">LIQUIDATIONS 30D (STACKED)</span>
-            <span style="display:flex;gap:10px;font-size:8.5px;">
-              <span style="color:#22c55e;">&#9632; LONG</span>
-              <span style="color:#ef4444;">&#9632; SHORT</span>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;">LIQUIDATIONS &middot; <span id="srLiqTfLabel">30D</span> (STACKED)</span>
+            <span style="display:flex;gap:8px;align-items:center;">
+              <span style="display:flex;gap:3px;">
+                <button data-tf="7" class="sr-tf-btn" type="button">7d</button>
+                <button data-tf="30" class="sr-tf-btn sr-tf-active" type="button">30d</button>
+                <button data-tf="90" class="sr-tf-btn" type="button">90d</button>
+              </span>
+              <span style="display:flex;gap:10px;font-size:8.5px;">
+                <span style="color:#22c55e;">&#9632; LONG</span>
+                <span style="color:#ef4444;">&#9632; SHORT</span>
+              </span>
             </span>
           </div>
           <div style="position:relative;height:180px;"><canvas id="srLiqChart"></canvas></div>
@@ -4914,7 +4932,7 @@
           levData.liquidations24hLong = toNum(latest.longLiquidationsUsd || latest.longLiquidations || 0);
           levData.liquidations24hShort = toNum(latest.shortLiquidationsUsd || latest.shortLiquidations || 0);
           // 30d history for stacked bar chart + squeeze radar
-          levData.liquidationsHistory = result.data.slice(-30).map(d => ({
+          levData.liquidationsHistory = result.data.slice(-90).map(d => ({
             date: d.d || d.day || d.date || d.t,
             long: toNum(d.longLiquidationsUsd || d.longLiquidations || 0),
             short: toNum(d.shortLiquidationsUsd || d.shortLiquidations || 0),
@@ -5211,7 +5229,8 @@
           liq24hLong: levData.liquidations24hLong || 0,
           liq24hShort: levData.liquidations24hShort || 0,
           spotPerpProxy: 0, oiDelta7d: null, oiDelta30d: null,
-          netPositioningSeries: [], liqSeries: []
+          netPositioningSeries: [], liqSeries: [],
+          liqLong7d: 0, liqShort7d: 0, liqVerdict: '--', liqVerdictColor: '#9a9aa6', liqLongPct24: 0.5
         };
       }
       try {
@@ -5300,13 +5319,19 @@
         else if (ls < 0.6) lsSig = -2;
         else if (ls < 0.8) lsSig = -1;
       }
+      let lsVerdict = null;
+      if (ls != null) {
+        if (ls < 0.8) lsVerdict = { text: 'BULLISH', color: '#22c55e' };
+        else if (ls > 1.25) lsVerdict = { text: 'BEARISH', color: '#ef4444' };
+      }
       factors.push({
         name: 'Long/Short Ratio',
         pass: ls != null ? (lsSig !== 0) : null,
         signal: lsSig,
         weight: 1.8,
         value: ls != null ? ls.toFixed(2) : 'n/d',
-        desc: 'Extremos indicam posicionamento desequilibrado. >1.5 = crowded longs, <0.7 = crowded shorts.'
+        desc: 'Extremos indicam posicionamento desequilibrado. >1.5 = crowded longs, <0.7 = crowded shorts.',
+        verdict: lsVerdict
       });
 
       // --- Factor 3: 24h liquidations asymmetry ---
@@ -5496,18 +5521,38 @@
         out.netPositioningSeries = [];
       }
 
-      // --- Liquidation history for chart ---
+      // --- Liquidation history 90d (renderer slices per TF) ---
       try {
-        out.liqSeries = Array.isArray(liqHist) ? liqHist.slice(-30) : [];
+        out.liqSeries = Array.isArray(liqHist) ? liqHist.slice(-90) : [];
       } catch (e) {
         out.liqSeries = [];
       }
+
+      // --- 7d cumulative ---
+      try {
+        const liq7 = Array.isArray(liqHist) ? liqHist.slice(-7) : [];
+        out.liqLong7d = liq7.reduce((s, x) => s + ((x && x.long) || 0), 0);
+        out.liqShort7d = liq7.reduce((s, x) => s + ((x && x.short) || 0), 0);
+      } catch (e) { out.liqLong7d = 0; out.liqShort7d = 0; }
+
+      // --- 24h dominance verdict ---
+      try {
+        const tot24 = (out.liq24hLong || 0) + (out.liq24hShort || 0);
+        if (tot24 > 0) {
+          const lp24 = out.liq24hLong / tot24;
+          if (lp24 > 0.65) { out.liqVerdict = 'LONG SQUEEZE'; out.liqVerdictColor = '#ef4444'; }
+          else if (lp24 < 0.35) { out.liqVerdict = 'SHORT SQUEEZE'; out.liqVerdictColor = '#22c55e'; }
+          else { out.liqVerdict = 'BALANCED'; out.liqVerdictColor = '#9a9aa6'; }
+          out.liqLongPct24 = lp24;
+        } else { out.liqVerdict = '--'; out.liqVerdictColor = '#9a9aa6'; out.liqLongPct24 = 0.5; }
+      } catch (e) { out.liqVerdict = '--'; out.liqVerdictColor = '#9a9aa6'; out.liqLongPct24 = 0.5; }
 
       out.factors = factors;
       return out;
     }
 
     let _srLiqChart = null;
+    let _srLiqTf = 30;
     let _srNetChart = null;
 
     function renderSqueezeRadar(rad, levData) {
@@ -5536,22 +5581,28 @@
       const updatedEl = $('srUpdated');
       if (updatedEl) updatedEl.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      // Headline: 24h Liquidations
+      // Headline: 24h Liquidations (verdict + split bar + 7d cumul)
+      const _fmtM = (v) => v > 0 ? '$' + (v >= 1e9 ? (v/1e9).toFixed(2) + 'B' : (v/1e6).toFixed(1) + 'M') : '$--';
       const liqTotalEl = $('srLiqTotal');
-      if (liqTotalEl) {
-        const t = rad.liq24h || 0;
-        liqTotalEl.textContent = t > 0 ? '$' + (t >= 1e9 ? (t/1e9).toFixed(2) + 'B' : (t/1e6).toFixed(1) + 'M') : '$--';
-      }
+      if (liqTotalEl) liqTotalEl.textContent = _fmtM(rad.liq24h || 0);
       const liqLEl = $('srLiqLongs');
-      if (liqLEl) {
-        const v = rad.liq24hLong || 0;
-        liqLEl.textContent = v > 0 ? '$' + (v >= 1e9 ? (v/1e9).toFixed(2) + 'B' : (v/1e6).toFixed(1) + 'M') : '$--';
-      }
+      if (liqLEl) liqLEl.textContent = _fmtM(rad.liq24hLong || 0);
       const liqSEl = $('srLiqShorts');
-      if (liqSEl) {
-        const v = rad.liq24hShort || 0;
-        liqSEl.textContent = v > 0 ? '$' + (v >= 1e9 ? (v/1e9).toFixed(2) + 'B' : (v/1e6).toFixed(1) + 'M') : '$--';
+      if (liqSEl) liqSEl.textContent = _fmtM(rad.liq24hShort || 0);
+      const liqL7 = $('srLiqLongs7d');
+      if (liqL7) liqL7.textContent = '7d ' + ((rad.liqLong7d || 0) > 0 ? _fmtM(rad.liqLong7d) : '--');
+      const liqS7 = $('srLiqShorts7d');
+      if (liqS7) liqS7.textContent = '7d ' + ((rad.liqShort7d || 0) > 0 ? _fmtM(rad.liqShort7d) : '--');
+      const vchip = $('srLiqVerdict');
+      if (vchip) {
+        vchip.textContent = rad.liqVerdict || '--';
+        vchip.style.color = rad.liqVerdictColor || '#9a9aa6';
       }
+      const _lPct = typeof rad.liqLongPct24 === 'number' ? rad.liqLongPct24 : 0.5;
+      const splitL = $('srLiqSplitL');
+      const splitS = $('srLiqSplitS');
+      if (splitL) splitL.style.width = (_lPct * 100).toFixed(1) + '%';
+      if (splitS) splitS.style.width = ((1 - _lPct) * 100).toFixed(1) + '%';
 
       // Funding
       const fundEl = $('srFundingVal');
@@ -5610,39 +5661,62 @@
           const right = document.createElement('span');
           right.style.cssText = 'font-family:\'JetBrains Mono\',monospace;font-size:10px;color:' + (isPass ? tone : '#9a9aa6') + ';';
           right.textContent = fac.value;
+          if (fac.verdict && fac.verdict.text) {
+            const vspan = document.createElement('span');
+            vspan.textContent = ' \u00b7 ' + fac.verdict.text;
+            vspan.style.cssText = 'color:' + fac.verdict.color + ';font-weight:700;margin-left:4px;font-size:9px;letter-spacing:0.4px;';
+            right.appendChild(vspan);
+          }
           row.appendChild(left); row.appendChild(right);
           row.title = fac.desc;
           fL.appendChild(row);
         }
       }
 
-      // Liquidations 30d stacked bar chart
-      const liqCtx = document.getElementById('srLiqChart');
-      if (liqCtx && Array.isArray(rad.liqSeries) && rad.liqSeries.length && typeof Chart !== 'undefined') {
-        if (_srLiqChart) _srLiqChart.destroy();
-        const labels = rad.liqSeries.map(p => {
+      // Liquidations stacked chart with TF toggle
+      if (typeof _srLiqTf === 'undefined' || !_srLiqTf) _srLiqTf = 30;
+      function _srRenderLiqChart() {
+        const liqCtx = document.getElementById('srLiqChart');
+        if (!liqCtx || !Array.isArray(rad.liqSeries) || !rad.liqSeries.length || typeof Chart === 'undefined') return;
+        const series = rad.liqSeries.slice(-_srLiqTf);
+        if (_srLiqChart) { try { _srLiqChart.destroy(); } catch(_){} }
+        const labels = series.map(p => {
           if (typeof p.date === 'string') return p.date.slice(5, 10);
           try { return new Date(p.date).toISOString().slice(5, 10); } catch(e) { return ''; }
         });
         _srLiqChart = new Chart(liqCtx, {
           type: 'bar',
-          data: {
-            labels: labels,
-            datasets: [
-              { label: 'Long Liq', data: rad.liqSeries.map(p => (p.long || 0) / 1e6), backgroundColor: 'rgba(34,197,94,0.8)', borderRadius: 2, stack: 's' },
-              { label: 'Short Liq', data: rad.liqSeries.map(p => (p.short || 0) / 1e6), backgroundColor: 'rgba(239,68,68,0.8)', borderRadius: 2, stack: 's' }
-            ]
-          },
+          data: { labels: labels, datasets: [
+            { label: 'Long Liq', data: series.map(p => (p.long || 0) / 1e6), backgroundColor: 'rgba(34,197,94,0.8)', borderRadius: 2, stack: 's' },
+            { label: 'Short Liq', data: series.map(p => (p.short || 0) / 1e6), backgroundColor: 'rgba(239,68,68,0.8)', borderRadius: 2, stack: 's' }
+          ]},
           options: {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': $' + ctx.parsed.y.toFixed(1) + 'M'; } } } },
             scales: {
-              x: { stacked: true, grid: { display: false }, ticks: { color: '#9a9aa6', maxTicksLimit: 8, font: { size: 8 } } },
+              x: { stacked: true, grid: { display: false }, ticks: { color: '#9a9aa6', maxTicksLimit: _srLiqTf <= 7 ? 7 : (_srLiqTf <= 30 ? 8 : 12), font: { size: 8 } } },
               y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9a9aa6', font: { size: 8 }, callback: v => '$' + v + 'M' } }
             }
           }
         });
+        const tfLabel = document.getElementById('srLiqTfLabel');
+        if (tfLabel) tfLabel.textContent = _srLiqTf + 'D';
       }
+      (function bindTfBtns(){
+        const btns = document.querySelectorAll('.sr-tf-btn[data-tf]');
+        btns.forEach(btn => {
+          if (btn.dataset.bound === '1') return;
+          btn.dataset.bound = '1';
+          btn.addEventListener('click', () => {
+            const nt = parseInt(btn.getAttribute('data-tf'), 10) || 30;
+            if (nt === _srLiqTf) return;
+            _srLiqTf = nt;
+            document.querySelectorAll('.sr-tf-btn').forEach(b => b.classList.toggle('sr-tf-active', parseInt(b.getAttribute('data-tf'),10) === _srLiqTf));
+            _srRenderLiqChart();
+          });
+        });
+      })();
+      _srRenderLiqChart();
 
       // Net Positioning 30d line chart
       const netCtx = document.getElementById('srNetChart');
