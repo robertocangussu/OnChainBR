@@ -792,7 +792,7 @@
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
           <span class="sig-legend"><span style="color:#00d97e;font-size:14px;">▲</span> BUY Signal</span>
           <span class="sig-legend"><span style="color:#ef4444;font-size:14px;">▼</span> SELL Signal</span>
-          <span class="sig-legend"><span style="display:inline-block;width:20px;height:2px;background:#f97316;vertical-align:middle;"></span> Z-Composite</span>
+          <span class="sig-legend"><span style="display:inline-block;width:20px;height:2px;background:rgba(255,255,255,0.6);vertical-align:middle;"></span> Z-Composite</span>
           <div style="display:flex;gap:4px;margin-left:8px;" id="sigRangeButtons">
             <button onclick="setSigRange(365)"  class="sig-range-btn" id="sigBtn1Y">1Y</button>
             <button onclick="setSigRange(730)"  class="sig-range-btn" id="sigBtn2Y">2Y</button>
@@ -4119,9 +4119,18 @@
       const ctx = document.getElementById('signalChart')?.getContext('2d');
       if (!ctx) return;
 
-      // Slice to selected range
-      const allPrices = _sigRangeDays > 0 ? state.prices.slice(-_sigRangeDays) : state.prices;
+      // Slice to selected range. Para ALL (_sigRangeDays=0), corta o prefixo vazio
+      // ate firstZDate pro chart nao ter vazio do lado esquerdo (2009-2011).
       const cMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
+      const firstZDate = state.compositeHistory.length ? state.compositeHistory[0].date : null;
+      let allPrices;
+      if (_sigRangeDays > 0) {
+        allPrices = state.prices.slice(-_sigRangeDays);
+      } else if (firstZDate) {
+        allPrices = state.prices.filter(p => p.date >= firstZDate);
+      } else {
+        allPrices = state.prices;
+      }
       const labels = allPrices.map(p => p.date);
       const priceData = allPrices.map(p => p.value);
       const zData = labels.map(d => cMap.get(d) ?? null);
@@ -4223,12 +4232,12 @@
               }
             },
             {
-              // Z-Composite line on right axis - thin and subtle
+              // Z-Composite line on right axis - thin and subtle (white tone)
               label: 'Z-Composite',
               data: zData,
               yAxisID: 'yZ',
-              borderColor: 'rgba(168,85,247,0.35)',
-              borderWidth: 1,
+              borderColor: 'rgba(255,255,255,0.4)',
+              borderWidth: 1.2,
               pointRadius: 0,
               tension: 0.3,
               fill: false
