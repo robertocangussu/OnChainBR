@@ -25,6 +25,54 @@
       --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px;
       --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px;
     }
+    :root {
+      /* Zone colors (Z-Composite) — PASSO 4 consolidation */
+      --zone-acc:  #00d97e;  /* accumulate / strong bullish */
+      --zone-und:  #84cc16;  /* undervalued / bullish mild */
+      --zone-fair: #eab308;  /* neutral / fair */
+      --zone-ele:  #f97316;  /* elevated / bearish mild */
+      --zone-over: #ef4444;  /* overheated / strong bearish */
+    }
+
+    /* === PASSO 2: Unified Card Tiers === */
+    .card-hero, .card-primary, .card-compact {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    .card-hero      { padding: 20px; text-align: center; }
+    .card-primary   { padding: 16px; overflow: hidden; }
+    .card-compact   { padding: 12px 14px; }
+    .card-hero:hover, .card-primary:hover, .card-compact:hover {
+      border-color: rgba(255,255,255,0.08);
+    }
+    /* Optional accent bar on top (subtle) */
+    .card-primary.card-accent::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--card-accent-color, var(--accent-orange)) 0%, transparent 100%);
+    }
+    /* Unified labels */
+    .card-label {
+      font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--text-muted); font-weight: 700;
+    }
+    .card-primary .card-label, .card-hero .card-label { margin-bottom: 10px; }
+    .card-compact .card-label { margin-bottom: 4px; }
+    /* Unified values */
+    .card-hero    .card-value { font-size: 44px; font-weight: 800; line-height: 1; color: var(--text-primary); }
+    .card-primary .card-value { font-size: 22px; font-weight: 800; line-height: 1; color: var(--text-primary); }
+    .card-compact .card-value { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+    /* Sub-labels under value */
+    .card-sub-label {
+      font-size: 10px; font-weight: 600; margin-top: 6px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .card-footnote {
+      font-size: 9px; color: var(--text-muted);
+      margin-top: 6px; letter-spacing: 0.3px;
+    }
 
     /* === Typography polish (tabular numerals para alinhamento perfeito) === */
     .zscore-value, .price-value, .stat-value, .metric-value,
@@ -128,6 +176,8 @@
     /* Live BTC Ticker (sticky top bar) */
     .live-ticker { position: fixed; top: 0; left: 0; right: 0; height: 36px; z-index: 9999; background: linear-gradient(90deg, rgba(10,10,14,0.98) 0%, rgba(18,18,24,0.98) 50%, rgba(10,10,14,0.98) 100%); border-bottom: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; gap: 24px; padding: 0 20px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.03em; overflow: hidden; }
     .lt-group { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .lt-sep { width: 1px; height: 14px; background: rgba(255,255,255,0.12); flex-shrink: 0; }
+    @media (max-width: 720px) { .lt-sep { display: none; } }
     .lt-brand { font-weight: 700; color: var(--accent-orange); letter-spacing: 0.15em; font-size: 10px; }
     .lt-label { color: var(--text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; }
     .lt-price { font-size: 14px; font-weight: 700; color: #fff; transition: color 180ms ease; font-variant-numeric: tabular-nums; }
@@ -236,7 +286,7 @@
 
     /* ===== SIDEBAR LAYOUT v23 ===== */
     .site-nav { display: none !important; }
-    .app-layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+    .app-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
     .sidebar {
       position: sticky; top: 0; height: 100vh; overflow-y: auto;
       background: rgba(10,10,11,0.98); backdrop-filter: blur(12px);
@@ -253,19 +303,41 @@
     .sb-brand-tag { font-size: 9px; font-weight: 600; color: var(--accent-orange); letter-spacing: 2px; text-transform: uppercase; }
     .sb-brand-title { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: var(--text-primary); margin-top: 3px; letter-spacing: 0.4px; }
     .sb-brand-sub { font-size: 8.5px; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.3px; }
-    .sidebar-status { padding: 7px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-size: 9px; }
-    .sidebar-nav { flex: 1; padding: 6px 10px 10px; overflow-y: hidden; display: flex; flex-direction: column; gap: 2px; }
-    .nav-group { margin-bottom: 2px; }
-    .nav-group-label {
-      font-size: 8px; text-transform: uppercase; letter-spacing: 1.4px;
-      color: var(--accent-orange); font-weight: 700; padding: 8px 10px 3px; opacity: 0.72;
+    /* Mini Z-Score indicator no brand */
+    .sb-brand-z {
+      margin-top: 10px; padding: 6px 8px; border-radius: 6px;
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.04);
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
     }
+    .sb-brand-z-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    .sb-brand-z-value { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.3px; }
+    .sb-brand-z-zone { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.85; }
+    .sidebar-status { padding: 7px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-size: 9px; }
+    .sidebar-nav { flex: 1; padding: 8px 10px 10px; overflow-y: hidden; display: flex; flex-direction: column; gap: 2px; }
+    .nav-group { margin-bottom: 4px; }
+    .nav-group-label {
+      font-size: 8px; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--text-muted); font-weight: 700; padding: 9px 10px 4px;
+      position: relative;
+    }
+    /* Accent bar lateral por categoria */
+    .nav-group-label::before {
+      content: ''; position: absolute; left: 2px; top: 12px; bottom: 6px;
+      width: 2px; border-radius: 1px; background: var(--nav-cat-color, var(--accent-orange));
+      opacity: 0.7;
+    }
+    .nav-group[data-cat="valuation"] .nav-group-label { --nav-cat-color: #f97316; color: #f97316; }
+    .nav-group[data-cat="holders"]   .nav-group-label { --nav-cat-color: #06b6d4; color: #06b6d4; }
+    .nav-group[data-cat="flow"]      .nav-group-label { --nav-cat-color: #a78bfa; color: #a78bfa; }
+    .nav-group[data-cat="risk"]      .nav-group-label { --nav-cat-color: #ef4444; color: #ef4444; }
+    .nav-group[data-cat="infra"]     .nav-group-label { --nav-cat-color: #00d97e; color: #00d97e; }
+    .nav-group[data-cat="synth"]     .nav-group-label { --nav-cat-color: #3b82f6; color: #3b82f6; }
     /* Pill-style nav button with subtle gradient accent on hover/active */
     .nav-link {
-      display: flex; align-items: center; gap: 9px;
-      padding: 6px 10px; text-decoration: none; color: var(--text-muted);
-      font-size: 10.5px; font-weight: 500; letter-spacing: 0.25px;
-      border-radius: 6px; margin: 0 2px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; text-decoration: none; color: var(--text-muted);
+      font-size: 11.5px; font-weight: 500; letter-spacing: 0.25px;
+      border-radius: 7px; margin: 1px 2px;
       border: 1px solid transparent;
       transition: all 0.15s ease; position: relative; overflow: hidden;
     }
@@ -275,8 +347,11 @@
       opacity: 0; transition: opacity 0.2s ease;
       pointer-events: none;
     }
-    .nav-link .nav-num { font-size: 8.5px; font-weight: 700; color: var(--text-muted); min-width: 16px; letter-spacing: 0.4px; font-family: 'JetBrains Mono', monospace; position: relative; z-index: 1; }
-    .nav-link .nav-text { flex: 1; position: relative; z-index: 1; }
+    .nav-link .nav-num { font-size: 9px; font-weight: 700; color: var(--text-muted); min-width: 18px; letter-spacing: 0.4px; font-family: 'JetBrains Mono', monospace; position: relative; z-index: 1; }
+    .nav-link .nav-text { flex: 1; position: relative; z-index: 1; display: flex; flex-direction: column; gap: 1px; line-height: 1.2; min-width: 0; }
+    .nav-link .nav-main { font-size: 11.5px; font-weight: 600; color: inherit; }
+    .nav-link .nav-sub { font-size: 9px; color: var(--text-muted); letter-spacing: 0.2px; opacity: 0.75; font-weight: 500; }
+    .nav-link.active .nav-sub, .nav-link:hover .nav-sub { opacity: 0.95; }
     .nav-link .nav-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-muted); opacity: 0.2; transition: all 0.2s; flex-shrink: 0; position: relative; z-index: 1; }
     .nav-link:hover {
       color: var(--text-primary);
@@ -318,10 +393,15 @@
     }
 
     /* ===== SECTION DIVIDERS ===== */
-    .section-wrap { padding-top: 32px; padding-bottom: 16px; }
-    .section-header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-    .section-num { font-size: 9px; font-weight: 700; color: var(--accent-orange); letter-spacing: 1px; }
-    .section-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
+    .section-wrap { padding-top: 48px; padding-bottom: 28px; }
+    .section-header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 24px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+    .section-num {
+      font-size: 11px; font-weight: 700; color: var(--accent-orange);
+      letter-spacing: 1px; font-family: 'JetBrains Mono', monospace;
+      background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.2);
+      padding: 3px 8px; border-radius: 5px;
+    }
+    .section-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 0.2px; }
     .section-sub { font-size: 10px; color: var(--text-secondary); margin-left: auto; letter-spacing: 0.5px; }
 
     /* ===== SIGNALS SECTION ===== */
@@ -582,18 +662,22 @@
       <span class="lt-dot" id="ltDot"></span>
       <span class="lt-brand">BTC/USDT</span>
     </div>
+    <span class="lt-sep"></span>
     <div class="lt-group">
       <span class="lt-price" id="ltPrice">--</span>
       <span class="lt-change neutral" id="ltChange">--</span>
     </div>
+    <span class="lt-sep lt-hide-mobile"></span>
     <div class="lt-group lt-hide-mobile">
       <span class="lt-metric-label">24h HIGH</span>
       <span class="lt-metric" id="ltHigh">--</span>
     </div>
+    <span class="lt-sep lt-hide-mobile"></span>
     <div class="lt-group lt-hide-mobile">
       <span class="lt-metric-label">24h LOW</span>
       <span class="lt-metric" id="ltLow">--</span>
     </div>
+    <span class="lt-sep lt-hide-mobile"></span>
     <div class="lt-group lt-hide-mobile">
       <span class="lt-metric-label">24h VOL</span>
       <span class="lt-metric" id="ltVol">--</span>
@@ -607,42 +691,47 @@
         <div class="sb-brand-tag">@ONCHAINBR</div>
         <div class="sb-brand-title">BTC Valuation</div>
         <div class="sb-brand-sub">Composite Z-Score · 365d · 9 Metrics</div>
+        <div class="sb-brand-z" id="sbBrandZ">
+          <span class="sb-brand-z-label">Z-Score</span>
+          <span class="sb-brand-z-value" id="sbBrandZValue">--</span>
+          <span class="sb-brand-z-zone" id="sbBrandZZone">--</span>
+        </div>
       </div>
       <div class="sidebar-status">
         <span class="status-ok" id="sidebarEndpoints" style="font-size:9px;">● 0/10</span>
         <span id="sidebarLastData" style="font-size:9px;color:var(--text-muted);">--</span>
       </div>
       <nav class="sidebar-nav">
-        <div class="nav-group">
+        <div class="nav-group" data-cat="valuation">
           <div class="nav-group-label">Valuation</div>
-          <a href="#dashboard" class="nav-link active" data-sec="dashboard"><span class="nav-num">01</span><span class="nav-text">Dashboard</span><span class="nav-dot"></span></a>
-          <a href="#signals" class="nav-link" data-sec="signals"><span class="nav-num">02</span><span class="nav-text">Sinais</span><span class="nav-dot"></span></a>
-          <a href="#rolling" class="nav-link" data-sec="rolling"><span class="nav-num">13</span><span class="nav-text">Multi-Rolling</span><span class="nav-dot"></span></a>
+          <a href="#dashboard" class="nav-link active" data-sec="dashboard"><span class="nav-num">01</span><span class="nav-text"><span class="nav-main">Dashboard</span><span class="nav-sub">Visão geral · KPIs</span></span><span class="nav-dot"></span></a>
+          <a href="#signals" class="nav-link" data-sec="signals"><span class="nav-num">02</span><span class="nav-text"><span class="nav-main">Sinais</span><span class="nav-sub">Z-Composite BUY/SELL</span></span><span class="nav-dot"></span></a>
+          <a href="#rolling" class="nav-link" data-sec="rolling"><span class="nav-num">03</span><span class="nav-text"><span class="nav-main">Multi-Rolling</span><span class="nav-sub">4 janelas · side by side</span></span><span class="nav-dot"></span></a>
         </div>
-        <div class="nav-group">
-          <div class="nav-group-label">Capital & Fluxo</div>
-          <a href="#flow" class="nav-link" data-sec="flow"><span class="nav-num">03</span><span class="nav-text">Fluxo</span><span class="nav-dot"></span></a>
-        </div>
-        <div class="nav-group">
+        <div class="nav-group" data-cat="holders">
           <div class="nav-group-label">Holders</div>
-          <a href="#smartmoney" class="nav-link" data-sec="smartmoney"><span class="nav-num">04</span><span class="nav-text">Smart Money</span><span class="nav-dot"></span></a>
-          <a href="#pricelayers" class="nav-link" data-sec="pricelayers"><span class="nav-num">11</span><span class="nav-text">Camadas de Preço</span><span class="nav-dot"></span></a>
-          <a href="#cohort" class="nav-link" data-sec="cohort"><span class="nav-num">12</span><span class="nav-text">Coortes STH</span><span class="nav-dot"></span></a>
+          <a href="#smartmoney" class="nav-link" data-sec="smartmoney"><span class="nav-num">04</span><span class="nav-text"><span class="nav-main">Smart Money</span><span class="nav-sub">LTH supply · HODL 1Y+</span></span><span class="nav-dot"></span></a>
+          <a href="#pricelayers" class="nav-link" data-sec="pricelayers"><span class="nav-num">05</span><span class="nav-text"><span class="nav-main">Camadas de Preço</span><span class="nav-sub">Cost basis STH/LTH</span></span><span class="nav-dot"></span></a>
+          <a href="#cohort" class="nav-link" data-sec="cohort"><span class="nav-num">06</span><span class="nav-text"><span class="nav-main">Coortes STH</span><span class="nav-sub">Stress · MVRV · SOPR</span></span><span class="nav-dot"></span></a>
         </div>
-        <div class="nav-group">
+        <div class="nav-group" data-cat="flow">
+          <div class="nav-group-label">Capital & Fluxo</div>
+          <a href="#flow" class="nav-link" data-sec="flow"><span class="nav-num">07</span><span class="nav-text"><span class="nav-main">Fluxo</span><span class="nav-sub">ETFs · exchange flows</span></span><span class="nav-dot"></span></a>
+        </div>
+        <div class="nav-group" data-cat="risk">
           <div class="nav-group-label">Derivativos & Sentimento</div>
-          <a href="#sentiment" class="nav-link" data-sec="sentiment"><span class="nav-num">05</span><span class="nav-text">Sentimento</span><span class="nav-dot"></span></a>
-          <a href="#leverage" class="nav-link" data-sec="leverage"><span class="nav-num">06</span><span class="nav-text">Alavancagem</span><span class="nav-dot"></span></a>
+          <a href="#sentiment" class="nav-link" data-sec="sentiment"><span class="nav-num">08</span><span class="nav-text"><span class="nav-main">Sentimento</span><span class="nav-sub">Fear & Greed · funding</span></span><span class="nav-dot"></span></a>
+          <a href="#leverage" class="nav-link" data-sec="leverage"><span class="nav-num">09</span><span class="nav-text"><span class="nav-main">Alavancagem</span><span class="nav-sub">Squeeze Radar · OI · Liq</span></span><span class="nav-dot"></span></a>
         </div>
-        <div class="nav-group">
-          <div class="nav-group-label">Infraestrutura</div>
-          <a href="#miners" class="nav-link" data-sec="miners"><span class="nav-num">07</span><span class="nav-text">Mineradores</span><span class="nav-dot"></span></a>
-          <a href="#trading" class="nav-link" data-sec="trading"><span class="nav-num">08</span><span class="nav-text">Trading</span><span class="nav-dot"></span></a>
+        <div class="nav-group" data-cat="infra">
+          <div class="nav-group-label">Produção & Operação</div>
+          <a href="#miners" class="nav-link" data-sec="miners"><span class="nav-num">10</span><span class="nav-text"><span class="nav-main">Mineradores</span><span class="nav-sub">Puell · reserve · MPI</span></span><span class="nav-dot"></span></a>
+          <a href="#trading" class="nav-link" data-sec="trading"><span class="nav-num">11</span><span class="nav-text"><span class="nav-main">Trading</span><span class="nav-sub">Tech indicators · TA</span></span><span class="nav-dot"></span></a>
         </div>
-        <div class="nav-group">
+        <div class="nav-group" data-cat="synth">
           <div class="nav-group-label">Síntese</div>
-          <a href="#report" class="nav-link" data-sec="report"><span class="nav-num">09</span><span class="nav-text">Relatório</span><span class="nav-dot"></span></a>
-          <a href="#backstage" class="nav-link" data-sec="backstage"><span class="nav-num">10</span><span class="nav-text">Bastidores</span><span class="nav-dot"></span></a>
+          <a href="#report" class="nav-link" data-sec="report"><span class="nav-num">12</span><span class="nav-text"><span class="nav-main">Relatório</span><span class="nav-sub">Leitura do mercado</span></span><span class="nav-dot"></span></a>
+          <a href="#backstage" class="nav-link" data-sec="backstage"><span class="nav-num">13</span><span class="nav-text"><span class="nav-main">Bastidores</span><span class="nav-sub">Backtest · analytics</span></span><span class="nav-dot"></span></a>
         </div>
       </nav>
       <div class="sidebar-footer">
@@ -653,9 +742,9 @@
     <main class="main-content">
   <!-- Halving Cycle Strip (global, fixa no topo do conteúdo) -->
   <div style="max-width:1400px;margin:0 auto;padding:12px 24px 0;">
-    <div class="halving-strip-caption">
+    <div class="halving-strip-caption" title="Progresso do ciclo de 4 anos desde o último halving (20/abr/2024). Próximo halving ~2028.">
       <span>Ciclo Halving · <span id="hStripEra">5ª era</span></span>
-      <span><span id="hStripDays">--</span> / 1460 dias · <span id="hStripPct">--%</span></span>
+      <span><span id="hStripDays">--</span> dias / ciclo 4 anos · <span id="hStripPct">--%</span></span>
     </div>
     <div class="halving-strip">
       <div class="halving-strip-fill" id="hStripFill" style="width:0%"></div>
@@ -832,7 +921,7 @@
   <!-- ========== SECTION 13: MULTI-ROLLING COMPOSITE COMPARISON ========== -->
   <div class="section-wrap" id="rolling" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">13</span>
+      <span class="section-num">03</span>
       <span class="section-title">Multi-Rolling Composite</span>
       <span class="section-sub">365D · 2Y · 4Y · FULL-CYCLE · SIDE BY SIDE</span>
     </div>
@@ -918,85 +1007,10 @@
   </div>
 
 
-  <!-- ═══════ CATEGORY DIVIDER: CAPITAL & FLUXO ═══════ -->
-  <div style="max-width:1400px;margin:32px auto 0;padding:0 24px;">
+  <!-- ═══════ CATEGORY DIVIDER: HOLDERS ═══════ -->
+  <div style="max-width:1400px;margin:56px auto 0;padding:0 24px;">
     <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
       <span style="font-size:14px;">②</span>
-      <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Capital & Fluxo</span>
-      <span style="font-size:9px;color:var(--text-muted);letter-spacing:0.5px;">ETF · Exchange · Netflow</span>
-    </div>
-  </div>
-  <div class="section-wrap" id="flow" style="max-width:1400px;margin:0 auto;padding:0 24px;">
-    <div class="section-header">
-      <span class="section-num">03</span>
-      <span class="section-title">Análise de Fluxo</span>
-      <span class="section-sub">FLUXOS ETF · RESERVA EXCHANGE · ATIVIDADE BALEIAS</span>
-    </div>
-    <div class="flow-stats-row">
-      <div class="flow-stat-item">
-        <div class="stat-label">ETF Flow (7d Sum)</div>
-        <div class="stat-value" id="flowEtf7d">--</div>
-        <div class="stat-sub" id="flowEtf7dSub">BTC net</div>
-      </div>
-      <div class="flow-stat-item">
-        <div class="stat-label">Exchange Reserve Δ7d</div>
-        <div class="stat-value" id="flowExReserve">--</div>
-        <div class="stat-sub" id="flowExReserveSub">BTC change</div>
-      </div>
-      <div class="flow-stat-item">
-        <div class="stat-label">Net Flow (30d avg)</div>
-        <div class="stat-value" id="flowWhaleRatio">--</div>
-        <div class="stat-sub" id="flowWhaleRatioSub">daily exchange flow</div>
-      </div>
-    </div>
-    <div class="flow-grid">
-      <div class="flow-card">
-        <div class="flow-card-header">
-          <div class="flow-card-title">ETF Net Flow (90d)</div>
-          <div>
-            <div class="flow-card-value" id="flowEtfLatest">--</div>
-            <div class="flow-card-sub">Latest daily (BTC)</div>
-          </div>
-        </div>
-        <div class="chart-container-flow"><canvas id="flowEtfChart"></canvas></div>
-      </div>
-      <div class="flow-card">
-        <div class="flow-card-header">
-          <div class="flow-card-title">Exchange Reserve (180d)</div>
-          <div>
-            <div class="flow-card-value" id="flowReserveLatest">--</div>
-            <div class="flow-card-sub">Total BTC on exchanges</div>
-          </div>
-        </div>
-        <div class="chart-container-flow"><canvas id="flowReserveChart"></canvas></div>
-      </div>
-    </div>
-    <div class="flow-grid">
-      <div class="flow-card">
-        <div class="flow-card-header">
-          <div class="flow-card-title">Exchange Inflow vs Outflow (90d)</div>
-        </div>
-        <div class="chart-container-flow"><canvas id="flowInOutChart"></canvas></div>
-      </div>
-      <div class="flow-pressure-card">
-        <div class="flow-pressure-label">Net Flow Pressure (30d)</div>
-        <div class="flow-pressure-value" id="flowPressureValue">--</div>
-        <div id="flowPressureLabel" style="font-size:11px;font-weight:600;margin-top:4px;">--</div>
-        <div class="flow-pressure-bar"><div class="flow-pressure-fill" id="flowPressureFill" style="width:50%;background:var(--accent-yellow)"></div></div>
-        <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-muted);margin-top:4px;"><span>SELL PRESSURE</span><span>NEUTRAL</span><span>BUY PRESSURE</span></div>
-        <div style="margin-top:16px;font-size:9px;color:var(--text-muted);line-height:1.6;" id="flowPressureDesc">Loading flow data...</div>
-      </div>
-    </div>
-
-
-  </div>
-
-  <!-- ========== SECTION 4: SMART MONEY TRACKER ========== -->
-
-  <!-- ═══════ CATEGORY DIVIDER: HOLDERS ═══════ -->
-  <div style="max-width:1400px;margin:32px auto 0;padding:0 24px;">
-    <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
-      <span style="font-size:14px;">③</span>
       <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Holders</span>
       <span style="font-size:9px;color:var(--text-muted);letter-spacing:0.5px;">LTH/STH · Camadas de Preço · Coortes</span>
     </div>
@@ -1171,7 +1185,7 @@
   <!-- ========== SECTION 11: REALIZED PRICE LAYERS ========== -->
   <div class="section-wrap" id="pricelayers" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">11</span>
+      <span class="section-num">05</span>
       <span class="section-title">Camadas de Preço Realizado</span>
       <span class="section-sub">CUSTO DE BASE POR COORTE · SUPORTE E RESISTÊNCIA ON-CHAIN</span>
     </div>
@@ -1196,16 +1210,16 @@
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
       <!-- STH Cost Basis -->
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#E24B4A 0%,transparent 100%);"></div>
-        <div style="font-size:9px;color:#E24B4A;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">STH Cost Basis</div>
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#ef4444 0%,transparent 100%);"></div>
+        <div style="font-size:9px;color:#ef4444;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">STH Cost Basis</div>
         <div id="plSthRP" style="font-size:22px;font-weight:800;color:var(--text-primary);line-height:1;">--</div>
         <div id="plDistSTH" style="font-size:12px;font-weight:600;margin-top:6px;">--</div>
         <div id="plSthSub" style="font-size:9px;color:var(--text-muted);margin-top:8px;letter-spacing:0.3px;">Resistência · moedas &lt; 155d</div>
       </div>
       <!-- LTH Cost Basis -->
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;">
-        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#1D9E75 0%,transparent 100%);"></div>
-        <div style="font-size:9px;color:#1D9E75;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">LTH Cost Basis</div>
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#00d97e 0%,transparent 100%);"></div>
+        <div style="font-size:9px;color:#00d97e;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">LTH Cost Basis</div>
         <div id="plLthRP" style="font-size:22px;font-weight:800;color:var(--text-primary);line-height:1;">--</div>
         <div id="plDistLTH" style="font-size:12px;font-weight:600;margin-top:6px;">--</div>
         <div id="plLthSub" style="font-size:9px;color:var(--text-muted);margin-top:8px;letter-spacing:0.3px;">Suporte · moedas &gt; 155d</div>
@@ -1280,7 +1294,7 @@
   <!-- ========== SECTION 12: COHORT PROFITABILITY ========== -->
   <div class="section-wrap" id="cohort" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">12</span>
+      <span class="section-num">06</span>
       <span class="section-title">Lucratividade por Coorte</span>
       <span class="section-sub">ÍNDICE DE STRESS STH · FAIXAS DE IDADE UTXO · CHECKLIST DE ACUMULAÇÃO</span>
     </div>
@@ -1304,7 +1318,7 @@
     <!-- 3 Component Cards for STH Stress -->
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:9px;color:#E24B4A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Dist. Spot vs STH RP</div>
+        <div style="font-size:9px;color:#ef4444;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Dist. Spot vs STH RP</div>
         <div id="cohortPriceDelta" style="font-size:18px;font-weight:700;color:var(--text-primary);">--</div>
         <div id="cohortPriceScore" style="font-size:11px;color:var(--text-muted);margin-top:4px;">Score: --/40</div>
       </div>
@@ -1358,8 +1372,83 @@
   </div>
 
 
+  <!-- ═══════ CATEGORY DIVIDER: CAPITAL & FLUXO ═══════ -->
+  <div style="max-width:1400px;margin:56px auto 0;padding:0 24px;">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
+      <span style="font-size:14px;">③</span>
+      <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Capital & Fluxo</span>
+      <span style="font-size:9px;color:var(--text-muted);letter-spacing:0.5px;">ETF · Exchange · Netflow</span>
+    </div>
+  </div>
+  <div class="section-wrap" id="flow" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <span class="section-title">Análise de Fluxo</span>
+      <span class="section-sub">FLUXOS ETF · RESERVA EXCHANGE · ATIVIDADE BALEIAS</span>
+    </div>
+    <div class="flow-stats-row">
+      <div class="flow-stat-item">
+        <div class="stat-label">ETF Flow (7d Sum)</div>
+        <div class="stat-value" id="flowEtf7d">--</div>
+        <div class="stat-sub" id="flowEtf7dSub">BTC net</div>
+      </div>
+      <div class="flow-stat-item">
+        <div class="stat-label">Exchange Reserve Δ7d</div>
+        <div class="stat-value" id="flowExReserve">--</div>
+        <div class="stat-sub" id="flowExReserveSub">BTC change</div>
+      </div>
+      <div class="flow-stat-item">
+        <div class="stat-label">Net Flow (30d avg)</div>
+        <div class="stat-value" id="flowWhaleRatio">--</div>
+        <div class="stat-sub" id="flowWhaleRatioSub">daily exchange flow</div>
+      </div>
+    </div>
+    <div class="flow-grid">
+      <div class="flow-card">
+        <div class="flow-card-header">
+          <div class="flow-card-title">ETF Net Flow (90d)</div>
+          <div>
+            <div class="flow-card-value" id="flowEtfLatest">--</div>
+            <div class="flow-card-sub">Latest daily (BTC)</div>
+          </div>
+        </div>
+        <div class="chart-container-flow"><canvas id="flowEtfChart"></canvas></div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-card-header">
+          <div class="flow-card-title">Exchange Reserve (180d)</div>
+          <div>
+            <div class="flow-card-value" id="flowReserveLatest">--</div>
+            <div class="flow-card-sub">Total BTC on exchanges</div>
+          </div>
+        </div>
+        <div class="chart-container-flow"><canvas id="flowReserveChart"></canvas></div>
+      </div>
+    </div>
+    <div class="flow-grid">
+      <div class="flow-card">
+        <div class="flow-card-header">
+          <div class="flow-card-title">Exchange Inflow vs Outflow (90d)</div>
+        </div>
+        <div class="chart-container-flow"><canvas id="flowInOutChart"></canvas></div>
+      </div>
+      <div class="flow-pressure-card">
+        <div class="flow-pressure-label">Net Flow Pressure (30d)</div>
+        <div class="flow-pressure-value" id="flowPressureValue">--</div>
+        <div id="flowPressureLabel" style="font-size:11px;font-weight:600;margin-top:4px;">--</div>
+        <div class="flow-pressure-bar"><div class="flow-pressure-fill" id="flowPressureFill" style="width:50%;background:var(--accent-yellow)"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-muted);margin-top:4px;"><span>SELL PRESSURE</span><span>NEUTRAL</span><span>BUY PRESSURE</span></div>
+        <div style="margin-top:16px;font-size:9px;color:var(--text-muted);line-height:1.6;" id="flowPressureDesc">Loading flow data...</div>
+      </div>
+    </div>
+
+
+  </div>
+
+  <!-- ========== SECTION 4: SMART MONEY TRACKER ========== -->
+
   <!-- ═══════ CATEGORY DIVIDER: DERIVATIVOS & SENTIMENTO ═══════ -->
-  <div style="max-width:1400px;margin:32px auto 0;padding:0 24px;">
+  <div style="max-width:1400px;margin:56px auto 0;padding:0 24px;">
     <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
       <span style="font-size:14px;">④</span>
       <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Derivativos & Sentimento</span>
@@ -1368,7 +1457,7 @@
   </div>
   <div class="section-wrap" id="sentiment" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">05</span>
+      <span class="section-num">08</span>
       <span class="section-title">Índice de Sentimento</span>
       <span class="section-sub">MEDO E GANÂNCIA · FUNDING · HUMOR COMPOSTO</span>
     </div>
@@ -1422,7 +1511,7 @@
   <!-- ========== SECTION 6: LEVERAGE RISK METER ========== -->
   <div class="section-wrap" id="leverage" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">06</span>
+      <span class="section-num">09</span>
       <span class="section-title">Medidor de Risco de Alavancagem</span>
       <span class="section-sub">OPEN INTEREST · LIQUIDAÇÕES · FUNDING RATE · RATIO L/S</span>
     </div>
@@ -1735,7 +1824,7 @@
   <!-- ========== SECTION 7: MINER & MACRO CONTEXT ========== -->
 
   <!-- ═══════ CATEGORY DIVIDER: INFRAESTRUTURA ═══════ -->
-  <div style="max-width:1400px;margin:32px auto 0;padding:0 24px;">
+  <div style="max-width:1400px;margin:56px auto 0;padding:0 24px;">
     <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
       <span style="font-size:14px;">⑤</span>
       <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Infraestrutura</span>
@@ -1744,7 +1833,7 @@
   </div>
   <div class="section-wrap" id="miners" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">07</span>
+      <span class="section-num">10</span>
       <span class="section-title">Contexto de Mineradores</span>
       <span class="section-sub">HASH RIBBONS · RESERVAS MINERS · PUELL MULTIPLE · DIFICULDADE</span>
     </div>
@@ -1845,7 +1934,7 @@
   <!-- ========== SECTION 8: TRADING SYSTEMS ========== -->
   <div class="section-wrap" id="trading" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">08</span>
+      <span class="section-num">11</span>
       <span class="section-title">Sistemas de Negociação</span>
       <span class="section-sub">TENDÊNCIA · DETECÇÃO DE REVERSÃO · MOMENTUM</span>
     </div>
@@ -2009,7 +2098,7 @@
   <!-- ========== SECTION 09: REPORT ========== -->
 
   <!-- ═══════ CATEGORY DIVIDER: SÍNTESE ═══════ -->
-  <div style="max-width:1400px;margin:32px auto 0;padding:0 24px;">
+  <div style="max-width:1400px;margin:56px auto 0;padding:0 24px;">
     <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
       <span style="font-size:14px;">⑥</span>
       <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Síntese</span>
@@ -2018,7 +2107,7 @@
   </div>
   <div class="section-wrap" id="report" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
-      <span class="section-num">09</span>
+      <span class="section-num">12</span>
       <span class="section-title">Leitura do Mercado</span>
       <span id="reportDate" style="font-size:10px;color:var(--text-muted);"></span>
     </div>
@@ -2301,7 +2390,7 @@
   </div>  <!-- ========== SECTION 10: BACKSTAGE (Advanced Analytics) ========== -->
   <div class="section-wrap" id="backstage" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">10</span>
+      <span class="section-num">13</span>
       <span class="section-title">Bastidores</span>
       <span class="section-sub">COMPARATIVO DE ESTRATÉGIAS · BACKTEST</span>
     </div>
@@ -2393,7 +2482,22 @@
 
   <!-- ========== GLOBAL FOOTER ========== -->
   <footer class="footer" style="max-width:1400px;margin:0 auto;padding:12px 24px 24px;">
-    <div>@ONCHAINBR · Z-Score Model · Rolling 365d · 9 Metrics · Signals · Flow · Sentiment · Trading · Relatório · Backstage · Price Layers · Cohort</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:10px;color:var(--text-muted);">
+      <span style="color:var(--accent-orange);font-weight:700;">@ONCHAINBR</span>
+      <span>· Z-Score Model · Rolling 365d · 9 Metrics ·</span>
+      <a href="#signals" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Sinais</a>
+      <a href="#rolling" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Rolling</a>
+      <a href="#smartmoney" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Smart Money</a>
+      <a href="#pricelayers" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Preço</a>
+      <a href="#cohort" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Coortes</a>
+      <a href="#flow" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Fluxo</a>
+      <a href="#sentiment" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Sentimento</a>
+      <a href="#leverage" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Alavancagem</a>
+      <a href="#miners" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Mineradores</a>
+      <a href="#trading" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Trading</a>
+      <a href="#report" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Relatório</a>
+      <a href="#backstage" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Bastidores</a>
+    </div>
     <div>APIs: <a href="https://bitview.space" target="_blank">Bitview</a> + <a href="https://bitcoin-data.com" target="_blank">BGeometrics</a> + <a href="https://alternative.me" target="_blank">Alternative.me</a> + <a href="https://binance.com" target="_blank">Binance</a></div>
   </footer>
     </main><!-- end .main-content -->
@@ -2934,6 +3038,10 @@
       Chart.defaults.plugins.legend.labels.boxHeight = 8;
       Chart.defaults.plugins.legend.labels.padding = 12;
       Chart.defaults.plugins.legend.labels.font = { size: 10, weight: '500', family: "'JetBrains Mono', monospace" };
+      // PASSO 5: Consistencia visual de charts — legend no canto top-right
+      Chart.defaults.plugins.legend.position = 'top';
+      Chart.defaults.plugins.legend.align = 'end';
+      Chart.defaults.layout = { padding: { top: 4, right: 4, bottom: 2, left: 2 } };
       Object.assign(Chart.defaults.plugins.tooltip, {
         backgroundColor: 'rgba(8,8,10,0.96)',
         borderColor: 'rgba(255,255,255,0.14)',
@@ -3286,6 +3394,9 @@
             const ssrCtx = getStablecoinContext(weakest.z);
             weakEl.textContent = ssrCtx.label;
             weakEl.style.color = ssrCtx.color;
+            weakEl.title = ssrCtx.explanationPt || '';
+            weakEl.style.cursor = 'help';
+            weakEl.style.borderBottom = '1px dotted ' + ssrCtx.color;
           } else {
             weakEl.textContent = METRICS[weakest.key]?.name.split(' ')[0] || '--';
             weakEl.style.color = getZone(weakest.z).color;
@@ -4115,19 +4226,46 @@
       }
     }
 
+    /* === Sidebar brand Z-Score mini indicator === */
+    function updateSidebarBrandZ() {
+      try {
+        const z = state?.compositeHistory?.length
+          ? state.compositeHistory[state.compositeHistory.length - 1].value
+          : null;
+        const vEl = document.getElementById('sbBrandZValue');
+        const zEl = document.getElementById('sbBrandZZone');
+        if (!vEl || !zEl) return;
+        if (z === null || z === undefined || isNaN(z)) {
+          vEl.textContent = '--'; zEl.textContent = '--'; return;
+        }
+        vEl.textContent = (z > 0 ? '+' : '') + z.toFixed(2);
+        let zone, color;
+        if (z <= -1.5)      { zone = 'ACC';   color = '#00d97e'; }
+        else if (z <= -0.5) { zone = 'UND';   color = '#84cc16'; }
+        else if (z <=  0.5) { zone = 'FAIR';  color = '#eab308'; }
+        else if (z <=  1.5) { zone = 'ELEV';  color = '#f97316'; }
+        else                { zone = 'OVER';  color = '#ef4444'; }
+        zEl.textContent = zone;
+        zEl.style.color = color;
+        vEl.style.color = color;
+      } catch(e) {
+        console.warn('[SidebarBrandZ] skip:', e.message);
+      }
+    }
+
     function renderSignalChart(signals) {
       const ctx = document.getElementById('signalChart')?.getContext('2d');
       if (!ctx) return;
+      updateSidebarBrandZ();
 
-      // Slice to selected range. Para ALL (_sigRangeDays=0), corta o prefixo vazio
-      // ate firstZDate pro chart nao ter vazio do lado esquerdo (2009-2011).
+      // Slice to selected range. ALL: trim firstZDate + skip BTC<$50 (pre-2013).
       const cMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
       const firstZDate = state.compositeHistory.length ? state.compositeHistory[0].date : null;
       let allPrices;
       if (_sigRangeDays > 0) {
         allPrices = state.prices.slice(-_sigRangeDays);
       } else if (firstZDate) {
-        allPrices = state.prices.filter(p => p.date >= firstZDate);
+        allPrices = state.prices.filter(p => p.date >= firstZDate && p.value >= 50);
       } else {
         allPrices = state.prices;
       }
@@ -10258,7 +10396,7 @@
       const fmtDist = (v, invert) => {
         const n = parseFloat(v);
         if (isNaN(n)) return '--';
-        const color = n < 0 ? '#E24B4A' : '#00d97e';
+        const color = n < 0 ? '#ef4444' : '#00d97e';
         return `<span style="color:${color};font-weight:700;">${n > 0 ? '+' : ''}${n}%</span>`;
       };
       
@@ -10282,12 +10420,12 @@
           const spEl = document.getElementById('plSupplyProfit');
           if (spEl) {
             spEl.textContent = spVal.toFixed(1) + '%';
-            spEl.style.color = spVal > 85 ? '#00d97e' : spVal > 70 ? '#84cc16' : spVal > 50 ? '#eab308' : '#E24B4A';
+            spEl.style.color = spVal > 85 ? '#00d97e' : spVal > 70 ? '#84cc16' : spVal > 50 ? '#eab308' : '#ef4444';
           }
           const stEl = document.getElementById('plSupplyStatus');
           if (stEl) {
             const st = spVal > 85 ? 'MAIORIA NO LUCRO' : spVal > 70 ? 'SAUDÁVEL' : spVal > 50 ? 'EQUILIBRADO' : 'STRESS';
-            const stColor = spVal > 85 ? '#00d97e' : spVal > 70 ? '#84cc16' : spVal > 50 ? '#eab308' : '#E24B4A';
+            const stColor = spVal > 85 ? '#00d97e' : spVal > 70 ? '#84cc16' : spVal > 50 ? '#eab308' : '#ef4444';
             stEl.textContent = st;
             stEl.style.color = stColor;
           }
@@ -10302,12 +10440,12 @@
           const hEl = document.getElementById('plHodl1Y');
           if (hEl) {
             hEl.textContent = h1y.toFixed(1) + '%';
-            hEl.style.color = h1y > 65 ? '#00d97e' : h1y > 55 ? '#84cc16' : h1y > 45 ? '#eab308' : '#E24B4A';
+            hEl.style.color = h1y > 65 ? '#00d97e' : h1y > 55 ? '#84cc16' : h1y > 45 ? '#eab308' : '#ef4444';
           }
           const hsEl = document.getElementById('plHodl1YStatus');
           if (hsEl) {
             const st = h1y > 65 ? 'CONVICÇÃO ALTA' : h1y > 55 ? 'DEEP HODL' : h1y > 45 ? 'DISTRIBUIÇÃO' : 'VENDA LTH';
-            const stColor = h1y > 65 ? '#00d97e' : h1y > 55 ? '#84cc16' : h1y > 45 ? '#eab308' : '#E24B4A';
+            const stColor = h1y > 65 ? '#00d97e' : h1y > 55 ? '#84cc16' : h1y > 45 ? '#eab308' : '#ef4444';
             hsEl.textContent = st;
             hsEl.style.color = stColor;
           }
@@ -10323,7 +10461,7 @@
           xStatusEl.style.color = '#00d97e';
         } else {
           xStatusEl.textContent = 'BEAR CAPITULATION';
-          xStatusEl.style.color = '#E24B4A';
+          xStatusEl.style.color = '#ef4444';
         }
       }
       setText('plCrossoverSpread', `STH/LTH Spread: ${xover.spread}%`);
@@ -10411,9 +10549,9 @@
       
       const datasets = [
         { label: 'BTC Spot', data: spotSlice.map(d => d.value), borderColor: '#FFFFFF', borderWidth: 2, fill: false, pointRadius: 0, order: 0, spanGaps: true },
-        { label: 'STH RP', data: alignToLabels(sliceEnd(sthRP)), borderColor: '#E24B4A', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], order: 1, spanGaps: true },
+        { label: 'STH RP', data: alignToLabels(sliceEnd(sthRP)), borderColor: '#ef4444', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], order: 1, spanGaps: true },
         { label: 'Realized Price', data: alignToLabels(sliceEnd(realized)), borderColor: '#888780', borderWidth: 1, fill: false, pointRadius: 0, borderDash: [2,3], order: 2, spanGaps: true },
-        { label: 'LTH RP', data: alignToLabels(sliceEnd(lthRP)), borderColor: '#1D9E75', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], order: 3, spanGaps: true },
+        { label: 'LTH RP', data: alignToLabels(sliceEnd(lthRP)), borderColor: '#00d97e', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], order: 3, spanGaps: true },
       ];
       if (delta.length > 0) {
         datasets.push({ label: 'Delta Price', data: alignToLabels(sliceEnd(delta)), borderColor: '#8B5CF6', borderWidth: 1, fill: false, pointRadius: 0, borderDash: [2,4], order: 4, spanGaps: true });
@@ -10582,15 +10720,15 @@
       // Component cards
       const pctDelta = stress.priceDelta ? (stress.priceDelta * 100).toFixed(1) : '--';
       setText('cohortPriceDelta', `${pctDelta}%`);
-      setColor('cohortPriceDelta', parseFloat(pctDelta) < 0 ? '#E24B4A' : '#00d97e');
+      setColor('cohortPriceDelta', parseFloat(pctDelta) < 0 ? '#ef4444' : '#00d97e');
       setText('cohortPriceScore', `Score: ${stress.components.priceScore || 0}/40`);
       
       setText('cohortMvrvSTH', cohortState.sthMVRV !== null ? cohortState.sthMVRV.toFixed(3) : '--');
-      setColor('cohortMvrvSTH', cohortState.sthMVRV < 1 ? '#E24B4A' : '#00d97e');
+      setColor('cohortMvrvSTH', cohortState.sthMVRV < 1 ? '#ef4444' : '#00d97e');
       setText('cohortMvrvScore', `Score: ${stress.components.mvrvScore || 0}/30`);
       
       setText('cohortSoprSTH', cohortState.sthSOPR !== null ? cohortState.sthSOPR.toFixed(4) : '--');
-      setColor('cohortSoprSTH', cohortState.sthSOPR < 1 ? '#E24B4A' : '#00d97e');
+      setColor('cohortSoprSTH', cohortState.sthSOPR < 1 ? '#ef4444' : '#00d97e');
       setText('cohortSoprScore', `Score: ${stress.components.soprScore || 0}/30`);
       
       // Supply in Profit
@@ -10598,7 +10736,7 @@
       if (sp !== null) {
         const spVal = sp > 100 ? sp : sp * (sp < 1 ? 100 : 1);
         setText('cohortSupplyProfit', safeFixed(spVal, 1) + '%');
-        setColor('cohortSupplyProfit', spVal > 75 ? '#00d97e' : spVal > 50 ? '#eab308' : '#E24B4A');
+        setColor('cohortSupplyProfit', spVal > 75 ? '#00d97e' : spVal > 50 ? '#eab308' : '#ef4444');
         setText('cohortSupplyLabel', spVal > 75 ? 'MAIORIA NO LUCRO' : spVal > 50 ? 'EQUILIBRADO' : 'MAIORIA NO PREJUÍZO');
         setText('cohortSupplyContext', spVal > 75 ? 'Mercado saudável — pressão de venda baixa' : spVal > 50 ? 'Equilíbrio — observar tendência' : 'Stress elevado — capitulação possível');
       }
@@ -10633,10 +10771,10 @@
 
         if (total > 0) {
           const groups = [
-            { label: 'Mãos Fracas',          sub: '0-3 meses',  value: maosF, pct: (maosF/total*100).toFixed(1), color: '#E24B4A' },
+            { label: 'Mãos Fracas',          sub: '0-3 meses',  value: maosF, pct: (maosF/total*100).toFixed(1), color: '#ef4444' },
             { label: 'Transição STH→LTH',    sub: '3-6 meses',  value: trans, pct: (trans/total*100).toFixed(1), color: '#F0A500' },
             { label: 'LTH Consolidado',      sub: '6m - 3 anos',value: lthJ,  pct: (lthJ/total*100).toFixed(1),  color: '#378ADD' },
-            { label: 'Diamantes',            sub: '3+ anos',    value: diam,  pct: (diam/total*100).toFixed(1),  color: '#1D9E75' },
+            { label: 'Diamantes',            sub: '3+ anos',    value: diam,  pct: (diam/total*100).toFixed(1),  color: '#00d97e' },
           ];
           
           setHTML('cohortHodlWaves', groups.map(g =>
@@ -10725,8 +10863,8 @@
           labels,
           datasets: [
             { label: 'BTC Spot', data: spot90.length > 0 ? spot90.map(d => d.value) : alignData([]), borderColor: '#FFFFFF', borderWidth: 2, fill: false, pointRadius: 0, spanGaps: true },
-            { label: 'STH RP', data: alignData(sth90), borderColor: '#E24B4A', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], spanGaps: true },
-            { label: 'LTH RP', data: alignData(lth90), borderColor: '#1D9E75', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], spanGaps: true },
+            { label: 'STH RP', data: alignData(sth90), borderColor: '#ef4444', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], spanGaps: true },
+            { label: 'LTH RP', data: alignData(lth90), borderColor: '#00d97e', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [4,2], spanGaps: true },
           ]
         },
         options: {
