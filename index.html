@@ -1536,8 +1536,8 @@
           <div style="font-size:8.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:6px;">24H LIQUIDATIONS</div>
           <div id="srLiqTotal" style="font-size:22px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#fff;">$--</div>
           <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:9.5px;">
-            <span>LONGS: <strong id="srLiqLongs" style="color:#ef4444;">$--</strong></span>
-            <span>SHORTS: <strong id="srLiqShorts" style="color:#22c55e;">$--</strong></span>
+            <span>LONGS: <strong id="srLiqLongs" style="color:#22c55e;">$--</strong></span>
+            <span>SHORTS: <strong id="srLiqShorts" style="color:#ef4444;">$--</strong></span>
           </div>
         </div>
         <div style="background:rgba(139,92,246,0.04);border:1px solid rgba(139,92,246,0.15);border-radius:8px;padding:14px;">
@@ -1592,8 +1592,8 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <span style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;">LIQUIDATIONS 30D (STACKED)</span>
             <span style="display:flex;gap:10px;font-size:8.5px;">
-              <span style="color:#ef4444;">&#9632; LONG</span>
-              <span style="color:#22c55e;">&#9632; SHORT</span>
+              <span style="color:#22c55e;">&#9632; LONG</span>
+              <span style="color:#ef4444;">&#9632; SHORT</span>
             </span>
           </div>
           <div style="position:relative;height:180px;"><canvas id="srLiqChart"></canvas></div>
@@ -4955,6 +4955,40 @@
           console.log('✓ Long/Short:', levData.longShortRatio, 'Long:', levData.longPct, 'Short:', levData.shortPct);
         }
       } catch(e) { console.warn('Long/Short fetch error:', e); }
+
+      // 5. Binance Taker Buy/Sell Volume (Factor #8: Taker Flow 7d)
+      // Proxy para BackQuant "Net Longs/Shorts": mede fluxo agressivo (crossings do spread).
+      // Positivo sustentado = compradores agressivos dominam -> risco de LONG SQUEEZE.
+      // Negativo sustentado = vendedores agressivos dominam -> risco de SHORT SQUEEZE.
+      try {
+        const tkRes = await fetch('https://fapi.binance.com/futures/data/takerlongshortRatio?symbol=BTCUSDT&period=1d&limit=30');
+        if (tkRes.ok) {
+          const tkArr = await tkRes.json();
+          if (Array.isArray(tkArr) && tkArr.length) {
+            const hist = tkArr.map(d => {
+              const bv = parseFloat(d.buyVol) || 0;
+              const sv = parseFloat(d.sellVol) || 0;
+              const tot = bv + sv;
+              return {
+                timestamp: d.timestamp,
+                buyVol: bv,
+                sellVol: sv,
+                delta: tot > 0 ? (bv - sv) / tot : 0,
+                ratio: parseFloat(d.buySellRatio) || 0
+              };
+            });
+            levData.takerFlowHistory = hist;
+            const last7 = hist.slice(-7);
+            if (last7.length) {
+              levData.takerFlow7d = last7.reduce((s, x) => s + x.delta, 0) / last7.length;
+              levData.takerFlowLatest = hist[hist.length - 1].delta;
+              console.log('✓ Taker Flow 7d:', (levData.takerFlow7d * 100).toFixed(2) + '%', '(latest:', (levData.takerFlowLatest * 100).toFixed(2) + '%)');
+            }
+          }
+        } else {
+          console.warn('[Leverage] Taker flow fetch HTTP', tkRes.status);
+        }
+      } catch(e) { console.warn('Taker flow fetch error:', e); }
       
       console.log('⚡ Leverage data collected:', levData);
       renderLeverageUI(levData);
@@ -5390,6 +5424,25 @@
         desc: 'Liquidacoes recentes vs media 30d. >2x = capitulacao fresca, setup de bounce.'
       });
 
+      // --- Factor 8: Taker Flow 7d (Binance aggressive buy/sell delta) ---
+      // Proxy para BackQuant Net Longs/Shorts. Delta > 0 = compradores dominam (flow de alta).
+      const tf7 = typeof levData.takerFlow7d === 'number' ? levData.takerFlow7d : null;
+      let tfSig = 0;
+      if (tf7 != null) {
+        if (tf7 > 0.08) tfSig = 2;
+        else if (tf7 > 0.03) tfSig = 1;
+        else if (tf7 < -0.08) tfSig = -2;
+        else if (tf7 < -0.03) tfSig = -1;
+      }
+      factors.push({
+        name: 'Taker Flow 7d',
+        pass: tf7 != null ? (tfSig !== 0) : null,
+        signal: tfSig,
+        weight: 1.3,
+        value: tf7 != null ? ((tf7 >= 0 ? '+' : '') + (tf7 * 100).toFixed(2) + '% delta') : 'n/d',
+        desc: 'Binance taker buy vs sell volume 7d avg. Positivo = compradores agressivos (proxy Net Longs BackQuant).'
+      });
+
       // --- Compose the score ---
       let rawScore = 0;
       let activeWeightSum = 0;
@@ -5576,8 +5629,8 @@
           data: {
             labels: labels,
             datasets: [
-              { label: 'Long Liq', data: rad.liqSeries.map(p => (p.long || 0) / 1e6), backgroundColor: 'rgba(239,68,68,0.8)', borderRadius: 2, stack: 's' },
-              { label: 'Short Liq', data: rad.liqSeries.map(p => (p.short || 0) / 1e6), backgroundColor: 'rgba(34,197,94,0.8)', borderRadius: 2, stack: 's' }
+              { label: 'Long Liq', data: rad.liqSeries.map(p => (p.long || 0) / 1e6), backgroundColor: 'rgba(34,197,94,0.8)', borderRadius: 2, stack: 's' },
+              { label: 'Short Liq', data: rad.liqSeries.map(p => (p.short || 0) / 1e6), backgroundColor: 'rgba(239,68,68,0.8)', borderRadius: 2, stack: 's' }
             ]
           },
           options: {
