@@ -770,9 +770,9 @@
         <div class="nav-group" data-cat="valuation">
           <div class="nav-group-label">Valuation</div>
           <a href="#dashboard" class="nav-link active" data-sec="dashboard"><span class="nav-num">01</span><span class="nav-text"><span class="nav-main">Dashboard</span><span class="nav-sub">Visão geral · KPIs</span></span><span class="nav-dot"></span></a>
-          <a href="#signals" class="nav-link" data-sec="signals"><span class="nav-num">02</span><span class="nav-text"><span class="nav-main">Sinais</span><span class="nav-sub">Z-Composite BUY/SELL</span></span><span class="nav-dot"></span></a>
-          <a href="#trading" class="nav-link" data-sec="trading"><span class="nav-num">03</span><span class="nav-text"><span class="nav-main">Trading</span><span class="nav-sub">Confirmação · TA</span></span><span class="nav-dot"></span></a>
-          <a href="#rolling" class="nav-link" data-sec="rolling"><span class="nav-num">04</span><span class="nav-text"><span class="nav-main">Multi-Rolling</span><span class="nav-sub">4 janelas · side by side</span></span><span class="nav-dot"></span></a>
+          <a href="#rolling" class="nav-link" data-sec="rolling"><span class="nav-num">02</span><span class="nav-text"><span class="nav-main">Multi-Rolling</span><span class="nav-sub">4 janelas · side by side</span></span><span class="nav-dot"></span></a>
+          <a href="#signals" class="nav-link" data-sec="signals"><span class="nav-num">03</span><span class="nav-text"><span class="nav-main">Sinais</span><span class="nav-sub">Z-Composite BUY/SELL</span></span><span class="nav-dot"></span></a>
+          <a href="#trading" class="nav-link" data-sec="trading"><span class="nav-num">04</span><span class="nav-text"><span class="nav-main">Trading</span><span class="nav-sub">Confirmação · TA</span></span><span class="nav-dot"></span></a>
         </div>
         <div class="nav-group" data-cat="holders">
           <div class="nav-group-label">Holders</div>
@@ -900,10 +900,99 @@
     
   </div><!-- end #dashboard -->
 
+  <!-- ========== SECTION 13: MULTI-ROLLING COMPOSITE COMPARISON ========== -->
+  <div class="section-wrap" id="rolling" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">Multi-Rolling Composite</span>
+      <span class="section-sub">365D · 2Y · 4Y · FULL-CYCLE · SIDE BY SIDE</span>
+    </div>
+
+    <div class="rolling-compare-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px;">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text-primary);letter-spacing:0.02em;">Quatro leituras do mesmo mercado</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.55;max-width:720px;">
+            O sistema principal continua usando <strong style="color:var(--accent-orange);">Rolling 365d</strong> (inalterado).
+            Abaixo, as mesmas 9 métricas ponderadas recalculadas em janelas diferentes — útil para <strong>detectar convergência/divergência</strong>:
+            quando as 4 apontam pra mesma zona, sinal é forte; quando divergem, metodologia importa.
+          </div>
+        </div>
+        <div class="rolling-status-pill" id="rollingStatusPill">
+          <span id="rollingStatusDot" style="width:6px;height:6px;border-radius:50%;background:currentColor;"></span>
+          <span id="rollingStatusText">calculando...</span>
+        </div>
+      </div>
+
+      <div class="rolling-compare-grid" id="rollingGrid">
+        <div class="rolling-reading" style="border-left-color:var(--accent-orange);">
+          <div class="rolling-reading-label">Rolling 365d <span style="color:var(--accent-orange);">★ PRIMÁRIO</span></div>
+          <div class="rolling-reading-value" id="r365Val" style="color:var(--text-primary);">--</div>
+          <div class="rolling-reading-zone" id="r365Zone">--</div>
+          <div class="rolling-reading-sub" id="r365Sub">O sinal que dirige o dashboard</div>
+        </div>
+        <div class="rolling-reading" style="border-left-color:var(--accent-cyan);">
+          <div class="rolling-reading-label">Rolling 2 anos <span style="color:var(--text-muted);">· médio prazo</span></div>
+          <div class="rolling-reading-value" id="r2yVal" style="color:var(--text-primary);">--</div>
+          <div class="rolling-reading-zone" id="r2yZone">--</div>
+          <div class="rolling-reading-sub" id="r2ySub">Janela de ~2 halvings parciais</div>
+        </div>
+        <div class="rolling-reading" style="border-left-color:var(--accent-blue);">
+          <div class="rolling-reading-label">Rolling 4 anos <span style="color:var(--text-muted);">· ciclo halving</span></div>
+          <div class="rolling-reading-value" id="r4yVal" style="color:var(--text-primary);">--</div>
+          <div class="rolling-reading-zone" id="r4yZone">--</div>
+          <div class="rolling-reading-sub" id="r4ySub">Captura o ciclo completo de 4 anos</div>
+        </div>
+        <div class="rolling-reading" style="border-left-color:var(--accent-purple);">
+          <div class="rolling-reading-label">Full Cycle <span style="color:var(--text-muted);">· toda a história</span></div>
+          <div class="rolling-reading-value" id="rAllVal" style="color:var(--text-primary);">--</div>
+          <div class="rolling-reading-zone" id="rAllZone">--</div>
+          <div class="rolling-reading-sub" id="rAllSub">Z contra a distribuição histórica inteira</div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;margin-top:18px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;">Diagnóstico de Convergência</div>
+        <div id="rollingDiagnosis" style="font-size:12px;color:var(--text-secondary);line-height:1.6;">Calculando spread entre janelas...</div>
+      </div>
+    </div>
+
+    <div class="backstage-card-full">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text-primary);">Histórico comparativo — quatro janelas sobrepostas</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Convergência = sinal forte · Divergência = metodologia em disputa</div>
+        </div>
+        <div style="display:flex;gap:6px;" id="rollingRangeButtons">
+          <button class="zoom-btn active" data-range="all" style="font-size:9px;padding:5px 10px;background:rgba(249,115,22,0.15);border:1px solid var(--accent-orange);color:var(--accent-orange);border-radius:4px;cursor:pointer;letter-spacing:0.06em;">ALL</button>
+          <button class="zoom-btn" data-range="4y" style="font-size:9px;padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;cursor:pointer;letter-spacing:0.06em;">4Y</button>
+          <button class="zoom-btn" data-range="2y" style="font-size:9px;padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;cursor:pointer;letter-spacing:0.06em;">2Y</button>
+          <button class="zoom-btn" data-range="1y" style="font-size:9px;padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;cursor:pointer;letter-spacing:0.06em;">1Y</button>
+        </div>
+      </div>
+      <div style="height:420px;"><canvas id="rollingCompareChart"></canvas></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;font-size:9px;color:var(--text-muted);">
+        <div>📊 <strong style="color:var(--accent-orange);">Laranja</strong> = 365d (oficial)</div>
+        <div>📊 <strong style="color:var(--accent-cyan);">Ciano</strong> = 2 anos</div>
+        <div>📊 <strong style="color:var(--accent-blue);">Azul</strong> = 4 anos</div>
+        <div>📊 <strong style="color:var(--accent-purple);">Roxo</strong> = Full Cycle</div>
+      </div>
+    </div>
+
+    <!-- Stats footer -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px;">
+      <div class="stat-card"><div class="stat-label">Z há 30 dias · 365d</div><div class="stat-value" id="rAvg365" style="color:var(--text-primary);">--</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;">onde o sinal estava há um mês</div></div>
+      <div class="stat-card"><div class="stat-label">Z há 30 dias · 2Y</div><div class="stat-value" id="rAvg2y" style="color:var(--text-primary);">--</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;">onde o sinal estava há um mês</div></div>
+      <div class="stat-card"><div class="stat-label">Z há 30 dias · 4Y</div><div class="stat-value" id="rAvg4y" style="color:var(--text-primary);">--</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;">onde o sinal estava há um mês</div></div>
+      <div class="stat-card"><div class="stat-label">Z há 30 dias · FULL</div><div class="stat-value" id="rAvgAll" style="color:var(--text-primary);">--</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;">onde o sinal estava há um mês</div></div>
+    </div>
+  </div>
+
+
   <!-- ========== SECTION 2: TRADE SIGNALS ========== -->
   <div class="section-wrap" id="signals" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">02</span>
+      <span class="section-num">03</span>
       <span class="section-title">Sinais de Negociação</span>
       <span class="section-sub">HISTÓRICO COMPLETO · COMPRA: Z sai da zona ACCUMULATE (confirmado) · VENDA: Z entra na zona ELEVATED</span>
     </div>
@@ -984,7 +1073,7 @@
   <!-- ========== SECTION 8: TRADING SYSTEMS ========== -->
   <div class="section-wrap" id="trading" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">03</span>
+      <span class="section-num">04</span>
       <span class="section-title">Sistemas de Negociação</span>
       <span class="section-sub">TENDÊNCIA · DETECÇÃO DE REVERSÃO · MOMENTUM</span>
     </div>
@@ -1144,95 +1233,6 @@
       </div>
     </div>
   </div>
-
-  <!-- ========== SECTION 13: MULTI-ROLLING COMPOSITE COMPARISON ========== -->
-  <div class="section-wrap" id="rolling" style="max-width:1400px;margin:0 auto;padding:0 24px;">
-    <div class="section-header">
-      <span class="section-num">04</span>
-      <span class="section-title">Multi-Rolling Composite</span>
-      <span class="section-sub">365D · 2Y · 4Y · FULL-CYCLE · SIDE BY SIDE</span>
-    </div>
-
-    <div class="rolling-compare-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px;">
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--text-primary);letter-spacing:0.02em;">Quatro leituras do mesmo mercado</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.55;max-width:720px;">
-            O sistema principal continua usando <strong style="color:var(--accent-orange);">Rolling 365d</strong> (inalterado).
-            Abaixo, as mesmas 9 métricas ponderadas recalculadas em janelas diferentes — útil para <strong>detectar convergência/divergência</strong>:
-            quando as 4 apontam pra mesma zona, sinal é forte; quando divergem, metodologia importa.
-          </div>
-        </div>
-        <div class="rolling-status-pill" id="rollingStatusPill">
-          <span id="rollingStatusDot" style="width:6px;height:6px;border-radius:50%;background:currentColor;"></span>
-          <span id="rollingStatusText">calculando...</span>
-        </div>
-      </div>
-
-      <div class="rolling-compare-grid" id="rollingGrid">
-        <div class="rolling-reading" style="border-left-color:var(--accent-orange);">
-          <div class="rolling-reading-label">Rolling 365d <span style="color:var(--accent-orange);">★ PRIMÁRIO</span></div>
-          <div class="rolling-reading-value" id="r365Val" style="color:var(--text-primary);">--</div>
-          <div class="rolling-reading-zone" id="r365Zone">--</div>
-          <div class="rolling-reading-sub" id="r365Sub">O sinal que dirige o dashboard</div>
-        </div>
-        <div class="rolling-reading" style="border-left-color:var(--accent-cyan);">
-          <div class="rolling-reading-label">Rolling 2 anos <span style="color:var(--text-muted);">· médio prazo</span></div>
-          <div class="rolling-reading-value" id="r2yVal" style="color:var(--text-primary);">--</div>
-          <div class="rolling-reading-zone" id="r2yZone">--</div>
-          <div class="rolling-reading-sub" id="r2ySub">Janela de ~2 halvings parciais</div>
-        </div>
-        <div class="rolling-reading" style="border-left-color:var(--accent-blue);">
-          <div class="rolling-reading-label">Rolling 4 anos <span style="color:var(--text-muted);">· ciclo halving</span></div>
-          <div class="rolling-reading-value" id="r4yVal" style="color:var(--text-primary);">--</div>
-          <div class="rolling-reading-zone" id="r4yZone">--</div>
-          <div class="rolling-reading-sub" id="r4ySub">Captura o ciclo completo de 4 anos</div>
-        </div>
-        <div class="rolling-reading" style="border-left-color:var(--accent-purple);">
-          <div class="rolling-reading-label">Full Cycle <span style="color:var(--text-muted);">· toda a história</span></div>
-          <div class="rolling-reading-value" id="rAllVal" style="color:var(--text-primary);">--</div>
-          <div class="rolling-reading-zone" id="rAllZone">--</div>
-          <div class="rolling-reading-sub" id="rAllSub">Z contra a distribuição histórica inteira</div>
-        </div>
-      </div>
-
-      <div style="background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:14px;margin-top:18px;">
-        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px;">Diagnóstico de Convergência</div>
-        <div id="rollingDiagnosis" style="font-size:12px;color:var(--text-secondary);line-height:1.6;">Calculando spread entre janelas...</div>
-      </div>
-    </div>
-
-    <div class="backstage-card-full">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--text-primary);">Histórico comparativo — quatro janelas sobrepostas</div>
-          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Convergência = sinal forte · Divergência = metodologia em disputa</div>
-        </div>
-        <div style="display:flex;gap:6px;" id="rollingRangeButtons">
-          <button class="zoom-btn active" data-range="all" style="font-size:9px;padding:5px 10px;background:rgba(249,115,22,0.15);border:1px solid var(--accent-orange);color:var(--accent-orange);border-radius:4px;cursor:pointer;letter-spacing:0.06em;">ALL</button>
-          <button class="zoom-btn" data-range="4y" style="font-size:9px;padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;cursor:pointer;letter-spacing:0.06em;">4Y</button>
-          <button class="zoom-btn" data-range="2y" style="font-size:9px;padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;cursor:pointer;letter-spacing:0.06em;">2Y</button>
-          <button class="zoom-btn" data-range="1y" style="font-size:9px;padding:5px 10px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:4px;cursor:pointer;letter-spacing:0.06em;">1Y</button>
-        </div>
-      </div>
-      <div style="height:420px;"><canvas id="rollingCompareChart"></canvas></div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;font-size:9px;color:var(--text-muted);">
-        <div>📊 <strong style="color:var(--accent-orange);">Laranja</strong> = 365d (oficial)</div>
-        <div>📊 <strong style="color:var(--accent-cyan);">Ciano</strong> = 2 anos</div>
-        <div>📊 <strong style="color:var(--accent-blue);">Azul</strong> = 4 anos</div>
-        <div>📊 <strong style="color:var(--accent-purple);">Roxo</strong> = Full Cycle</div>
-      </div>
-    </div>
-
-    <!-- Stats footer -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px;">
-      <div class="stat-card"><div class="stat-label">Z há 30 dias · 365d</div><div class="stat-value" id="rAvg365" style="color:var(--text-primary);">--</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;">onde o sinal estava há um mês</div></div>
-      <div class="stat-card"><div class="stat-label">Z há 30 dias · 2Y</div><div class="stat-value" id="rAvg2y" style="color:var(--text-primary);">--</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;">onde o sinal estava há um mês</div></div>
-      <div class="stat-card"><div class="stat-label">Z há 30 dias · 4Y</div><div class="stat-value" id="rAvg4y" style="color:var(--text-primary);">--</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;">onde o sinal estava há um mês</div></div>
-      <div class="stat-card"><div class="stat-label">Z há 30 dias · FULL</div><div class="stat-value" id="rAvgAll" style="color:var(--text-primary);">--</div><div style="font-size:9px;color:var(--text-muted);margin-top:4px;">onde o sinal estava há um mês</div></div>
-    </div>
-  </div>
-
 
   <!-- ═══════ CATEGORY DIVIDER: HOLDERS ═══════ -->
   <div style="max-width:1400px;margin:56px auto 0;padding:0 24px;">
