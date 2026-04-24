@@ -719,6 +719,102 @@
     .sr-tf-btn.sr-tf-active { background: rgba(139,92,246,0.18); color: #c4b5fd; border-color: rgba(139,92,246,0.35); }
 
     @media (max-width: 700px) { .futures-metrics-grid { grid-template-columns: repeat(2,1fr); } .backstage-metrics-row { grid-template-columns: repeat(2,1fr); } .confluence-breakdown { grid-template-columns: repeat(2,1fr); } }
+
+    /* ========================================================== */
+    /* === Batch 13 · Mobile polish (Round 3)                 === */
+    /* ========================================================== */
+
+    /* F2 · Sidebar-toggle acima do Live Ticker e integrado à faixa */
+    .sidebar-toggle {
+      top: 4px !important;
+      left: 8px !important;
+      width: 34px !important;
+      height: 28px !important;
+      z-index: 10001 !important;
+      font-size: 16px !important;
+      background: rgba(249,115,22,0.12) !important;
+      border-color: rgba(249,115,22,0.35) !important;
+      color: var(--accent-orange) !important;
+      border-radius: 5px !important;
+    }
+
+    /* ========== Breakpoint 600px (tablets em portrait) ========== */
+    @media (max-width: 600px) {
+      /* F1 · Live Ticker: compactar — esconder 3º+ lt-group (metrics extras) */
+      .live-ticker { gap: 10px !important; padding: 0 8px !important; padding-left: 48px !important; }
+      .live-ticker .lt-group:nth-of-type(n+4) { display: none !important; }
+      .lt-brand { font-size: 9px !important; }
+      .lt-price { font-size: 12px !important; }
+      .lt-change { font-size: 10px !important; padding: 2px 5px !important; }
+
+      /* F2 · Extra padding não é mais necessário pro toggle — ticker cobre */
+      .main-content { padding-top: 44px !important; }
+
+      /* F3 · section-wrap padding menor */
+      .section-wrap { padding-left: 14px !important; padding-right: 14px !important; }
+
+      /* Header brand vs header-right em coluna */
+      .header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+      .header-right { text-align: left !important; }
+
+      /* F4 · Grids inline — atacar por attribute selector (safe, sem mexer HTML) */
+      [style*="grid-template-columns:1fr 1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
+      [style*="grid-template-columns:repeat(4,1fr)"] { grid-template-columns: repeat(2,1fr) !important; }
+      [style*="grid-template-columns:repeat(3,1fr)"] { grid-template-columns: repeat(2,1fr) !important; }
+
+      /* Section-header quebra em 2 linhas (.section-sub sem margin-left:auto) */
+      .section-header { flex-wrap: wrap !important; gap: 8px 12px !important; }
+      .section-sub { margin-left: 0 !important; }
+      .section-title { font-size: 15px !important; }
+
+      /* F6 · Gauge menor */
+      .gauge-container { width: 170px !important; height: 95px !important; }
+      .zscore-value { font-size: 38px !important; }
+      .price-value { font-size: 28px !important; }
+
+      /* Cards/paddings mais compactos */
+      .zscore-card, .gauge-card, .price-card { padding: 14px !important; }
+
+      /* Confluence em 500 ainda é 3 cols; forçar 2 em 600px */
+      .confluence-breakdown { grid-template-columns: repeat(2,1fr) !important; gap: 8px !important; }
+    }
+
+    /* ========== Breakpoint 480px (phones em portrait) ========== */
+    @media (max-width: 480px) {
+      /* F1 · Live Ticker ainda mais enxuto — só brand + preço + change */
+      .live-ticker { gap: 8px !important; font-size: 10px !important; }
+      .live-ticker .lt-group:nth-of-type(n+3) { display: none !important; }
+
+      /* F4 · grids 3x1 viram 1 col; 4x1 permanece 2x2 */
+      [style*="grid-template-columns:1fr 1fr 1fr"] { grid-template-columns: 1fr !important; }
+      [style*="grid-template-columns:repeat(3,1fr)"] { grid-template-columns: 1fr !important; }
+
+      /* Cards do report em uma coluna por padding-respect */
+      .section-wrap { padding-left: 10px !important; padding-right: 10px !important; }
+
+      /* Halving strip caption menor */
+      .halving-strip-caption { font-size: 9px !important; }
+
+      /* Sidebar-nav (drawer) ocupa mais da tela pra leitura */
+      .sidebar { width: 88vw !important; max-width: 300px !important; }
+    }
+
+    /* ========== Breakpoint 380px (iPhone SE e similares) ========== */
+    @media (max-width: 380px) {
+      /* 4x1 vira 1 col também em tela minúscula */
+      [style*="grid-template-columns:repeat(4,1fr)"] { grid-template-columns: repeat(2,1fr) !important; }
+      [style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+
+      .section-wrap { padding-left: 8px !important; padding-right: 8px !important; }
+      .zscore-value { font-size: 32px !important; }
+      .price-value { font-size: 24px !important; }
+      .gauge-container { width: 150px !important; height: 85px !important; }
+
+      /* Section-num menor */
+      .section-num { font-size: 10px !important; padding: 2px 6px !important; }
+      .section-title { font-size: 14px !important; }
+    }
+
   </style>
 </head>
 <body>
