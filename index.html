@@ -1455,27 +1455,35 @@
           </div>
           <!-- Flow -->
           <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:14px;">
-            <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">FLOW</div>
-            <div style="display:flex;gap:14px;margin-top:6px;">
+            <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">FLOW (BACKQUANT)</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
               <div>
                 <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">FUNDING</div>
-                <div id="fsFund" style="font-size:13px;font-weight:700;margin-top:2px;">--</div>
+                <div id="fsFund" style="font-size:12px;font-weight:700;margin-top:2px;">--</div>
               </div>
               <div>
-                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">&Delta;OI 12H</div>
-                <div id="fsOi12h" style="font-size:13px;font-weight:700;margin-top:2px;">--</div>
+                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">CVD SLOPE</div>
+                <div id="fsCvd" style="font-size:12px;font-weight:700;margin-top:2px;">--</div>
               </div>
               <div>
-                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">CVD 4H</div>
-                <div id="fsCvd" style="font-size:13px;font-weight:700;margin-top:2px;">--</div>
+                <div style="font-size:8px;color:#22c55e;letter-spacing:0.5px;">NET LONGS 12H</div>
+                <div id="fsNetL" style="font-size:12px;font-weight:700;margin-top:2px;">--</div>
+              </div>
+              <div>
+                <div style="font-size:8px;color:#ef4444;letter-spacing:0.5px;">NET SHORTS 12H</div>
+                <div id="fsNetS" style="font-size:12px;font-weight:700;margin-top:2px;">--</div>
               </div>
             </div>
           </div>
         </div>
-        <!-- Chart -->
+        <!-- Chart + mini-charts -->
         <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;">
-            <span>BTC 1H &middot; EMA 9 + EMA 21 &middot; &#9650; LONG / &#9660; SHORT entries &middot; 120 velas</span>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;">
+            <span>BTC 1H &middot; EMA 9 + EMA 21 &middot; &#9650; LONG / &#9660; SHORT entries</span>
+            <span style="display:flex;gap:6px;align-items:center;">
+              <span style="color:#666;font-size:8px;">SCROLL/PINCH = ZOOM &middot; DRAG = PAN</span>
+              <button id="fsResetZoom" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.4);color:#a78bfa;font-size:8px;padding:3px 8px;border-radius:3px;cursor:pointer;letter-spacing:0.5px;font-weight:600;">RESET</button>
+            </span>
           </div>
           <div style="display:flex;gap:14px;font-size:9px;letter-spacing:0.5px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
             <span style="color:#8b5cf6;">&#9473; PRICE</span>
@@ -1485,6 +1493,21 @@
             <span style="color:#ef4444;font-weight:600;">&#9660; SHORT entry</span>
           </div>
           <div style="height:240px;"><canvas id="fsChart"></canvas></div>
+          <!-- Net Longs vs Net Shorts -->
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-top:14px;margin-bottom:4px;">
+            <span>NET POSITIONING &middot; longs/shorts cumulativo (OI+price decompose)</span>
+            <span style="display:flex;gap:10px;">
+              <span style="color:#22c55e;">&#9473; NET LONGS</span>
+              <span style="color:#ef4444;">&#9473; NET SHORTS</span>
+            </span>
+          </div>
+          <div style="height:90px;"><canvas id="fsNetChart"></canvas></div>
+          <!-- CVD -->
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-top:10px;margin-bottom:4px;">
+            <span>CVD &middot; cumulative taker delta (aggressor flow)</span>
+            <span style="color:#a78bfa;">&#9473; CVD</span>
+          </div>
+          <div style="height:80px;"><canvas id="fsCvdChart"></canvas></div>
         </div>
       </div>
 
@@ -5180,10 +5203,33 @@
       return { result: 'TIMEOUT', bars: exitIdx - entryIdx, exit: exitPrice, pnl: pnl };
     }
 
+    // Sign-aware delta formatter: evita '+-54'
+    function fsFmtDelta(v, decimals) {
+      if (v == null || isNaN(v)) return '--';
+      const d = decimals != null ? decimals : 0;
+      const sign = v >= 0 ? '+' : '';
+      return sign + Number(v).toFixed(d);
+    }
+
+    // Slope: compara serie[i] vs serie[i-lookback]. Retorna % diff relativo ao |ref|.
+    function fsSlope(series, i, lookback) {
+      if (i < lookback) return null;
+      const a = series[i], b = series[i - lookback];
+      if (a == null || b == null) return null;
+      const denom = Math.abs(b) > 1e-6 ? Math.abs(b) : 1;
+      return ((a - b) / denom) * 100;
+    }
+
     // Computa score LONG e SHORT no idx dado; retorna o lado com maior score
     function fsComputeScore(idx, ctx) {
       const ema9 = ctx.ema9, ema21 = ctx.ema21, macd = ctx.macd, rsi1h = ctx.rsi1h;
-      const rsi4h = ctx.rsi4hAligned, oi12 = ctx.oi12hPct, funding = ctx.funding, taker = ctx.takerRatio;
+      const rsi4h = ctx.rsi4hAligned, funding = ctx.funding;
+      const netLongs = ctx.netLongs, netShorts = ctx.netShorts, cvd = ctx.cvd;
+
+      // Slopes BackQuant-style
+      const netLongsSlope12 = fsSlope(netLongs, idx, 12);
+      const netShortsSlope12 = fsSlope(netShorts, idx, 12);
+      const cvdSlope6 = fsSlope(cvd, idx, 6);
 
       function longFactors() {
         const out = [];
@@ -5193,7 +5239,7 @@
           const pass = a != null && b != null && a > b;
           const recent = pass && (idx >= 3 && ema9[idx-3] != null && ema21[idx-3] != null && ema9[idx-3] <= ema21[idx-3]);
           out.push({ id:'emaX', name:'EMA9 > EMA21', pass:pass,
-            value: (a!=null&&b!=null)?('+'+(a-b).toFixed(0)):'--',
+            value: (a!=null&&b!=null) ? fsFmtDelta(a-b, 0) : '--',
             desc: pass ? (recent ? 'cross recente' : 'alinhada bullish') : 'alinhada bearish' });
         }
         // 2. RSI 1h saindo de oversold
@@ -5227,7 +5273,7 @@
             value: h!=null ? h.toFixed(1) : '--',
             desc: pass ? (h > 0 ? 'hist > 0' : 'hist crescendo') : 'hist bearish' });
         }
-        // 5. Funding < 0.005%
+        // 5. Funding baixo/negativo
         {
           const f = funding;
           const pass = f != null && f < 0.00005;
@@ -5235,21 +5281,21 @@
             value: f!=null ? (f*100).toFixed(4)+'%' : '--',
             desc: pass ? 'shorts pressionados' : 'funding normal/alto' });
         }
-        // 6. OI 12h < -2%
+        // 6. NET LONGS subindo 12h (novos longs entrando)
         {
-          const d = oi12[idx];
-          const pass = d != null && d < -2;
-          out.push({ id:'oi', name:'OI 12h < -2%', pass:pass,
-            value: d!=null ? d.toFixed(1)+'%' : '--',
-            desc: pass ? 'deleveraging' : 'OI estavel/subindo' });
+          const s = netLongsSlope12;
+          const pass = s != null && s > 0.5;
+          out.push({ id:'netL', name:'Net Longs subindo 12h', pass:pass,
+            value: s!=null ? fsFmtDelta(s, 1)+'%' : '--',
+            desc: pass ? 'longs abrindo posicao' : 'longs fracos/saindo' });
         }
-        // 7. Taker buy > 52%
+        // 7. CVD slope positivo (agressor comprador recente)
         {
-          const t = taker;
-          const pass = t != null && t > 0.52;
-          out.push({ id:'cvd', name:'Taker buy > 52%', pass:pass,
-            value: t!=null ? (t*100).toFixed(1)+'%' : '--',
-            desc: pass ? 'agressor comprador' : 'equilibrado/vendedor' });
+          const s = cvdSlope6;
+          const pass = s != null && s > 0.3;
+          out.push({ id:'cvd', name:'CVD subindo 6h', pass:pass,
+            value: s!=null ? fsFmtDelta(s, 1)+'%' : '--',
+            desc: pass ? 'compradores agressivos' : 'sem buying pressure' });
         }
         return out;
       }
@@ -5262,7 +5308,7 @@
           const pass = a != null && b != null && a < b;
           const recent = pass && (idx >= 3 && ema9[idx-3] != null && ema21[idx-3] != null && ema9[idx-3] >= ema21[idx-3]);
           out.push({ id:'emaX', name:'EMA9 < EMA21', pass:pass,
-            value: (a!=null&&b!=null)?(a-b).toFixed(0):'--',
+            value: (a!=null&&b!=null) ? fsFmtDelta(a-b, 0) : '--',
             desc: pass ? (recent ? 'cross recente' : 'alinhada bearish') : 'alinhada bullish' });
         }
         // 2. RSI 1h saindo OB
@@ -5296,7 +5342,7 @@
             value: h!=null ? h.toFixed(1) : '--',
             desc: pass ? (h < 0 ? 'hist < 0' : 'hist caindo') : 'hist bullish' });
         }
-        // 5. Funding > 0.015%
+        // 5. Funding alto
         {
           const f = funding;
           const pass = f != null && f > 0.00015;
@@ -5304,21 +5350,21 @@
             value: f!=null ? (f*100).toFixed(4)+'%' : '--',
             desc: pass ? 'longs pagando caro' : 'funding normal/baixo' });
         }
-        // 6. OI 12h > +3%
+        // 6. NET SHORTS subindo 12h (novos shorts entrando)
         {
-          const d = oi12[idx];
-          const pass = d != null && d > 3;
-          out.push({ id:'oi', name:'OI 12h > +3%', pass:pass,
-            value: d!=null ? d.toFixed(1)+'%' : '--',
-            desc: pass ? 'leverage piling' : 'OI estavel/caindo' });
+          const s = netShortsSlope12;
+          const pass = s != null && s > 0.5;
+          out.push({ id:'netS', name:'Net Shorts subindo 12h', pass:pass,
+            value: s!=null ? fsFmtDelta(s, 1)+'%' : '--',
+            desc: pass ? 'shorts abrindo posicao' : 'shorts fracos/saindo' });
         }
-        // 7. Taker buy < 48%
+        // 7. CVD slope negativo (agressor vendedor recente)
         {
-          const t = taker;
-          const pass = t != null && t < 0.48;
-          out.push({ id:'cvd', name:'Taker buy < 48%', pass:pass,
-            value: t!=null ? (t*100).toFixed(1)+'%' : '--',
-            desc: pass ? 'agressor vendedor' : 'equilibrado/comprador' });
+          const s = cvdSlope6;
+          const pass = s != null && s < -0.3;
+          out.push({ id:'cvd', name:'CVD caindo 6h', pass:pass,
+            value: s!=null ? fsFmtDelta(s, 1)+'%' : '--',
+            desc: pass ? 'vendedores agressivos' : 'sem selling pressure' });
         }
         return out;
       }
@@ -5331,11 +5377,12 @@
       return { score: sScore, side:'SHORT', factors: sf, opposite: lScore };
     }
 
-    // Engine principal: roda scoring + backtest em loop retroativo
+    // Engine principal: BackQuant decompose + RSI/MA/MACD
     function computeFlowScalperSignal(klines1h, klines4h, oiHistory, takerHistory, currentFunding) {
       if (!klines1h || klines1h.length < 60 || !klines4h || klines4h.length < 20) {
         return { current: null, signals: [], stats: null, chart: null, error: 'dados insuficientes' };
       }
+      const n = klines1h.length;
       const closes1h = klines1h.map(function(k){ return k.close; });
       const closes4h = klines4h.map(function(k){ return k.close; });
       const ema9 = computeEMA(closes1h, 9);
@@ -5356,7 +5403,7 @@
         return latest;
       });
 
-      // Map OI por timestamp
+      // Map OI por timestamp + oiAt por kline
       const oiByTime = (oiHistory || []).map(function(p){
         const t = (typeof p.date === 'string') ? new Date(p.date).getTime() : p.date;
         return { t: t, v: p.value };
@@ -5373,46 +5420,103 @@
         return oiByTime[lo].v;
       }
 
-      const oi12hPct = klines1h.map(function(k) {
-        const now = oiAt(k.openTime);
-        const before = oiAt(k.openTime - 12 * 3600 * 1000);
-        if (!now || !before) return null;
-        return ((now - before) / before) * 100;
-      });
+      // OI por kline (hourly resolution)
+      const oiSeries = klines1h.map(function(k){ return oiAt(k.openTime); });
 
-      // Taker ratio 4h rolling
-      const takerByTime = (takerHistory || []).map(function(p){
-        const t = (typeof p.date === 'string') ? new Date(p.date).getTime() : p.date;
-        return { t: t, buy: p.buy || 0, sell: p.sell || 0 };
-      }).filter(function(p){ return !isNaN(p.t); }).sort(function(a,b){ return a.t - b.t; });
-
-      function takerRatioAt(ts) {
-        if (!takerByTime.length) return null;
-        const startT = ts - 4 * 3600 * 1000;
-        let buy = 0, sell = 0;
-        for (let i = 0; i < takerByTime.length; i++) {
-          const p = takerByTime[i];
-          if (p.t >= startT && p.t <= ts) { buy += p.buy; sell += p.sell; }
-        }
-        if (buy + sell === 0) return null;
-        return buy / (buy + sell);
+      // ========== NET LONGS / NET SHORTS DECOMPOSE (BackQuant-style) ==========
+      // Regra classica:
+      //   Preco UP + OI UP   -> longs abrindo (Net Longs +=)
+      //   Preco UP + OI DOWN -> shorts cobrindo (Net Shorts -=, aka reduz)
+      //   Preco DOWN + OI UP   -> shorts abrindo (Net Shorts +=)
+      //   Preco DOWN + OI DOWN -> longs capitulando (Net Longs -=)
+      const netLongs = new Array(n).fill(0);
+      const netShorts = new Array(n).fill(0);
+      for (let i = 1; i < n; i++) {
+        netLongs[i] = netLongs[i-1];
+        netShorts[i] = netShorts[i-1];
+        const pNow = closes1h[i], pPrev = closes1h[i-1];
+        const oNow = oiSeries[i], oPrev = oiSeries[i-1];
+        if (oNow == null || oPrev == null) continue;
+        const dOi = oNow - oPrev;
+        const dP = pNow - pPrev;
+        if (dP > 0 && dOi > 0) { netLongs[i] += dOi; }
+        else if (dP > 0 && dOi < 0) { netShorts[i] += dOi; }  // shorts decrease (covering)
+        else if (dP < 0 && dOi > 0) { netShorts[i] += dOi; }
+        else if (dP < 0 && dOi < 0) { netLongs[i] += dOi; }  // longs decrease (capitulation)
       }
 
-      // Loop retroativo com cooldown
+      // ========== CVD CUMULATIVO (index-aligned) ==========
+      // Taker history pode ser daily ou hourly - usamos alinhamento index-based
+      // pra pegar os ultimos N entries e montar CVD series alinhada ao tail dos klines.
+      // Cada entry vira um delta (buy - sell), acumulado.
+      const cvd = new Array(n).fill(null);
+      if (takerHistory && takerHistory.length > 0) {
+        // Ordena por data crescente se houver
+        const sortedTaker = takerHistory.slice().sort(function(a, b) {
+          const ta = (typeof a.date === 'string') ? new Date(a.date).getTime() : (a.date || 0);
+          const tb = (typeof b.date === 'string') ? new Date(b.date).getTime() : (b.date || 0);
+          return ta - tb;
+        });
+        // Se taker tem menos entries que klines, expande pra cobrir (repeat daily value over hours)
+        const expanded = [];
+        if (sortedTaker.length >= n * 0.5) {
+          // Alinhamento 1:1 do tail
+          const takeFrom = Math.max(0, sortedTaker.length - n);
+          for (let i = takeFrom; i < sortedTaker.length; i++) expanded.push(sortedTaker[i]);
+        } else {
+          // Expande daily -> distribui cada entry por 24 klines
+          const repeats = Math.max(1, Math.floor(n / Math.max(1, sortedTaker.length)));
+          for (let i = 0; i < sortedTaker.length; i++) {
+            for (let r = 0; r < repeats; r++) expanded.push(sortedTaker[i]);
+          }
+        }
+        // Align tail
+        const takeFrom2 = Math.max(0, expanded.length - n);
+        const tailData = expanded.slice(takeFrom2);
+        const offset = n - tailData.length;
+        let cumul = 0;
+        for (let i = 0; i < n; i++) {
+          if (i < offset) { cvd[i] = null; continue; }
+          const entry = tailData[i - offset];
+          const buy = parseFloat(entry.buy || entry.takerBuyVolume || entry.buyVolume || 0);
+          const sell = parseFloat(entry.sell || entry.takerSellVolume || entry.sellVolume || 0);
+          // Normaliza (divide por 1e9 pra escala legivel em bilhoes)
+          cumul += (buy - sell) / 1e9;
+          cvd[i] = cumul;
+        }
+      }
+
+      // ========== LOOP RETROATIVO COM COOLDOWN + RE-ARM ==========
       const signals = [];
       const COOLDOWN_BARS = 6;
       let lastL = -Infinity, lastS = -Infinity;
+      // Re-arm: depois de um entry, so re-fire quando score do mesmo lado cair abaixo de 4
+      let armedL = true, armedS = true;
       const MIN_IDX = 35;
       for (let i = MIN_IDX; i < klines1h.length - 1; i++) {
         const ctx = {
           ema9: ema9, ema21: ema21, macd: macd, rsi1h: rsi1h, rsi4hAligned: rsi4hAligned,
-          oi12hPct: oi12hPct, funding: currentFunding,
-          takerRatio: takerRatioAt(klines1h[i].openTime)
+          funding: currentFunding, netLongs: netLongs, netShorts: netShorts, cvd: cvd
         };
         const sc = fsComputeScore(i, ctx);
+
+        // Re-arm tracking: compute both sides independentemente pra decidir disarm
+        // (fsComputeScore ja retorna lado dominante; pra re-arm precisamos do outro lado tb)
+        // Aproximacao: se sc.opposite < 4 tambem libera o lado oposto
+        if (!armedL && sc.side === 'LONG' && sc.score < 4) armedL = true;
+        if (!armedL && sc.side === 'SHORT' && sc.opposite < 4) armedL = true;
+        if (!armedS && sc.side === 'SHORT' && sc.score < 4) armedS = true;
+        if (!armedS && sc.side === 'LONG' && sc.opposite < 4) armedS = true;
+
         if (sc.score < 5) continue;
-        if (sc.side === 'LONG' && i - lastL < COOLDOWN_BARS) continue;
-        if (sc.side === 'SHORT' && i - lastS < COOLDOWN_BARS) continue;
+        if (sc.side === 'LONG') {
+          if (!armedL) continue;
+          if (i - lastL < COOLDOWN_BARS) continue;
+        } else {
+          if (!armedS) continue;
+          if (i - lastS < COOLDOWN_BARS) continue;
+        }
+
         const sim = fsSimulateTrade(i, sc.side, klines1h);
         if (!sim) continue;
         signals.push({
@@ -5426,10 +5530,11 @@
           bars: sim.bars,
           result: sim.result
         });
-        if (sc.side === 'LONG') lastL = i; else lastS = i;
+        if (sc.side === 'LONG') { lastL = i; armedL = false; }
+        else { lastS = i; armedS = false; }
       }
 
-      // Stats
+      // ========== STATS ==========
       const total = signals.length;
       const hits = signals.filter(function(s){ return s.result === 'HIT_TARGET'; }).length;
       const winRate = total > 0 ? hits / total : 0;
@@ -5445,16 +5550,18 @@
         };
       });
 
-      // Current score (ultima kline disponivel)
+      // ========== CURRENT SCORE ==========
       const lastIdx = klines1h.length - 1;
       const currentCtx = {
         ema9: ema9, ema21: ema21, macd: macd, rsi1h: rsi1h, rsi4hAligned: rsi4hAligned,
-        oi12hPct: oi12hPct, funding: currentFunding,
-        takerRatio: takerRatioAt(klines1h[lastIdx].openTime)
+        funding: currentFunding, netLongs: netLongs, netShorts: netShorts, cvd: cvd
       };
       const currentScore = fsComputeScore(lastIdx, currentCtx);
+      const curNetLongsSlope = fsSlope(netLongs, lastIdx, 12);
+      const curNetShortsSlope = fsSlope(netShorts, lastIdx, 12);
+      const curCvdSlope = fsSlope(cvd, lastIdx, 6);
 
-      // Chart data: ultimas 120 barras
+      // ========== CHART DATA: ultimas 120 barras ==========
       const chartStart = Math.max(0, klines1h.length - 120);
       const chartLabels = klines1h.slice(chartStart).map(function(k){
         const d = new Date(k.openTime);
@@ -5466,6 +5573,9 @@
       const chartPrices = klines1h.slice(chartStart).map(function(k){ return k.close; });
       const chartEma9 = ema9.slice(chartStart);
       const chartEma21 = ema21.slice(chartStart);
+      const chartNetL = netLongs.slice(chartStart);
+      const chartNetS = netShorts.slice(chartStart);
+      const chartCvd = cvd.slice(chartStart);
       const markers = signals.filter(function(s){ return s.barIdx >= chartStart; }).map(function(s){
         return {
           x: s.barIdx - chartStart,
@@ -5492,8 +5602,9 @@
           rsi4h: rsi4hAligned[lastIdx],
           macdHist: macd.hist[lastIdx],
           funding: currentFunding,
-          oi12hPct: oi12hPct[lastIdx],
-          takerRatio: currentCtx.takerRatio,
+          netLongsSlope: curNetLongsSlope,
+          netShortsSlope: curNetShortsSlope,
+          cvdSlope: curCvdSlope,
           ema9: ema9[lastIdx],
           ema21: ema21[lastIdx]
         },
@@ -5504,6 +5615,9 @@
           prices: chartPrices,
           ema9: chartEma9,
           ema21: chartEma21,
+          netLongs: chartNetL,
+          netShorts: chartNetS,
+          cvd: chartCvd,
           markers: markers
         },
         window: { start: windowStart, end: windowEnd, bars: klines1h.length }
@@ -5555,7 +5669,10 @@
       }
     }
 
-    // Renderer principal
+    // Renderer principal (BackQuant + zoom)
+    let _fsNetChart = null;
+    let _fsCvdChart = null;
+
     function renderFlowScalperUI(fs) {
       if (!fs) return;
       const fmt = function(n, d) { if (n == null || isNaN(n)) return '--'; return Number(n).toFixed(d != null ? d : 2); };
@@ -5620,21 +5737,26 @@
         macdEl.style.color = cur.macdHist == null ? '#9a9aa6' : (cur.macdHist > 0 ? '#22c55e' : '#ef4444');
       }
 
-      // Flow row
+      // Flow row (BackQuant)
       const fundEl = document.getElementById('fsFund');
       if (fundEl) {
         fundEl.textContent = cur.funding != null ? (cur.funding * 100).toFixed(4) + '%' : '--';
         fundEl.style.color = cur.funding == null ? '#9a9aa6' : (cur.funding > 0.00015 ? '#ef4444' : cur.funding < 0.00005 ? '#22c55e' : '#e5e5ea');
       }
-      const oi12hEl = document.getElementById('fsOi12h');
-      if (oi12hEl) {
-        oi12hEl.textContent = fmtPct(cur.oi12hPct, 1);
-        oi12hEl.style.color = cur.oi12hPct == null ? '#9a9aa6' : (cur.oi12hPct > 3 ? '#ef4444' : cur.oi12hPct < -2 ? '#22c55e' : '#e5e5ea');
-      }
       const cvdEl = document.getElementById('fsCvd');
       if (cvdEl) {
-        cvdEl.textContent = cur.takerRatio != null ? (cur.takerRatio * 100).toFixed(1) + '%' : '--';
-        cvdEl.style.color = cur.takerRatio == null ? '#9a9aa6' : (cur.takerRatio > 0.52 ? '#22c55e' : cur.takerRatio < 0.48 ? '#ef4444' : '#e5e5ea');
+        cvdEl.textContent = cur.cvdSlope != null ? ((cur.cvdSlope > 0 ? '+' : '') + cur.cvdSlope.toFixed(1) + '%') : '--';
+        cvdEl.style.color = cur.cvdSlope == null ? '#9a9aa6' : (cur.cvdSlope > 0.3 ? '#22c55e' : cur.cvdSlope < -0.3 ? '#ef4444' : '#e5e5ea');
+      }
+      const netLEl = document.getElementById('fsNetL');
+      if (netLEl) {
+        netLEl.textContent = cur.netLongsSlope != null ? ((cur.netLongsSlope > 0 ? '+' : '') + cur.netLongsSlope.toFixed(1) + '%') : '--';
+        netLEl.style.color = cur.netLongsSlope == null ? '#9a9aa6' : (cur.netLongsSlope > 0.5 ? '#22c55e' : cur.netLongsSlope < -0.5 ? '#ef4444' : '#e5e5ea');
+      }
+      const netSEl = document.getElementById('fsNetS');
+      if (netSEl) {
+        netSEl.textContent = cur.netShortsSlope != null ? ((cur.netShortsSlope > 0 ? '+' : '') + cur.netShortsSlope.toFixed(1) + '%') : '--';
+        netSEl.style.color = cur.netShortsSlope == null ? '#9a9aa6' : (cur.netShortsSlope > 0.5 ? '#ef4444' : cur.netShortsSlope < -0.5 ? '#22c55e' : '#e5e5ea');
       }
 
       // Factors
@@ -5664,7 +5786,6 @@
           right.style.cssText = 'font-family:\'JetBrains Mono\',monospace;font-size:10px;color:' + (f.pass ? '#e5e5ea' : '#9a9aa6') + ';';
           right.textContent = f.value;
           row.appendChild(left); row.appendChild(right);
-          // tooltip via title
           row.title = f.desc;
           factorsListEl.appendChild(row);
         });
@@ -5724,7 +5845,19 @@
         }
       }
 
-      // Chart render
+      // ========== CHARTS (com zoom/pan bilateral) ==========
+      const zoomCfg = {
+        pan: { enabled: true, mode: 'x', modifierKey: null },
+        zoom: {
+          wheel: { enabled: true, speed: 0.1 },
+          pinch: { enabled: true },
+          drag: { enabled: false },
+          mode: 'x'
+        },
+        limits: { x: { minRange: 5 } }
+      };
+
+      // Chart principal — preco + EMAs + markers
       const canvas = document.getElementById('fsChart');
       if (canvas && fs.chart) {
         if (_fsChart) { try { _fsChart.destroy(); } catch(e) {} _fsChart = null; }
@@ -5736,67 +5869,15 @@
           data: {
             labels: fs.chart.labels,
             datasets: [
-              {
-                label: 'BTC Price',
-                data: fs.chart.prices,
-                borderColor: '#8b5cf6',
-                backgroundColor: 'rgba(139,92,246,0.08)',
-                borderWidth: 1.8,
-                pointRadius: 0,
-                tension: 0.15,
-                fill: false,
-                yAxisID: 'y'
-              },
-              {
-                label: 'EMA 9',
-                data: fs.chart.ema9,
-                borderColor: '#eab308',
-                borderWidth: 1.2,
-                pointRadius: 0,
-                tension: 0.2,
-                fill: false,
-                yAxisID: 'y'
-              },
-              {
-                label: 'EMA 21',
-                data: fs.chart.ema21,
-                borderColor: '#a78bfa',
-                borderWidth: 1.2,
-                pointRadius: 0,
-                tension: 0.2,
-                fill: false,
-                yAxisID: 'y'
-              },
-              {
-                label: 'LONG entries',
-                data: longMarkers,
-                type: 'scatter',
-                backgroundColor: '#22c55e',
-                borderColor: '#22c55e',
-                pointStyle: 'triangle',
-                pointRadius: 8,
-                pointHoverRadius: 10,
-                showLine: false,
-                yAxisID: 'y'
-              },
-              {
-                label: 'SHORT entries',
-                data: shortMarkers,
-                type: 'scatter',
-                backgroundColor: '#ef4444',
-                borderColor: '#ef4444',
-                pointStyle: 'triangle',
-                rotation: 180,
-                pointRadius: 8,
-                pointHoverRadius: 10,
-                showLine: false,
-                yAxisID: 'y'
-              }
+              { label: 'BTC Price', data: fs.chart.prices, borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.08)', borderWidth: 1.8, pointRadius: 0, tension: 0.15, fill: false, yAxisID: 'y' },
+              { label: 'EMA 9', data: fs.chart.ema9, borderColor: '#eab308', borderWidth: 1.2, pointRadius: 0, tension: 0.2, fill: false, yAxisID: 'y' },
+              { label: 'EMA 21', data: fs.chart.ema21, borderColor: '#a78bfa', borderWidth: 1.2, pointRadius: 0, tension: 0.2, fill: false, yAxisID: 'y' },
+              { label: 'LONG entries', data: longMarkers, type: 'scatter', backgroundColor: '#22c55e', borderColor: '#22c55e', pointStyle: 'triangle', pointRadius: 8, pointHoverRadius: 10, showLine: false, yAxisID: 'y' },
+              { label: 'SHORT entries', data: shortMarkers, type: 'scatter', backgroundColor: '#ef4444', borderColor: '#ef4444', pointStyle: 'triangle', rotation: 180, pointRadius: 8, pointHoverRadius: 10, showLine: false, yAxisID: 'y' }
             ]
           },
           options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             interaction: { intersect: false, mode: 'index' },
             plugins: {
               legend: { display: false },
@@ -5812,28 +5893,86 @@
                     return ds + ': $' + Number(item.parsed.y).toLocaleString('en-US', {maximumFractionDigits:0});
                   }
                 }
-              }
+              },
+              zoom: zoomCfg
             },
             scales: {
-              x: {
-                ticks: { color: '#666', font: { size: 9 }, maxTicksLimit: 10, autoSkip: true },
-                grid: { color: 'rgba(255,255,255,0.03)' }
-              },
-              y: {
-                type: 'linear',
-                position: 'right',
-                ticks: {
-                  color: '#8b5cf6', font: { size: 9 },
-                  callback: function(v) { return '$' + Number(v/1000).toFixed(1) + 'k'; }
-                },
-                grid: { color: 'rgba(255,255,255,0.03)' }
-              }
+              x: { ticks: { color: '#666', font: { size: 9 }, maxTicksLimit: 10, autoSkip: true }, grid: { color: 'rgba(255,255,255,0.03)' } },
+              y: { type: 'linear', position: 'right', ticks: { color: '#8b5cf6', font: { size: 9 }, callback: function(v){ return '$' + Number(v/1000).toFixed(1) + 'k'; } }, grid: { color: 'rgba(255,255,255,0.03)' } }
             }
           }
         });
       }
-    }
 
+      // Net Longs vs Net Shorts mini-chart
+      const netCanvas = document.getElementById('fsNetChart');
+      if (netCanvas && fs.chart) {
+        if (_fsNetChart) { try { _fsNetChart.destroy(); } catch(e) {} _fsNetChart = null; }
+        const nctx = netCanvas.getContext('2d');
+        _fsNetChart = new Chart(nctx, {
+          type: 'line',
+          data: {
+            labels: fs.chart.labels,
+            datasets: [
+              { label: 'Net Longs', data: fs.chart.netLongs, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.15)', borderWidth: 1.2, pointRadius: 0, tension: 0.25, fill: 'origin' },
+              { label: 'Net Shorts', data: fs.chart.netShorts, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.15)', borderWidth: 1.2, pointRadius: 0, tension: 0.25, fill: 'origin' }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: function(item){ return item.dataset.label + ': ' + Number(item.parsed.y).toFixed(0); } } },
+              zoom: zoomCfg
+            },
+            scales: {
+              x: { ticks: { color: '#666', font: { size: 8 }, maxTicksLimit: 6, autoSkip: true }, grid: { display: false } },
+              y: { position: 'right', ticks: { color: '#666', font: { size: 8 }, maxTicksLimit: 4 }, grid: { color: 'rgba(255,255,255,0.03)' } }
+            }
+          }
+        });
+      }
+
+      // CVD mini-chart
+      const cvdCanvas = document.getElementById('fsCvdChart');
+      if (cvdCanvas && fs.chart) {
+        if (_fsCvdChart) { try { _fsCvdChart.destroy(); } catch(e) {} _fsCvdChart = null; }
+        const cctx = cvdCanvas.getContext('2d');
+        _fsCvdChart = new Chart(cctx, {
+          type: 'line',
+          data: {
+            labels: fs.chart.labels,
+            datasets: [
+              { label: 'CVD', data: fs.chart.cvd, borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.15)', borderWidth: 1.4, pointRadius: 0, tension: 0.2, fill: 'origin' }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: function(item){ return 'CVD: ' + Number(item.parsed.y).toFixed(2) + ' B'; } } },
+              zoom: zoomCfg
+            },
+            scales: {
+              x: { ticks: { color: '#666', font: { size: 8 }, maxTicksLimit: 6, autoSkip: true }, grid: { display: false } },
+              y: { position: 'right', ticks: { color: '#a78bfa', font: { size: 8 }, maxTicksLimit: 4, callback: function(v){ return Number(v).toFixed(1)+'B'; } }, grid: { color: 'rgba(255,255,255,0.03)' } }
+            }
+          }
+        });
+      }
+
+      // Reset zoom button handler (re-bind toda vez pra garantir)
+      const resetBtn = document.getElementById('fsResetZoom');
+      if (resetBtn) {
+        resetBtn.onclick = function() {
+          if (_fsChart && _fsChart.resetZoom) _fsChart.resetZoom('none');
+          if (_fsNetChart && _fsNetChart.resetZoom) _fsNetChart.resetZoom('none');
+          if (_fsCvdChart && _fsCvdChart.resetZoom) _fsCvdChart.resetZoom('none');
+        };
+      }
+    }
 
     // ========== OI/PRICE DIVERGENCE (Estagio A) ==========
     // Detecta 4+4 quadrantes de divergencia entre OI e Price.
