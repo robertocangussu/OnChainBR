@@ -2362,6 +2362,22 @@
       <span class="section-title">Leitura do Mercado</span>
       <span id="reportDate" style="font-size:10px;color:var(--text-muted);"></span>
     </div>
+
+    <!-- ========== AI DAILY REPORT BLOCK (Batch 17) ========== -->
+    <div id="aiReportBlock" style="display:none;margin:16px 0 24px;padding:18px 22px;border-radius:12px;background:linear-gradient(135deg,rgba(249,115,22,0.08) 0%,rgba(6,182,212,0.04) 100%);border:1px solid rgba(249,115,22,0.22);box-shadow:0 4px 16px rgba(249,115,22,0.06);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span style="font-size:14px;">AI</span>
+        <span style="font-size:10px;color:var(--accent-orange);font-weight:700;letter-spacing:2px;text-transform:uppercase;">Analise do Dia &middot; IA</span>
+        <span id="aiReportDate" style="font-size:9px;color:var(--text-muted);margin-left:auto;"></span>
+        <span id="aiReportModel" style="font-size:9px;color:var(--text-muted);padding:2px 6px;background:rgba(255,255,255,0.04);border-radius:3px;"></span>
+      </div>
+      <div id="aiReportLoading" style="font-size:11px;color:var(--text-muted);font-style:italic;padding:8px 0;">Gerando analise do dia...</div>
+      <div id="aiReportContent" style="display:none;font-size:12.5px;line-height:1.75;color:var(--text-primary);"></div>
+      <div id="aiReportError" style="display:none;font-size:10px;color:var(--text-muted);padding:6px 0;"></div>
+      <div id="aiReportFooter" style="display:none;font-size:9px;color:var(--text-muted);margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04);letter-spacing:0.5px;">
+        Gerado por Claude Haiku 4.5 &middot; <span id="aiReportCachedBadge"></span> &middot; <span id="aiReportRegenLink" style="cursor:pointer;color:var(--accent-cyan);text-decoration:underline;text-underline-offset:2px;">forcar atualizacao</span>
+      </div>
+    </div>
     
     <!-- Confluence Score -->
     <div class="confluence-card" id="confluenceCard">
@@ -8016,6 +8032,265 @@
     let reportRetryCount = 0;
     const MAX_REPORT_RETRIES = 5;
     
+
+    // ========== AI DAILY REPORT (Batch 17) ==========
+    const AI_REPORT_URL = 'https://onchainbr-ai-report.roberty-rockeiro.workers.dev/api/daily-report';
+    const AI_REPORT_TIMEOUT_MS = 30000;
+    let _aiReportInFlight = false;
+    let _aiReportFetchedToday = false;
+
+    function _safeNum(val, digits) {
+      if (val === null || val === undefined || Number.isNaN(val)) return null;
+      const n = typeof val === 'number' ? val : parseFloat(val);
+      if (!isFinite(n)) return null;
+      return digits !== undefined ? +n.toFixed(digits) : n;
+    }
+
+    function buildReportSnapshot() {
+      const rawValues = (typeof state !== 'undefined' && state && state.rawValues) ? state.rawValues : {};
+      const techData = (typeof tradingState !== 'undefined' && tradingState && tradingState.technicalData) ? tradingState.technicalData : [];
+      const lastTech = techData.length > 0 ? techData[techData.length - 1] : {};
+      const price = _safeNum((typeof tradingState !== 'undefined' && tradingState) ? tradingState.currentPrice : 0, 0) || _safeNum(lastTech.price, 0);
+      const sma50 = _safeNum(lastTech.sma50, 0);
+      const sma200 = _safeNum(lastTech.sma200, 0);
+
+      let multiRolling = null;
+      try {
+        if (typeof multiRollingState !== 'undefined' && multiRollingState && multiRollingState.readings) {
+          multiRolling = { aligned: !!multiRollingState.aligned, status: multiRollingState.status || null, readings: multiRollingState.readings };
+        }
+      } catch(e) {}
+
+      let whale = null;
+      try {
+        if (typeof whaleState !== 'undefined' && whaleState && whaleState.loaded) {
+          whale = { cohorts: whaleState.cohorts || null, percentiles: whaleState.percentiles || null };
+        }
+      } catch(e) {}
+
+      let confluence = null;
+      try {
+        if (typeof confluenceState !== 'undefined' && confluenceState && confluenceState.score !== undefined) {
+          confluence = { score: _safeNum(confluenceState.score, 1), label: confluenceState.label || null, factors: confluenceState.factors || null };
+        }
+      } catch(e) {}
+
+      let squeezeRadar = null;
+      try {
+        if (typeof squeezeRadarState !== 'undefined' && squeezeRadarState) {
+          squeezeRadar = { score: _safeNum(squeezeRadarState.score, 0), verdict: squeezeRadarState.verdict || null };
+        }
+      } catch(e) {}
+
+      let futuresPressure = null;
+      try {
+        if (typeof futuresPressureState !== 'undefined' && futuresPressureState) {
+          futuresPressure = { score: _safeNum(futuresPressureState.score, 0), verdict: futuresPressureState.verdict || null };
+        }
+      } catch(e) {}
+
+      let flow = null;
+      try {
+        if (typeof flowState !== 'undefined' && flowState && flowState.loaded) {
+          flow = { etfNetflow7d: _safeNum(flowState.etfNetflow7d, 0), etfNetflow30d: _safeNum(flowState.etfNetflow30d, 0), exchangeReserveChg30d: _safeNum(flowState.exchangeReserveChg30d, 2) };
+        }
+      } catch(e) {}
+
+      let priceLayers = null;
+      try {
+        if (typeof priceLayersState !== 'undefined' && priceLayersState && priceLayersState.layers) {
+          priceLayers = { sthRP: _safeNum(priceLayersState.layers.sthRP, 0), lthRP: _safeNum(priceLayersState.layers.lthRP, 0), positionScore: _safeNum(priceLayersState.layers.positionScore, 1), zone: priceLayersState.layers.zone || null };
+        }
+      } catch(e) {}
+
+      let halving = null;
+      try {
+        if (typeof getHalvingInfo === 'function') {
+          const h = getHalvingInfo();
+          halving = { daysSinceHalving: h.daysSinceHalving, cycleProgress: parseFloat(h.cycleProgress), era: h.currentEra };
+        }
+      } catch(e) {}
+
+      let phase = null;
+      try {
+        if (typeof detectMarketPhase === 'function') {
+          const p = detectMarketPhase();
+          phase = { name: p.name, descPt: p.descPt };
+        }
+      } catch(e) {}
+
+      let zScoreDelta7d = null;
+      try {
+        const h = (typeof state !== 'undefined' && state) ? (state.compositeHistory || []) : [];
+        if (h.length >= 7) {
+          zScoreDelta7d = _safeNum(h[h.length - 1].value - h[h.length - 7].value, 3);
+        }
+      } catch(e) {}
+
+      const zScore = (typeof state !== 'undefined' && state) ? _safeNum(state.composite, 3) : null;
+
+      return {
+        price: price,
+        priceVsSMA50pct: (price && sma50) ? _safeNum(((price / sma50) - 1) * 100, 2) : null,
+        priceVsSMA200pct: (price && sma200) ? _safeNum(((price / sma200) - 1) * 100, 2) : null,
+        structure: (sma50 && sma200) ? (sma50 > sma200 ? 'bull' : 'bear') : null,
+        zScore: zScore,
+        zScoreDelta7d: zScoreDelta7d,
+        metrics: {
+          mvrv: _safeNum(rawValues.mvrv, 2),
+          nupl: _safeNum(rawValues.nupl, 3),
+          sopr: _safeNum(rawValues.sopr, 4),
+          mayerMultiple: _safeNum(rawValues.mayerMultiple, 3),
+          ssr: _safeNum(rawValues.ssrStablecoin, 2),
+          puellMultiple: _safeNum(rawValues.puellMultiple, 3),
+          supplyProfit: _safeNum(rawValues.supplyProfit, 2),
+          fearGreed: _safeNum(rawValues.fearGreed, 0),
+          rsiWeekly: _safeNum(rawValues.rsiWeekly, 1)
+        },
+        technical: { rsi: _safeNum(lastTech.rsi, 1), macd: _safeNum(lastTech.macd, 2), sma50: sma50, sma200: sma200 },
+        smartMoney: (typeof smartMoneyState !== 'undefined' && smartMoneyState) ? {
+          confidence: _safeNum(smartMoneyState.confidence, 0),
+          lth30d: _safeNum(smartMoneyState.lth30d, 0),
+          sth30d: _safeNum(smartMoneyState.sth30d, 0),
+          reserveRisk: _safeNum(smartMoneyState.reserveRisk, 5)
+        } : null,
+        whale: whale,
+        leverage: (typeof leverageState !== 'undefined' && leverageState) ? {
+          riskScore: _safeNum(leverageState.riskScore, 0),
+          oi: _safeNum(leverageState.oi, 0),
+          longShort: _safeNum(leverageState.longShort, 3),
+          funding: _safeNum((typeof tradingState !== 'undefined' && tradingState) ? tradingState.funding : null, 5)
+        } : null,
+        miners: (typeof minerState !== 'undefined' && minerState) ? {
+          healthScore: _safeNum(minerState.healthScore, 0),
+          puell: _safeNum(minerState.puell, 3),
+          reserveChg30d: _safeNum(minerState.reserveChg, 2),
+          posIdx: _safeNum(minerState.posIdx, 3)
+        } : null,
+        multiRolling: multiRolling,
+        squeezeRadar: squeezeRadar,
+        futuresPressure: futuresPressure,
+        confluence: confluence,
+        flow: flow,
+        priceLayers: priceLayers,
+        halving: halving,
+        phase: phase
+      };
+    }
+
+    async function fetchDailyAIReport(forceRefresh) {
+      if (_aiReportInFlight) return;
+      if (_aiReportFetchedToday && !forceRefresh) return;
+      _aiReportInFlight = true;
+
+      const today = new Date().toISOString().slice(0, 10);
+      const snapshot = buildReportSnapshot();
+
+      let previousDay = null;
+      try {
+        const raw = localStorage.getItem('onchainbr:lastSnapshot');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.date && parsed.date !== today) {
+            previousDay = parsed;
+          }
+        }
+      } catch(e) {}
+
+      const block = document.getElementById('aiReportBlock');
+      const loading = document.getElementById('aiReportLoading');
+      const content = document.getElementById('aiReportContent');
+      const errorEl = document.getElementById('aiReportError');
+      const footer = document.getElementById('aiReportFooter');
+      if (block) block.style.display = 'block';
+      if (loading) loading.style.display = 'block';
+      if (content) content.style.display = 'none';
+      if (errorEl) errorEl.style.display = 'none';
+      if (footer) footer.style.display = 'none';
+
+      const ctrl = new AbortController();
+      const timeoutId = setTimeout(function(){ ctrl.abort(); }, AI_REPORT_TIMEOUT_MS);
+
+      try {
+        const resp = await fetch(AI_REPORT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: today, snapshot: snapshot, previousDay: previousDay, forceRefresh: !!forceRefresh }),
+          signal: ctrl.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!resp.ok) {
+          const errText = await resp.text().catch(function(){ return ''; });
+          throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+        }
+
+        const data = await resp.json();
+        if (!data.report) throw new Error('Empty report');
+
+        renderAIReportBlock(data);
+        _aiReportFetchedToday = true;
+
+        try {
+          const payload = Object.assign({ date: today }, snapshot);
+          localStorage.setItem('onchainbr:lastSnapshot', JSON.stringify(payload));
+        } catch(e) {}
+
+        console.log('[AI Report] OK (cached=' + data.cached + ')');
+      } catch(err) {
+        clearTimeout(timeoutId);
+        console.warn('[AI Report] Failed:', err.message);
+        if (loading) loading.style.display = 'none';
+        if (errorEl) {
+          errorEl.style.display = 'block';
+          errorEl.innerHTML = 'Analise IA indisponivel no momento. A analise tecnica abaixo continua sendo atualizada normalmente.';
+        }
+      } finally {
+        _aiReportInFlight = false;
+      }
+    }
+
+    function renderAIReportBlock(data) {
+      const block = document.getElementById('aiReportBlock');
+      const loading = document.getElementById('aiReportLoading');
+      const content = document.getElementById('aiReportContent');
+      const errorEl = document.getElementById('aiReportError');
+      const dateEl = document.getElementById('aiReportDate');
+      const modelEl = document.getElementById('aiReportModel');
+      const cachedEl = document.getElementById('aiReportCachedBadge');
+      const footer = document.getElementById('aiReportFooter');
+
+      if (!block || !content) return;
+
+      if (loading) loading.style.display = 'none';
+      if (errorEl) errorEl.style.display = 'none';
+
+      content.innerHTML = data.report;
+      content.style.display = 'block';
+      block.style.display = 'block';
+
+      try {
+        const d = new Date(data.generatedAt);
+        if (dateEl) dateEl.textContent = d.toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'}) + ' ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+      } catch(e) {}
+
+      if (modelEl && data.model) {
+        modelEl.textContent = data.model.replace('claude-', '').replace(/-[0-9]{8}$/, '').toUpperCase();
+      }
+      if (cachedEl) cachedEl.textContent = data.cached ? 'servido do cache' : 'recem-gerado';
+      if (footer) footer.style.display = 'block';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const regenLink = document.getElementById('aiReportRegenLink');
+      if (regenLink) {
+        regenLink.addEventListener('click', function() {
+          _aiReportFetchedToday = false;
+          fetchDailyAIReport(true);
+        });
+      }
+    });
+
     function generateReport() {
       console.log('[Report] Generating daily analysis...');
       console.log('[Report] state.composite:', state.composite);
@@ -8329,6 +8604,10 @@
         console.warn('[Report] Enhanced narrative failed, using fallback:', e);
         document.getElementById('reportMainText').innerHTML = mainText;
       }
+
+      // Batch 17: dispara analise IA assincrona (fire-and-forget)
+      try { if (typeof fetchDailyAIReport === 'function') fetchDailyAIReport(false); }
+      catch (e) { console.warn('[AI Report] Call failed:', e); }
       
       // ========== ACTION RECOMMENDATION (INTEGRATED) ==========
       let actionText = '';
