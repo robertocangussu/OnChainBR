@@ -247,37 +247,57 @@
     .sidebar::-webkit-scrollbar-track { background: transparent; }
     .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
     .sidebar-brand {
-      padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
-      background: linear-gradient(180deg, rgba(249,115,22,0.05) 0%, transparent 100%);
+      padding: 14px 16px 12px; border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(249,115,22,0.06) 0%, transparent 100%);
     }
-    .sb-brand-tag { font-size: 10px; font-weight: 600; color: var(--accent-orange); letter-spacing: 2px; text-transform: uppercase; }
-    .sb-brand-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; color: var(--text-primary); margin-top: 4px; letter-spacing: 0.5px; }
-    .sb-brand-sub { font-size: 9px; color: var(--text-muted); margin-top: 5px; letter-spacing: 0.3px; }
-    .sidebar-status { padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-size: 9px; }
-    .sidebar-nav { flex: 1; padding: 8px 0 20px; overflow-y: auto; }
-    .nav-group { margin-bottom: 4px; }
+    .sb-brand-tag { font-size: 9px; font-weight: 600; color: var(--accent-orange); letter-spacing: 2px; text-transform: uppercase; }
+    .sb-brand-title { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: var(--text-primary); margin-top: 3px; letter-spacing: 0.4px; }
+    .sb-brand-sub { font-size: 8.5px; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.3px; }
+    .sidebar-status { padding: 7px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-size: 9px; }
+    .sidebar-nav { flex: 1; padding: 6px 10px 10px; overflow-y: hidden; display: flex; flex-direction: column; gap: 2px; }
+    .nav-group { margin-bottom: 2px; }
     .nav-group-label {
-      font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px;
-      color: var(--accent-orange); font-weight: 700; padding: 14px 20px 6px; opacity: 0.85;
+      font-size: 8px; text-transform: uppercase; letter-spacing: 1.4px;
+      color: var(--accent-orange); font-weight: 700; padding: 8px 10px 3px; opacity: 0.72;
     }
+    /* Pill-style nav button with subtle gradient accent on hover/active */
     .nav-link {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 16px 8px 24px; text-decoration: none; color: var(--text-muted);
-      font-size: 11px; font-weight: 500; letter-spacing: 0.3px;
-      border-left: 2px solid transparent; transition: all 0.15s ease; position: relative;
+      display: flex; align-items: center; gap: 9px;
+      padding: 6px 10px; text-decoration: none; color: var(--text-muted);
+      font-size: 10.5px; font-weight: 500; letter-spacing: 0.25px;
+      border-radius: 6px; margin: 0 2px;
+      border: 1px solid transparent;
+      transition: all 0.15s ease; position: relative; overflow: hidden;
     }
-    .nav-link .nav-num { font-size: 9px; font-weight: 700; color: var(--text-muted); min-width: 18px; letter-spacing: 0.5px; font-family: 'JetBrains Mono', monospace; }
-    .nav-link .nav-text { flex: 1; }
-    .nav-link .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); opacity: 0.2; transition: all 0.2s; flex-shrink: 0; }
-    .nav-link:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+    .nav-link::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgba(249,115,22,0.08) 0%, transparent 60%);
+      opacity: 0; transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+    .nav-link .nav-num { font-size: 8.5px; font-weight: 700; color: var(--text-muted); min-width: 16px; letter-spacing: 0.4px; font-family: 'JetBrains Mono', monospace; position: relative; z-index: 1; }
+    .nav-link .nav-text { flex: 1; position: relative; z-index: 1; }
+    .nav-link .nav-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text-muted); opacity: 0.2; transition: all 0.2s; flex-shrink: 0; position: relative; z-index: 1; }
+    .nav-link:hover {
+      color: var(--text-primary);
+      border-color: rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.015);
+    }
+    .nav-link:hover::before { opacity: 1; }
     .nav-link:hover .nav-num { color: var(--text-secondary); }
-    .nav-link.active { color: var(--accent-orange); background: rgba(249,115,22,0.06); border-left-color: var(--accent-orange); }
+    .nav-link.active {
+      color: var(--accent-orange);
+      border-color: rgba(249,115,22,0.25);
+      background: linear-gradient(90deg, rgba(249,115,22,0.14) 0%, rgba(249,115,22,0.04) 80%);
+      box-shadow: 0 0 0 1px rgba(249,115,22,0.08), 0 2px 6px -2px rgba(249,115,22,0.25);
+    }
+    .nav-link.active::before { opacity: 0; }
     .nav-link.active .nav-num { color: var(--accent-orange); }
-    .nav-link.active .nav-dot { background: var(--accent-orange); opacity: 1; box-shadow: 0 0 6px rgba(249,115,22,0.4); }
+    .nav-link.active .nav-dot { background: var(--accent-orange); opacity: 1; box-shadow: 0 0 6px rgba(249,115,22,0.5); }
     .nav-link.status-green .nav-dot { background: #00d97e; opacity: 0.8; }
     .nav-link.status-yellow .nav-dot { background: #eab308; opacity: 0.8; }
     .nav-link.status-red .nav-dot { background: #ef4444; opacity: 0.9; }
-    .sidebar-footer { padding: 12px 20px; border-top: 1px solid var(--border); font-size: 9px; color: var(--text-muted); }
+    .sidebar-footer { padding: 8px 16px; border-top: 1px solid var(--border); font-size: 9px; color: var(--text-muted); }
     .sidebar-footer a { color: var(--accent-blue); text-decoration: none; }
     .main-content { min-width: 0; overflow-x: hidden; }
     .sidebar-toggle {
@@ -1172,31 +1192,62 @@
       </div>
     </div>
 
-    <!-- 4 KPI Cards - Distance to each layer -->
+    <!-- Cost Basis Row — QR-style cards (real data only) -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;">
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:9px;color:#E24B4A;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">STH Realized Price</div>
-        <div id="plSthRP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
-        <div id="plDistSTH" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
-        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Resistência (custo STH)</div>
+      <!-- STH Cost Basis -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#E24B4A 0%,transparent 100%);"></div>
+        <div style="font-size:9px;color:#E24B4A;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">STH Cost Basis</div>
+        <div id="plSthRP" style="font-size:22px;font-weight:800;color:var(--text-primary);line-height:1;">--</div>
+        <div id="plDistSTH" style="font-size:12px;font-weight:600;margin-top:6px;">--</div>
+        <div id="plSthSub" style="font-size:9px;color:var(--text-muted);margin-top:8px;letter-spacing:0.3px;">Resistência · moedas &lt; 155d</div>
       </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:9px;color:#378ADD;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Realized Price Global</div>
-        <div id="plRealizedP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
-        <div id="plDistRealized" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
-        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Custo médio global</div>
+      <!-- LTH Cost Basis -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#1D9E75 0%,transparent 100%);"></div>
+        <div style="font-size:9px;color:#1D9E75;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">LTH Cost Basis</div>
+        <div id="plLthRP" style="font-size:22px;font-weight:800;color:var(--text-primary);line-height:1;">--</div>
+        <div id="plDistLTH" style="font-size:12px;font-weight:600;margin-top:6px;">--</div>
+        <div id="plLthSub" style="font-size:9px;color:var(--text-muted);margin-top:8px;letter-spacing:0.3px;">Suporte · moedas &gt; 155d</div>
       </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:9px;color:#1D9E75;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">LTH Realized Price</div>
-        <div id="plLthRP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
-        <div id="plDistLTH" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
-        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Suporte estrutural</div>
+      <!-- Supply in Profit -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#8B5CF6 0%,transparent 100%);"></div>
+        <div style="font-size:9px;color:#8B5CF6;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">Supply in Profit</div>
+        <div id="plSupplyProfit" style="font-size:22px;font-weight:800;color:var(--text-primary);line-height:1;">--</div>
+        <div id="plSupplyStatus" style="font-size:12px;font-weight:600;margin-top:6px;">--</div>
+        <div id="plSupplySub" style="font-size:9px;color:var(--text-muted);margin-top:8px;letter-spacing:0.3px;">% do circulante no lucro</div>
       </div>
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
-        <div style="font-size:9px;color:#8B5CF6;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Delta Price</div>
-        <div id="plDeltaP" style="font-size:16px;font-weight:700;color:var(--text-primary);">--</div>
-        <div id="plDistDelta" style="font-size:13px;font-weight:600;margin-top:4px;">--</div>
-        <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Floor histórico de ciclo</div>
+      <!-- HODL 1Y+ Share -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#f97316 0%,transparent 100%);"></div>
+        <div style="font-size:9px;color:#f97316;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">HODL 1Y+ Share</div>
+        <div id="plHodl1Y" style="font-size:22px;font-weight:800;color:var(--text-primary);line-height:1;">--</div>
+        <div id="plHodl1YStatus" style="font-size:12px;font-weight:600;margin-top:6px;">--</div>
+        <div id="plHodl1YSub" style="font-size:9px;color:var(--text-muted);margin-top:8px;letter-spacing:0.3px;">Convicção LTH · age &gt;1y</div>
+      </div>
+    </div>
+    <!-- Secondary row: Realized Global + Delta (slim, secondary weight) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:9px;color:#378ADD;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;">Realized Price Global</div>
+          <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Custo médio de todo o mercado</div>
+        </div>
+        <div style="text-align:right;">
+          <div id="plRealizedP" style="font-size:15px;font-weight:700;color:var(--text-primary);">--</div>
+          <div id="plDistRealized" style="font-size:11px;font-weight:600;margin-top:2px;">--</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:9px;color:#F0A500;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;">Delta Price (cycle floor)</div>
+          <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">Suporte histórico de ciclo</div>
+        </div>
+        <div style="text-align:right;">
+          <div id="plDeltaP" style="font-size:15px;font-weight:700;color:var(--text-primary);">--</div>
+          <div id="plDistDelta" style="font-size:11px;font-weight:600;margin-top:2px;">--</div>
+        </div>
       </div>
     </div>
 
@@ -10213,6 +10264,46 @@
       setHTML('plDistLTH', fmtDist(pps.distances.toLTH));
       setText('plDeltaP', fmt(layers.deltaP));
       setHTML('plDistDelta', fmtDist(pps.distances.toDelta));
+
+      // --- NEW: Supply in Profit (from cohortState) ---
+      try {
+        const sp = (typeof cohortState !== 'undefined') ? cohortState.supplyProfit : null;
+        if (sp !== null && sp !== undefined) {
+          const spVal = sp > 100 ? sp : sp * (sp < 1 ? 100 : 1);
+          const spEl = document.getElementById('plSupplyProfit');
+          if (spEl) {
+            spEl.textContent = spVal.toFixed(1) + '%';
+            spEl.style.color = spVal > 85 ? '#00d97e' : spVal > 70 ? '#84cc16' : spVal > 50 ? '#eab308' : '#E24B4A';
+          }
+          const stEl = document.getElementById('plSupplyStatus');
+          if (stEl) {
+            const st = spVal > 85 ? 'MAIORIA NO LUCRO' : spVal > 70 ? 'SAUDÁVEL' : spVal > 50 ? 'EQUILIBRADO' : 'STRESS';
+            const stColor = spVal > 85 ? '#00d97e' : spVal > 70 ? '#84cc16' : spVal > 50 ? '#eab308' : '#E24B4A';
+            stEl.textContent = st;
+            stEl.style.color = stColor;
+          }
+        }
+      } catch(e) { console.warn('[PriceLayers] Supply in Profit render skip:', e.message); }
+
+      // --- NEW: HODL 1Y+ Share (from smartMoneyState) ---
+      try {
+        const h1y = (typeof smartMoneyState !== 'undefined' && smartMoneyState.hodl1y !== undefined)
+          ? parseFloat(smartMoneyState.hodl1y) : null;
+        if (h1y !== null && !isNaN(h1y)) {
+          const hEl = document.getElementById('plHodl1Y');
+          if (hEl) {
+            hEl.textContent = h1y.toFixed(1) + '%';
+            hEl.style.color = h1y > 65 ? '#00d97e' : h1y > 55 ? '#84cc16' : h1y > 45 ? '#eab308' : '#E24B4A';
+          }
+          const hsEl = document.getElementById('plHodl1YStatus');
+          if (hsEl) {
+            const st = h1y > 65 ? 'CONVICÇÃO ALTA' : h1y > 55 ? 'DEEP HODL' : h1y > 45 ? 'DISTRIBUIÇÃO' : 'VENDA LTH';
+            const stColor = h1y > 65 ? '#00d97e' : h1y > 55 ? '#84cc16' : h1y > 45 ? '#eab308' : '#E24B4A';
+            hsEl.textContent = st;
+            hsEl.style.color = stColor;
+          }
+        }
+      } catch(e) { console.warn('[PriceLayers] HODL 1Y+ render skip:', e.message); }
       
       // Crossover Status
       const xover = detectLayerCrossovers(history.sthRP, history.lthRP);
