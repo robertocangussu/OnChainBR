@@ -124,7 +124,33 @@
     .rolling-status-mixed { background: rgba(234,179,8,0.12); color: var(--sig-neutral); border: 1px solid rgba(234,179,8,0.3); }
     .rolling-status-diverged { background: rgba(239,68,68,0.12); color: var(--sig-bear); border: 1px solid rgba(239,68,68,0.3); }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'JetBrains Mono', monospace; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+    body { font-family: 'JetBrains Mono', monospace; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; padding-top: 36px; }
+    /* Live BTC Ticker (sticky top bar) */
+    .live-ticker { position: fixed; top: 0; left: 0; right: 0; height: 36px; z-index: 9999; background: linear-gradient(90deg, rgba(10,10,14,0.98) 0%, rgba(18,18,24,0.98) 50%, rgba(10,10,14,0.98) 100%); border-bottom: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; gap: 24px; padding: 0 20px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.03em; overflow: hidden; }
+    .lt-group { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .lt-brand { font-weight: 700; color: var(--accent-orange); letter-spacing: 0.15em; font-size: 10px; }
+    .lt-label { color: var(--text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; }
+    .lt-price { font-size: 14px; font-weight: 700; color: #fff; transition: color 180ms ease; font-variant-numeric: tabular-nums; }
+    .lt-price.tick-up { color: #22c55e; }
+    .lt-price.tick-down { color: #ef4444; }
+    .lt-change { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+    .lt-change.up { color: #22c55e; background: rgba(34,197,94,0.12); }
+    .lt-change.down { color: #ef4444; background: rgba(239,68,68,0.12); }
+    .lt-change.neutral { color: #9a9aa6; background: rgba(255,255,255,0.04); }
+    .lt-metric { color: #c0c0c8; font-size: 11px; font-variant-numeric: tabular-nums; }
+    .lt-metric-label { color: var(--text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; }
+    .lt-dot { width: 6px; height: 6px; border-radius: 50%; background: #666; box-shadow: 0 0 6px rgba(102,102,102,0.5); transition: background 300ms ease, box-shadow 300ms ease; }
+    .lt-dot.live { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.7); animation: lt-pulse 2s ease-in-out infinite; }
+    .lt-dot.stale { background: #eab308; box-shadow: 0 0 6px rgba(234,179,8,0.5); }
+    .lt-dot.dead { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+    @keyframes lt-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @media (max-width: 768px) {
+      .live-ticker { gap: 12px; padding: 0 12px; font-size: 10px; height: 32px; }
+      body { padding-top: 32px; }
+      .lt-brand { font-size: 9px; }
+      .lt-price { font-size: 12px; }
+      .lt-hide-mobile { display: none; }
+    }
     .container { max-width: 1400px; margin: 0 auto; padding: 16px 24px; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0 20px; }
     .brand-name { font-size: 11px; font-weight: 600; color: var(--accent-orange); letter-spacing: 2px; }
@@ -526,6 +552,29 @@
   </style>
 </head>
 <body>
+  <!-- Live BTC Ticker (sticky top) -->
+  <div class="live-ticker" id="liveTicker" aria-label="Live BTC Price Ticker">
+    <div class="lt-group">
+      <span class="lt-dot" id="ltDot"></span>
+      <span class="lt-brand">BTC/USDT</span>
+    </div>
+    <div class="lt-group">
+      <span class="lt-price" id="ltPrice">--</span>
+      <span class="lt-change neutral" id="ltChange">--</span>
+    </div>
+    <div class="lt-group lt-hide-mobile">
+      <span class="lt-metric-label">24h HIGH</span>
+      <span class="lt-metric" id="ltHigh">--</span>
+    </div>
+    <div class="lt-group lt-hide-mobile">
+      <span class="lt-metric-label">24h LOW</span>
+      <span class="lt-metric" id="ltLow">--</span>
+    </div>
+    <div class="lt-group lt-hide-mobile">
+      <span class="lt-metric-label">24h VOL</span>
+      <span class="lt-metric" id="ltVol">--</span>
+    </div>
+  </div>
   <button class="sidebar-toggle" id="sidebarToggle" aria-label="Menu">&#9776;</button>
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
   <div class="app-layout">
@@ -1415,143 +1464,151 @@
       </div>
     </div>
 
-    <!-- Flow Scalper · Intraday Entry System (1h) - Estagio G -->
-    <div class="sm-checklist-card" style="margin-top:20px;" id="divergenceCard">
+    <!-- Squeeze Radar · Market Pressure & Liquidation Risk -->
+    <div class="sm-checklist-card" id="squeezeRadarCard" style="margin-top:20px;">
       <div class="sm-checklist-title" style="display:flex;justify-content:space-between;align-items:center;">
-        <span>FLOW SCALPER &middot; INTRADAY ENTRY SYSTEM (1H)</span>
+        <span>SQUEEZE RADAR &middot; MARKET PRESSURE &amp; LIQUIDATION RISK</span>
         <span style="display:flex;gap:12px;align-items:center;">
-          <span id="fsLiveDot" style="font-size:9px;color:#666;font-weight:600;letter-spacing:0.5px;">&#9679; ...</span>
-          <span id="fsLivePrice" style="font-size:12px;font-weight:700;color:#8b5cf6;font-family:'JetBrains Mono',monospace;">--</span>
-          <span id="fsUpdated" style="font-size:9px;color:var(--text-muted);font-weight:400;letter-spacing:0.5px;">--</span>
+          <span id="srState" style="font-size:10px;font-weight:700;letter-spacing:1px;color:#9a9aa6;">COMPUTING...</span>
+          <span id="srUpdated" style="font-size:9px;color:var(--text-muted);font-weight:400;letter-spacing:0.5px;">--</span>
         </span>
       </div>
+      <div class="sm-checklist-desc" style="margin-bottom:16px;">Detecta regimes de compressão/expansão via funding, OI, liquidações e spot vs perp. Prevê probabilidade de short squeeze (shorts espremidos) ou long squeeze (longs liquidados).</div>
 
-      <!-- Row 1: stat boxes + chart -->
-      <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-top:14px;">
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <!-- Current score -->
-          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:14px;">
-            <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">CURRENT SIGNAL</div>
-            <div id="fsScore" style="font-size:22px;font-weight:700;margin-top:4px;color:#9a9aa6;letter-spacing:0.5px;">--</div>
-            <div id="fsScoreDesc" style="font-size:10px;color:var(--text-muted);margin-top:4px;line-height:1.4;min-height:28px;">aguardando dados...</div>
-          </div>
-          <!-- Momentum -->
-          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:14px;">
-            <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">MOMENTUM</div>
-            <div style="display:flex;gap:14px;margin-top:6px;">
-              <div>
-                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">RSI 1H</div>
-                <div id="fsRsi1h" style="font-size:13px;font-weight:700;margin-top:2px;">--</div>
-              </div>
-              <div>
-                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">RSI 4H</div>
-                <div id="fsRsi4h" style="font-size:13px;font-weight:700;margin-top:2px;">--</div>
-              </div>
-              <div>
-                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">MACD</div>
-                <div id="fsMacd" style="font-size:13px;font-weight:700;margin-top:2px;">--</div>
-              </div>
-            </div>
-          </div>
-          <!-- Flow -->
-          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:14px;">
-            <div style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">FLOW (BACKQUANT)</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
-              <div>
-                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">FUNDING</div>
-                <div id="fsFund" style="font-size:12px;font-weight:700;margin-top:2px;">--</div>
-              </div>
-              <div>
-                <div style="font-size:8px;color:var(--text-muted);letter-spacing:0.5px;">CVD SLOPE</div>
-                <div id="fsCvd" style="font-size:12px;font-weight:700;margin-top:2px;">--</div>
-              </div>
-              <div>
-                <div style="font-size:8px;color:#22c55e;letter-spacing:0.5px;">NET LONGS 12H</div>
-                <div id="fsNetL" style="font-size:12px;font-weight:700;margin-top:2px;">--</div>
-              </div>
-              <div>
-                <div style="font-size:8px;color:#ef4444;letter-spacing:0.5px;">NET SHORTS 12H</div>
-                <div id="fsNetS" style="font-size:12px;font-weight:700;margin-top:2px;">--</div>
-              </div>
-            </div>
+      <!-- ZONE 1: Main Squeeze Score Gauge -->
+      <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:20px 24px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;">SQUEEZE PRESSURE SCORE</span>
+          <span id="srScoreValue" style="font-size:28px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#e5e5ea;">0.0</span>
+        </div>
+        <!-- SVG horizontal gauge: -10 to +10 -->
+        <svg id="srMainGauge" viewBox="0 0 800 70" style="width:100%;height:70px;display:block;">
+          <defs>
+            <linearGradient id="srGradient" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#22c55e"/>
+              <stop offset="0.25" stop-color="#86efac"/>
+              <stop offset="0.5" stop-color="#9a9aa6"/>
+              <stop offset="0.75" stop-color="#fca5a5"/>
+              <stop offset="1" stop-color="#ef4444"/>
+            </linearGradient>
+          </defs>
+          <!-- Track -->
+          <rect x="20" y="26" width="760" height="10" rx="5" fill="url(#srGradient)" opacity="0.28"/>
+          <!-- Midline -->
+          <line x1="400" y1="20" x2="400" y2="42" stroke="#444" stroke-width="1" stroke-dasharray="2,2"/>
+          <!-- Needle -->
+          <g id="srNeedle" transform="translate(400 31)">
+            <polygon points="0,-16 -7,-28 7,-28" fill="#fff" stroke="#000" stroke-width="0.5"/>
+            <circle cx="0" cy="0" r="5" fill="#fff" stroke="#000" stroke-width="0.5"/>
+          </g>
+          <!-- Labels -->
+          <text x="20" y="58" fill="#22c55e" font-size="9" font-weight="700" font-family="JetBrains Mono" letter-spacing="1">SHORT SQUEEZE</text>
+          <text x="400" y="58" fill="#9a9aa6" font-size="9" font-weight="600" font-family="JetBrains Mono" text-anchor="middle">NEUTRAL</text>
+          <text x="780" y="58" fill="#ef4444" font-size="9" font-weight="700" font-family="JetBrains Mono" letter-spacing="1" text-anchor="end">LONG SQUEEZE</text>
+          <!-- Scale ticks -->
+          <g stroke="#555" stroke-width="0.5" opacity="0.6">
+            <line x1="100" y1="26" x2="100" y2="36"/>
+            <line x1="180" y1="26" x2="180" y2="36"/>
+            <line x1="260" y1="26" x2="260" y2="36"/>
+            <line x1="340" y1="26" x2="340" y2="36"/>
+            <line x1="460" y1="26" x2="460" y2="36"/>
+            <line x1="540" y1="26" x2="540" y2="36"/>
+            <line x1="620" y1="26" x2="620" y2="36"/>
+            <line x1="700" y1="26" x2="700" y2="36"/>
+          </g>
+          <!-- Scale labels -->
+          <g fill="#666" font-size="8" font-family="JetBrains Mono" text-anchor="middle">
+            <text x="20" y="16">-10</text>
+            <text x="100" y="16">-8</text>
+            <text x="260" y="16">-4</text>
+            <text x="400" y="16">0</text>
+            <text x="540" y="16">+4</text>
+            <text x="700" y="16">+8</text>
+            <text x="780" y="16">+10</text>
+          </g>
+        </svg>
+        <div id="srScoreDesc" style="font-size:10.5px;color:#c0c0c8;margin-top:10px;text-align:center;font-weight:500;">Aguardando dados...</div>
+      </div>
+
+      <!-- ZONE 2: Headline stats (3 columns) -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+        <div style="background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.15);border-radius:8px;padding:14px;">
+          <div style="font-size:8.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:6px;">24H LIQUIDATIONS</div>
+          <div id="srLiqTotal" style="font-size:22px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#fff;">$--</div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:9.5px;">
+            <span>LONGS: <strong id="srLiqLongs" style="color:#ef4444;">$--</strong></span>
+            <span>SHORTS: <strong id="srLiqShorts" style="color:#22c55e;">$--</strong></span>
           </div>
         </div>
-        <!-- Chart + mini-charts -->
-        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;">
-            <span>BTC 1H &middot; EMA 9 + EMA 21 &middot; &#9650; LONG / &#9660; SHORT entries</span>
-            <span style="display:flex;gap:6px;align-items:center;">
-              <span style="color:#666;font-size:8px;">SCROLL/PINCH = ZOOM &middot; DRAG = PAN</span>
-              <button id="fsResetZoom" style="background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.4);color:#a78bfa;font-size:8px;padding:3px 8px;border-radius:3px;cursor:pointer;letter-spacing:0.5px;font-weight:600;">RESET</button>
-            </span>
-          </div>
-          <div style="display:flex;gap:14px;font-size:9px;letter-spacing:0.5px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
-            <span style="color:#8b5cf6;">&#9473; PRICE</span>
-            <span style="color:#eab308;">&#9473; EMA9</span>
-            <span style="color:#a78bfa;">&#9473; EMA21</span>
-            <span style="color:#22c55e;font-weight:600;margin-left:10px;">&#9650; LONG entry</span>
-            <span style="color:#ef4444;font-weight:600;">&#9660; SHORT entry</span>
-          </div>
-          <div style="height:240px;"><canvas id="fsChart"></canvas></div>
-          <!-- Net Longs vs Net Shorts -->
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-top:14px;margin-bottom:4px;">
-            <span>NET POSITIONING &middot; longs/shorts cumulativo (OI+price decompose)</span>
-            <span style="display:flex;gap:10px;">
-              <span style="color:#22c55e;">&#9473; NET LONGS</span>
-              <span style="color:#ef4444;">&#9473; NET SHORTS</span>
-            </span>
-          </div>
-          <div style="height:90px;"><canvas id="fsNetChart"></canvas></div>
-          <!-- CVD -->
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:9px;color:var(--text-muted);letter-spacing:1px;margin-top:10px;margin-bottom:4px;">
-            <span>CVD &middot; cumulative taker delta (aggressor flow)</span>
-            <span style="color:#a78bfa;">&#9473; CVD</span>
-          </div>
-          <div style="height:80px;"><canvas id="fsCvdChart"></canvas></div>
+        <div style="background:rgba(139,92,246,0.04);border:1px solid rgba(139,92,246,0.15);border-radius:8px;padding:14px;">
+          <div style="font-size:8.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:6px;">FUNDING RATE (8H)</div>
+          <div id="srFundingVal" style="font-size:22px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#fff;">--</div>
+          <div id="srFundingDesc" style="font-size:9.5px;color:var(--text-muted);margin-top:8px;">--</div>
+        </div>
+        <div style="background:rgba(6,182,212,0.04);border:1px solid rgba(6,182,212,0.15);border-radius:8px;padding:14px;">
+          <div style="font-size:8.5px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:6px;">SPOT &minus; PERP PREMIUM</div>
+          <div id="srPremiumVal" style="font-size:22px;font-weight:700;font-family:'Space Grotesk',sans-serif;color:#fff;">--</div>
+          <div id="srPremiumDesc" style="font-size:9.5px;color:var(--text-muted);margin-top:8px;">--</div>
         </div>
       </div>
 
-      <!-- Row 2: factors breakdown + backtest table -->
-      <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:20px;margin-top:20px;">
-        <!-- Factors -->
-        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <span style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">7 FATORES &middot; <span id="fsFactorsSide">--</span></span>
-            <span id="fsFactorsScore" style="font-size:12px;font-weight:700;color:#9a9aa6;">0 / 7</span>
+      <!-- ZONE 3: Long / Short Pressure (2 horizontal bars) -->
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
+        <div style="background:rgba(34,197,94,0.03);border:1px solid rgba(34,197,94,0.12);border-radius:8px;padding:14px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;">LONG PRESSURE</span>
+            <span id="srLongPressureVal" style="font-size:14px;font-weight:700;color:#22c55e;font-family:'JetBrains Mono',monospace;">--</span>
           </div>
-          <div id="fsFactorsList" style="display:flex;flex-direction:column;gap:6px;"></div>
-          <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);font-size:9px;color:var(--text-muted);line-height:1.4;">
-            Entra LONG/SHORT com score &ge; threshold adaptativo (5/7 dos validos) <b>E</b> RSI 4h TURN (cruzou 45/55). Backtest 365d. Target &plusmn;5% / Stop &#8723;3% / Max 48h / Cooldown 6h.
-          </div>
+          <svg viewBox="0 0 300 14" style="width:100%;height:14px;display:block;">
+            <rect x="0" y="4" width="300" height="6" rx="3" fill="rgba(255,255,255,0.06)"/>
+            <rect id="srLongPressureBar" x="0" y="4" width="0" height="6" rx="3" fill="#22c55e"/>
+          </svg>
+          <div id="srLongPressureDesc" style="font-size:9.5px;color:#c0c0c8;margin-top:8px;">Risco de shorts sendo espremidos (short squeeze)</div>
         </div>
-        <!-- Backtest -->
-        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <span style="font-size:9px;color:var(--text-muted);letter-spacing:1px;">BACKTEST 1H &middot; <span id="fsBacktestWindow">--</span></span>
-            <span id="fsStats" style="font-size:11px;color:#9a9aa6;">--</span>
+        <div style="background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.12);border-radius:8px;padding:14px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;">SHORT PRESSURE</span>
+            <span id="srShortPressureVal" style="font-size:14px;font-weight:700;color:#ef4444;font-family:'JetBrains Mono',monospace;">--</span>
           </div>
-          <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:10px;font-family:'JetBrains Mono',monospace;">
-              <thead>
-                <tr style="color:var(--text-muted);border-bottom:1px solid rgba(255,255,255,0.08);">
-                  <th style="text-align:left;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">DATE</th>
-                  <th style="text-align:center;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">SIDE</th>
-                  <th style="text-align:center;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">SCORE</th>
-                  <th style="text-align:right;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">ENTRY</th>
-                  <th style="text-align:right;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">EXIT</th>
-                  <th style="text-align:right;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">P&amp;L</th>
-                  <th style="text-align:center;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">BARS</th>
-                  <th style="text-align:center;padding:6px 4px;font-weight:500;letter-spacing:0.5px;">RESULT</th>
-                </tr>
-              </thead>
-              <tbody id="fsBacktestBody">
-                <tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text-muted);">Aguardando dados...</td></tr>
-              </tbody>
-            </table>
-          </div>
+          <svg viewBox="0 0 300 14" style="width:100%;height:14px;display:block;">
+            <rect x="0" y="4" width="300" height="6" rx="3" fill="rgba(255,255,255,0.06)"/>
+            <rect id="srShortPressureBar" x="0" y="4" width="0" height="6" rx="3" fill="#ef4444"/>
+          </svg>
+          <div id="srShortPressureDesc" style="font-size:9.5px;color:#c0c0c8;margin-top:8px;">Risco de longs sendo liquidados (long squeeze)</div>
         </div>
       </div>
+
+      <!-- ZONE 4: Factor breakdown -->
+      <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:10px;">SIGNAL DECOMPOSITION</div>
+        <div id="srFactors" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px 16px;">
+          <div style="color:var(--text-muted);font-size:10px;">Aguardando dados...</div>
+        </div>
+      </div>
+
+      <!-- ZONE 5: Charts (Liquidations 30d + Net Positioning 7d) -->
+      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:12px;">
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:12px 14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;">LIQUIDATIONS 30D (STACKED)</span>
+            <span style="display:flex;gap:10px;font-size:8.5px;">
+              <span style="color:#ef4444;">&#9632; LONG</span>
+              <span style="color:#22c55e;">&#9632; SHORT</span>
+            </span>
+          </div>
+          <div style="position:relative;height:180px;"><canvas id="srLiqChart"></canvas></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:12px 14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;">NET POSITIONING (OI &Delta;)</span>
+            <span style="font-size:8.5px;color:#8b5cf6;">30D</span>
+          </div>
+          <div style="position:relative;height:180px;"><canvas id="srNetChart"></canvas></div>
+        </div>
+      </div>
+
     </div>
+
   </div>
 
   <div style="max-width:1400px;margin:0 auto;padding:20px 24px 0;">
@@ -4835,7 +4892,7 @@
           const data = result.data;
           console.log('[Leverage] OI sample (' + (sourceIsDaily ? 'daily' : 'hourly') + '):', JSON.stringify(data[data.length-1]));
           // Se veio daily, pega tudo (pode ser anos). Se horario, limita a 1800 (~75d)
-          // pra evitar payload gigante — aggregateOIDaily no divergence dedupa em ambos casos.
+          // pra evitar payload gigante — aggregateOIDaily dedupa p/ daily em ambos casos.
           const histSlice = sourceIsDaily ? data : data.slice(-1800);
           levData.oiHistory = histSlice.map(d => ({
             date: d.d || d.day || d.date || d.t,
@@ -4847,25 +4904,38 @@
         }
       } catch(e) { console.warn('OI fetch error:', e); }
       
-      // 2. Liquidations 24h - use totalLiquidationsUsd
+      // 2. Liquidations 24h + 30d history (for Squeeze Radar)
       try {
         const result = await fetchBGeometrics('/v1/btc-liquidations-1d', 'Liquidations 1d');
         if (result.success && result.data && result.data.length) {
           const latest = result.data[result.data.length - 1];
           console.log('[Leverage] Liq sample:', JSON.stringify(latest));
           levData.liquidations24h = toNum(latest.totalLiquidationsUsd || latest.longLiquidationsUsd + latest.shortLiquidationsUsd || latest.value);
-          console.log('✓ Liquidations 24h:', levData.liquidations24h);
+          levData.liquidations24hLong = toNum(latest.longLiquidationsUsd || latest.longLiquidations || 0);
+          levData.liquidations24hShort = toNum(latest.shortLiquidationsUsd || latest.shortLiquidations || 0);
+          // 30d history for stacked bar chart + squeeze radar
+          levData.liquidationsHistory = result.data.slice(-30).map(d => ({
+            date: d.d || d.day || d.date || d.t,
+            long: toNum(d.longLiquidationsUsd || d.longLiquidations || 0),
+            short: toNum(d.shortLiquidationsUsd || d.shortLiquidations || 0),
+            total: toNum(d.totalLiquidationsUsd || ((d.longLiquidationsUsd || 0) + (d.shortLiquidationsUsd || 0)))
+          }));
+          console.log('✓ Liquidations 24h:', levData.liquidations24h, '30d history:', levData.liquidationsHistory.length, 'pts');
         }
       } catch(e) { console.warn('Liquidations fetch error:', e); }
       
-      // 3. Funding Rate
+      // 3. Funding Rate + 30d history (for Squeeze Radar regime detection)
       try {
         const result = await fetchBGeometrics('/v1/funding-rate', 'Funding Rate');
         if (result.success && result.data && result.data.length) {
           const latest = result.data[result.data.length - 1];
           console.log('[Leverage] Funding sample:', JSON.stringify(latest));
           levData.fundingRate = getLatest(result.data, 'fundingRate', 'rate', 'value');
-          console.log('✓ Funding Rate:', levData.fundingRate);
+          levData.fundingHistory = result.data.slice(-60).map(d => ({
+            date: d.d || d.day || d.date || d.t,
+            value: toNum(d.fundingRate || d.rate || d.value || 0)
+          }));
+          console.log('✓ Funding Rate:', levData.fundingRate, 'history:', levData.fundingHistory.length, 'pts');
         }
       } catch(e) { console.warn('Funding Rate fetch error:', e); }
       
@@ -5075,1064 +5145,14 @@
         renderLevOiChart(levData.oiHistory.slice(-30));
       }
 
-      // Flow Scalper (Estagio G): intraday entry system 1h.
-      // renderLeverageUI nao e async, usamos Promise.all + .then() pra fazer fetches paralelos.
+      // Squeeze Radar: pressure + liquidation risk radar
       try {
-        // UI loading placeholder (paginacao demora ~4-6s)
-        const fsStatusEl = document.getElementById('fsStatus');
-        if (fsStatusEl) { fsStatusEl.textContent = 'Carregando backtest 1 ano...'; fsStatusEl.style.color = 'var(--btc-orange)'; }
-        Promise.all([
-          fetchBinanceKlinesHistory('1h', 365),
-          fetchBinanceKlinesHistory('4h', 365),
-          fetchBGeometrics('/v1/taker-vol-1h', 'FS: Taker Vol').catch(() => ({ success: false }))
-        ]).then(([k1h, k4h, takerRes]) => {
-          try {
-            const takerHistory = (takerRes && takerRes.success && Array.isArray(takerRes.data))
-              ? takerRes.data.map(d => ({
-                  date: d.d || d.date || d.t,
-                  buy: parseFloat(d.takerBuyVolume || d.buyVolume || d.buy || 0),
-                  sell: parseFloat(d.takerSellVolume || d.sellVolume || d.sell || 0)
-                }))
-              : [];
-            const fs = computeFlowScalperSignal(k1h, k4h, levData.oiHistory || [], takerHistory, levData.fundingRate);
-            leverageState.flowScalper = fs;
-            renderFlowScalperUI(fs);
-            openFlowScalperWebSocket();
-          } catch(eInner) { console.warn('[FlowScalper] compute/render error:', eInner); }
-        }).catch(e => console.warn('[FlowScalper] fetch chain error:', e));
-      } catch(e) { console.warn('[FlowScalper] setup error:', e); }
+        const rad = computeSqueezeRadar(levData);
+        leverageState.squeezeRadar = rad;
+        renderSqueezeRadar(rad, levData);
+      } catch(e) { console.warn('[SqueezeRadar] compute/render error:', e); }
     }
     
-
-    // ============================================================
-    // FLOW SCALPER (Estagio G) - Intraday Entry System 1h
-    // Scoring 0-7: EMA cross + RSI 1h + RSI 4h + MACD + Funding + OI + CVD
-    // Entra LONG/SHORT se score >= 5. Target +5%/-5%, stop -3%/+3%, max 48h, cooldown 6h.
-    // WebSocket live: wss://stream.binance.com:9443/ws/btcusdt@kline_1h
-    // ============================================================
-
-    // Helper: EMA classica com seed SMA do periodo
-    function computeEMA(closes, period) {
-      const n = closes.length;
-      const out = new Array(n).fill(null);
-      if (n < period) return out;
-      const k = 2 / (period + 1);
-      let seed = 0;
-      for (let i = 0; i < period; i++) seed += closes[i];
-      seed /= period;
-      out[period - 1] = seed;
-      let ema = seed;
-      for (let i = period; i < n; i++) {
-        ema = closes[i] * k + ema * (1 - k);
-        out[i] = ema;
-      }
-      return out;
-    }
-
-    // Helper: MACD 12/26/9 retorna {line, signal, hist}
-    function computeMACD(closes, fast, slow, signalPer) {
-      fast = fast || 12; slow = slow || 26; signalPer = signalPer || 9;
-      const n = closes.length;
-      const emaFast = computeEMA(closes, fast);
-      const emaSlow = computeEMA(closes, slow);
-      const line = new Array(n).fill(null);
-      for (let i = 0; i < n; i++) {
-        if (emaFast[i] != null && emaSlow[i] != null) line[i] = emaFast[i] - emaSlow[i];
-      }
-      const firstValid = line.findIndex(v => v != null);
-      const signalSerie = new Array(n).fill(null);
-      if (firstValid >= 0) {
-        const compact = line.slice(firstValid).filter(v => v != null);
-        if (compact.length >= signalPer) {
-          const sigCompact = computeEMA(compact, signalPer);
-          for (let i = 0; i < sigCompact.length; i++) {
-            if (sigCompact[i] != null) signalSerie[firstValid + i] = sigCompact[i];
-          }
-        }
-      }
-      const hist = new Array(n).fill(null);
-      for (let i = 0; i < n; i++) {
-        if (line[i] != null && signalSerie[i] != null) hist[i] = line[i] - signalSerie[i];
-      }
-      return { line, signal: signalSerie, hist };
-    }
-
-    // Fetch Binance klines generico. Retorna array de {openTime, open, high, low, close, volume, closeTime, closed}
-    async function fetchBinanceKlines(interval, limit) {
-      limit = limit || 500;
-      const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=' + interval + '&limit=' + limit;
-      const r = await fetch(url);
-      if (!r.ok) throw new Error('Binance klines ' + interval + ' HTTP ' + r.status);
-      const data = await r.json();
-      if (!Array.isArray(data)) throw new Error('Binance klines invalid data');
-      const now = Date.now();
-      return data.map(function(k) {
-        return {
-          openTime: Number(k[0]),
-          open: parseFloat(k[1]),
-          high: parseFloat(k[2]),
-          low: parseFloat(k[3]),
-          close: parseFloat(k[4]),
-          volume: parseFloat(k[5]),
-          closeTime: Number(k[6]),
-          closed: Number(k[6]) <= now
-        };
-      });
-    }
-
-    // Fetch Binance klines historico com paginacao (endTime loop). daysBack define janela.
-    // Usado pra backtest: 1h * 365d = 8760 bars = 9 batches; 4h * 365d = 2190 bars = 3 batches.
-    async function fetchBinanceKlinesHistory(interval, daysBack) {
-      const intervalMs = { '1h': 3600000, '4h': 14400000, '12h': 43200000, '1d': 86400000 };
-      const ms = intervalMs[interval];
-      if (!ms) throw new Error('fetchBinanceKlinesHistory: interval nao suportado: ' + interval);
-      const targetStart = Date.now() - daysBack * 86400000;
-      const batchSize = 1000;
-      let endTime = Date.now();
-      const all = [];
-      let safety = 20; // cap hard em 20 batches (max ~20k bars) pra evitar loop
-      while (safety-- > 0) {
-        const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=' + interval
-                  + '&limit=' + batchSize + '&endTime=' + endTime;
-        const r = await fetch(url);
-        if (!r.ok) throw new Error('Binance history ' + interval + ' HTTP ' + r.status);
-        const data = await r.json();
-        if (!Array.isArray(data) || data.length === 0) break;
-        const batch = data.map(function(k){
-          return { openTime: Number(k[0]), open: parseFloat(k[1]), high: parseFloat(k[2]),
-                   low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5]),
-                   closeTime: Number(k[6]) };
-        });
-        all.unshift.apply(all, batch);
-        const firstOpen = batch[0].openTime;
-        if (firstOpen <= targetStart) break;
-        if (data.length < batchSize) break;
-        endTime = firstOpen - 1;
-        await new Promise(function(res){ setTimeout(res, 120); });
-      }
-      // Filter para janela alvo + dedupe por openTime
-      const now = Date.now();
-      const seen = {};
-      const out = [];
-      for (let i = 0; i < all.length; i++) {
-        const k = all[i];
-        if (k.openTime < targetStart) continue;
-        if (seen[k.openTime]) continue;
-        seen[k.openTime] = 1;
-        k.closed = k.closeTime <= now;
-        out.push(k);
-      }
-      out.sort(function(a,b){ return a.openTime - b.openTime; });
-      console.log('[FlowScalper] history ' + interval + ' fetched ' + out.length + ' klines (target ' + daysBack + 'd)');
-      return out;
-    }
-
-    // Simula gestao de trade: target +/-5%, stop +/-3%, timeout 48 velas
-    function fsSimulateTrade(entryIdx, side, klines1h) {
-      const entry = klines1h[entryIdx] && klines1h[entryIdx].close;
-      if (!entry) return null;
-      const TARGET_PCT = 5, STOP_PCT = 3, MAX_BARS = 48;
-      const target = side === 'LONG' ? entry * (1 + TARGET_PCT/100) : entry * (1 - TARGET_PCT/100);
-      const stop = side === 'LONG' ? entry * (1 - STOP_PCT/100) : entry * (1 + STOP_PCT/100);
-      for (let i = 1; i <= MAX_BARS; i++) {
-        const j = entryIdx + i;
-        if (j >= klines1h.length) break;
-        const hi = klines1h[j].high, lo = klines1h[j].low;
-        if (side === 'LONG') {
-          if (hi >= target) return { result: 'HIT_TARGET', bars: i, exit: target, pnl: TARGET_PCT };
-          if (lo <= stop) return { result: 'HIT_STOP', bars: i, exit: stop, pnl: -STOP_PCT };
-        } else {
-          if (lo <= target) return { result: 'HIT_TARGET', bars: i, exit: target, pnl: TARGET_PCT };
-          if (hi >= stop) return { result: 'HIT_STOP', bars: i, exit: stop, pnl: -STOP_PCT };
-        }
-      }
-      const exitIdx = Math.min(entryIdx + MAX_BARS, klines1h.length - 1);
-      if (exitIdx <= entryIdx) return null;
-      const exitPrice = klines1h[exitIdx].close;
-      const pnl = side === 'LONG' ? ((exitPrice - entry) / entry) * 100 : ((entry - exitPrice) / entry) * 100;
-      return { result: 'TIMEOUT', bars: exitIdx - entryIdx, exit: exitPrice, pnl: pnl };
-    }
-
-    // Sign-aware delta formatter: evita '+-54'
-    function fsFmtDelta(v, decimals) {
-      if (v == null || isNaN(v)) return '--';
-      const d = decimals != null ? decimals : 0;
-      const sign = v >= 0 ? '+' : '';
-      return sign + Number(v).toFixed(d);
-    }
-
-    // Slope: compara serie[i] vs serie[i-lookback]. Retorna % diff relativo ao |ref|.
-    function fsSlope(series, i, lookback) {
-      if (i < lookback) return null;
-      const a = series[i], b = series[i - lookback];
-      if (a == null || b == null) return null;
-      const denom = Math.abs(b) > 1e-6 ? Math.abs(b) : 1;
-      return ((a - b) / denom) * 100;
-    }
-
-    // Computa score LONG e SHORT no idx dado; retorna o lado com maior score
-    function fsComputeScore(idx, ctx) {
-      const ema9 = ctx.ema9, ema21 = ctx.ema21, macd = ctx.macd, rsi1h = ctx.rsi1h;
-      const rsi4h = ctx.rsi4hAligned, funding = ctx.funding;
-      const netLongs = ctx.netLongs, netShorts = ctx.netShorts, cvd = ctx.cvd;
-
-      // Slopes BackQuant-style
-      const netLongsSlope12 = fsSlope(netLongs, idx, 12);
-      const netShortsSlope12 = fsSlope(netShorts, idx, 12);
-      const cvdSlope6 = fsSlope(cvd, idx, 6);
-
-      function longFactors() {
-        const out = [];
-        // 1. EMA9 > EMA21
-        {
-          const a = ema9[idx], b = ema21[idx];
-          const pass = a != null && b != null && a > b;
-          const recent = pass && (idx >= 3 && ema9[idx-3] != null && ema21[idx-3] != null && ema9[idx-3] <= ema21[idx-3]);
-          out.push({ id:'emaX', name:'EMA9 > EMA21', pass:pass,
-            value: (a!=null&&b!=null) ? fsFmtDelta(a-b, 0) : '--',
-            desc: pass ? (recent ? 'cross recente' : 'alinhada bullish') : 'alinhada bearish' });
-        }
-        // 2. RSI 4h TURN UP (crossing acima de 40 vindo de zona oversold)
-        {
-          const pass = !!(ctx.turnUp && ctx.turnUp[idx]);
-          const r4 = rsi4h[idx];
-          out.push({ id:'turn', name:'RSI 4h TURN UP', pass:pass,
-            value: r4!=null ? r4.toFixed(0) : '--',
-            desc: pass ? 'RSI 4h cruzou 40 de baixo - virada de fundo' : 'sem virada 4h recente' });
-        }
-        // 3. RSI 4h > 45
-        {
-          const r = rsi4h[idx];
-          const pass = r != null && r > 45;
-          out.push({ id:'rsi4h', name:'RSI 4h nao-bearish', pass:pass,
-            value: r!=null ? r.toFixed(0) : '--',
-            desc: pass ? '> 45' : '<= 45' });
-        }
-        // 4. MACD bullish
-        {
-          const h = macd.hist[idx];
-          const hPrev = idx >= 3 ? macd.hist[idx-3] : null;
-          const growing = h != null && hPrev != null && h > hPrev;
-          const pass = (h != null && h > 0) || growing;
-          out.push({ id:'macd', name:'MACD bullish', pass:pass,
-            value: h!=null ? h.toFixed(1) : '--',
-            desc: pass ? (h > 0 ? 'hist > 0' : 'hist crescendo') : 'hist bearish' });
-        }
-        // 5. Funding baixo/negativo
-        {
-          const f = funding;
-          const pass = f != null && f < 0.00005;
-          out.push({ id:'fund', name:'Funding < 0.005%', pass:pass,
-            value: f!=null ? (f*100).toFixed(4)+'%' : '--',
-            desc: pass ? 'shorts pressionados' : 'funding normal/alto' });
-        }
-        // 6. NET LONGS subindo 12h (novos longs entrando) - null se sem dado OI
-        {
-          const s = netLongsSlope12;
-          const pass = s == null ? null : (s > 0.5);
-          out.push({ id:'netL', name:'Net Longs subindo 12h', pass:pass,
-            value: s!=null ? fsFmtDelta(s, 1)+'%' : 'n/d',
-            desc: pass === null ? 'sem dado OI no periodo' : (pass ? 'longs abrindo posicao' : 'longs fracos/saindo') });
-        }
-        // 7. CVD slope positivo - null se sem taker data
-        {
-          const s = cvdSlope6;
-          const pass = s == null ? null : (s > 0.3);
-          out.push({ id:'cvd', name:'CVD subindo 6h', pass:pass,
-            value: s!=null ? fsFmtDelta(s, 1)+'%' : 'n/d',
-            desc: pass === null ? 'sem dado CVD no periodo' : (pass ? 'compradores agressivos' : 'sem buying pressure') });
-        }
-        return out;
-      }
-
-      function shortFactors() {
-        const out = [];
-        // 1. EMA9 < EMA21
-        {
-          const a = ema9[idx], b = ema21[idx];
-          const pass = a != null && b != null && a < b;
-          const recent = pass && (idx >= 3 && ema9[idx-3] != null && ema21[idx-3] != null && ema9[idx-3] >= ema21[idx-3]);
-          out.push({ id:'emaX', name:'EMA9 < EMA21', pass:pass,
-            value: (a!=null&&b!=null) ? fsFmtDelta(a-b, 0) : '--',
-            desc: pass ? (recent ? 'cross recente' : 'alinhada bearish') : 'alinhada bullish' });
-        }
-        // 2. RSI 4h TURN DOWN (crossing abaixo de 60 vindo de zona overbought)
-        {
-          const pass = !!(ctx.turnDown && ctx.turnDown[idx]);
-          const r4 = rsi4h[idx];
-          out.push({ id:'turn', name:'RSI 4h TURN DOWN', pass:pass,
-            value: r4!=null ? r4.toFixed(0) : '--',
-            desc: pass ? 'RSI 4h cruzou 60 de cima - virada de topo' : 'sem virada 4h recente' });
-        }
-        // 3. RSI 4h < 55
-        {
-          const r = rsi4h[idx];
-          const pass = r != null && r < 55;
-          out.push({ id:'rsi4h', name:'RSI 4h nao-bullish', pass:pass,
-            value: r!=null ? r.toFixed(0) : '--',
-            desc: pass ? '< 55' : '>= 55' });
-        }
-        // 4. MACD bearish
-        {
-          const h = macd.hist[idx];
-          const hPrev = idx >= 3 ? macd.hist[idx-3] : null;
-          const falling = h != null && hPrev != null && h < hPrev;
-          const pass = (h != null && h < 0) || falling;
-          out.push({ id:'macd', name:'MACD bearish', pass:pass,
-            value: h!=null ? h.toFixed(1) : '--',
-            desc: pass ? (h < 0 ? 'hist < 0' : 'hist caindo') : 'hist bullish' });
-        }
-        // 5. Funding alto
-        {
-          const f = funding;
-          const pass = f != null && f > 0.00015;
-          out.push({ id:'fund', name:'Funding > 0.015%', pass:pass,
-            value: f!=null ? (f*100).toFixed(4)+'%' : '--',
-            desc: pass ? 'longs pagando caro' : 'funding normal/baixo' });
-        }
-        // 6. NET SHORTS subindo 12h (novos shorts entrando) - null se sem dado OI
-        {
-          const s = netShortsSlope12;
-          const pass = s == null ? null : (s > 0.5);
-          out.push({ id:'netS', name:'Net Shorts subindo 12h', pass:pass,
-            value: s!=null ? fsFmtDelta(s, 1)+'%' : 'n/d',
-            desc: pass === null ? 'sem dado OI no periodo' : (pass ? 'shorts abrindo posicao' : 'shorts fracos/saindo') });
-        }
-        // 7. CVD slope negativo - null se sem taker data
-        {
-          const s = cvdSlope6;
-          const pass = s == null ? null : (s < -0.3);
-          out.push({ id:'cvd', name:'CVD caindo 6h', pass:pass,
-            value: s!=null ? fsFmtDelta(s, 1)+'%' : 'n/d',
-            desc: pass === null ? 'sem dado CVD no periodo' : (pass ? 'vendedores agressivos' : 'sem selling pressure') });
-        }
-        return out;
-      }
-
-      const lf = longFactors();
-      const sf = shortFactors();
-      // pass === true conta positivo; pass === null (sem dado) nao conta NEM como valido
-      const lValid = lf.filter(function(f){ return f.pass !== null; }).length;
-      const sValid = sf.filter(function(f){ return f.pass !== null; }).length;
-      const lScore = lf.filter(function(f){ return f.pass === true; }).length;
-      const sScore = sf.filter(function(f){ return f.pass === true; }).length;
-      // threshold dinamico: 5/7 do total valido, min 3, max 5
-      const lRequired = Math.min(5, Math.max(3, Math.ceil(lValid * 5/7)));
-      const sRequired = Math.min(5, Math.max(3, Math.ceil(sValid * 5/7)));
-      if (lScore >= sScore) return { score: lScore, side:'LONG', factors: lf, opposite: sScore,
-        valid: lValid, required: lRequired };
-      return { score: sScore, side:'SHORT', factors: sf, opposite: lScore,
-        valid: sValid, required: sRequired };
-    }
-
-    // Engine principal: BackQuant decompose + RSI/MA/MACD
-    function computeFlowScalperSignal(klines1h, klines4h, oiHistory, takerHistory, currentFunding) {
-      if (!klines1h || klines1h.length < 60 || !klines4h || klines4h.length < 20) {
-        return { current: null, signals: [], stats: null, chart: null, error: 'dados insuficientes' };
-      }
-      const n = klines1h.length;
-      const closes1h = klines1h.map(function(k){ return k.close; });
-      const closes4h = klines4h.map(function(k){ return k.close; });
-      const ema9 = computeEMA(closes1h, 9);
-      const ema21 = computeEMA(closes1h, 21);
-      const macd = computeMACD(closes1h, 12, 26, 9);
-      const rsi1h = computeRSI14Wilder(closes1h);
-      const rsi4hRaw = computeRSI14Wilder(closes4h);
-
-      // Align RSI 4h ao 1h: pra cada 1h candle, acha ultima 4h candle com closeTime <= openTime
-      const rsi4hAligned = klines1h.map(function(k1) {
-        let latest = null;
-        for (let i = klines4h.length - 1; i >= 0; i--) {
-          if (klines4h[i].closeTime <= k1.openTime) {
-            latest = rsi4hRaw[i];
-            break;
-          }
-        }
-        return latest;
-      });
-
-      // ========== RSI 4h TURN DETECTION (Estagio I) ==========
-      // Detecta o RSI 4h cruzando 40 de baixo pra cima (TURN UP) ou 60 de cima pra baixo (TURN DOWN).
-      // Essas viradas sao as "entradas classicas" do trading 4h.
-      const TURN_LOW = 45, TURN_HIGH = 55;  // Estagio J: relaxado pra disparar em bull market
-      const rsi4hTurnUpRaw = new Array(klines4h.length).fill(false);
-      const rsi4hTurnDownRaw = new Array(klines4h.length).fill(false);
-      for (let j = 1; j < rsi4hRaw.length; j++) {
-        const r = rsi4hRaw[j], rp = rsi4hRaw[j-1];
-        if (r == null || rp == null) continue;
-        if (rp <= TURN_LOW && r > TURN_LOW) rsi4hTurnUpRaw[j] = true;
-        if (rp >= TURN_HIGH && r < TURN_HIGH) rsi4hTurnDownRaw[j] = true;
-      }
-      // Mapeia turn raw -> 1h index: fire no primeiro kline 1h cujo [openTime, closeTime] contem o closeTime do 4h
-      const turnUp = new Array(klines1h.length).fill(false);
-      const turnDown = new Array(klines1h.length).fill(false);
-      for (let j = 0; j < klines4h.length; j++) {
-        if (!rsi4hTurnUpRaw[j] && !rsi4hTurnDownRaw[j]) continue;
-        const ct = klines4h[j].closeTime;
-        for (let i = 0; i < klines1h.length; i++) {
-          if (klines1h[i].openTime <= ct && klines1h[i].closeTime >= ct) {
-            if (rsi4hTurnUpRaw[j]) turnUp[i] = true;
-            if (rsi4hTurnDownRaw[j]) turnDown[i] = true;
-            break;
-          }
-          if (klines1h[i].openTime > ct) {
-            if (rsi4hTurnUpRaw[j]) turnUp[i] = true;
-            if (rsi4hTurnDownRaw[j]) turnDown[i] = true;
-            break;
-          }
-        }
-      }
-
-      // Map OI por timestamp + oiAt por kline
-      const oiByTime = (oiHistory || []).map(function(p){
-        const t = (typeof p.date === 'string') ? new Date(p.date).getTime() : p.date;
-        return { t: t, v: p.value };
-      }).filter(function(p){ return p.v > 0 && !isNaN(p.t); }).sort(function(a,b){ return a.t - b.t; });
-
-      function oiAt(ts) {
-        if (!oiByTime.length) return null;
-        let lo = 0, hi = oiByTime.length - 1;
-        if (oiByTime[0].t > ts) return null;
-        while (lo < hi) {
-          const m = (lo + hi + 1) >> 1;
-          if (oiByTime[m].t <= ts) lo = m; else hi = m - 1;
-        }
-        return oiByTime[lo].v;
-      }
-
-      // OI por kline (hourly resolution)
-      const oiSeries = klines1h.map(function(k){ return oiAt(k.openTime); });
-
-      // ========== NET LONGS / NET SHORTS DECOMPOSE (BackQuant-style) ==========
-      // Regra classica:
-      //   Preco UP + OI UP   -> longs abrindo (Net Longs +=)
-      //   Preco UP + OI DOWN -> shorts cobrindo (Net Shorts -=, aka reduz)
-      //   Preco DOWN + OI UP   -> shorts abrindo (Net Shorts +=)
-      //   Preco DOWN + OI DOWN -> longs capitulando (Net Longs -=)
-      const netLongs = new Array(n).fill(0);
-      const netShorts = new Array(n).fill(0);
-      for (let i = 1; i < n; i++) {
-        netLongs[i] = netLongs[i-1];
-        netShorts[i] = netShorts[i-1];
-        const pNow = closes1h[i], pPrev = closes1h[i-1];
-        const oNow = oiSeries[i], oPrev = oiSeries[i-1];
-        if (oNow == null || oPrev == null) continue;
-        const dOi = oNow - oPrev;
-        const dP = pNow - pPrev;
-        if (dP > 0 && dOi > 0) { netLongs[i] += dOi; }
-        else if (dP > 0 && dOi < 0) { netShorts[i] += dOi; }  // shorts decrease (covering)
-        else if (dP < 0 && dOi > 0) { netShorts[i] += dOi; }
-        else if (dP < 0 && dOi < 0) { netLongs[i] += dOi; }  // longs decrease (capitulation)
-      }
-
-      // ========== CVD CUMULATIVO (index-aligned) ==========
-      // Taker history pode ser daily ou hourly - usamos alinhamento index-based
-      // pra pegar os ultimos N entries e montar CVD series alinhada ao tail dos klines.
-      // Cada entry vira um delta (buy - sell), acumulado.
-      const cvd = new Array(n).fill(null);
-      if (takerHistory && takerHistory.length > 0) {
-        // Ordena por data crescente se houver
-        const sortedTaker = takerHistory.slice().sort(function(a, b) {
-          const ta = (typeof a.date === 'string') ? new Date(a.date).getTime() : (a.date || 0);
-          const tb = (typeof b.date === 'string') ? new Date(b.date).getTime() : (b.date || 0);
-          return ta - tb;
-        });
-        // Se taker tem menos entries que klines, expande pra cobrir (repeat daily value over hours)
-        const expanded = [];
-        if (sortedTaker.length >= n * 0.5) {
-          // Alinhamento 1:1 do tail
-          const takeFrom = Math.max(0, sortedTaker.length - n);
-          for (let i = takeFrom; i < sortedTaker.length; i++) expanded.push(sortedTaker[i]);
-        } else {
-          // Expande daily -> distribui cada entry por 24 klines
-          const repeats = Math.max(1, Math.floor(n / Math.max(1, sortedTaker.length)));
-          for (let i = 0; i < sortedTaker.length; i++) {
-            for (let r = 0; r < repeats; r++) expanded.push(sortedTaker[i]);
-          }
-        }
-        // Align tail
-        const takeFrom2 = Math.max(0, expanded.length - n);
-        const tailData = expanded.slice(takeFrom2);
-        const offset = n - tailData.length;
-        let cumul = 0;
-        for (let i = 0; i < n; i++) {
-          if (i < offset) { cvd[i] = null; continue; }
-          const entry = tailData[i - offset];
-          const buy = parseFloat(entry.buy || entry.takerBuyVolume || entry.buyVolume || 0);
-          const sell = parseFloat(entry.sell || entry.takerSellVolume || entry.sellVolume || 0);
-          // Normaliza (divide por 1e9 pra escala legivel em bilhoes)
-          cumul += (buy - sell) / 1e9;
-          cvd[i] = cumul;
-        }
-      }
-
-      // ========== LOOP RETROATIVO COM COOLDOWN + RE-ARM ==========
-      const signals = [];
-      const COOLDOWN_BARS = 6;
-      let lastL = -Infinity, lastS = -Infinity;
-      // Re-arm: depois de um entry, so re-fire quando score do mesmo lado cair abaixo de 4
-      let armedL = true, armedS = true;
-      const MIN_IDX = 35;
-      for (let i = MIN_IDX; i < klines1h.length - 1; i++) {
-        const ctx = {
-          ema9: ema9, ema21: ema21, macd: macd, rsi1h: rsi1h, rsi4hAligned: rsi4hAligned,
-          funding: currentFunding, netLongs: netLongs, netShorts: netShorts, cvd: cvd,
-          turnUp: turnUp, turnDown: turnDown
-        };
-        const sc = fsComputeScore(i, ctx);
-
-        // Re-arm tracking dinamico: usar threshold adaptativo (required - 1)
-        const rearmThr = Math.max(2, (sc.required || 4) - 1);
-        if (!armedL && sc.side === 'LONG' && sc.score < rearmThr) armedL = true;
-        if (!armedL && sc.side === 'SHORT' && sc.opposite < rearmThr) armedL = true;
-        if (!armedS && sc.side === 'SHORT' && sc.score < rearmThr) armedS = true;
-        if (!armedS && sc.side === 'LONG' && sc.opposite < rearmThr) armedS = true;
-
-        if (sc.score < (sc.required || 5)) continue;
-        // HARD GATE: RSI 4h TURN factor precisa estar ativo pra disparar entrada
-        const turnFactor = sc.factors.find(function(f){ return f.id === 'turn'; });
-        if (!turnFactor || !turnFactor.pass) continue;
-        if (sc.side === 'LONG') {
-          if (!armedL) continue;
-          if (i - lastL < COOLDOWN_BARS) continue;
-        } else {
-          if (!armedS) continue;
-          if (i - lastS < COOLDOWN_BARS) continue;
-        }
-
-        const sim = fsSimulateTrade(i, sc.side, klines1h);
-        if (!sim) continue;
-        signals.push({
-          barIdx: i,
-          date: new Date(klines1h[i].openTime).toISOString(),
-          side: sc.side,
-          score: sc.score,
-          required: sc.required,
-          valid: sc.valid,
-          entry: klines1h[i].close,
-          exit: sim.exit,
-          pnl: sim.pnl,
-          bars: sim.bars,
-          result: sim.result
-        });
-        if (sc.side === 'LONG') { lastL = i; armedL = false; }
-        else { lastS = i; armedS = false; }
-      }
-
-      // ========== STATS ==========
-      const total = signals.length;
-      const hits = signals.filter(function(s){ return s.result === 'HIT_TARGET'; }).length;
-      const winRate = total > 0 ? hits / total : 0;
-      const netPnl = signals.reduce(function(s, x){ return s + x.pnl; }, 0);
-      const byScore = {};
-      [3,4,5,6,7].forEach(function(k) {
-        const arr = signals.filter(function(x){ return x.score === k; });
-        const h = arr.filter(function(x){ return x.result === 'HIT_TARGET'; }).length;
-        byScore[k] = {
-          total: arr.length, hits: h,
-          winRate: arr.length ? h / arr.length : 0,
-          pnl: arr.reduce(function(a,b){ return a + b.pnl; }, 0)
-        };
-      });
-
-      // ========== CURRENT SCORE ==========
-      const lastIdx = klines1h.length - 1;
-      const currentCtx = {
-        ema9: ema9, ema21: ema21, macd: macd, rsi1h: rsi1h, rsi4hAligned: rsi4hAligned,
-        funding: currentFunding, netLongs: netLongs, netShorts: netShorts, cvd: cvd,
-        turnUp: turnUp, turnDown: turnDown
-      };
-      const currentScore = fsComputeScore(lastIdx, currentCtx);
-      const curNetLongsSlope = fsSlope(netLongs, lastIdx, 12);
-      const curNetShortsSlope = fsSlope(netShorts, lastIdx, 12);
-      const curCvdSlope = fsSlope(cvd, lastIdx, 6);
-
-      // ========== CHART DATA: ultimas 120 barras ==========
-      const chartStart = Math.max(0, klines1h.length - 120);
-      const chartLabels = klines1h.slice(chartStart).map(function(k){
-        const d = new Date(k.openTime);
-        const mm = String(d.getUTCMonth()+1).padStart(2,'0');
-        const dd = String(d.getUTCDate()).padStart(2,'0');
-        const hh = String(d.getUTCHours()).padStart(2,'0');
-        return mm+'/'+dd+' '+hh+'h';
-      });
-      const chartPrices = klines1h.slice(chartStart).map(function(k){ return k.close; });
-      const chartEma9 = ema9.slice(chartStart);
-      const chartEma21 = ema21.slice(chartStart);
-      const chartNetL = netLongs.slice(chartStart);
-      const chartNetS = netShorts.slice(chartStart);
-      const chartCvd = cvd.slice(chartStart);
-      const markers = signals.filter(function(s){ return s.barIdx >= chartStart; }).map(function(s){
-        return {
-          x: s.barIdx - chartStart,
-          y: s.entry,
-          side: s.side,
-          score: s.score,
-          valid: s.valid,
-          required: s.required,
-          result: s.result,
-          pnl: s.pnl,
-          date: s.date
-        };
-      });
-
-      const windowStart = klines1h[0] ? new Date(klines1h[0].openTime).toISOString().slice(0,10) : '--';
-      const windowEnd = klines1h[lastIdx] ? new Date(klines1h[lastIdx].openTime).toISOString().slice(0,10) : '--';
-
-      return {
-        current: {
-          score: currentScore.score,
-          side: currentScore.side,
-          factors: currentScore.factors,
-          opposite: currentScore.opposite,
-          required: currentScore.required,
-          valid: currentScore.valid,
-          price: klines1h[lastIdx].close,
-          rsi1h: rsi1h[lastIdx],
-          rsi4h: rsi4hAligned[lastIdx],
-          macdHist: macd.hist[lastIdx],
-          funding: currentFunding,
-          netLongsSlope: curNetLongsSlope,
-          netShortsSlope: curNetShortsSlope,
-          cvdSlope: curCvdSlope,
-          ema9: ema9[lastIdx],
-          ema21: ema21[lastIdx]
-        },
-        signals: signals,
-        stats: { total: total, hits: hits, winRate: winRate, netPnl: netPnl, byScore: byScore },
-        chart: {
-          labels: chartLabels,
-          prices: chartPrices,
-          ema9: chartEma9,
-          ema21: chartEma21,
-          netLongs: chartNetL,
-          netShorts: chartNetS,
-          cvd: chartCvd,
-          markers: markers
-        },
-        window: { start: windowStart, end: windowEnd, bars: klines1h.length }
-      };
-    }
-
-    // WebSocket live: atualiza ultimo ponto do chart e o badge LIVE
-    let _fsWS = null;
-    let _fsChart = null;
-    let _fsReconnectTimer = null;
-
-    function openFlowScalperWebSocket() {
-      try { if (_fsWS && _fsWS.readyState !== 3) _fsWS.close(); } catch(e) {}
-      if (_fsReconnectTimer) { clearTimeout(_fsReconnectTimer); _fsReconnectTimer = null; }
-      try {
-        _fsWS = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_1h');
-        _fsWS.onopen = function() {
-          console.log('[FlowScalper] WS connected');
-          const dot = document.getElementById('fsLiveDot');
-          if (dot) { dot.style.color = '#22c55e'; dot.textContent = '\u25CF LIVE'; }
-        };
-        _fsWS.onmessage = function(ev) {
-          try {
-            const msg = JSON.parse(ev.data);
-            if (!msg.k) return;
-            const close = parseFloat(msg.k.c);
-            if (isNaN(close)) return;
-            const priceEl = document.getElementById('fsLivePrice');
-            if (priceEl) priceEl.textContent = '$' + close.toLocaleString('en-US', {maximumFractionDigits: 2});
-            if (_fsChart && _fsChart.data && _fsChart.data.datasets && _fsChart.data.datasets[0]) {
-              const ds = _fsChart.data.datasets[0];
-              if (ds.data && ds.data.length > 0) {
-                ds.data[ds.data.length - 1] = close;
-                _fsChart.update('none');
-              }
-            }
-          } catch(e) {}
-        };
-        _fsWS.onclose = function() {
-          const dot = document.getElementById('fsLiveDot');
-          if (dot) { dot.style.color = '#ef4444'; dot.textContent = '\u25CF OFFLINE'; }
-          console.log('[FlowScalper] WS closed, reconnecting in 3s...');
-          _fsReconnectTimer = setTimeout(openFlowScalperWebSocket, 3000);
-        };
-        _fsWS.onerror = function(e) { console.warn('[FlowScalper] WS error'); };
-      } catch(e) {
-        console.warn('[FlowScalper] WS init failed:', e);
-        _fsReconnectTimer = setTimeout(openFlowScalperWebSocket, 5000);
-      }
-    }
-
-    // Renderer principal (BackQuant + zoom)
-    let _fsNetChart = null;
-    let _fsCvdChart = null;
-
-    function renderFlowScalperUI(fs) {
-      if (!fs) return;
-      const fmt = function(n, d) { if (n == null || isNaN(n)) return '--'; return Number(n).toFixed(d != null ? d : 2); };
-      const fmtPct = function(n, d) { if (n == null || isNaN(n)) return '--'; return (n > 0 ? '+' : '') + Number(n).toFixed(d != null ? d : 2) + '%'; };
-      const fmtDollar = function(n) { if (n == null || isNaN(n)) return '--'; return '$' + Number(n).toLocaleString('en-US', {maximumFractionDigits: 0}); };
-
-      // Updated timestamp
-      const updEl = document.getElementById('fsUpdated');
-      if (updEl) {
-        const now = new Date();
-        const hh = String(now.getHours()).padStart(2,'0');
-        const mm = String(now.getMinutes()).padStart(2,'0');
-        const ss = String(now.getSeconds()).padStart(2,'0');
-        updEl.textContent = 'UPDATED ' + hh + ':' + mm + ':' + ss;
-      }
-
-      if (fs.error || !fs.current) {
-        const scoreEl = document.getElementById('fsScore');
-        const descEl = document.getElementById('fsScoreDesc');
-        if (scoreEl) scoreEl.textContent = '--';
-        if (descEl) descEl.textContent = fs.error || 'sem dados';
-        return;
-      }
-
-      const cur = fs.current;
-
-      // Score box
-      const scoreEl = document.getElementById('fsScore');
-      const descEl = document.getElementById('fsScoreDesc');
-      if (scoreEl) {
-        const req = cur.required || 5;
-        const val = cur.valid || 7;
-        const active = cur.score >= req;
-        const sideTxt = cur.side === 'LONG' ? '\u25B2 LONG' : '\u25BC SHORT';
-        scoreEl.textContent = cur.score + '/' + val + ' ' + (active ? sideTxt : 'NEUTRAL');
-        if (active) scoreEl.style.color = cur.side === 'LONG' ? '#22c55e' : '#ef4444';
-        else if (cur.score >= Math.max(2, req - 2)) scoreEl.style.color = '#eab308';
-        else scoreEl.style.color = '#9a9aa6';
-      }
-      if (descEl) {
-        const req = cur.required || 5;
-        const val = cur.valid || 7;
-        if (cur.score >= req) {
-          descEl.textContent = 'Sinal ATIVO. Score dominante: ' + cur.side + ' (' + cur.score + '/' + val + '). Oposto: ' + cur.opposite + '/' + val + '.';
-        } else if (cur.score >= Math.max(2, req - 2)) {
-          descEl.textContent = 'Convergencia parcial (' + cur.score + '/' + val + ' ' + cur.side + '). Precisa ' + req + '+ pra disparar.';
-        } else {
-          descEl.textContent = 'Mercado lateral. Sem confluencia suficiente.';
-        }
-      }
-
-      // Momentum row
-      const rsi1hEl = document.getElementById('fsRsi1h');
-      if (rsi1hEl) {
-        rsi1hEl.textContent = fmt(cur.rsi1h, 0);
-        rsi1hEl.style.color = cur.rsi1h == null ? '#9a9aa6' : (cur.rsi1h >= 70 ? '#ef4444' : cur.rsi1h <= 30 ? '#22c55e' : '#e5e5ea');
-      }
-      const rsi4hEl = document.getElementById('fsRsi4h');
-      if (rsi4hEl) {
-        rsi4hEl.textContent = fmt(cur.rsi4h, 0);
-        rsi4hEl.style.color = cur.rsi4h == null ? '#9a9aa6' : (cur.rsi4h >= 70 ? '#ef4444' : cur.rsi4h <= 30 ? '#22c55e' : '#e5e5ea');
-      }
-      const macdEl = document.getElementById('fsMacd');
-      if (macdEl) {
-        macdEl.textContent = fmt(cur.macdHist, 1);
-        macdEl.style.color = cur.macdHist == null ? '#9a9aa6' : (cur.macdHist > 0 ? '#22c55e' : '#ef4444');
-      }
-
-      // Flow row (BackQuant)
-      const fundEl = document.getElementById('fsFund');
-      if (fundEl) {
-        fundEl.textContent = cur.funding != null ? (cur.funding * 100).toFixed(4) + '%' : '--';
-        fundEl.style.color = cur.funding == null ? '#9a9aa6' : (cur.funding > 0.00015 ? '#ef4444' : cur.funding < 0.00005 ? '#22c55e' : '#e5e5ea');
-      }
-      const cvdEl = document.getElementById('fsCvd');
-      if (cvdEl) {
-        cvdEl.textContent = cur.cvdSlope != null ? ((cur.cvdSlope > 0 ? '+' : '') + cur.cvdSlope.toFixed(1) + '%') : '--';
-        cvdEl.style.color = cur.cvdSlope == null ? '#9a9aa6' : (cur.cvdSlope > 0.3 ? '#22c55e' : cur.cvdSlope < -0.3 ? '#ef4444' : '#e5e5ea');
-      }
-      const netLEl = document.getElementById('fsNetL');
-      if (netLEl) {
-        netLEl.textContent = cur.netLongsSlope != null ? ((cur.netLongsSlope > 0 ? '+' : '') + cur.netLongsSlope.toFixed(1) + '%') : '--';
-        netLEl.style.color = cur.netLongsSlope == null ? '#9a9aa6' : (cur.netLongsSlope > 0.5 ? '#22c55e' : cur.netLongsSlope < -0.5 ? '#ef4444' : '#e5e5ea');
-      }
-      const netSEl = document.getElementById('fsNetS');
-      if (netSEl) {
-        netSEl.textContent = cur.netShortsSlope != null ? ((cur.netShortsSlope > 0 ? '+' : '') + cur.netShortsSlope.toFixed(1) + '%') : '--';
-        netSEl.style.color = cur.netShortsSlope == null ? '#9a9aa6' : (cur.netShortsSlope > 0.5 ? '#ef4444' : cur.netShortsSlope < -0.5 ? '#22c55e' : '#e5e5ea');
-      }
-
-      // Factors
-      const factorsSideEl = document.getElementById('fsFactorsSide');
-      if (factorsSideEl) factorsSideEl.textContent = cur.side + ' SIDE';
-      const factorsScoreEl = document.getElementById('fsFactorsScore');
-      if (factorsScoreEl) {
-        const req = cur.required || 5, val = cur.valid || 7;
-        factorsScoreEl.textContent = cur.score + ' / ' + val;
-        factorsScoreEl.style.color = cur.score >= req ? (cur.side === 'LONG' ? '#22c55e' : '#ef4444') : cur.score >= Math.max(2, req - 2) ? '#eab308' : '#9a9aa6';
-      }
-      const factorsListEl = document.getElementById('fsFactorsList');
-      if (factorsListEl) {
-        factorsListEl.innerHTML = '';
-        cur.factors.forEach(function(f) {
-          const isNull = f.pass === null;
-          const isPass = f.pass === true;
-          const row = document.createElement('div');
-          row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,' + (isPass ? '0.04' : '0.015') + ');border-radius:4px;font-size:10.5px;' + (isNull ? 'opacity:0.55;' : '');
-          const left = document.createElement('span');
-          left.style.cssText = 'display:flex;gap:8px;align-items:center;';
-          const check = document.createElement('span');
-          check.textContent = isNull ? '\u2014' : (isPass ? '\u2713' : '\u2717');
-          check.style.cssText = 'color:' + (isNull ? '#666' : (isPass ? '#22c55e' : '#666')) + ';font-weight:700;width:12px;';
-          const name = document.createElement('span');
-          name.textContent = f.name;
-          name.style.cssText = 'color:' + (isPass ? '#e5e5ea' : '#9a9aa6') + ';';
-          left.appendChild(check); left.appendChild(name);
-          const right = document.createElement('span');
-          right.style.cssText = 'font-family:\'JetBrains Mono\',monospace;font-size:10px;color:' + (isPass ? '#e5e5ea' : '#9a9aa6') + ';';
-          right.textContent = f.value;
-          row.appendChild(left); row.appendChild(right);
-          row.title = f.desc;
-          factorsListEl.appendChild(row);
-        });
-      }
-
-      // Backtest window label
-      const winEl = document.getElementById('fsBacktestWindow');
-      if (winEl && fs.window) winEl.textContent = fs.window.start + ' \u2192 ' + fs.window.end + ' (' + fs.window.bars + ' barras)';
-
-      // Backtest stats
-      const statsEl = document.getElementById('fsStats');
-      if (statsEl && fs.stats) {
-        const st = fs.stats;
-        const wr = (st.winRate * 100).toFixed(0);
-        const netSign = st.netPnl > 0 ? '+' : '';
-        let txt = 'Total: <b style="color:' + (st.winRate >= 0.5 ? '#22c55e' : '#ef4444') + ';">' + wr + '% (' + st.hits + '/' + st.total + ')</b> \u00b7 Net: <b>' + netSign + st.netPnl.toFixed(1) + '%</b>';
-        if (st.byScore && (st.byScore[6] || st.byScore[7])) {
-          const s67 = (st.byScore[6].total + st.byScore[7].total);
-          const h67 = (st.byScore[6].hits + st.byScore[7].hits);
-          if (s67 > 0) {
-            const wr67 = (h67 / s67 * 100).toFixed(0);
-            txt += ' \u00b7 6-7/7: <b style="color:' + (h67/s67 >= 0.5 ? '#22c55e' : '#ef4444') + ';">' + wr67 + '% (' + h67 + '/' + s67 + ')</b>';
-          }
-        }
-        statsEl.innerHTML = txt;
-      }
-
-      // Backtest table
-      const bodyEl = document.getElementById('fsBacktestBody');
-      if (bodyEl) {
-        const rows = (fs.signals || []).slice().reverse().slice(0, 20);
-        if (rows.length === 0) {
-          bodyEl.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text-muted);">Nenhum sinal disparado na janela.</td></tr>';
-        } else {
-          bodyEl.innerHTML = '';
-          rows.forEach(function(s) {
-            const tr = document.createElement('tr');
-            tr.style.cssText = 'border-bottom:1px solid rgba(255,255,255,0.04);';
-            const d = new Date(s.date);
-            const dateStr = d.toISOString().slice(5,16).replace('T',' ');
-            const sideColor = s.side === 'LONG' ? '#22c55e' : '#ef4444';
-            const sideIcon = s.side === 'LONG' ? '\u25B2' : '\u25BC';
-            const resColor = s.result === 'HIT_TARGET' ? '#22c55e' : s.result === 'HIT_STOP' ? '#ef4444' : '#eab308';
-            const resIcon = s.result === 'HIT_TARGET' ? '\u2713' : s.result === 'HIT_STOP' ? '\u2717' : '\u23f1';
-            const pnlColor = s.pnl > 0 ? '#22c55e' : '#ef4444';
-            tr.innerHTML =
-              '<td style="padding:5px 4px;color:var(--text-muted);">' + dateStr + '</td>' +
-              '<td style="padding:5px 4px;text-align:center;color:' + sideColor + ';font-weight:700;">' + sideIcon + ' ' + s.side + '</td>' +
-              '<td style="padding:5px 4px;text-align:center;color:' + (s.score >= 6 ? '#22c55e' : '#eab308') + ';font-weight:600;">' + s.score + '/' + (s.valid || 7) + '</td>' +
-              '<td style="padding:5px 4px;text-align:right;">' + fmtDollar(s.entry) + '</td>' +
-              '<td style="padding:5px 4px;text-align:right;">' + fmtDollar(s.exit) + '</td>' +
-              '<td style="padding:5px 4px;text-align:right;color:' + pnlColor + ';font-weight:700;">' + (s.pnl > 0 ? '+' : '') + s.pnl.toFixed(2) + '%</td>' +
-              '<td style="padding:5px 4px;text-align:center;color:var(--text-muted);">' + s.bars + 'h</td>' +
-              '<td style="padding:5px 4px;text-align:center;color:' + resColor + ';font-weight:700;">' + resIcon + ' ' + s.result.replace('HIT_','').replace('TIMEOUT','TIME') + '</td>';
-            bodyEl.appendChild(tr);
-          });
-        }
-      }
-
-      // ========== CHARTS (com zoom/pan bilateral) ==========
-      const zoomCfg = {
-        pan: { enabled: true, mode: 'x', modifierKey: null },
-        zoom: {
-          wheel: { enabled: true, speed: 0.1 },
-          pinch: { enabled: true },
-          drag: { enabled: false },
-          mode: 'x'
-        },
-        limits: { x: { minRange: 5 } }
-      };
-
-      // Chart principal — preco + EMAs + markers
-      const canvas = document.getElementById('fsChart');
-      if (canvas && fs.chart) {
-        if (_fsChart) { try { _fsChart.destroy(); } catch(e) {} _fsChart = null; }
-        const ctx = canvas.getContext('2d');
-        const longMarkers = fs.chart.markers.filter(function(m){ return m.side === 'LONG'; }).map(function(m){ return { x: m.x, y: m.y, meta: m }; });
-        const shortMarkers = fs.chart.markers.filter(function(m){ return m.side === 'SHORT'; }).map(function(m){ return { x: m.x, y: m.y, meta: m }; });
-        _fsChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: fs.chart.labels,
-            datasets: [
-              { label: 'BTC Price', data: fs.chart.prices, borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.08)', borderWidth: 1.8, pointRadius: 0, tension: 0.15, fill: false, yAxisID: 'y' },
-              { label: 'EMA 9', data: fs.chart.ema9, borderColor: '#eab308', borderWidth: 1.2, pointRadius: 0, tension: 0.2, fill: false, yAxisID: 'y' },
-              { label: 'EMA 21', data: fs.chart.ema21, borderColor: '#a78bfa', borderWidth: 1.2, pointRadius: 0, tension: 0.2, fill: false, yAxisID: 'y' },
-              { label: 'LONG entries', data: longMarkers, type: 'scatter', backgroundColor: '#22c55e', borderColor: '#22c55e', pointStyle: 'triangle', pointRadius: 8, pointHoverRadius: 10, showLine: false, yAxisID: 'y' },
-              { label: 'SHORT entries', data: shortMarkers, type: 'scatter', backgroundColor: '#ef4444', borderColor: '#ef4444', pointStyle: 'triangle', rotation: 180, pointRadius: 8, pointHoverRadius: 10, showLine: false, yAxisID: 'y' }
-            ]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            interaction: { intersect: false, mode: 'index' },
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  label: function(item) {
-                    const ds = item.dataset.label;
-                    if (ds === 'LONG entries' || ds === 'SHORT entries') {
-                      const m = item.raw && item.raw.meta;
-                      if (!m) return ds;
-                      return m.side + ' ' + m.score + '/' + (m.valid || 7) + ' \u00b7 ' + m.result + ' \u00b7 PnL ' + (m.pnl>0?'+':'') + m.pnl.toFixed(1) + '%';
-                    }
-                    return ds + ': $' + Number(item.parsed.y).toLocaleString('en-US', {maximumFractionDigits:0});
-                  }
-                }
-              },
-              zoom: zoomCfg
-            },
-            scales: {
-              x: { ticks: { color: '#666', font: { size: 9 }, maxTicksLimit: 10, autoSkip: true }, grid: { color: 'rgba(255,255,255,0.03)' } },
-              y: { type: 'linear', position: 'right', ticks: { color: '#8b5cf6', font: { size: 9 }, callback: function(v){ return '$' + Number(v/1000).toFixed(1) + 'k'; } }, grid: { color: 'rgba(255,255,255,0.03)' } }
-            }
-          }
-        });
-      }
-
-      // Net Longs vs Net Shorts mini-chart
-      const netCanvas = document.getElementById('fsNetChart');
-      if (netCanvas && fs.chart) {
-        if (_fsNetChart) { try { _fsNetChart.destroy(); } catch(e) {} _fsNetChart = null; }
-        const nctx = netCanvas.getContext('2d');
-        _fsNetChart = new Chart(nctx, {
-          type: 'line',
-          data: {
-            labels: fs.chart.labels,
-            datasets: [
-              { label: 'Net Longs', data: fs.chart.netLongs, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.15)', borderWidth: 1.2, pointRadius: 0, tension: 0.25, fill: 'origin' },
-              { label: 'Net Shorts', data: fs.chart.netShorts, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.15)', borderWidth: 1.2, pointRadius: 0, tension: 0.25, fill: 'origin' }
-            ]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            interaction: { intersect: false, mode: 'index' },
-            plugins: {
-              legend: { display: false },
-              tooltip: { callbacks: { label: function(item){ return item.dataset.label + ': ' + Number(item.parsed.y).toFixed(0); } } },
-              zoom: zoomCfg
-            },
-            scales: {
-              x: { ticks: { color: '#666', font: { size: 8 }, maxTicksLimit: 6, autoSkip: true }, grid: { display: false } },
-              y: { position: 'right', ticks: { color: '#666', font: { size: 8 }, maxTicksLimit: 4 }, grid: { color: 'rgba(255,255,255,0.03)' } }
-            }
-          }
-        });
-      }
-
-      // CVD mini-chart
-      const cvdCanvas = document.getElementById('fsCvdChart');
-      if (cvdCanvas && fs.chart) {
-        if (_fsCvdChart) { try { _fsCvdChart.destroy(); } catch(e) {} _fsCvdChart = null; }
-        const cctx = cvdCanvas.getContext('2d');
-        _fsCvdChart = new Chart(cctx, {
-          type: 'line',
-          data: {
-            labels: fs.chart.labels,
-            datasets: [
-              { label: 'CVD', data: fs.chart.cvd, borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.15)', borderWidth: 1.4, pointRadius: 0, tension: 0.2, fill: 'origin' }
-            ]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            interaction: { intersect: false, mode: 'index' },
-            plugins: {
-              legend: { display: false },
-              tooltip: { callbacks: { label: function(item){ return 'CVD: ' + Number(item.parsed.y).toFixed(2) + ' B'; } } },
-              zoom: zoomCfg
-            },
-            scales: {
-              x: { ticks: { color: '#666', font: { size: 8 }, maxTicksLimit: 6, autoSkip: true }, grid: { display: false } },
-              y: { position: 'right', ticks: { color: '#a78bfa', font: { size: 8 }, maxTicksLimit: 4, callback: function(v){ return Number(v).toFixed(1)+'B'; } }, grid: { color: 'rgba(255,255,255,0.03)' } }
-            }
-          }
-        });
-      }
-
-      // Reset zoom button handler (re-bind toda vez pra garantir)
-      const resetBtn = document.getElementById('fsResetZoom');
-      if (resetBtn) {
-        resetBtn.onclick = function() {
-          if (_fsChart && _fsChart.resetZoom) _fsChart.resetZoom('none');
-          if (_fsNetChart && _fsNetChart.resetZoom) _fsNetChart.resetZoom('none');
-          if (_fsCvdChart && _fsCvdChart.resetZoom) _fsCvdChart.resetZoom('none');
-        };
-      }
-    }
-
-    // ========== OI/PRICE DIVERGENCE (Estagio A) ==========
-    // Detecta 4+4 quadrantes de divergencia entre OI e Price.
-    // Usa Z-score rolling 60d do OI change pra decidir "extremo" (contextual, nao threshold fixo).
-    // Evita overfit: +-2sigma = ~5% das observacoes, padrao estatistico.
-    // FIX 20/04: endpoint /v1/open-interest-1h eh HORARIO, entao agregamos p/ daily (1 ponto por dia,
-    // ultimo valor do dia) antes de calcular changes. Antes, tudo era em escala horaria (bug).
-    // Retorna null se dados insuficientes (< 62 daily points).
-
-    // Divergence Estagio F: RSI 14 Wilder's smoothing.
-    // Input: array de closes. Output: array same length, null antes do warmup (idx<14).
-    function computeRSI14Wilder(closes) {
-      const n = closes.length;
-      const rsi = new Array(n).fill(null);
-      if (n < 15) return rsi;
-      let gain = 0, loss = 0;
-      for (let i = 1; i <= 14; i++) {
-        const ch = closes[i] - closes[i - 1];
-        if (ch >= 0) gain += ch; else loss -= ch;
-      }
-      gain /= 14; loss /= 14;
-      rsi[14] = loss === 0 ? 100 : 100 - (100 / (1 + gain / loss));
-      for (let i = 15; i < n; i++) {
-        const ch = closes[i] - closes[i - 1];
-        const up = ch > 0 ? ch : 0;
-        const dn = ch < 0 ? -ch : 0;
-        gain = (gain * 13 + up) / 14;
-        loss = (loss * 13 + dn) / 14;
-        rsi[i] = loss === 0 ? 100 : 100 - (100 / (1 + gain / loss));
-      }
-      return rsi;
-    }
-
-    // Divergence Estagio F: fetch Binance klines 12h + computa RSI + agrega por dia.
-    // Retorna Map<YYYY-MM-DD, rsi>. Em falha, retorna Map vazio (gate desligado).
-    // Binance /api/v3/klines: [[openTime, open, high, low, close, vol, closeTime, ...]]
-    async function fetchBinanceRSI12h() {
-      const out = new Map();
-      try {
-        const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=12h&limit=500';
-        const r = await fetch(url);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const data = await r.json();
-        if (!Array.isArray(data) || data.length < 20) throw new Error('klines data invalid: ' + (data && data.length));
-        const now = Date.now();
-        // Descarta candle possivelmente em aberto (closeTime > now)
-        const filtered = data.filter(k => Array.isArray(k) && k.length >= 7 && Number(k[6]) <= now);
-        const closes = filtered.map(k => parseFloat(k[4]));
-        const rsiArr = computeRSI14Wilder(closes);
-        for (let i = 0; i < filtered.length; i++) {
-          if (rsiArr[i] == null) continue;
-          // Agrupa por data do openTime (UTC). Ultima kline do dia (openTime 12:00) ganha.
-          const key = new Date(Number(filtered[i][0])).toISOString().slice(0, 10);
-          out.set(key, rsiArr[i]);
-        }
-        console.log('[Divergence-F] RSI 12h loaded: ' + out.size + ' days (latest: ' +
-          (out.size ? Array.from(out.values()).slice(-1)[0].toFixed(1) : 'n/a') + ')');
-      } catch (e) {
-        console.warn('[Divergence-F] RSI 12h fetch failed:', e.message, '— gate will be disabled (fallback to Estagio E behavior)');
-      }
-      return out;
-    }
-
     // Agrega serie horaria (ou ja-daily) em daily: um ponto por dia (ultimo valor do dia).
     function aggregateOIDaily(oiHistory) {
       if (!oiHistory || !oiHistory.length) return [];
@@ -6155,578 +5175,414 @@
       return Array.from(byDay.values()).sort((a, b) => a.date.localeCompare(b.date));
     }
 
-    function computeOIPriceDivergence(oiHistory, priceHistory, levState, rsi12hMap) {
-      // Estagio F (Maartun + RSI 12h gate): triggers binarios sobre delta OI 24h daily,
-      // + filtro de momento via RSI 12h.
-      // SEM Z-SCORE neste bloco. Confidence = cluster density (7d only).
-      //   RAW TRIGGER  SELL quando dOI 24h > +5%  (leverage subindo rapido)
-      //   RAW TRIGGER  BUY  quando dOI 24h < -4%  (deleveraging rapido)
-      //   GATE RSI 12h SELL valida so se rsi12h >= 70 (overbought)
-      //   GATE RSI 12h BUY  valida so se rsi12h <= 30 (oversold)
-      // Thresholds vindos da query do Maartun (@JA_Maartun no CryptoQuant) + RSI filter proprio.
-      if (!oiHistory || !oiHistory.length) return null;
-      if (!priceHistory || priceHistory.length < 2) return null;
-
-      const TH_SELL = 5;
-      const TH_BUY = -4;
-      const CLUSTER_WINDOW = 7;
-      const CLUSTER_MIN = 4;
-      const BUILDING_MIN = 2;
-      const SMA_SHORT = 20;
-      const SMA_LONG = 50;
-      const RSI_OVERBOUGHT = 70;
-      const RSI_OVERSOLD = 30;
-      const rsiMap = (rsi12hMap instanceof Map) ? rsi12hMap : new Map();
-      const rsiGateActive = rsiMap.size > 0;
-
-      // Agrega OI pra daily (dedupa hourly/daily endpoints)
-      const oiDaily = aggregateOIDaily(oiHistory);
-      if (oiDaily.length < 2) return null;
-
-      // Price map por data
-      const priceMap = new Map();
-      for (const p of priceHistory) {
-        if (!p) continue;
-        const d = p.date || p.day;
-        if (typeof d === 'string' && typeof p.value === 'number' && p.value > 0) {
-          priceMap.set(d.slice(0, 10), p.value);
-        }
-      }
-      // Alinha OI com Price (intersecao por data)
-      const aligned = [];
-      for (const o of oiDaily) {
-        const pv = priceMap.get(o.date);
-        if (typeof pv === 'number' && pv > 0 && o.value > 0) {
-          aligned.push({ date: o.date, oi: o.value, price: pv });
-        }
-      }
-      if (aligned.length < 2) {
-        console.warn('[Divergence-E] aligned daily points too few:', aligned.length);
-        return null;
-      }
-
-      // Monta dailyData com dOI, dPrice, RSI 12h e alert binario (com gate RSI)
-      const dailyData = [];
-      for (let i = 0; i < aligned.length; i++) {
-        const cur = aligned[i];
-        let oiPct = null, pricePct = null, rawAlert = null, alert = null;
-        const rsi12h = rsiMap.has(cur.date) ? rsiMap.get(cur.date) : null;
-        if (i >= 1) {
-          const prev = aligned[i - 1];
-          oiPct = prev.oi > 0 ? ((cur.oi - prev.oi) / prev.oi) * 100 : 0;
-          pricePct = prev.price > 0 ? ((cur.price - prev.price) / prev.price) * 100 : 0;
-          if (oiPct > TH_SELL) rawAlert = 'SELL';
-          else if (oiPct < TH_BUY) rawAlert = 'BUY';
-          // Gate: se RSI 12h carregou, exige confluencia. Se nao carregou, passa tudo (fallback).
-          if (rawAlert && rsiGateActive) {
-            if (rawAlert === 'SELL' && (rsi12h == null || rsi12h < RSI_OVERBOUGHT)) alert = null;
-            else if (rawAlert === 'BUY' && (rsi12h == null || rsi12h > RSI_OVERSOLD)) alert = null;
-            else alert = rawAlert;
-          } else {
-            alert = rawAlert;
-          }
-        }
-        dailyData.push({ idx: i, date: cur.date, price: cur.price, oi: cur.oi, oiPct, pricePct, rawAlert, alert, rsi12h });
-      }
-
-      // Regime: SMA20 vs SMA50 do preco daily
-      const priceVals = aligned.map(a => a.price);
-      function sma(n, i) {
-        if (i < n - 1) return null;
-        let sum = 0;
-        for (let k = i - n + 1; k <= i; k++) sum += priceVals[k];
-        return sum / n;
-      }
-      for (const d of dailyData) {
-        const s20 = sma(SMA_SHORT, d.idx);
-        const s50 = sma(SMA_LONG, d.idx);
-        d.sma20 = s20;
-        d.sma50 = s50;
-        if (s20 == null || s50 == null) {
-          d.regime = 'UNKNOWN';
-        } else if (s20 > s50 * 1.005) {
-          d.regime = 'UPTREND';
-        } else if (s20 < s50 * 0.995) {
-          d.regime = 'DOWNTREND';
-        } else {
-          d.regime = 'RANGE';
-        }
-      }
-
-      // Cluster density: conta alerts na MESMA direcao nos ultimos 7 dias
-      for (let i = 0; i < dailyData.length; i++) {
-        const d = dailyData[i];
-        if (!d.alert) { d.cluster = null; d.clusterSize = 0; continue; }
-        let count = 0;
-        for (let j = Math.max(0, i - CLUSTER_WINDOW + 1); j <= i; j++) {
-          if (dailyData[j].alert === d.alert) count++;
-        }
-        d.clusterSize = count;
-        if (count >= CLUSTER_MIN) d.cluster = 'CLUSTER';
-        else if (count >= BUILDING_MIN) d.cluster = 'BUILDING';
-        else d.cluster = 'ISOLATED';
-      }
-
-      // Estagio F: Confidence baseado em cluster density APENAS.
-      // (Regime continua calculado pra debug/tabela, mas nao influencia confidence —
-      // o filtro de momento agora vem do RSI 12h no gate de entrada.)
-      //   CLUSTER  -> HIGH
-      //   BUILDING -> MEDIUM
-      //   ISOLATED -> LOW
-      for (const d of dailyData) {
-        if (!d.alert) { d.confidence = null; continue; }
-        if (d.cluster === 'CLUSTER') d.confidence = 'HIGH';
-        else if (d.cluster === 'BUILDING') d.confidence = 'MEDIUM';
-        else d.confidence = 'LOW';
-      }
-
-      // Current state (ultima barra alinhada)
-      const last = dailyData[dailyData.length - 1];
-      const current = {
-        date: last.date,
-        price: last.price,
-        oi: last.oi,
-        oiChange24h: last.oiPct != null ? last.oiPct : 0,
-        priceChange24h: last.pricePct != null ? last.pricePct : 0,
-        alert: last.alert,
-        rawAlert: last.rawAlert,
-        cluster: last.cluster,
-        clusterSize: last.clusterSize,
-        regime: last.regime,
-        confidence: last.confidence,
-        rsi12h: last.rsi12h,
-        rsiGateActive
+    // ============================================================
+    // SQUEEZE RADAR - Market Pressure & Liquidation Risk
+    // Score range: -10 (short squeeze risk) to +10 (long squeeze risk)
+    // Inputs: levData (oiHistory, liquidationsHistory, fundingHistory, longShortRatio)
+    // ============================================================
+    function computeSqueezeRadar(levData) {
+      const out = {
+        score: 0,
+        state: 'NEUTRAL',
+        stateDesc: 'Mercado equilibrado entre longs e shorts.',
+        longPressure: 0,   // 0-100, high = risk of short squeeze (longs dominant)
+        shortPressure: 0,  // 0-100, high = risk of long squeeze (shorts dominant)
+        factors: [],
+        funding: levData.fundingRate || 0,
+        fundingRegime: 'NEUTRAL',
+        liq24h: levData.liquidations24h || 0,
+        liq24hLong: levData.liquidations24hLong || 0,
+        liq24hShort: levData.liquidations24hShort || 0,
+        spotPerpProxy: 0,  // funding * 100 * 3 as a proxy if no spot data
+        oiDelta7d: null,
+        oiDelta30d: null,
+        netPositioningSeries: [],
+        liqSeries: []
       };
 
-      // Historico completo de alerts (ciclo todo) — ja filtrado pelo gate RSI
-      const signals = dailyData.filter(d => d.alert).map(d => ({
-        date: d.date,
-        idx: d.idx,
-        alert: d.alert,
-        price: d.price,
-        oiPct: d.oiPct,
-        pricePct: d.pricePct,
-        cluster: d.cluster,
-        clusterSize: d.clusterSize,
-        regime: d.regime,
-        confidence: d.confidence,
-        rsi12h: d.rsi12h
-      }));
-      // Raw triggers (pre-gate) — uteis pra UI mostrar quantos foram descartados
-      const rawSignalsCount = dailyData.filter(d => d.rawAlert).length;
+      const factors = [];  // each: { name, pass (null/bool/null), signal (-1/0/+1), weight, value, desc }
 
-      // Backtest: +7d/+14d/+30d
-      const backtest = { rows: [] };
-      let hits = 0, total = 0, cHits = 0, cTotal = 0;
-      for (const s of signals) {
-        const p0 = s.price;
-        const row = { ...s, r7: null, r14: null, r30: null, hit: null };
-        const getRet = (off) => {
-          const t = aligned[s.idx + off];
-          if (!t || typeof t.price !== 'number' || !p0) return null;
-          return ((t.price - p0) / p0) * 100;
-        };
-        row.r7 = getRet(7);
-        row.r14 = getRet(14);
-        row.r30 = getRet(30);
-        const judgeRet = row.r7 != null ? row.r7 : (row.r14 != null ? row.r14 : null);
-        if (judgeRet != null) {
-          if (s.alert === 'BUY') row.hit = judgeRet > 0;
-          else if (s.alert === 'SELL') row.hit = judgeRet < 0;
-          if (row.hit != null) {
-            total++; if (row.hit) hits++;
-            if (s.cluster === 'CLUSTER') { cTotal++; if (row.hit) cHits++; }
-          }
-        }
-        backtest.rows.push(row);
-      }
-      backtest.hits = hits;
-      backtest.total = total;
-      backtest.hitRate = total > 0 ? (hits / total) * 100 : null;
-      backtest.clusterHits = cHits;
-      backtest.clusterTotal = cTotal;
-      backtest.clusterHitRate = cTotal > 0 ? (cHits / cTotal) * 100 : null;
-      backtest.rows.sort((a, b) => b.date.localeCompare(a.date));
+      // --- Factor 1: Funding Rate magnitude + direction ---
+      const f = typeof out.funding === 'number' ? out.funding : 0;
+      // Funding > 0.02% = elevated long pressure; > 0.05% = extreme long squeeze setup
+      // Funding < -0.01% = short-side discomfort
+      let fSig = 0;
+      if (f > 0.0005) fSig = 2;       // very positive = crowded longs = LONG SQUEEZE risk
+      else if (f > 0.0002) fSig = 1;
+      else if (f < -0.0002) fSig = -2; // negative = shorts paying = SHORT SQUEEZE risk
+      else if (f < -0.00005) fSig = -1;
+      const fPct = (f * 100).toFixed(4) + '%';
+      factors.push({
+        name: 'Funding Rate',
+        pass: fSig !== 0,
+        signal: fSig,
+        weight: 2.5,
+        value: (f >= 0 ? '+' : '') + (f * 100).toFixed(4) + '%',
+        desc: 'Positivo = longs pagando (crowded long, risco LS). Negativo = shorts pagando (crowded short, risco SS).'
+      });
+      if (f > 0.0003) out.fundingRegime = 'POSITIVE (LONGS PAY)';
+      else if (f < -0.0001) out.fundingRegime = 'NEGATIVE (SHORTS PAY)';
 
-      // Confirmadores (4o agora = cluster status atual em vez de OI Z-score)
-      const confirmers = [];
-      const ls = levState && levState.longShort;
-      const fr = levState && levState.funding;
-      const liq = levState && levState.liq24h;
-      if (typeof fr === 'number' && Math.abs(fr) > 0.0001) {
-        confirmers.push({ key: 'funding', active: true, label: 'Funding rate extremo', value: (fr*100).toFixed(4) + '%' });
-      } else {
-        confirmers.push({ key: 'funding', active: false, label: 'Funding rate extremo', value: fr != null ? (fr*100).toFixed(4) + '%' : '--' });
+      // --- Factor 2: L/S Ratio extremes ---
+      const ls = typeof levData.longShortRatio === 'number' ? levData.longShortRatio : null;
+      let lsSig = 0;
+      if (ls != null) {
+        if (ls > 2.0) lsSig = 2;
+        else if (ls > 1.4) lsSig = 1;
+        else if (ls < 0.6) lsSig = -2;
+        else if (ls < 0.8) lsSig = -1;
       }
-      if (typeof ls === 'number' && (ls > 1.5 || ls < 0.7)) {
-        confirmers.push({ key: 'ls', active: true, label: 'Long/Short ratio extremo', value: ls.toFixed(2) });
-      } else {
-        confirmers.push({ key: 'ls', active: false, label: 'Long/Short ratio extremo', value: ls != null ? ls.toFixed(2) : '--' });
-      }
-      if (typeof liq === 'number' && liq > 50e6) {
-        confirmers.push({ key: 'liq', active: true, label: 'Liquidacoes 24h > $50M', value: '$' + (liq/1e6).toFixed(1) + 'M' });
-      } else {
-        confirmers.push({ key: 'liq', active: false, label: 'Liquidacoes 24h > $50M', value: liq != null ? '$' + (liq/1e6).toFixed(1) + 'M' : '--' });
-      }
-      const inCluster = current.cluster === 'CLUSTER' || current.cluster === 'BUILDING';
-      confirmers.push({ key: 'cluster', active: inCluster, label: 'Alerts em cluster (≥2 em 7d)', value: (current.clusterSize || 0) + '/7d' });
-      const confirmScore = confirmers.filter(c => c.active).length;
+      factors.push({
+        name: 'Long/Short Ratio',
+        pass: ls != null ? (lsSig !== 0) : null,
+        signal: lsSig,
+        weight: 1.8,
+        value: ls != null ? ls.toFixed(2) : 'n/d',
+        desc: 'Extremos indicam posicionamento desequilibrado. >1.5 = crowded longs, <0.7 = crowded shorts.'
+      });
 
-      // Coverage meta
-      const coverage = {
-        daysAnalyzed: aligned.length,
-        firstDate: aligned[0] && aligned[0].date,
-        lastDate: aligned[aligned.length - 1] && aligned[aligned.length - 1].date,
-        signalsTotal: signals.length,
-        signalsSell: signals.filter(s => s.alert === 'SELL').length,
-        signalsBuy: signals.filter(s => s.alert === 'BUY').length,
-        clusterCount: signals.filter(s => s.cluster === 'CLUSTER').length,
-        rawSignalsCount,
-        rsiGateActive,
-        rsiDaysCovered: rsiMap.size
-      };
+      // --- Factor 3: 24h liquidations asymmetry ---
+      const liqL = out.liq24hLong || 0;
+      const liqS = out.liq24hShort || 0;
+      const liqT = liqL + liqS;
+      let liqSig = 0;
+      if (liqT > 0) {
+        const longDominance = liqL / liqT;
+        // If >70% of liquidations are longs, shorts are winning = continued downside / SS setup fading
+        // But if longs just got flushed, setup for SHORT SQUEEZE bounce
+        if (longDominance > 0.75) liqSig = -1;   // longs flushed -> ss potential (bounce)
+        else if (longDominance < 0.25) liqSig = 1; // shorts flushed -> ls potential (continued up)
+      }
+      factors.push({
+        name: 'Liquidations 24h',
+        pass: liqT > 0 ? (liqSig !== 0) : null,
+        signal: liqSig,
+        weight: 1.5,
+        value: liqT > 0 ? ('$' + (liqT/1e6).toFixed(1) + 'M, ' + Math.round(liqL/liqT*100) + '% long') : 'n/d',
+        desc: 'Flush de longs recente = setup de short squeeze (bounce). Flush de shorts = continuacao long squeeze.'
+      });
 
-      // Chart data (ultimos 90 dias alinhados)
-      const chartSlice = aligned.slice(-90);
-      const chartDates = chartSlice.map(a => a.date);
-      const chartPrices = chartSlice.map(a => a.price);
-      const chartOI = chartSlice.map(a => a.oi);
-      const markers = {
-        SELL: new Array(chartSlice.length).fill(null),
-        BUY:  new Array(chartSlice.length).fill(null)
-      };
-      const markerMeta = {
-        SELL: new Array(chartSlice.length).fill(null),
-        BUY:  new Array(chartSlice.length).fill(null)
-      };
-      for (const s of signals) {
-        const idx = chartDates.indexOf(s.date);
-        if (idx >= 0) {
-          markers[s.alert][idx] = s.price;
-          const rsiStr = (typeof s.rsi12h === 'number') ? ' · RSI ' + s.rsi12h.toFixed(0) : '';
-          markerMeta[s.alert][idx] = s.cluster + ' · ΔOI ' + (s.oiPct >= 0 ? '+' : '') + s.oiPct.toFixed(1) + '%' + rsiStr;
+      // --- Factor 4: OI trend 7d (recent buildup) ---
+      const oiHist = Array.isArray(levData.oiHistory) ? levData.oiHistory : [];
+      let oiDelta7d = null;
+      if (oiHist.length >= 8) {
+        const latestOI = oiHist[oiHist.length - 1].value;
+        const oi7agoPt = oiHist[oiHist.length - 8];
+        if (oi7agoPt && oi7agoPt.value > 0) {
+          oiDelta7d = (latestOI - oi7agoPt.value) / oi7agoPt.value;
         }
       }
+      out.oiDelta7d = oiDelta7d;
+      let oiSig = 0;
+      if (oiDelta7d != null) {
+        // Rising OI + positive funding = building longs = LS risk. Rising OI + neg funding = SS risk.
+        if (oiDelta7d > 0.05) oiSig = f > 0 ? 2 : (f < 0 ? -2 : 1);
+        else if (oiDelta7d > 0.02) oiSig = f > 0 ? 1 : (f < 0 ? -1 : 0);
+        else if (oiDelta7d < -0.05) oiSig = 0; // deleveraging, reducing pressure
+      }
+      factors.push({
+        name: 'OI Delta 7d',
+        pass: oiDelta7d != null ? (Math.abs(oiDelta7d) > 0.02) : null,
+        signal: oiSig,
+        weight: 1.5,
+        value: oiDelta7d != null ? ((oiDelta7d >= 0 ? '+' : '') + (oiDelta7d * 100).toFixed(1) + '%') : 'n/d',
+        desc: 'OI subindo = nova alavancagem. Combinado com funding revela lado dominante.'
+      });
 
-      return {
-        current,
-        signals,
-        backtest,
-        confirmers,
-        confirmScore,
-        coverage,
-        chart: { labels: chartDates, prices: chartPrices, oi: chartOI, markers, markerMeta }
-      };
+      // --- Factor 5: Funding regime persistence (7d average) ---
+      const fHist = Array.isArray(levData.fundingHistory) ? levData.fundingHistory.slice(-7) : [];
+      let fAvg7 = null;
+      if (fHist.length >= 3) {
+        fAvg7 = fHist.reduce((s,x) => s + (x.value || 0), 0) / fHist.length;
+      }
+      let fAvgSig = 0;
+      if (fAvg7 != null) {
+        if (fAvg7 > 0.0003) fAvgSig = 1;
+        else if (fAvg7 < -0.0001) fAvgSig = -1;
+      }
+      factors.push({
+        name: 'Funding Avg 7d',
+        pass: fAvg7 != null ? (fAvgSig !== 0) : null,
+        signal: fAvgSig,
+        weight: 1.2,
+        value: fAvg7 != null ? ((fAvg7 >= 0 ? '+' : '') + (fAvg7 * 100).toFixed(4) + '%') : 'n/d',
+        desc: 'Regime persistente de funding. Positivo sustentado = acumulacao de longs pressionados.'
+      });
+
+      // --- Factor 6: Long% / Short% skew ---
+      const lp = typeof levData.longPct === 'number' ? levData.longPct : null;
+      const sp = typeof levData.shortPct === 'number' ? levData.shortPct : null;
+      let skewSig = 0;
+      let skewStr = 'n/d';
+      if (lp != null && sp != null) {
+        const total = lp + sp;
+        if (total > 0) {
+          const lNorm = lp / total;
+          if (lNorm > 0.70) skewSig = 2;
+          else if (lNorm > 0.58) skewSig = 1;
+          else if (lNorm < 0.30) skewSig = -2;
+          else if (lNorm < 0.42) skewSig = -1;
+          skewStr = Math.round(lNorm * 100) + '% L / ' + Math.round((1-lNorm) * 100) + '% S';
+        }
+      }
+      factors.push({
+        name: 'Long% Skew',
+        pass: (lp != null && sp != null) ? (skewSig !== 0) : null,
+        signal: skewSig,
+        weight: 1.0,
+        value: skewStr,
+        desc: 'Distribuicao de contas long/short. >70% long = crowded longs (LS risk).'
+      });
+
+      // --- Factor 7: Recent liquidation spike (3d vs 30d avg) ---
+      const liqHist = Array.isArray(levData.liquidationsHistory) ? levData.liquidationsHistory : [];
+      let liqSpike = 0;
+      let liqSpikeSig = 0;
+      if (liqHist.length >= 10) {
+        const recent3 = liqHist.slice(-3).reduce((s,x) => s + (x.total || 0), 0) / 3;
+        const avg30 = liqHist.reduce((s,x) => s + (x.total || 0), 0) / liqHist.length;
+        if (avg30 > 0) {
+          liqSpike = recent3 / avg30;
+          // Recent liquidation spike = capitulation / cleansing, often mean-reversion setup
+          if (liqSpike > 2.0) liqSpikeSig = 1; // fresh flush = bounce setup (small signal)
+        }
+      }
+      factors.push({
+        name: 'Liq Spike 3d',
+        pass: liqHist.length >= 10 ? (liqSpikeSig !== 0) : null,
+        signal: liqSpikeSig,
+        weight: 0.8,
+        value: liqHist.length >= 10 ? (liqSpike.toFixed(2) + 'x avg') : 'n/d',
+        desc: 'Liquidacoes recentes vs media 30d. >2x = capitulacao fresca, setup de bounce.'
+      });
+
+      // --- Compose the score ---
+      let rawScore = 0;
+      let activeWeightSum = 0;
+      for (const fac of factors) {
+        if (fac.signal !== 0 && fac.pass === true) {
+          rawScore += fac.signal * fac.weight;
+          activeWeightSum += fac.weight;
+        }
+      }
+      // Normalize to -10..+10. Max possible raw = sum of (weight * 2) for all factors
+      const maxRaw = factors.reduce((s, x) => s + (x.weight * 2), 0);
+      const score = maxRaw > 0 ? (rawScore / maxRaw) * 10 : 0;
+      out.score = Math.max(-10, Math.min(10, score));
+
+      // --- Compose Long/Short pressure (0-100 each) ---
+      // Long pressure = signals indicating SHORT SQUEEZE risk (positive inputs for SS)
+      // Short pressure = signals indicating LONG SQUEEZE risk (positive inputs for LS)
+      let lpPress = 0, spPress = 0;
+      for (const fac of factors) {
+        if (fac.pass !== true || fac.signal === 0) continue;
+        const mag = Math.abs(fac.signal) * fac.weight;
+        if (fac.signal > 0) spPress += mag; // positive score = LS risk => short-side pressure
+        else lpPress += mag;
+      }
+      const pressMax = factors.reduce((s, x) => s + (x.weight * 2), 0);
+      out.longPressure = pressMax > 0 ? Math.min(100, (lpPress / pressMax) * 100 * 2) : 0;
+      out.shortPressure = pressMax > 0 ? Math.min(100, (spPress / pressMax) * 100 * 2) : 0;
+
+      // --- State label ---
+      const s = out.score;
+      if (s >= 6) { out.state = 'PRIMED FOR LONG SQUEEZE'; out.stateDesc = 'Crowded longs + funding alto. Risco elevado de cascata de liquidacao dos longs (correcao).'; }
+      else if (s >= 3) { out.state = 'LONG-BIASED'; out.stateDesc = 'Vies de pressao nos longs. Cuidado com shake-outs acima.'; }
+      else if (s >= 1) { out.state = 'MILD LONG TILT'; out.stateDesc = 'Leve inclinacao long. Sem sinal forte de squeeze iminente.'; }
+      else if (s <= -6) { out.state = 'PRIMED FOR SHORT SQUEEZE'; out.stateDesc = 'Crowded shorts + funding negativo. Setup classico para short squeeze violento.'; }
+      else if (s <= -3) { out.state = 'SHORT-BIASED'; out.stateDesc = 'Vies de pressao nos shorts. Espaco para movimento de alta por liquidacao.'; }
+      else if (s <= -1) { out.state = 'MILD SHORT TILT'; out.stateDesc = 'Leve inclinacao short. Observar se progride.'; }
+      else { out.state = 'NEUTRAL'; out.stateDesc = 'Mercado equilibrado, sem setup de squeeze claro. Range provavel.'; }
+
+      // --- Net Positioning series (OI changes 30d, for mini chart) ---
+      if (oiHist.length >= 2) {
+        const slice = oiHist.slice(-30);
+        const base = slice[0].value;
+        out.netPositioningSeries = slice.map(p => ({
+          date: p.date,
+          delta: base > 0 ? ((p.value - base) / base) * 100 : 0
+        }));
+      }
+
+      // --- Liquidation history for chart ---
+      out.liqSeries = liqHist.slice(-30);
+
+      out.factors = factors;
+      return out;
     }
 
-    let _divPriceChart = null;
-    function renderDivergenceSignal(div) {
-      const $q = document.getElementById('divQuadrant');
-      const $l = document.getElementById('divLabel');
-      const $p = document.getElementById('divPriceChg');
-      const $o = document.getElementById('divOiChg');
-      const $z = document.getElementById('divOiZ');          // reused: agora mostra REGIME
-      const $zLabel = document.getElementById('divOiZLabel'); // label do 3o stat
-      const $u = document.getElementById('divergenceUpdated');
-      const $cList = document.getElementById('divConfirmersList');
-      const $cScore = document.getElementById('divConfirmScore');
-      const $btBody = document.getElementById('divBacktestBody');
-      const $wr = document.getElementById('divWinRate');
-      if (!$q) return;
+    let _srLiqChart = null;
+    let _srNetChart = null;
 
-      if (!div || !div.current) {
-        $q.textContent = 'INSUFFICIENT DATA';
-        $q.style.color = '#666';
-        if ($l) $l.textContent = 'Aguardando historico OI + price alinhado';
-        if ($p) $p.textContent = '--';
-        if ($o) $o.textContent = '--';
-        if ($z) $z.textContent = '--';
-        if ($u) $u.textContent = '';
-        if ($cList) $cList.innerHTML = '<div style="font-size:10px;color:var(--text-muted);">--</div>';
-        if ($btBody) $btBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text-muted);">Sem dados suficientes</td></tr>';
-        return;
-      }
+    function renderSqueezeRadar(rad, levData) {
+      const $ = function(id) { return document.getElementById(id); };
 
-      const c = div.current;
+      // Main score gauge
+      const scoreEl = $('srScoreValue');
+      if (scoreEl) {
+        scoreEl.textContent = (rad.score >= 0 ? '+' : '') + rad.score.toFixed(1);
+        scoreEl.style.color = rad.score >= 3 ? '#ef4444' : rad.score <= -3 ? '#22c55e' : '#e5e5ea';
+      }
+      // Move needle: score -10..+10 -> x 20..780 (centered at 400)
+      const needle = $('srNeedle');
+      if (needle) {
+        const xPos = 400 + (rad.score / 10) * 380;
+        needle.setAttribute('transform', 'translate(' + xPos + ' 31)');
+      }
+      const stateEl = $('srState');
+      if (stateEl) {
+        stateEl.textContent = rad.state;
+        stateEl.style.color = rad.score >= 3 ? '#ef4444' : rad.score <= -3 ? '#22c55e' : rad.score > 0 ? '#fca5a5' : rad.score < 0 ? '#86efac' : '#9a9aa6';
+      }
+      const descEl = $('srScoreDesc');
+      if (descEl) descEl.textContent = rad.stateDesc;
 
-      // --- Estado current (Estagio F) ---
-      let quadrant, label, color;
-      const rsiStr = (typeof c.rsi12h === 'number') ? c.rsi12h.toFixed(0) : '--';
-      if (!c.alert) {
-        quadrant = 'NEUTRAL';
-        color = '#9a9aa6';
-        // Diferencia: tinha raw trigger mas foi barrado pelo RSI gate?
-        if (c.rawAlert && c.rsiGateActive) {
-          quadrant = 'BLOCKED BY RSI';
-          color = '#666';
-          const dir = c.rawAlert === 'BUY' ? 'BUY' : 'SELL';
-          const req = c.rawAlert === 'BUY' ? '<=30' : '>=70';
-          label = 'Trigger RAW ' + dir + ' (ΔOI ' + c.oiChange24h.toFixed(1) + '%) mas RSI 12h=' + rsiStr +
-                  ' nao atende o threshold ' + req + '. Sem confluencia de momento.';
-        } else {
-          label = 'Sem alert ativo (ΔOI 24h ' + (c.oiChange24h >= 0 ? '+' : '') + c.oiChange24h.toFixed(2) +
-                  '% entre thresholds -4% / +5%)';
-        }
-      } else {
-        const dir = c.alert === 'BUY' ? 'BUY' : 'SELL';
-        const tagCluster = c.cluster || 'ISOLATED';
-        quadrant = dir + ' ' + tagCluster;
-        if (c.confidence === 'HIGH')         color = c.alert === 'BUY' ? '#00d97e' : '#ef4444';
-        else if (c.confidence === 'MEDIUM')  color = c.alert === 'BUY' ? '#84cc16' : '#f59e0b';
-        else                                 color = '#eab308';
-        if (c.alert === 'BUY') {
-          label = 'Deleveraging (ΔOI ' + c.oiChange24h.toFixed(1) + '%) + RSI 12h=' + rsiStr +
-                  ' (oversold) · ' + c.clusterSize + ' alert(s) em 7d';
-        } else {
-          label = 'Leverage spike (ΔOI +' + c.oiChange24h.toFixed(1) + '%) + RSI 12h=' + rsiStr +
-                  ' (overbought) · ' + c.clusterSize + ' alert(s) em 7d';
-        }
-      }
-      $q.textContent = quadrant;
-      $q.style.color = color;
-      if ($l) $l.textContent = label;
+      const updatedEl = $('srUpdated');
+      if (updatedEl) updatedEl.textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      // --- Stats ---
-      const fmtPct = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
-      if ($p) {
-        $p.textContent = fmtPct(c.priceChange24h);
-        $p.style.color = c.priceChange24h >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      // Headline: 24h Liquidations
+      const liqTotalEl = $('srLiqTotal');
+      if (liqTotalEl) {
+        const t = rad.liq24h || 0;
+        liqTotalEl.textContent = t > 0 ? '$' + (t >= 1e9 ? (t/1e9).toFixed(2) + 'B' : (t/1e6).toFixed(1) + 'M') : '$--';
       }
-      if ($o) {
-        $o.textContent = fmtPct(c.oiChange24h);
-        $o.style.color = c.oiChange24h >= 5 ? 'var(--accent-red)'
-                        : c.oiChange24h <= -4 ? 'var(--accent-green)'
-                        : '#ccc';
+      const liqLEl = $('srLiqLongs');
+      if (liqLEl) {
+        const v = rad.liq24hLong || 0;
+        liqLEl.textContent = v > 0 ? '$' + (v >= 1e9 ? (v/1e9).toFixed(2) + 'B' : (v/1e6).toFixed(1) + 'M') : '$--';
       }
-      if ($z) {
-        if (typeof c.rsi12h === 'number') {
-          $z.textContent = c.rsi12h.toFixed(0);
-          $z.style.color = c.rsi12h >= 70 ? 'var(--accent-red)'
-                         : c.rsi12h <= 30 ? 'var(--accent-green)'
-                         : '#ccc';
-        } else {
-          $z.textContent = '--';
-          $z.style.color = '#888';
-        }
-      }
-      if ($zLabel) $zLabel.textContent = 'RSI 12H';
-      if ($u) $u.textContent = 'updated ' + new Date().toLocaleTimeString('pt-BR');
-
-      // --- Confirmadores ---
-      if ($cList && div.confirmers) {
-        $cList.innerHTML = div.confirmers.map(cf => {
-          const icon = cf.active ? '✓' : '✕';
-          const col = cf.active ? 'var(--accent-green)' : '#555';
-          return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;padding:4px 6px;border-radius:3px;background:rgba(255,255,255,0.015);">'
-               + '<span style="color:' + col + ';"><span style="margin-right:6px;">' + icon + '</span>' + cf.label + '</span>'
-               + '<span style="color:' + (cf.active ? '#fff' : '#777') + ';font-family:\'JetBrains Mono\',monospace;">' + cf.value + '</span>'
-               + '</div>';
-        }).join('');
-      }
-      if ($cScore) {
-        const s = div.confirmScore || 0;
-        $cScore.textContent = s + ' / 4';
-        $cScore.style.color = s >= 2 ? 'var(--accent-green)' : s === 1 ? 'var(--accent-yellow)' : '#666';
+      const liqSEl = $('srLiqShorts');
+      if (liqSEl) {
+        const v = rad.liq24hShort || 0;
+        liqSEl.textContent = v > 0 ? '$' + (v >= 1e9 ? (v/1e9).toFixed(2) + 'B' : (v/1e6).toFixed(1) + 'M') : '$--';
       }
 
-      // --- Backtest table ---
-      if ($btBody) {
-        if (!div.backtest || !div.backtest.rows || !div.backtest.rows.length) {
-          $btBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text-muted);">Nenhum alert (ΔOI 24h > +5% / < -4%) no historico</td></tr>';
-        } else {
-          const ALERT_COLOR = { SELL: '#ef4444', BUY: '#00d97e' };
-          const CLUSTER_COLOR = { CLUSTER: '#00d97e', BUILDING: '#eab308', ISOLATED: '#888' };
-          const fmtRet = r => r == null ? '<span style="color:#555;">--</span>' : '<span style="color:' + (r >= 0 ? '#00d97e' : '#ef4444') + ';">' + (r >= 0 ? '+' : '') + r.toFixed(1) + '%</span>';
-          const fmtHit = h => h == null ? '<span style="color:#555;">PEND</span>' : h ? '<span style="color:#00d97e;font-weight:700;">HIT</span>' : '<span style="color:#ef4444;font-weight:700;">MISS</span>';
-          const rows = div.backtest.rows.slice(0, 15).map(r => {
-            const rsiCell = (typeof r.rsi12h === 'number') ? 'RSI ' + r.rsi12h.toFixed(0) : 'RSI --';
-            const alertBlock = '<span style="color:' + (ALERT_COLOR[r.alert] || '#9a9aa6') + ';font-weight:700;">' + r.alert + '</span>'
-                             + '<div style="font-size:9px;color:' + (CLUSTER_COLOR[r.cluster] || '#888') + ';margin-top:1px;">'
-                               + r.cluster + ' (' + r.clusterSize + '/7d) · ' + rsiCell
-                             + '</div>';
-            return '<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">'
-                 + '<td style="padding:6px 4px;color:#ccc;">' + r.date + '</td>'
-                 + '<td style="padding:6px 4px;">' + alertBlock + '</td>'
-                 + '<td style="padding:6px 4px;text-align:right;color:#ccc;">$' + (r.price ? r.price.toLocaleString('en-US',{maximumFractionDigits:0}) : '--') + '</td>'
-                 + '<td style="padding:6px 4px;text-align:right;">' + fmtRet(r.r7) + '</td>'
-                 + '<td style="padding:6px 4px;text-align:right;">' + fmtRet(r.r14) + '</td>'
-                 + '<td style="padding:6px 4px;text-align:right;">' + fmtRet(r.r30) + '</td>'
-                 + '<td style="padding:6px 4px;text-align:center;">' + fmtHit(r.hit) + '</td>'
-                 + '</tr>';
-          }).join('');
-          $btBody.innerHTML = rows;
+      // Funding
+      const fundEl = $('srFundingVal');
+      if (fundEl) {
+        const f = rad.funding || 0;
+        fundEl.textContent = (f >= 0 ? '+' : '') + (f * 100).toFixed(4) + '%';
+        fundEl.style.color = f > 0.0003 ? '#ef4444' : f < -0.0001 ? '#22c55e' : '#e5e5ea';
+      }
+      const fundDescEl = $('srFundingDesc');
+      if (fundDescEl) fundDescEl.textContent = rad.fundingRegime;
+
+      // Spot-Perp proxy (from funding direction + magnitude)
+      const premEl = $('srPremiumVal');
+      if (premEl) {
+        const f = rad.funding || 0;
+        // Proxy: funding * price * 3 (approximate implied premium in $)
+        const proxy = f * 3 * 100; // just show as pp proxy
+        premEl.textContent = (f >= 0 ? '+' : '') + (f * 100).toFixed(3) + 'pp';
+        premEl.style.color = f > 0.0003 ? '#ef4444' : f < -0.0001 ? '#22c55e' : '#e5e5ea';
+      }
+      const premDescEl = $('srPremiumDesc');
+      if (premDescEl) {
+        const f = rad.funding || 0;
+        premDescEl.textContent = f > 0.0002 ? 'Perp caro vs spot (longs pagando premio)' : f < -0.0001 ? 'Perp barato vs spot (shorts pagando)' : 'Equilibrio proximo ao spot';
+      }
+
+      // Long / Short pressure bars (SVG rect widths)
+      const lpBar = $('srLongPressureBar');
+      const lpVal = $('srLongPressureVal');
+      if (lpBar) lpBar.setAttribute('width', (rad.longPressure / 100 * 300));
+      if (lpVal) lpVal.textContent = rad.longPressure.toFixed(0) + '/100';
+      const spBar = $('srShortPressureBar');
+      const spVal = $('srShortPressureVal');
+      if (spBar) spBar.setAttribute('width', (rad.shortPressure / 100 * 300));
+      if (spVal) spVal.textContent = rad.shortPressure.toFixed(0) + '/100';
+
+      // Factor list
+      const fL = $('srFactors');
+      if (fL) {
+        fL.innerHTML = '';
+        for (const fac of rad.factors) {
+          const row = document.createElement('div');
+          const isNull = fac.pass === null;
+          const isPass = fac.pass === true;
+          const tone = fac.signal > 0 ? '#ef4444' : fac.signal < 0 ? '#22c55e' : '#9a9aa6';
+          row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(255,255,255,' + (isPass ? '0.03' : '0.012') + ');border-radius:4px;font-size:10.5px;' + (isNull ? 'opacity:0.55;' : '');
+          const left = document.createElement('span');
+          left.style.cssText = 'display:flex;gap:8px;align-items:center;';
+          const check = document.createElement('span');
+          check.textContent = isNull ? '\u2014' : (isPass ? (fac.signal > 0 ? '\u25B2' : fac.signal < 0 ? '\u25BC' : '\u25CB') : '\u25CB');
+          check.style.cssText = 'color:' + (isNull ? '#666' : tone) + ';font-weight:700;width:14px;font-size:11px;';
+          const name = document.createElement('span');
+          name.textContent = fac.name;
+          name.style.cssText = 'color:' + (isPass ? '#e5e5ea' : '#9a9aa6') + ';';
+          left.appendChild(check); left.appendChild(name);
+          const right = document.createElement('span');
+          right.style.cssText = 'font-family:\'JetBrains Mono\',monospace;font-size:10px;color:' + (isPass ? tone : '#9a9aa6') + ';';
+          right.textContent = fac.value;
+          row.appendChild(left); row.appendChild(right);
+          row.title = fac.desc;
+          fL.appendChild(row);
         }
       }
-      if ($wr) {
-        const bt = div.backtest || {};
-        const cov = div.coverage || {};
-        let total = '';
-        if (bt.hitRate != null) {
-          const color = bt.hitRate >= 60 ? 'var(--accent-green)' : bt.hitRate >= 40 ? 'var(--accent-yellow)' : 'var(--accent-red)';
-          total = '<span style="color:' + color + ';">Total: ' + bt.hitRate.toFixed(0) + '% (' + bt.hits + '/' + bt.total + ')</span>';
-        } else {
-          total = '<span style="color:#9a9aa6;">Total: sem julgados</span>';
-        }
-        let cluster = '';
-        if (bt.clusterHitRate != null) {
-          const col = bt.clusterHitRate >= 60 ? 'var(--accent-green)' : bt.clusterHitRate >= 40 ? 'var(--accent-yellow)' : 'var(--accent-red)';
-          cluster = '<span style="color:' + col + ';margin-left:10px;">CLUSTER: ' + bt.clusterHitRate.toFixed(0) + '% (' + bt.clusterHits + '/' + bt.clusterTotal + ')</span>';
-        } else {
-          cluster = '<span style="color:#777;margin-left:10px;">CLUSTER: --</span>';
-        }
-        const covStr = cov.daysAnalyzed
-          ? '<span style="color:#777;margin-left:10px;font-size:9px;">' + cov.daysAnalyzed + 'd · ' + (cov.signalsTotal||0) + ' alerts (' + (cov.signalsSell||0) + '▼/' + (cov.signalsBuy||0) + '▲)</span>'
-          : '';
-        $wr.innerHTML = total + cluster + covStr;
-      }
 
-      // --- Chart Price + OI + markers ---
-      const ctx = document.getElementById('divPriceChart');
-      if (!ctx || !div.chart || !div.chart.labels.length) return;
-      if (_divPriceChart) _divPriceChart.destroy();
-
-      const chartData = div.chart;
-      // Estagio F: markers uniformes (sem highlight 10px). Cores Maartun: price roxo, OI amarelo.
-      _divPriceChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: chartData.labels,
-          datasets: [
-            {
-              label: 'BTC Price',
-              data: chartData.prices,
-              yAxisID: 'y',
-              borderColor: '#8b5cf6',
-              backgroundColor: 'rgba(139,92,246,0.06)',
-              borderWidth: 1.8,
-              pointRadius: 0,
-              tension: 0.15,
-              fill: true,
-              order: 4
-            },
-            {
-              label: 'Open Interest',
-              data: chartData.oi,
-              yAxisID: 'y1',
-              borderColor: 'rgba(234,179,8,0.75)',
-              backgroundColor: 'rgba(234,179,8,0.04)',
-              borderWidth: 1.2,
-              pointRadius: 0,
-              tension: 0.15,
-              fill: false,
-              order: 5
-            },
-            {
-              label: 'SELL',
-              data: chartData.markers.SELL,
-              yAxisID: 'y',
-              borderColor: 'transparent',
-              backgroundColor: '#ef4444',
-              pointStyle: 'triangle',
-              rotation: 180,
-              pointRadius: 6,
-              pointHoverRadius: 9,
-              pointBorderColor: 'rgba(255,255,255,0.5)',
-              pointBorderWidth: 1,
-              showLine: false,
-              spanGaps: false,
-              order: 3,
-              _meta: chartData.markerMeta ? chartData.markerMeta.SELL : null
-            },
-            {
-              label: 'BUY',
-              data: chartData.markers.BUY,
-              yAxisID: 'y',
-              borderColor: 'transparent',
-              backgroundColor: '#00d97e',
-              pointStyle: 'triangle',
-              pointRadius: 6,
-              pointHoverRadius: 9,
-              pointBorderColor: 'rgba(255,255,255,0.5)',
-              pointBorderWidth: 1,
-              showLine: false,
-              spanGaps: false,
-              order: 3,
-              _meta: chartData.markerMeta ? chartData.markerMeta.BUY : null
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: item => {
-                  const v = item.raw;
-                  if (v == null) return null;
-                  if (item.dataset.label === 'BTC Price') return 'BTC: $' + Number(v).toLocaleString('en-US',{maximumFractionDigits:0});
-                  if (item.dataset.label === 'Open Interest') return 'OI: $' + (v/1e9).toFixed(2) + 'B';
-                  const meta = item.dataset._meta;
-                  const sub = meta && meta[item.dataIndex] ? meta[item.dataIndex] : null;
-                  const head = sub ? (item.dataset.label + ' · ' + sub) : item.dataset.label;
-                  return head + ' @ $' + Number(v).toLocaleString('en-US',{maximumFractionDigits:0});
-                }
-              }
-            }
+      // Liquidations 30d stacked bar chart
+      const liqCtx = document.getElementById('srLiqChart');
+      if (liqCtx && Array.isArray(rad.liqSeries) && rad.liqSeries.length && typeof Chart !== 'undefined') {
+        if (_srLiqChart) _srLiqChart.destroy();
+        const labels = rad.liqSeries.map(p => {
+          if (typeof p.date === 'string') return p.date.slice(5, 10);
+          try { return new Date(p.date).toISOString().slice(5, 10); } catch(e) { return ''; }
+        });
+        _srLiqChart = new Chart(liqCtx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              { label: 'Long Liq', data: rad.liqSeries.map(p => (p.long || 0) / 1e6), backgroundColor: 'rgba(239,68,68,0.8)', borderRadius: 2, stack: 's' },
+              { label: 'Short Liq', data: rad.liqSeries.map(p => (p.short || 0) / 1e6), backgroundColor: 'rgba(34,197,94,0.8)', borderRadius: 2, stack: 's' }
+            ]
           },
-          scales: {
-            x: {
-              display: true,
-              grid: { display: false },
-              ticks: { color: '#9a9aa6', font: { size: 8 }, maxTicksLimit: 8 }
-            },
-            y: {
-              display: true,
-              position: 'left',
-              grid: { color: 'rgba(255,255,255,0.04)' },
-              ticks: {
-                color: '#8b5cf6', font: { size: 8 },
-                callback: v => '$' + (v/1000).toFixed(0) + 'k'
-              }
-            },
-            y1: {
-              display: true,
-              position: 'right',
-              grid: { drawOnChartArea: false },
-              ticks: {
-                color: '#eab308', font: { size: 8 },
-                callback: v => '$' + (v/1e9).toFixed(0) + 'B'
-              }
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': $' + ctx.parsed.y.toFixed(1) + 'M'; } } } },
+            scales: {
+              x: { stacked: true, grid: { display: false }, ticks: { color: '#9a9aa6', maxTicksLimit: 8, font: { size: 8 } } },
+              y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9a9aa6', font: { size: 8 }, callback: v => '$' + v + 'M' } }
             }
           }
-        }
-      });
+        });
+      }
+
+      // Net Positioning 30d line chart
+      const netCtx = document.getElementById('srNetChart');
+      if (netCtx && Array.isArray(rad.netPositioningSeries) && rad.netPositioningSeries.length && typeof Chart !== 'undefined') {
+        if (_srNetChart) _srNetChart.destroy();
+        const labels = rad.netPositioningSeries.map(p => {
+          if (typeof p.date === 'string') return p.date.slice(5, 10);
+          try { return new Date(p.date).toISOString().slice(5, 10); } catch(e) { return ''; }
+        });
+        _srNetChart = new Chart(netCtx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: rad.netPositioningSeries.map(p => p.delta),
+              borderColor: '#8b5cf6',
+              backgroundColor: 'rgba(139,92,246,0.12)',
+              borderWidth: 1.5,
+              fill: true,
+              pointRadius: 0,
+              tension: 0.3
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return ctx.parsed.y.toFixed(1) + '% vs 30d ago'; } } } },
+            scales: {
+              x: { grid: { display: false }, ticks: { color: '#9a9aa6', maxTicksLimit: 8, font: { size: 8 } } },
+              y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9a9aa6', font: { size: 8 }, callback: v => (v >= 0 ? '+' : '') + v.toFixed(0) + '%' } }
+            }
+          }
+        });
+      }
     }
 
-        function renderLevOiChart(data) {
-      const ctx = document.getElementById('levOiChart');
-      if (!ctx) return;
-      if (_levOiChart) _levOiChart.destroy();
-      
-      _levOiChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: data.map(d => d.date),
-          datasets: [{
-            data: data.map(d => d.value / 1e9),
-            backgroundColor: data.map(d => d.value > 30e9 ? 'rgba(239,68,68,0.7)' : 'rgba(0,217,126,0.7)'),
-            borderRadius: 2
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { display: true, grid: { display: false }, ticks: { color: '#9a9aa6', maxTicksLimit: 6, font: { size: 8 } } },
-            y: { display: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9a9aa6', font: { size: 8 }, callback: v => '$' + v.toFixed(0) + 'B' } }
-          }
-        }
-      });
-    }
+
     
     // ========== SECTION 07: MINER & MACRO ==========
     let _minerReserveChart = null;
@@ -11540,6 +10396,135 @@
       }
     }, 28000);
 
-  </script>
+  
+
+    // ============================================================
+    // LIVE BTC TICKER (Binance WebSocket @ticker stream)
+    // Stream: wss://stream.binance.com:9443/ws/btcusdt@ticker
+    // Push rate: ~1-2 seconds, includes 24h rolling stats (high/low/vol/change)
+    // ============================================================
+    (function initLiveTicker() {
+      const $price = document.getElementById('ltPrice');
+      const $change = document.getElementById('ltChange');
+      const $high = document.getElementById('ltHigh');
+      const $low = document.getElementById('ltLow');
+      const $vol = document.getElementById('ltVol');
+      const $dot = document.getElementById('ltDot');
+      if (!$price) { console.warn('[LiveTicker] elements not found'); return; }
+
+      let ws = null;
+      let lastPrice = null;
+      let lastMessageAt = 0;
+      let reconnectTimer = null;
+      let staleCheckTimer = null;
+
+      function fmtPrice(n) {
+        if (!isFinite(n)) return '--';
+        return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+      function fmtVol(n) {
+        if (!isFinite(n)) return '--';
+        if (n >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
+        if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+        if (n >= 1e3) return '$' + (n / 1e3).toFixed(1) + 'K';
+        return '$' + n.toFixed(0);
+      }
+      function fmtPct(n) {
+        if (!isFinite(n)) return '--';
+        const sign = n >= 0 ? '+' : '';
+        return sign + n.toFixed(2) + '%';
+      }
+
+      function handleTick(data) {
+        // Binance 24hr ticker payload fields:
+        // c = current close, h = 24h high, l = 24h low, q = 24h quote volume, P = 24h price change percent
+        const price = parseFloat(data.c);
+        const high = parseFloat(data.h);
+        const low = parseFloat(data.l);
+        const qVol = parseFloat(data.q);
+        const pct = parseFloat(data.P);
+        if (!isFinite(price)) return;
+
+        lastMessageAt = Date.now();
+
+        // Flash animation
+        $price.textContent = fmtPrice(price);
+        if (lastPrice !== null && price !== lastPrice) {
+          const cls = price > lastPrice ? 'tick-up' : 'tick-down';
+          $price.classList.remove('tick-up', 'tick-down');
+          // force reflow so transition retriggers
+          void $price.offsetWidth;
+          $price.classList.add(cls);
+          setTimeout(() => $price.classList.remove(cls), 700);
+        }
+        lastPrice = price;
+
+        $change.textContent = fmtPct(pct);
+        $change.classList.remove('up', 'down', 'neutral');
+        $change.classList.add(pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral');
+
+        if ($high) $high.textContent = fmtPrice(high);
+        if ($low) $low.textContent = fmtPrice(low);
+        if ($vol) $vol.textContent = fmtVol(qVol);
+
+        setStatus('live');
+      }
+
+      function setStatus(s) {
+        if (!$dot) return;
+        $dot.classList.remove('live', 'stale', 'dead');
+        if (s) $dot.classList.add(s);
+      }
+
+      function connect() {
+        try {
+          if (ws && ws.readyState !== 3) { try { ws.close(); } catch (e) {} }
+          ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@ticker');
+          ws.onopen = function () {
+            console.log('[LiveTicker] connected');
+            setStatus('live');
+          };
+          ws.onmessage = function (ev) {
+            try {
+              const data = JSON.parse(ev.data);
+              handleTick(data);
+            } catch (e) { /* ignore parse errors */ }
+          };
+          ws.onclose = function () {
+            console.log('[LiveTicker] closed, reconnecting in 3s');
+            setStatus('dead');
+            clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(connect, 3000);
+          };
+          ws.onerror = function () {
+            setStatus('dead');
+          };
+        } catch (e) {
+          console.warn('[LiveTicker] connect failed:', e);
+          setStatus('dead');
+          clearTimeout(reconnectTimer);
+          reconnectTimer = setTimeout(connect, 5000);
+        }
+      }
+
+      // Stale check: if no message in 10s, mark as stale
+      staleCheckTimer = setInterval(function () {
+        if (lastMessageAt === 0) return;
+        const age = Date.now() - lastMessageAt;
+        if (age > 10000 && age < 30000) setStatus('stale');
+        else if (age >= 30000) setStatus('dead');
+      }, 2000);
+
+      // Kick off connection
+      connect();
+
+      // Re-check when tab becomes visible (mobile browsers suspend WS)
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && ws && ws.readyState !== 1) {
+          connect();
+        }
+      });
+    })();
+</script>
 </body>
 </html>
