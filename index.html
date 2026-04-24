@@ -777,6 +777,15 @@
 
       /* Confluence em 500 ainda é 3 cols; forçar 2 em 600px */
       .confluence-breakdown { grid-template-columns: repeat(2,1fr) !important; gap: 8px !important; }
+
+      /* Batch 14 · Grids com proporções não-iguais (1.3fr 1fr etc) → 1 col */
+      [style*="grid-template-columns:1.3fr 1fr"],
+      [style*="grid-template-columns:1fr 1.3fr"],
+      [style*="grid-template-columns:1fr 1.4fr 1fr"],
+      [style*="grid-template-columns:1.4fr 1fr"] { grid-template-columns: 1fr !important; }
+
+      /* Force canvas containers a respeitar o pai (Chart.js pode forçar minWidth) */
+      canvas { max-width: 100% !important; }
     }
 
     /* ========== Breakpoint 480px (phones em portrait) ========== */
