@@ -1521,7 +1521,7 @@
           </div>
           <div id="fsFactorsList" style="display:flex;flex-direction:column;gap:6px;"></div>
           <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);font-size:9px;color:var(--text-muted);line-height:1.4;">
-            Entra LONG/SHORT com score &ge; 5/7 <b>E</b> RSI 4h TURN (cruzou 40/60). Target &plusmn;5% / Stop &#8723;3% / Max 48h / Cooldown 6h.
+            Entra LONG/SHORT com score &ge; threshold adaptativo (5/7 dos validos) <b>E</b> RSI 4h TURN (cruzou 45/55). Backtest 365d. Target &plusmn;5% / Stop &#8723;3% / Max 48h / Cooldown 6h.
           </div>
         </div>
         <!-- Backtest -->
@@ -5078,9 +5078,12 @@
       // Flow Scalper (Estagio G): intraday entry system 1h.
       // renderLeverageUI nao e async, usamos Promise.all + .then() pra fazer fetches paralelos.
       try {
+        // UI loading placeholder (paginacao demora ~4-6s)
+        const fsStatusEl = document.getElementById('fsStatus');
+        if (fsStatusEl) { fsStatusEl.textContent = 'Carregando backtest 1 ano...'; fsStatusEl.style.color = 'var(--btc-orange)'; }
         Promise.all([
-          fetchBinanceKlines('1h', 500),
-          fetchBinanceKlines('4h', 500),
+          fetchBinanceKlinesHistory('1h', 365),
+          fetchBinanceKlinesHistory('4h', 365),
           fetchBGeometrics('/v1/taker-vol-1h', 'FS: Taker Vol').catch(() => ({ success: false }))
         ]).then(([k1h, k4h, takerRes]) => {
           try {
@@ -5175,6 +5178,53 @@
           closed: Number(k[6]) <= now
         };
       });
+    }
+
+    // Fetch Binance klines historico com paginacao (endTime loop). daysBack define janela.
+    // Usado pra backtest: 1h * 365d = 8760 bars = 9 batches; 4h * 365d = 2190 bars = 3 batches.
+    async function fetchBinanceKlinesHistory(interval, daysBack) {
+      const intervalMs = { '1h': 3600000, '4h': 14400000, '12h': 43200000, '1d': 86400000 };
+      const ms = intervalMs[interval];
+      if (!ms) throw new Error('fetchBinanceKlinesHistory: interval nao suportado: ' + interval);
+      const targetStart = Date.now() - daysBack * 86400000;
+      const batchSize = 1000;
+      let endTime = Date.now();
+      const all = [];
+      let safety = 20; // cap hard em 20 batches (max ~20k bars) pra evitar loop
+      while (safety-- > 0) {
+        const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=' + interval
+                  + '&limit=' + batchSize + '&endTime=' + endTime;
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('Binance history ' + interval + ' HTTP ' + r.status);
+        const data = await r.json();
+        if (!Array.isArray(data) || data.length === 0) break;
+        const batch = data.map(function(k){
+          return { openTime: Number(k[0]), open: parseFloat(k[1]), high: parseFloat(k[2]),
+                   low: parseFloat(k[3]), close: parseFloat(k[4]), volume: parseFloat(k[5]),
+                   closeTime: Number(k[6]) };
+        });
+        all.unshift.apply(all, batch);
+        const firstOpen = batch[0].openTime;
+        if (firstOpen <= targetStart) break;
+        if (data.length < batchSize) break;
+        endTime = firstOpen - 1;
+        await new Promise(function(res){ setTimeout(res, 120); });
+      }
+      // Filter para janela alvo + dedupe por openTime
+      const now = Date.now();
+      const seen = {};
+      const out = [];
+      for (let i = 0; i < all.length; i++) {
+        const k = all[i];
+        if (k.openTime < targetStart) continue;
+        if (seen[k.openTime]) continue;
+        seen[k.openTime] = 1;
+        k.closed = k.closeTime <= now;
+        out.push(k);
+      }
+      out.sort(function(a,b){ return a.openTime - b.openTime; });
+      console.log('[FlowScalper] history ' + interval + ' fetched ' + out.length + ' klines (target ' + daysBack + 'd)');
+      return out;
     }
 
     // Simula gestao de trade: target +/-5%, stop +/-3%, timeout 48 velas
@@ -5276,21 +5326,21 @@
             value: f!=null ? (f*100).toFixed(4)+'%' : '--',
             desc: pass ? 'shorts pressionados' : 'funding normal/alto' });
         }
-        // 6. NET LONGS subindo 12h (novos longs entrando)
+        // 6. NET LONGS subindo 12h (novos longs entrando) - null se sem dado OI
         {
           const s = netLongsSlope12;
-          const pass = s != null && s > 0.5;
+          const pass = s == null ? null : (s > 0.5);
           out.push({ id:'netL', name:'Net Longs subindo 12h', pass:pass,
-            value: s!=null ? fsFmtDelta(s, 1)+'%' : '--',
-            desc: pass ? 'longs abrindo posicao' : 'longs fracos/saindo' });
+            value: s!=null ? fsFmtDelta(s, 1)+'%' : 'n/d',
+            desc: pass === null ? 'sem dado OI no periodo' : (pass ? 'longs abrindo posicao' : 'longs fracos/saindo') });
         }
-        // 7. CVD slope positivo (agressor comprador recente)
+        // 7. CVD slope positivo - null se sem taker data
         {
           const s = cvdSlope6;
-          const pass = s != null && s > 0.3;
+          const pass = s == null ? null : (s > 0.3);
           out.push({ id:'cvd', name:'CVD subindo 6h', pass:pass,
-            value: s!=null ? fsFmtDelta(s, 1)+'%' : '--',
-            desc: pass ? 'compradores agressivos' : 'sem buying pressure' });
+            value: s!=null ? fsFmtDelta(s, 1)+'%' : 'n/d',
+            desc: pass === null ? 'sem dado CVD no periodo' : (pass ? 'compradores agressivos' : 'sem buying pressure') });
         }
         return out;
       }
@@ -5340,31 +5390,39 @@
             value: f!=null ? (f*100).toFixed(4)+'%' : '--',
             desc: pass ? 'longs pagando caro' : 'funding normal/baixo' });
         }
-        // 6. NET SHORTS subindo 12h (novos shorts entrando)
+        // 6. NET SHORTS subindo 12h (novos shorts entrando) - null se sem dado OI
         {
           const s = netShortsSlope12;
-          const pass = s != null && s > 0.5;
+          const pass = s == null ? null : (s > 0.5);
           out.push({ id:'netS', name:'Net Shorts subindo 12h', pass:pass,
-            value: s!=null ? fsFmtDelta(s, 1)+'%' : '--',
-            desc: pass ? 'shorts abrindo posicao' : 'shorts fracos/saindo' });
+            value: s!=null ? fsFmtDelta(s, 1)+'%' : 'n/d',
+            desc: pass === null ? 'sem dado OI no periodo' : (pass ? 'shorts abrindo posicao' : 'shorts fracos/saindo') });
         }
-        // 7. CVD slope negativo (agressor vendedor recente)
+        // 7. CVD slope negativo - null se sem taker data
         {
           const s = cvdSlope6;
-          const pass = s != null && s < -0.3;
+          const pass = s == null ? null : (s < -0.3);
           out.push({ id:'cvd', name:'CVD caindo 6h', pass:pass,
-            value: s!=null ? fsFmtDelta(s, 1)+'%' : '--',
-            desc: pass ? 'vendedores agressivos' : 'sem selling pressure' });
+            value: s!=null ? fsFmtDelta(s, 1)+'%' : 'n/d',
+            desc: pass === null ? 'sem dado CVD no periodo' : (pass ? 'vendedores agressivos' : 'sem selling pressure') });
         }
         return out;
       }
 
       const lf = longFactors();
       const sf = shortFactors();
-      const lScore = lf.filter(function(f){ return f.pass; }).length;
-      const sScore = sf.filter(function(f){ return f.pass; }).length;
-      if (lScore >= sScore) return { score: lScore, side:'LONG', factors: lf, opposite: sScore };
-      return { score: sScore, side:'SHORT', factors: sf, opposite: lScore };
+      // pass === true conta positivo; pass === null (sem dado) nao conta NEM como valido
+      const lValid = lf.filter(function(f){ return f.pass !== null; }).length;
+      const sValid = sf.filter(function(f){ return f.pass !== null; }).length;
+      const lScore = lf.filter(function(f){ return f.pass === true; }).length;
+      const sScore = sf.filter(function(f){ return f.pass === true; }).length;
+      // threshold dinamico: 5/7 do total valido, min 3, max 5
+      const lRequired = Math.min(5, Math.max(3, Math.ceil(lValid * 5/7)));
+      const sRequired = Math.min(5, Math.max(3, Math.ceil(sValid * 5/7)));
+      if (lScore >= sScore) return { score: lScore, side:'LONG', factors: lf, opposite: sScore,
+        valid: lValid, required: lRequired };
+      return { score: sScore, side:'SHORT', factors: sf, opposite: lScore,
+        valid: sValid, required: sRequired };
     }
 
     // Engine principal: BackQuant decompose + RSI/MA/MACD
@@ -5396,7 +5454,7 @@
       // ========== RSI 4h TURN DETECTION (Estagio I) ==========
       // Detecta o RSI 4h cruzando 40 de baixo pra cima (TURN UP) ou 60 de cima pra baixo (TURN DOWN).
       // Essas viradas sao as "entradas classicas" do trading 4h.
-      const TURN_LOW = 40, TURN_HIGH = 60;
+      const TURN_LOW = 45, TURN_HIGH = 55;  // Estagio J: relaxado pra disparar em bull market
       const rsi4hTurnUpRaw = new Array(klines4h.length).fill(false);
       const rsi4hTurnDownRaw = new Array(klines4h.length).fill(false);
       for (let j = 1; j < rsi4hRaw.length; j++) {
@@ -5523,15 +5581,14 @@
         };
         const sc = fsComputeScore(i, ctx);
 
-        // Re-arm tracking: compute both sides independentemente pra decidir disarm
-        // (fsComputeScore ja retorna lado dominante; pra re-arm precisamos do outro lado tb)
-        // Aproximacao: se sc.opposite < 4 tambem libera o lado oposto
-        if (!armedL && sc.side === 'LONG' && sc.score < 4) armedL = true;
-        if (!armedL && sc.side === 'SHORT' && sc.opposite < 4) armedL = true;
-        if (!armedS && sc.side === 'SHORT' && sc.score < 4) armedS = true;
-        if (!armedS && sc.side === 'LONG' && sc.opposite < 4) armedS = true;
+        // Re-arm tracking dinamico: usar threshold adaptativo (required - 1)
+        const rearmThr = Math.max(2, (sc.required || 4) - 1);
+        if (!armedL && sc.side === 'LONG' && sc.score < rearmThr) armedL = true;
+        if (!armedL && sc.side === 'SHORT' && sc.opposite < rearmThr) armedL = true;
+        if (!armedS && sc.side === 'SHORT' && sc.score < rearmThr) armedS = true;
+        if (!armedS && sc.side === 'LONG' && sc.opposite < rearmThr) armedS = true;
 
-        if (sc.score < 5) continue;
+        if (sc.score < (sc.required || 5)) continue;
         // HARD GATE: RSI 4h TURN factor precisa estar ativo pra disparar entrada
         const turnFactor = sc.factors.find(function(f){ return f.id === 'turn'; });
         if (!turnFactor || !turnFactor.pass) continue;
@@ -5550,6 +5607,8 @@
           date: new Date(klines1h[i].openTime).toISOString(),
           side: sc.side,
           score: sc.score,
+          required: sc.required,
+          valid: sc.valid,
           entry: klines1h[i].close,
           exit: sim.exit,
           pnl: sim.pnl,
@@ -5566,7 +5625,7 @@
       const winRate = total > 0 ? hits / total : 0;
       const netPnl = signals.reduce(function(s, x){ return s + x.pnl; }, 0);
       const byScore = {};
-      [5,6,7].forEach(function(k) {
+      [3,4,5,6,7].forEach(function(k) {
         const arr = signals.filter(function(x){ return x.score === k; });
         const h = arr.filter(function(x){ return x.result === 'HIT_TARGET'; }).length;
         byScore[k] = {
@@ -5609,6 +5668,8 @@
           y: s.entry,
           side: s.side,
           score: s.score,
+          valid: s.valid,
+          required: s.required,
           result: s.result,
           pnl: s.pnl,
           date: s.date
@@ -5624,6 +5685,8 @@
           side: currentScore.side,
           factors: currentScore.factors,
           opposite: currentScore.opposite,
+          required: currentScore.required,
+          valid: currentScore.valid,
           price: klines1h[lastIdx].close,
           rsi1h: rsi1h[lastIdx],
           rsi4h: rsi4hAligned[lastIdx],
@@ -5730,18 +5793,22 @@
       const scoreEl = document.getElementById('fsScore');
       const descEl = document.getElementById('fsScoreDesc');
       if (scoreEl) {
-        const active = cur.score >= 5;
+        const req = cur.required || 5;
+        const val = cur.valid || 7;
+        const active = cur.score >= req;
         const sideTxt = cur.side === 'LONG' ? '\u25B2 LONG' : '\u25BC SHORT';
-        scoreEl.textContent = cur.score + '/7 ' + (active ? sideTxt : 'NEUTRAL');
+        scoreEl.textContent = cur.score + '/' + val + ' ' + (active ? sideTxt : 'NEUTRAL');
         if (active) scoreEl.style.color = cur.side === 'LONG' ? '#22c55e' : '#ef4444';
-        else if (cur.score >= 3) scoreEl.style.color = '#eab308';
+        else if (cur.score >= Math.max(2, req - 2)) scoreEl.style.color = '#eab308';
         else scoreEl.style.color = '#9a9aa6';
       }
       if (descEl) {
-        if (cur.score >= 5) {
-          descEl.textContent = 'Sinal ATIVO. Score dominante: ' + cur.side + ' (' + cur.score + '/7). Oposto: ' + cur.opposite + '/7.';
-        } else if (cur.score >= 3) {
-          descEl.textContent = 'Convergencia parcial (' + cur.score + '/7 ' + cur.side + '). Precisa 5+ pra disparar.';
+        const req = cur.required || 5;
+        const val = cur.valid || 7;
+        if (cur.score >= req) {
+          descEl.textContent = 'Sinal ATIVO. Score dominante: ' + cur.side + ' (' + cur.score + '/' + val + '). Oposto: ' + cur.opposite + '/' + val + '.';
+        } else if (cur.score >= Math.max(2, req - 2)) {
+          descEl.textContent = 'Convergencia parcial (' + cur.score + '/' + val + ' ' + cur.side + '). Precisa ' + req + '+ pra disparar.';
         } else {
           descEl.textContent = 'Mercado lateral. Sem confluencia suficiente.';
         }
@@ -5791,26 +5858,29 @@
       if (factorsSideEl) factorsSideEl.textContent = cur.side + ' SIDE';
       const factorsScoreEl = document.getElementById('fsFactorsScore');
       if (factorsScoreEl) {
-        factorsScoreEl.textContent = cur.score + ' / 7';
-        factorsScoreEl.style.color = cur.score >= 5 ? (cur.side === 'LONG' ? '#22c55e' : '#ef4444') : cur.score >= 3 ? '#eab308' : '#9a9aa6';
+        const req = cur.required || 5, val = cur.valid || 7;
+        factorsScoreEl.textContent = cur.score + ' / ' + val;
+        factorsScoreEl.style.color = cur.score >= req ? (cur.side === 'LONG' ? '#22c55e' : '#ef4444') : cur.score >= Math.max(2, req - 2) ? '#eab308' : '#9a9aa6';
       }
       const factorsListEl = document.getElementById('fsFactorsList');
       if (factorsListEl) {
         factorsListEl.innerHTML = '';
         cur.factors.forEach(function(f) {
+          const isNull = f.pass === null;
+          const isPass = f.pass === true;
           const row = document.createElement('div');
-          row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,' + (f.pass ? '0.04' : '0.015') + ');border-radius:4px;font-size:10.5px;';
+          row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,' + (isPass ? '0.04' : '0.015') + ');border-radius:4px;font-size:10.5px;' + (isNull ? 'opacity:0.55;' : '');
           const left = document.createElement('span');
           left.style.cssText = 'display:flex;gap:8px;align-items:center;';
           const check = document.createElement('span');
-          check.textContent = f.pass ? '\u2713' : '\u2717';
-          check.style.cssText = 'color:' + (f.pass ? '#22c55e' : '#666') + ';font-weight:700;width:12px;';
+          check.textContent = isNull ? '\u2014' : (isPass ? '\u2713' : '\u2717');
+          check.style.cssText = 'color:' + (isNull ? '#666' : (isPass ? '#22c55e' : '#666')) + ';font-weight:700;width:12px;';
           const name = document.createElement('span');
           name.textContent = f.name;
-          name.style.cssText = 'color:' + (f.pass ? '#e5e5ea' : '#9a9aa6') + ';';
+          name.style.cssText = 'color:' + (isPass ? '#e5e5ea' : '#9a9aa6') + ';';
           left.appendChild(check); left.appendChild(name);
           const right = document.createElement('span');
-          right.style.cssText = 'font-family:\'JetBrains Mono\',monospace;font-size:10px;color:' + (f.pass ? '#e5e5ea' : '#9a9aa6') + ';';
+          right.style.cssText = 'font-family:\'JetBrains Mono\',monospace;font-size:10px;color:' + (isPass ? '#e5e5ea' : '#9a9aa6') + ';';
           right.textContent = f.value;
           row.appendChild(left); row.appendChild(right);
           row.title = f.desc;
@@ -5861,7 +5931,7 @@
             tr.innerHTML =
               '<td style="padding:5px 4px;color:var(--text-muted);">' + dateStr + '</td>' +
               '<td style="padding:5px 4px;text-align:center;color:' + sideColor + ';font-weight:700;">' + sideIcon + ' ' + s.side + '</td>' +
-              '<td style="padding:5px 4px;text-align:center;color:' + (s.score >= 6 ? '#22c55e' : '#eab308') + ';font-weight:600;">' + s.score + '/7</td>' +
+              '<td style="padding:5px 4px;text-align:center;color:' + (s.score >= 6 ? '#22c55e' : '#eab308') + ';font-weight:600;">' + s.score + '/' + (s.valid || 7) + '</td>' +
               '<td style="padding:5px 4px;text-align:right;">' + fmtDollar(s.entry) + '</td>' +
               '<td style="padding:5px 4px;text-align:right;">' + fmtDollar(s.exit) + '</td>' +
               '<td style="padding:5px 4px;text-align:right;color:' + pnlColor + ';font-weight:700;">' + (s.pnl > 0 ? '+' : '') + s.pnl.toFixed(2) + '%</td>' +
@@ -5915,7 +5985,7 @@
                     if (ds === 'LONG entries' || ds === 'SHORT entries') {
                       const m = item.raw && item.raw.meta;
                       if (!m) return ds;
-                      return m.side + ' ' + m.score + '/7 \u00b7 ' + m.result + ' \u00b7 PnL ' + (m.pnl>0?'+':'') + m.pnl.toFixed(1) + '%';
+                      return m.side + ' ' + m.score + '/' + (m.valid || 7) + ' \u00b7 ' + m.result + ' \u00b7 PnL ' + (m.pnl>0?'+':'') + m.pnl.toFixed(1) + '%';
                     }
                     return ds + ': $' + Number(item.parsed.y).toLocaleString('en-US', {maximumFractionDigits:0});
                   }
