@@ -457,6 +457,9 @@
     /* ===== FLOW SECTION ===== */
     .flow-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
     .flow-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .flow-tf-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); font-size: 9px; font-family: 'JetBrains Mono', monospace; padding: 3px 8px; border-radius: 4px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px; }
+    .flow-tf-btn:hover { color: var(--text-primary); background: rgba(168,85,247,0.08); border-color: var(--accent-purple, #a855f7); }
+    .flow-tf-btn.active { background: rgba(168,85,247,0.18); color: #c4a7ff; border-color: #a855f7; font-weight: 600; }
     .flow-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
     .flow-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .flow-card-title { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -630,6 +633,19 @@
     .whale-row:last-child { border-bottom: none; }
     .whale-label { color: var(--text-secondary); }
     .whale-value { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+    /* === Whale Matrix (Phase B) === */
+    .whale-matrix-header { display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr; gap: 6px; padding: 4px 0 8px; border-bottom: 1px solid var(--border); font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; }
+    .whale-matrix-header > :first-child { text-align: left; }
+    .whale-matrix-row { display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr; gap: 6px; padding: 10px 0; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .whale-matrix-row:last-of-type { border-bottom: none; }
+    .whale-cohort-label { display: flex; flex-direction: column; gap: 2px; padding-right: 6px; }
+    .whale-cohort-name { font-size: 10.5px; font-weight: 600; color: var(--text-primary); }
+    .whale-cohort-total { font-size: 9px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    .whale-cell { padding: 5px 4px; border-radius: 4px; display: flex; flex-direction: column; gap: 3px; align-items: center; background: rgba(255,255,255,0.02); transition: background 0.2s, border 0.2s; border: 1px solid transparent; min-height: 46px; justify-content: center; }
+    .whale-cell-val { font-size: 10.5px; font-weight: 700; text-align: center; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .whale-spark { width: 100%; height: 14px; display: block; opacity: 0.7; }
+    .whale-matrix-semaphore { margin-top: 12px; padding: 10px 12px; border-radius: 6px; font-size: 11px; text-align: center; font-weight: 600; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); }
+    .whale-matrix-semaphore-sub { font-size: 9px; color: var(--text-muted); margin-top: 4px; font-weight: 400; letter-spacing: 0.02em; }
     .nbp-card { background: linear-gradient(135deg, var(--bg-card) 0%, rgba(59,130,246,0.05) 100%); border: 1px solid var(--accent-blue); border-radius: 10px; padding: 20px; text-align: center; }
     .nbp-title { font-size: 11px; font-weight: 700; color: var(--accent-blue); letter-spacing: 0.5px; margin-bottom: 16px; }
     .nbp-score { font-family: 'Space Grotesk', sans-serif; font-size: 52px; font-weight: 700; }
@@ -1140,36 +1156,43 @@
     <!-- Whale Breakdown + Net Buying Pressure -->
     <div class="whale-grid">
       <div class="whale-card">
-        <div class="whale-card-title">WHALE ACCUMULATION BREAKDOWN (30d)</div>
-        <div class="whale-row">
-          <span class="whale-label">Whales >10K BTC</span>
-          <span class="whale-value" id="whale10k">--</span>
+        <div class="whale-card-title">WHALE ACCUMULATION MATRIX · ΔBTC por janela</div>
+        <div class="whale-matrix-header">
+          <span>Cohort</span>
+          <span>7d</span>
+          <span>30d</span>
+          <span>90d</span>
         </div>
-        <div class="whale-row">
-          <span class="whale-label">Δ 7d</span>
-          <span class="whale-value" id="whale10k7d">--</span>
+        <div class="whale-matrix-row" data-cohort="10K">
+          <div class="whale-cohort-label">
+            <span class="whale-cohort-name">Whales &gt;10K BTC</span>
+            <span class="whale-cohort-total" id="whale10kTotal">-- BTC</span>
+          </div>
+          <div class="whale-cell" data-cohort="10K" data-tf="7"><div class="whale-cell-val" id="whmCell_10K_7">--</div><svg class="whale-spark" id="whmSpark_10K_7" viewBox="0 0 60 14" preserveAspectRatio="none"></svg></div>
+          <div class="whale-cell" data-cohort="10K" data-tf="30"><div class="whale-cell-val" id="whmCell_10K_30">--</div><svg class="whale-spark" id="whmSpark_10K_30" viewBox="0 0 60 14" preserveAspectRatio="none"></svg></div>
+          <div class="whale-cell" data-cohort="10K" data-tf="90"><div class="whale-cell-val" id="whmCell_10K_90">--</div><svg class="whale-spark" id="whmSpark_10K_90" viewBox="0 0 60 14" preserveAspectRatio="none"></svg></div>
         </div>
-        <div class="whale-row">
-          <span class="whale-label">Δ 30d</span>
-          <span class="whale-value" id="whale10k30d">--</span>
+        <div class="whale-matrix-row" data-cohort="1K10K">
+          <div class="whale-cohort-label">
+            <span class="whale-cohort-name">Whales 1K–10K BTC</span>
+            <span class="whale-cohort-total" id="whale1k10kTotal">-- BTC</span>
+          </div>
+          <div class="whale-cell" data-cohort="1K10K" data-tf="7"><div class="whale-cell-val" id="whmCell_1K10K_7">--</div><svg class="whale-spark" id="whmSpark_1K10K_7" viewBox="0 0 60 14" preserveAspectRatio="none"></svg></div>
+          <div class="whale-cell" data-cohort="1K10K" data-tf="30"><div class="whale-cell-val" id="whmCell_1K10K_30">--</div><svg class="whale-spark" id="whmSpark_1K10K_30" viewBox="0 0 60 14" preserveAspectRatio="none"></svg></div>
+          <div class="whale-cell" data-cohort="1K10K" data-tf="90"><div class="whale-cell-val" id="whmCell_1K10K_90">--</div><svg class="whale-spark" id="whmSpark_1K10K_90" viewBox="0 0 60 14" preserveAspectRatio="none"></svg></div>
         </div>
-        <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px;"></div>
-        <div class="whale-row">
-          <span class="whale-label">Large Holders 1K–10K BTC</span>
-          <span class="whale-value" id="whale1k10k">--</span>
+        <div class="whale-matrix-row" data-cohort="100-1K">
+          <div class="whale-cohort-label">
+            <span class="whale-cohort-name">Sharks 100–1K BTC</span>
+            <span class="whale-cohort-total" id="whale1001kTotal">-- BTC</span>
+          </div>
+          <div class="whale-cell" data-cohort="100-1K" data-tf="7"><div class="whale-cell-val" id="whmCell_1001K_7">--</div><svg class="whale-spark" id="whmSpark_1001K_7" viewBox="0 0 60 14" preserveAspectRatio="none"></svg></div>
+          <div class="whale-cell" data-cohort="100-1K" data-tf="30"><div class="whale-cell-val" id="whmCell_1001K_30">--</div><svg class="whale-spark" id="whmSpark_1001K_30" viewBox="0 0 60 14" preserveAspectRatio="none"></svg></div>
+          <div class="whale-cell" data-cohort="100-1K" data-tf="90"><div class="whale-cell-val" id="whmCell_1001K_90">--</div><svg class="whale-spark" id="whmSpark_1001K_90" viewBox="0 0 60 14" preserveAspectRatio="none"></svg></div>
         </div>
-        <div class="whale-row">
-          <span class="whale-label">Δ 7d</span>
-          <span class="whale-value" id="whale1k10k7d">--</span>
-        </div>
-        <div class="whale-row">
-          <span class="whale-label">Δ 30d</span>
-          <span class="whale-value" id="whale1k10k30d">--</span>
-        </div>
-        <div style="border-top:1px solid var(--border);margin:10px 0;padding-top:10px;"></div>
-        <div class="whale-row">
-          <span class="whale-label">vs LTH Net Position</span>
-          <span class="whale-value" id="whaleVsLth">--</span>
+        <div class="whale-matrix-semaphore" id="whmSemaphore">
+          <span id="whmSemaphoreText">Analisando padrão multi-timeframe…</span>
+          <div class="whale-matrix-semaphore-sub" id="whmSemaphoreSub">Célula verde = acumulação forte no percentil histórico; vermelho = distribuição forte; tom sutil = próximo da mediana.</div>
         </div>
       </div>
       <div class="nbp-card">
@@ -1428,11 +1451,26 @@
       </div>
       <div class="flow-card">
         <div class="flow-card-header">
-          <div class="flow-card-title">Exchange Reserve (180d)</div>
+          <div class="flow-card-title">Exchange Reserve <span id="flowReserveWinLabel" style="font-weight:400;color:var(--text-muted);font-size:9px;">(2Y)</span></div>
           <div>
             <div class="flow-card-value" id="flowReserveLatest">--</div>
             <div class="flow-card-sub">Total BTC on exchanges</div>
           </div>
+        </div>
+        <!-- Timeframe toggle -->
+        <div id="flowReserveTfToggle" style="display:flex;gap:4px;margin:6px 0 8px;justify-content:flex-end;flex-wrap:wrap;">
+          <button class="flow-tf-btn" data-win="90">90d</button>
+          <button class="flow-tf-btn" data-win="180">180d</button>
+          <button class="flow-tf-btn" data-win="365">1Y</button>
+          <button class="flow-tf-btn active" data-win="730">2Y</button>
+          <button class="flow-tf-btn" data-win="0">ALL</button>
+        </div>
+        <!-- Context grid: Δ janela · slope · ATH · vs ATH -->
+        <div id="flowReserveContext" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:8px;font-size:9px;line-height:1.4;">
+          <div style="color:var(--text-muted);">Δ Janela: <span id="flowResvWinDelta" style="color:var(--text-primary);font-weight:600;">--</span></div>
+          <div style="color:var(--text-muted);">Slope: <span id="flowResvSlope" style="color:var(--text-primary);font-weight:600;">--</span></div>
+          <div style="color:var(--text-muted);">ATH: <span id="flowResvAth" style="color:var(--text-primary);font-weight:600;">--</span></div>
+          <div style="color:var(--text-muted);">vs ATH: <span id="flowResvVsAth" style="color:var(--text-primary);font-weight:600;">--</span></div>
         </div>
         <div class="chart-container-flow"><canvas id="flowReserveChart"></canvas></div>
       </div>
@@ -4583,7 +4621,116 @@
       });
     }
 
-    async function fetchFlowData() {
+    // ========== EXCHANGE RESERVE v2 — helpers ==========
+    // Regressao linear simples (OLS) sobre [{date, value}]. Retorna slope por dia e por mes.
+    function computeLinearSlope(data) {
+      const n = data.length;
+      if (n < 2) return { slopePerDay: 0, slopePerMonth: 0, intercept: 0, r2: 0, n };
+      const xs = data.map((_, i) => i);
+      const ys = data.map(d => d.value);
+      const sumX = xs.reduce((a,b)=>a+b, 0);
+      const sumY = ys.reduce((a,b)=>a+b, 0);
+      const meanX = sumX / n, meanY = sumY / n;
+      let num = 0, den = 0, ssTot = 0;
+      for (let i = 0; i < n; i++) {
+        num += (xs[i] - meanX) * (ys[i] - meanY);
+        den += (xs[i] - meanX) ** 2;
+        ssTot += (ys[i] - meanY) ** 2;
+      }
+      const slopePerDay = den > 0 ? num / den : 0;
+      const intercept = meanY - slopePerDay * meanX;
+      // R^2
+      let ssRes = 0;
+      for (let i = 0; i < n; i++) {
+        const pred = intercept + slopePerDay * xs[i];
+        ssRes += (ys[i] - pred) ** 2;
+      }
+      const r2 = ssTot > 0 ? 1 - (ssRes / ssTot) : 0;
+      return { slopePerDay, slopePerMonth: slopePerDay * 30, intercept, r2, n };
+    }
+
+    // Renderiza o Exchange Reserve com uma janela especifica.
+    // winDays: 90, 180, 365, 730, ou 0 (ALL).
+    function updateExchangeReserveView(winDays) {
+      const full = window._exchResvFull;
+      if (!full || !full.length) return;
+      window._exchResvWin = winDays;
+
+      const sliced = (winDays === 0 || winDays >= full.length) ? full.slice() : full.slice(-winDays);
+      const latest = sliced[sliced.length - 1].value;
+      const first  = sliced[0].value;
+      const delta  = latest - first;
+
+      // Atualiza label da janela no titulo
+      const winLabel = winDays === 0 ? 'ALL' : winDays <= 180 ? winDays + 'd' : winDays === 365 ? '1Y' : winDays === 730 ? '2Y' : winDays + 'd';
+      const labelEl = document.getElementById('flowReserveWinLabel');
+      if (labelEl) labelEl.textContent = '(' + winLabel + ')';
+
+      // Valor principal (latest)
+      const latestEl = document.getElementById('flowReserveLatest');
+      if (latestEl) latestEl.textContent = formatBTC(latest, false) + ' BTC';
+
+      // Stat bar Δ7d (continua sendo variacao 7d, mas cor agora depende de trend ESTRUTURAL)
+      // Estrutural = slope da serie full (ate 2Y). Se slope 2Y for negativo (queda estrutural),
+      // entao o stat fica verde mesmo que curto prazo tenha subido.
+      const prev7 = full.length > 7 ? full[full.length - 8].value : latest;
+      const delta7 = latest - prev7;
+      const structural = computeLinearSlope(full.slice(-Math.min(730, full.length)));
+      const structuralDown = structural.slopePerMonth < 0;
+      const cycleEl = document.getElementById('flowExReserve');
+      const cycleSub = document.getElementById('flowExReserveSub');
+      if (cycleEl) {
+        cycleEl.textContent = formatBTC(delta7);
+        // Cor: verde se ambos (7d & estrutural) apontam outflow, amarelo se divergem, vermelho se ambos inflow
+        if (delta7 < 0 && structuralDown) {
+          cycleEl.style.color = 'var(--accent-green)';
+          if (cycleSub) cycleSub.textContent = '▼ outflow · trend estrutural tambem cai';
+        } else if (delta7 > 0 && !structuralDown) {
+          cycleEl.style.color = 'var(--accent-red)';
+          if (cycleSub) cycleSub.textContent = '▲ inflow · trend estrutural sobe';
+        } else {
+          cycleEl.style.color = 'var(--accent-yellow)';
+          if (cycleSub) cycleSub.textContent = delta7 < 0
+            ? '▼ outflow 7d mas trend estrutural sobe'
+            : '▲ inflow 7d mas trend estrutural cai';
+        }
+      }
+
+      // Context grid
+      const winSlope = computeLinearSlope(sliced);
+      const slopeMo = winSlope.slopePerMonth;
+      const ath = full.reduce((m, d) => d.value > m.value ? d : m, full[0]);
+      const vsAthPct = ath.value > 0 ? ((latest - ath.value) / ath.value) * 100 : 0;
+
+      const dEl = document.getElementById('flowResvWinDelta');
+      const sEl = document.getElementById('flowResvSlope');
+      const aEl = document.getElementById('flowResvAth');
+      const vEl = document.getElementById('flowResvVsAth');
+
+      if (dEl) {
+        dEl.textContent = (delta >= 0 ? '+' : '') + formatBTC(delta);
+        dEl.style.color = delta < 0 ? 'var(--accent-green)' : delta > 0 ? 'var(--accent-red)' : 'var(--text-primary)';
+      }
+      if (sEl) {
+        const slopeStr = (slopeMo >= 0 ? '+' : '') + formatBTC(slopeMo) + '/mes';
+        sEl.textContent = slopeStr;
+        sEl.style.color = slopeMo < 0 ? 'var(--accent-green)' : slopeMo > 0 ? 'var(--accent-red)' : 'var(--text-primary)';
+      }
+      if (aEl) {
+        const athDate = ath.date ? new Date(ath.date).toLocaleDateString('pt-BR', {month:'short', year:'2-digit'}) : '--';
+        aEl.textContent = formatBTC(ath.value, false) + ' (' + athDate + ')';
+        aEl.style.color = 'var(--text-secondary)';
+      }
+      if (vEl) {
+        vEl.textContent = (vsAthPct >= 0 ? '+' : '') + vsAthPct.toFixed(1) + '%';
+        vEl.style.color = vsAthPct < 0 ? 'var(--accent-green)' : 'var(--text-primary)';
+      }
+
+      // Re-render chart
+      renderFlowLineChart('flowReserveChart', sliced, 'Reserve', '#a855f7', false);
+    }
+
+        async function fetchFlowData() {
       console.log('🔄 Fetching Flow Analysis data...');
       
       // BGeometrics Advanced Plan endpoints (correct names per API docs)
@@ -4616,18 +4763,15 @@
         }
       }
 
-      // Exchange Reserve
+      // Exchange Reserve — v2: guarda serie completa + toggle de timeframe + badge com regressao
       if (resR.status === 'fulfilled' && resR.value?.success) {
-        const data = normalizeBGeometricsData(resR.value.data, 'exchangeReserveBtc').slice(-180);
-        if (data.length) {
-          const latest = data[data.length-1].value;
-          const prev7  = data.length > 7 ? data[data.length-8].value : latest;
-          const delta  = latest - prev7;
-          document.getElementById('flowReserveLatest').textContent = formatBTC(latest, false) + ' BTC';
-          document.getElementById('flowExReserve').textContent = formatBTC(delta);
-          document.getElementById('flowExReserve').style.color = delta < 0 ? 'var(--accent-green)' : 'var(--accent-red)'; // falling reserve = bullish
-          document.getElementById('flowExReserveSub').textContent = delta < 0 ? '▼ coins leaving exchanges' : '▲ coins entering exchanges';
-          renderFlowLineChart('flowReserveChart', data, 'Reserve', '#a855f7', false);
+        const fullData = normalizeBGeometricsData(resR.value.data, 'exchangeReserveBtc');
+        if (fullData.length) {
+          // Guardar serie completa em escopo exposto pra handler do toggle
+          window._exchResvFull = fullData;
+          // Renderizar com default 2Y (ou o que o usuario ja selecionou, se existir)
+          const defaultWin = (typeof window._exchResvWin === 'number') ? window._exchResvWin : 730;
+          updateExchangeReserveView(defaultWin);
         }
       }
 
@@ -8502,10 +8646,20 @@
       });
     });
 
+    // Exchange Reserve timeframe toggle (v2)
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest('#flowReserveTfToggle .flow-tf-btn');
+      if (!btn) return;
+      document.querySelectorAll('#flowReserveTfToggle .flow-tf-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const winDays = parseInt(btn.dataset.win, 10) || 0;
+      try { updateExchangeReserveView(winDays); } catch(err) { console.warn('[ExchangeReserve] update err', err); }
+    });
+
 
     // ========== NEW GLOBAL STATES (v2.0) ==========
     const futuresPressureState = { score: null, funding: null, takerRatio: null, oiChange: null, liqLong: null, liqShort: null, topTraderRatio: null, loaded: false };
-    const whaleState = { whale10k: null, whale10k7d: null, whale10k30d: null, whale1k10k: null, whale1k10k7d: null, whale1k10k30d: null, loaded: false };
+    const whaleState = { whale10k: null, whale10k7d: null, whale10k30d: null, whale1k10k: null, whale1k10k7d: null, whale1k10k30d: null, loaded: false, series: { '10K': null, '1K10K': null, '100-1K': null } };
     const nbpState = { score: null, loaded: false };
     const confluenceState = { score: null, loaded: false };
     const backstageState = { rocData: [], equityCurve: [], loaded: false };
@@ -8830,77 +8984,42 @@
       }
     }
 
-    // ========== WHALE ACCUMULATION ==========
+    // ========== WHALE ACCUMULATION (Phase B: 3 cohorts x 3 timeframes matrix) ==========
     async function fetchWhaleData() {
-      console.log('[Whale] Fetching whale data...');
+      console.log('[Whale] Fetching matrix data (3 cohorts)...');
       try {
-        const [whale10kRes, coins10kRes, whale1kRes, coins1kRes] = await Promise.allSettled([
-          fetchBGeometrics('/v1/balance-addr-10K-BTC', 'Whale: Addr >10K'),
+        const [coins10kRes, coins1kRes, coins100Res] = await Promise.allSettled([
           fetchBGeometrics('/v1/coins-addr-10K-BTC', 'Whale: Coins >10K'),
-          fetchBGeometrics('/v1/balance-addr-10K-1K-BTC', 'Whale: Addr 1K-10K'),
-          fetchBGeometrics('/v1/coins-addr-10K-1K-BTC', 'Whale: Coins 1K-10K')
+          fetchBGeometrics('/v1/coins-addr-10K-1K-BTC', 'Whale: Coins 1K-10K'),
+          fetchBGeometrics('/v1/coins-addr-1K-100-BTC', 'Whale: Coins 100-1K')
         ]);
 
-        // Process >10K BTC whales
-        if (coins10kRes.status === 'fulfilled' && coins10kRes.value.success) {
-          const data = normalizeBGeometricsData(coins10kRes.value.data);
-          if (data.length > 30) {
-            const current = data[data.length - 1].value;
-            const d7 = data.length >= 8 ? data[data.length - 8].value : current;
-            const d30 = data.length >= 31 ? data[data.length - 31].value : current;
-
-            whaleState.whale10k = current;
-            whaleState.whale10k7d = current - d7;
-            whaleState.whale10k30d = current - d30;
-
-            const el10k = document.getElementById('whale10k');
-            if (el10k) el10k.textContent = formatBTC(current, false) + ' BTC';
-            const el7d = document.getElementById('whale10k7d');
-            if (el7d) {
-              el7d.textContent = formatBTC(current - d7);
-              el7d.style.color = (current - d7) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-            }
-            const el30d = document.getElementById('whale10k30d');
-            if (el30d) {
-              el30d.textContent = formatBTC(current - d30);
-              el30d.style.color = (current - d30) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-            }
-          }
-        }
-
-        // Process 1K-10K holders
-        if (coins1kRes.status === 'fulfilled' && coins1kRes.value.success) {
-          const data = normalizeBGeometricsData(coins1kRes.value.data);
-          if (data.length > 30) {
-            const current = data[data.length - 1].value;
-            const d7 = data.length >= 8 ? data[data.length - 8].value : current;
-            const d30 = data.length >= 31 ? data[data.length - 31].value : current;
-
-            whaleState.whale1k10k = current;
-            whaleState.whale1k10k7d = current - d7;
-            whaleState.whale1k10k30d = current - d30;
-
-            const el1k = document.getElementById('whale1k10k');
-            if (el1k) el1k.textContent = formatBTC(current, false) + ' BTC';
-            const el7d = document.getElementById('whale1k10k7d');
-            if (el7d) {
-              el7d.textContent = formatBTC(current - d7);
-              el7d.style.color = (current - d7) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
-            }
-            const el30d = document.getElementById('whale1k10k30d');
-            if (el30d) {
-              el30d.textContent = formatBTC(current - d30);
-              el30d.style.color = (current - d30) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+        const mapRes = { '10K': coins10kRes, '1K10K': coins1kRes, '100-1K': coins100Res };
+        for (const key of Object.keys(mapRes)) {
+          const res = mapRes[key];
+          if (res.status === 'fulfilled' && res.value && res.value.success) {
+            const data = normalizeBGeometricsData(res.value.data);
+            if (data.length > 30) {
+              whaleState.series[key] = data;
+              const current = data[data.length - 1].value;
+              const d7 = data.length >= 8 ? data[data.length - 8].value : current;
+              const d30 = data.length >= 31 ? data[data.length - 31].value : current;
+              if (key === '10K') {
+                whaleState.whale10k = current;
+                whaleState.whale10k7d = current - d7;
+                whaleState.whale10k30d = current - d30;
+              } else if (key === '1K10K') {
+                whaleState.whale1k10k = current;
+                whaleState.whale1k10k7d = current - d7;
+                whaleState.whale1k10k30d = current - d30;
+              }
             }
           }
         }
 
         whaleState.loaded = true;
-
-        // Compare with LTH (with retry if LTH not loaded yet)
+        try { renderWhaleMatrix(); } catch(e) { console.warn('[Whale] renderWhaleMatrix error', e); }
         updateWhaleVsLth();
-
-
         calculateNetBuyingPressure();
         updateConfluenceScore();
       } catch(e) {
@@ -8908,34 +9027,159 @@
       }
     }
 
-    // ========== WHALE vs LTH COMPARISON (with retry) ==========
-    function updateWhaleVsLth() {
-      if (whaleState.whale10k30d !== null && smartMoneyState.loaded && smartMoneyState.lth30d !== null) {
-        const el = document.getElementById('whaleVsLth');
-        if (el) {
-          const whaleTotal = (whaleState.whale10k30d || 0) + (whaleState.whale1k10k30d || 0);
-          const lth = smartMoneyState.lth30d;
-          const aligned = (whaleTotal > 0 && lth > 0) || (whaleTotal < 0 && lth < 0);
-          if (aligned) {
-            el.innerHTML = '<span style="font-size:13px;font-weight:700;color:#00d97e;">✅ ALIGNED</span><br><span style="font-size:9px;color:var(--text-secondary);">Whales + LTH acumulando na mesma direção</span>';
-          } else {
-            el.innerHTML = '<span style="font-size:13px;font-weight:700;color:#FF9500;">⚠️ DIVERGENT</span><br><span style="font-size:9px;color:#FF9500;">Whales vs LTH em direções opostas — atenção!</span>';
-            el.parentElement.style.borderBottom = 'none';
-            // Add a subtle alert background
-            el.style.background = 'rgba(255,149,0,0.08)';
-            el.style.borderRadius = '6px';
-            el.style.padding = '8px 10px';
-            el.style.marginTop = '4px';
+    // ========== WHALE MATRIX RENDERER (Phase B) ==========
+    // Cell visual: ΔBTC number + mini-sparkline (last ~90 pts of history) + background color by historical percentile.
+    // Color rationale: percentile is self-relative — avoids arbitrary thresholds.
+    // If current delta is in the top decile historical accumulation, bg = strong green; top 25% = soft green;
+    // middle 50% = neutral; bottom 25% = soft red; bottom decile = strong red.
+    function whmComputeRollingDeltas(series, winDays) {
+      // returns array of deltas computed over a sliding window of winDays length
+      // Each delta = series[i] - series[i - winDays]
+      const out = [];
+      if (!series || series.length <= winDays) return out;
+      for (let i = winDays; i < series.length; i++) {
+        out.push(series[i].value - series[i - winDays].value);
+      }
+      return out;
+    }
+    function whmPercentileRank(deltas, value) {
+      // returns percentile (0..1) of `value` within `deltas` distribution
+      if (!deltas || !deltas.length) return 0.5;
+      let count = 0;
+      for (const d of deltas) if (d < value) count++;
+      return count / deltas.length;
+    }
+    function whmColorByPercentile(pct) {
+      // pct 0..1 — returns {bg, border, text} css colors
+      // Use a symmetric palette around 0.5
+      if (pct >= 0.90) return { bg: 'rgba(29,158,117,0.28)', border: 'rgba(29,158,117,0.60)', text: '#1D9E75' };
+      if (pct >= 0.75) return { bg: 'rgba(29,158,117,0.14)', border: 'rgba(29,158,117,0.30)', text: '#1D9E75' };
+      if (pct >= 0.55) return { bg: 'rgba(29,158,117,0.06)', border: 'transparent', text: '#cfcfd6' };
+      if (pct <= 0.10) return { bg: 'rgba(226,75,74,0.28)', border: 'rgba(226,75,74,0.60)', text: '#E24B4A' };
+      if (pct <= 0.25) return { bg: 'rgba(226,75,74,0.14)', border: 'rgba(226,75,74,0.30)', text: '#E24B4A' };
+      if (pct <= 0.45) return { bg: 'rgba(226,75,74,0.06)', border: 'transparent', text: '#cfcfd6' };
+      return { bg: 'rgba(255,255,255,0.02)', border: 'transparent', text: '#cfcfd6' };
+    }
+    function whmRenderSpark(svgEl, points) {
+      if (!svgEl || !points || points.length < 2) return;
+      // points = array of numbers (cumulative values for last N days)
+      const min = Math.min(...points), max = Math.max(...points);
+      const range = (max - min) || 1;
+      const W = 60, H = 14;
+      const step = W / (points.length - 1);
+      const coords = points.map((v, i) => `${(i * step).toFixed(1)},${(H - ((v - min) / range) * H).toFixed(1)}`);
+      const color = points[points.length - 1] >= points[0] ? '#1D9E75' : '#E24B4A';
+      svgEl.innerHTML = `<polyline points="${coords.join(' ')}" fill="none" stroke="${color}" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    }
+    function whmFmtDelta(n) {
+      if (!isFinite(n)) return '--';
+      const sign = n >= 0 ? '+' : '−';
+      const abs = Math.abs(n);
+      if (abs >= 1e6) return sign + (abs / 1e6).toFixed(2) + 'M';
+      if (abs >= 1e3) return sign + (abs / 1e3).toFixed(1) + 'k';
+      return sign + abs.toFixed(0);
+    }
+    function whmFmtTotal(n) {
+      if (!isFinite(n)) return '--';
+      if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M BTC';
+      if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k BTC';
+      return n.toFixed(0) + ' BTC';
+    }
+    function renderWhaleMatrix() {
+      const cohorts = [
+        { key: '10K',    elPrefix: '10K',   totalId: 'whale10kTotal' },
+        { key: '1K10K',  elPrefix: '1K10K', totalId: 'whale1k10kTotal' },
+        { key: '100-1K', elPrefix: '1001K', totalId: 'whale1001kTotal' }
+      ];
+      const tfs = [7, 30, 90];
+      let accumScore = 0, totalCells = 0, missing = 0;
+      for (const c of cohorts) {
+        const series = whaleState.series[c.key];
+        const totalEl = document.getElementById(c.totalId);
+        if (!series || series.length < 90) {
+          if (totalEl) totalEl.textContent = '-- BTC';
+          for (const tf of tfs) {
+            const cellVal = document.getElementById(`whmCell_${c.elPrefix}_${tf}`);
+            if (cellVal) { cellVal.textContent = '--'; cellVal.parentElement.style.background = 'rgba(255,255,255,0.02)'; cellVal.parentElement.style.borderColor = 'transparent'; cellVal.style.color = '#7a7a84'; }
+            missing++;
           }
+          continue;
         }
-      } else if (whaleState.loaded) {
-        // LTH data not ready yet, retry
-        if (!window._whaleVsLthRetry) window._whaleVsLthRetry = 0;
-        window._whaleVsLthRetry++;
-        if (window._whaleVsLthRetry < 15) {
-          setTimeout(updateWhaleVsLth, 2000);
+        const current = series[series.length - 1].value;
+        if (totalEl) totalEl.textContent = whmFmtTotal(current);
+        for (const tf of tfs) {
+          const cellWrap = document.querySelector(`.whale-cell[data-cohort="${c.key}"][data-tf="${tf}"]`);
+          const valEl = document.getElementById(`whmCell_${c.elPrefix}_${tf}`);
+          const sparkEl = document.getElementById(`whmSpark_${c.elPrefix}_${tf}`);
+          if (!cellWrap || !valEl) continue;
+          if (series.length <= tf + 1) {
+            valEl.textContent = '—';
+            cellWrap.style.background = 'rgba(255,255,255,0.02)';
+            cellWrap.style.borderColor = 'transparent';
+            valEl.style.color = '#7a7a84';
+            continue;
+          }
+          const delta = current - series[series.length - 1 - tf].value;
+          // Historical distribution of same-window deltas (using all history, rolling)
+          const deltas = whmComputeRollingDeltas(series, tf);
+          const pct = whmPercentileRank(deltas, delta);
+          const pal = whmColorByPercentile(pct);
+          valEl.textContent = whmFmtDelta(delta);
+          valEl.style.color = pal.text;
+          cellWrap.style.background = pal.bg;
+          cellWrap.style.borderColor = pal.border;
+          cellWrap.title = `Percentil histórico ${(pct * 100).toFixed(0)}% · janela ${tf}d · Δ=${whmFmtDelta(delta)} BTC`;
+          // Sparkline: last min(tf * 3, series.length) raw values
+          const sparkWin = Math.min(tf * 3, series.length - 1);
+          const sparkPoints = series.slice(-sparkWin).map(d => d.value);
+          whmRenderSpark(sparkEl, sparkPoints);
+          // Score accumulation for semaphore: delta positive = +1 scaled by magnitude (pct mapped to -1..+1)
+          accumScore += (pct - 0.5) * 2;
+          totalCells++;
         }
       }
+      // Semaphore
+      const semTxt = document.getElementById('whmSemaphoreText');
+      const semSub = document.getElementById('whmSemaphoreSub');
+      const semBox = document.getElementById('whmSemaphore');
+      if (semTxt && semBox && totalCells > 0) {
+        const avg = accumScore / totalCells; // -1 strong distribution .. +1 strong accumulation
+        let label, color, bg, border;
+        if (avg >= 0.45)       { label = '✅ ACUMULAÇÃO FORTE MULTI-TF'; color = '#1D9E75'; bg = 'rgba(29,158,117,0.10)';  border = 'rgba(29,158,117,0.35)';  }
+        else if (avg >= 0.18)  { label = '🟢 Acumulação moderada';        color = '#1D9E75'; bg = 'rgba(29,158,117,0.06)';  border = 'rgba(29,158,117,0.20)';  }
+        else if (avg <= -0.45) { label = '🔻 DISTRIBUIÇÃO FORTE MULTI-TF'; color = '#E24B4A'; bg = 'rgba(226,75,74,0.10)';  border = 'rgba(226,75,74,0.35)';   }
+        else if (avg <= -0.18) { label = '🔴 Distribuição moderada';       color = '#E24B4A'; bg = 'rgba(226,75,74,0.06)';  border = 'rgba(226,75,74,0.20)';   }
+        else                   { label = '⚪ Fluxo misto / neutro';         color = '#cfcfd6'; bg = 'rgba(255,255,255,0.03)'; border = 'rgba(255,255,255,0.06)'; }
+        semTxt.textContent = label;
+        semTxt.style.color = color;
+        semBox.style.background = bg;
+        semBox.style.borderColor = border;
+        // Signal aligned/divergent with LTH (from Smart Money) — if available
+        let lthNote = '';
+        if (smartMoneyState && smartMoneyState.loaded && smartMoneyState.lth30d !== null) {
+          const lthSign = smartMoneyState.lth30d > 0 ? 1 : (smartMoneyState.lth30d < 0 ? -1 : 0);
+          const whalesSign = avg > 0.1 ? 1 : (avg < -0.1 ? -1 : 0);
+          if (lthSign !== 0 && whalesSign !== 0) {
+            lthNote = (lthSign === whalesSign) ? ' · ✓ LTH alinhado' : ' · ⚠ LTH divergente';
+          }
+        }
+        if (semSub) semSub.textContent = `Score agregado: ${(avg * 100).toFixed(0)} · ${totalCells}/9 células${lthNote}`;
+      }
+    }
+
+    // ========== WHALE vs LTH COMPARISON (Phase B: info moved to matrix semaphore) ==========
+    // Legacy DOM element #whaleVsLth removed from UI in Phase B — the aligned/divergent info is now
+    // surfaced in the matrix semaphore line (see renderWhaleMatrix). This function is kept as a
+    // retry hook: it re-renders the matrix when Smart Money (LTH) data arrives after whaleData loaded.
+    function updateWhaleVsLth() {
+      if (!whaleState.loaded) return;
+      if (smartMoneyState && smartMoneyState.loaded && smartMoneyState.lth30d !== null) {
+        try { renderWhaleMatrix(); } catch(e) { console.warn('[Whale] re-render on LTH error', e); }
+        return;
+      }
+      if (!window._whaleVsLthRetry) window._whaleVsLthRetry = 0;
+      window._whaleVsLthRetry++;
+      if (window._whaleVsLthRetry < 15) setTimeout(updateWhaleVsLth, 2000);
     }
 
     // ========== NET BUYING PRESSURE ==========
@@ -11085,7 +11329,6 @@
         }
       });
     })();
-</script>
+  </script>
 </body>
 </html>
-                                       
