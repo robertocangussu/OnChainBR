@@ -3403,9 +3403,11 @@
       const ctx = document.getElementById('priceChart')?.getContext('2d');
       if (!ctx || state.prices.length === 0) return;
       
-      // Use ALL available data (not just 365 days)
-      const priceData = state.prices;
+      // Use ALL available data (not just 365 days), but trim empty prefix:
+      // start at first date where Z-Composite exists so the chart has no gap on the left.
       const compositeMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
+      const firstZDate = state.compositeHistory.length ? state.compositeHistory[0].date : null;
+      const priceData = firstZDate ? state.prices.filter(p => p.date >= firstZDate) : state.prices;
       
       // Sample data for performance if too many points (keep ~1000 points max)
       const maxPoints = 1500;
@@ -3470,11 +3472,11 @@
               type: 'logarithmic', 
               display: true, 
               position: 'left', 
-              min: 100,
+              min: 1,
               max: 150000,
               grid: { color: 'rgba(255,255,255,0.05)' }, 
               afterBuildTicks: function(axis) {
-                axis.ticks = [100, 500, 1000, 5000, 10000, 50000, 100000].map(v => ({value: v}));
+                axis.ticks = [1, 10, 100, 500, 1000, 5000, 10000, 50000, 100000].map(v => ({value: v}));
               },
               ticks: { 
                 color: '#9a9aa6', 
@@ -3499,10 +3501,10 @@
       const ctx = document.getElementById('oscillatorChart')?.getContext('2d');
       if (!ctx || state.compositeHistory.length === 0) return;
 
-      // ALIGN X-AXIS WITH priceChart: use state.prices as the authoritative date range
-      // and map compositeHistory onto those dates (null where Z is not computed yet).
-      // This keeps the two stacked charts column-aligned (QuantumResearch style).
-      const priceData = state.prices;
+      // ALIGN X-AXIS WITH priceChart: use state.prices as the authoritative date range,
+      // TRIMMED to start at firstZDate so no empty prefix on the left.
+      const firstZDate = state.compositeHistory.length ? state.compositeHistory[0].date : null;
+      const priceData = firstZDate ? state.prices.filter(p => p.date >= firstZDate) : state.prices;
       if (!priceData.length) return;
 
       // Mirror priceChart sampling (maxPoints = 1500) so tick density matches
