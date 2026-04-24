@@ -34,7 +34,28 @@
       --zone-over: #ef4444;  /* overheated / strong bearish */
     }
 
-    /* === PASSO 2: Unified Card Tiers === */
+    /* === Batch 6 · Polish universal (a11y + premium) === */
+    html { scroll-behavior: smooth; }
+    ::selection { background: rgba(249,115,22,0.32); color: #fff; }
+    ::-moz-selection { background: rgba(249,115,22,0.32); color: #fff; }
+    *:focus-visible { outline: 2px solid var(--accent-orange); outline-offset: 2px; border-radius: 3px; }
+    a:focus-visible, button:focus-visible { outline-offset: 3px; }
+    /* Custom scrollbar (webkit) */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 5px; border: 2px solid transparent; background-clip: content-box; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(249,115,22,0.35); background-clip: content-box; }
+    /* Firefox */
+    * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.10) transparent; }
+
+    /* === Batch 6 · Section subtitle premium === */
+    .section-sub {
+      font-size: 11px; font-weight: 500; letter-spacing: 0.3px;
+      padding: 4px 10px; border-radius: 12px;
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05);
+    }
+
+        /* === PASSO 2: Unified Card Tiers === */
     .card-hero, .card-primary, .card-compact {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -42,9 +63,9 @@
       transition: all 0.15s ease;
       position: relative;
     }
-    .card-hero      { padding: 20px; text-align: center; }
+    .card-hero      { padding: 24px; text-align: center; }
     .card-primary   { padding: 16px; overflow: hidden; }
-    .card-compact   { padding: 12px 14px; }
+    .card-compact   { padding: 12px; }
     .card-hero:hover, .card-primary:hover, .card-compact:hover {
       border-color: rgba(255,255,255,0.08);
     }
@@ -176,7 +197,7 @@
     /* Live BTC Ticker (sticky top bar) */
     .live-ticker { position: fixed; top: 0; left: 0; right: 0; height: 36px; z-index: 9999; background: linear-gradient(90deg, rgba(10,10,14,0.98) 0%, rgba(18,18,24,0.98) 50%, rgba(10,10,14,0.98) 100%); border-bottom: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; gap: 24px; padding: 0 20px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.03em; overflow: hidden; }
     .lt-group { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-    .lt-sep { width: 1px; height: 14px; background: rgba(255,255,255,0.12); flex-shrink: 0; }
+    .lt-sep { width: 1px; height: 18px; background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.22) 50%, transparent 100%); flex-shrink: 0; }
     @media (max-width: 720px) { .lt-sep { display: none; } }
     .lt-brand { font-weight: 700; color: var(--accent-orange); letter-spacing: 0.15em; font-size: 10px; }
     .lt-label { color: var(--text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; }
@@ -196,6 +217,7 @@
     @keyframes lt-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     @media (max-width: 768px) {
       .live-ticker { gap: 12px; padding: 0 12px; font-size: 10px; height: 32px; }
+      .footer > div { grid-template-columns: 1fr !important; gap: 16px !important; }
       body { padding-top: 32px; }
       .lt-brand { font-size: 9px; }
       .lt-price { font-size: 12px; }
@@ -209,7 +231,7 @@
     .header-right { text-align: right; font-size: 10px; }
     .status-ok { color: var(--accent-green); font-weight: 500; }
     .status-date { color: var(--text-muted); margin-top: 2px; }
-    .top-stats { display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .top-stats { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 16px; margin-bottom: 20px; align-items: stretch; }
     .zscore-card, .gauge-card, .price-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; }
     .zscore-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
     .zscore-value { font-family: 'Space Grotesk', sans-serif; font-size: 48px; font-weight: 700; }
@@ -222,11 +244,11 @@
     .price-value { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; }
     .price-change { font-size: 14px; font-weight: 600; margin-top: 8px; }
     .price-date { font-size: 9px; color: var(--text-muted); margin-top: 6px; }
-    .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
-    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
-    .stat-label { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 6px; }
+    .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; align-items: stretch; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; min-height: 88px; display: flex; flex-direction: column; justify-content: center; }
+    .stat-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.4px; }
     .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
-    .stat-sub { font-size: 8px; color: var(--text-muted); margin-top: 4px; }
+    .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
     .main-grid { display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
     .chart-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 14px; }
     .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
@@ -359,7 +381,7 @@
       opacity: 0; transition: opacity 0.2s ease;
       pointer-events: none;
     }
-    .nav-link .nav-num { font-size: 11px; font-weight: 700; color: var(--text-muted); min-width: 24px; letter-spacing: 0.4px; font-family: 'JetBrains Mono', monospace; position: relative; z-index: 1; }
+    .nav-link .nav-num { font-size: 11px; font-weight: 700; color: var(--text-muted); min-width: 24px; letter-spacing: 0.4px; font-family: 'JetBrains Mono', monospace; position: relative; z-index: 1; opacity: 0.55; transition: opacity 0.2s; }
     .nav-link .nav-text { flex: 1; position: relative; z-index: 1; display: flex; flex-direction: column; gap: 3px; line-height: 1.25; min-width: 0; }
     .nav-link .nav-main { font-size: 13.5px; font-weight: 600; color: inherit; letter-spacing: 0.1px; }
     .nav-link .nav-sub { font-size: 10.5px; color: var(--text-muted); letter-spacing: 0.2px; opacity: 0.85; font-weight: 500; }
@@ -371,15 +393,22 @@
       background: rgba(255,255,255,0.015);
     }
     .nav-link:hover::before { opacity: 1; }
-    .nav-link:hover .nav-num { color: var(--text-secondary); }
+    .nav-link:hover .nav-num { color: var(--text-secondary); opacity: 0.85; }
     .nav-link.active {
       color: var(--accent-orange);
       border-color: rgba(249,115,22,0.25);
       background: linear-gradient(90deg, rgba(249,115,22,0.14) 0%, rgba(249,115,22,0.04) 80%);
       box-shadow: 0 0 0 1px rgba(249,115,22,0.08), 0 2px 6px -2px rgba(249,115,22,0.25);
     }
+    /* v4.1 Batch 6: barra lateral esquerda no nav ativo */
+    .nav-link.active::after {
+      content: ''; position: absolute; left: 0; top: 18%; bottom: 18%;
+      width: 3px; border-radius: 0 3px 3px 0;
+      background: linear-gradient(180deg, var(--accent-orange) 0%, rgba(249,115,22,0.45) 100%);
+      box-shadow: 0 0 8px rgba(249,115,22,0.5);
+    }
     .nav-link.active::before { opacity: 0; }
-    .nav-link.active .nav-num { color: var(--accent-orange); }
+    .nav-link.active .nav-num { color: var(--accent-orange); opacity: 1; }
     .nav-link.active .nav-dot { background: var(--accent-orange); opacity: 1; box-shadow: 0 0 6px rgba(249,115,22,0.5); }
     .nav-link.status-green .nav-dot { background: #00d97e; opacity: 0.8; }
     .nav-link.status-yellow .nav-dot { background: #eab308; opacity: 0.8; }
@@ -418,7 +447,7 @@
 
     /* ===== SIGNALS SECTION ===== */
     /* Signals redesign */
-    .sig-stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 16px; }
+    .sig-stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 16px; align-items: stretch; }
     .sig-stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
     .sig-stat-label { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
     .sig-stat-val { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
@@ -471,19 +500,19 @@
     .flow-pressure-value { font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700; margin-bottom: 4px; }
     .flow-pressure-bar { height: 6px; border-radius: 3px; background: var(--border); margin: 12px 0 6px; overflow: hidden; }
     .flow-pressure-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
-    .flow-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .flow-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; align-items: stretch; }
     .flow-stat-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
 
     /* ===== SENTIMENT SECTION ===== */
     .sentiment-grid { display: grid; grid-template-columns: 200px 1fr 1fr; gap: 16px; margin-bottom: 16px; }
     .fg-dial-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    .fg-value { font-family: 'Space Grotesk', sans-serif; font-size: 52px; font-weight: 700; }
+    .fg-value { font-family: 'Space Grotesk', sans-serif; font-size: 38px; font-weight: 700; line-height: 1; }
     .fg-label { font-size: 14px; font-weight: 600; margin-top: 4px; }
     .fg-sub { font-size: 8px; color: var(--text-muted); margin-top: 6px; }
     .sentiment-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
     .sentiment-card-title { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
     .chart-container-sentiment { height: 160px; }
-    .sentiment-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    .sentiment-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; align-items: stretch; }
     .sentiment-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
     .sentiment-funding-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .funding-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
@@ -495,7 +524,10 @@
 
     /* Section 05: Trading Systems */
     .trading-status-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
-    .trading-status-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center; }
+    .trading-status-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center; position: relative; }
+    .trading-status-card.trend-card    { border-left: 4px solid #eab308; }
+    .trading-status-card.reversal-card { border-left: 4px solid #3b82f6; }
+    .trading-status-card.momentum-card { border-left: 4px solid #22c55e; }
     .trading-status-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
     .trading-status-value { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; margin-bottom: 6px; }
     .trading-status-sub { font-size: 9px; color: var(--text-muted); margin-bottom: 12px; }
@@ -556,7 +588,7 @@
     .sm-chart-title { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
     .sm-chart-container { height: 180px; }
     
-    .sm-stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px; }
+    .sm-stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px; align-items: stretch; }
     .sm-stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
     .sm-stat-label { font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
     .sm-stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; }
@@ -728,6 +760,11 @@
       <div class="sidebar-status">
         <span class="status-ok" id="sidebarEndpoints" style="font-size:9px;">● 0/10</span>
         <span id="sidebarLastData" style="font-size:9px;color:var(--text-muted);">--</span>
+      </div>
+      <div class="sidebar-status-legend" style="padding:6px 20px 8px;border-bottom:1px solid var(--border);display:flex;gap:10px;font-size:8.5px;color:var(--text-muted);letter-spacing:0.4px;flex-wrap:wrap;" title="Legenda dos indicadores de status das seções">
+        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:6px;height:6px;border-radius:50%;background:#00d97e;display:inline-block;"></span>OK</span>
+        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:6px;height:6px;border-radius:50%;background:#eab308;display:inline-block;"></span>Parcial</span>
+        <span style="display:inline-flex;align-items:center;gap:3px;"><span style="width:6px;height:6px;border-radius:50%;background:#ef4444;display:inline-block;"></span>Erro</span>
       </div>
       <nav class="sidebar-nav">
         <div class="nav-group" data-cat="valuation">
@@ -1249,7 +1286,7 @@
         <div style="font-size:9px;color:#ef4444;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">STH Cost Basis</div>
         <div id="plSthRP" style="font-size:22px;font-weight:800;color:var(--text-primary);line-height:1;">--</div>
         <div id="plDistSTH" style="font-size:12px;font-weight:600;margin-top:6px;">--</div>
-        <div id="plSthSub" style="font-size:9px;color:var(--text-muted);margin-top:8px;letter-spacing:0.3px;">Resistência · moedas &lt; 155d</div>
+        <div id="plSthSub" style="font-size:10px;color:var(--text-muted);margin-top:8px;letter-spacing:0.3px;">Custo médio de holders recentes</div>
       </div>
       <!-- LTH Cost Basis -->
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;">
@@ -1257,7 +1294,7 @@
         <div style="font-size:9px;color:#00d97e;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:10px;">LTH Cost Basis</div>
         <div id="plLthRP" style="font-size:22px;font-weight:800;color:var(--text-primary);line-height:1;">--</div>
         <div id="plDistLTH" style="font-size:12px;font-weight:600;margin-top:6px;">--</div>
-        <div id="plLthSub" style="font-size:9px;color:var(--text-muted);margin-top:8px;letter-spacing:0.3px;">Suporte · moedas &gt; 155d</div>
+        <div id="plLthSub" style="font-size:10px;color:var(--text-muted);margin-top:8px;letter-spacing:0.3px;">Custo médio de holders antigos</div>
       </div>
       <!-- Supply in Profit -->
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;">
@@ -1514,7 +1551,31 @@
     <div class="sentiment-grid">
       <div class="fg-dial-card">
         <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Fear &amp; Greed</div>
-        <div class="fg-value" id="fgValue">--</div>
+        <div class="fg-gauge-wrap" style="position:relative;width:200px;height:120px;margin:0 auto 8px;">
+          <svg viewBox="0 0 200 120" style="width:100%;height:100%;overflow:visible;">
+            <!-- 5 zone arcs (each 36°) -->
+            <g fill="none" stroke-width="14" stroke-linecap="butt">
+              <path d="M 10 100 A 90 90 0 0 1 37.3 36.6" stroke="#c73030"/>
+              <path d="M 37.3 36.6 A 90 90 0 0 1 100 10" stroke="#e87c3a"/>
+              <path d="M 100 10 A 90 90 0 0 1 162.7 36.6" stroke="#d4b82c"/>
+              <path d="M 162.7 36.6 A 90 90 0 0 1 189 85" stroke="#67c84a"/>
+              <path d="M 189 85 A 90 90 0 0 1 190 100" stroke="#1a9e55"/>
+            </g>
+            <!-- Needle (rotated via JS) -->
+            <g id="fgNeedleGroup" style="transform-origin:100px 100px;transform:rotate(-90deg);transition:transform 0.6s cubic-bezier(.4,.0,.2,1);">
+              <line x1="100" y1="100" x2="100" y2="20" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="100" cy="100" r="6" fill="#fff"/>
+              <circle cx="100" cy="100" r="3" fill="#1a1a1f"/>
+            </g>
+            <!-- Scale labels -->
+            <g fill="#6a6a72" font-size="7" font-family="JetBrains Mono" text-anchor="middle">
+              <text x="15" y="118">0</text>
+              <text x="100" y="4">50</text>
+              <text x="185" y="118">100</text>
+            </g>
+          </svg>
+          <div class="fg-value" id="fgValue" style="position:absolute;left:0;right:0;bottom:-4px;text-align:center;">--</div>
+        </div>
         <div class="fg-label" id="fgLabel">--</div>
         <div class="fg-sub" id="fgDate">--</div>
       </div>
@@ -1699,7 +1760,7 @@
           <text x="20" y="58" fill="#22c55e" font-size="9" font-weight="700" font-family="JetBrains Mono" letter-spacing="1">SHORT SQUEEZE</text>
           <text x="400" y="58" fill="#9a9aa6" font-size="9" font-weight="600" font-family="JetBrains Mono" text-anchor="middle">NEUTRAL</text>
           <text x="780" y="58" fill="#ef4444" font-size="9" font-weight="700" font-family="JetBrains Mono" letter-spacing="1" text-anchor="end">LONG SQUEEZE</text>
-          <!-- Scale ticks -->
+          <!-- Scale ticks (v4.1 10.3: added -5/+5 emphasized ticks) -->
           <g stroke="#555" stroke-width="0.5" opacity="0.6">
             <line x1="100" y1="26" x2="100" y2="36"/>
             <line x1="180" y1="26" x2="180" y2="36"/>
@@ -1709,6 +1770,14 @@
             <line x1="540" y1="26" x2="540" y2="36"/>
             <line x1="620" y1="26" x2="620" y2="36"/>
             <line x1="700" y1="26" x2="700" y2="36"/>
+          </g>
+          <g stroke="#888" stroke-width="1" opacity="0.8">
+            <line x1="210" y1="24" x2="210" y2="36"/>
+            <line x1="590" y1="24" x2="590" y2="36"/>
+          </g>
+          <g fill="#888" font-size="7" font-family="JetBrains Mono" text-anchor="middle" opacity="0.85">
+            <text x="210" y="46">-5</text>
+            <text x="590" y="46">+5</text>
           </g>
           <!-- Scale labels -->
           <g fill="#666" font-size="8" font-family="JetBrains Mono" text-anchor="middle">
@@ -2169,8 +2238,14 @@
         <div style="font-size:9px;color:var(--text-muted);">Weighted aggregate of all dashboard signals</div>
       </div>
       <div class="confluence-score-wrap">
-        <div class="confluence-score-big" id="confluenceScoreValue" style="color:var(--accent-yellow)">--</div>
-        <div id="confluenceScoreLabel" style="font-size:14px;font-weight:600;margin-top:4px;color:var(--text-muted)">CALCULATING...</div>
+        <div class="confluence-ring-wrap" style="position:relative;width:180px;height:180px;margin:0 auto;display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 180 180" style="position:absolute;top:0;left:0;width:100%;height:100%;transform:rotate(-90deg);">
+            <circle cx="90" cy="90" r="78" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"/>
+            <circle id="confluenceRingFill" cx="90" cy="90" r="78" fill="none" stroke="var(--accent-yellow)" stroke-width="8" stroke-linecap="round" stroke-dasharray="490" stroke-dashoffset="490" style="transition:stroke-dashoffset 0.6s ease, stroke 0.3s;"/>
+          </svg>
+          <div class="confluence-score-big" id="confluenceScoreValue" style="color:var(--accent-yellow);position:relative;z-index:1;">--</div>
+        </div>
+        <div id="confluenceScoreLabel" style="font-size:14px;font-weight:600;margin-top:8px;color:var(--text-muted)">CALCULATING...</div>
       </div>
       <div class="confluence-breakdown">
         <div class="confluence-factor">
@@ -2321,12 +2396,12 @@
     </div>
     
     <!-- Action Card -->
-    <div id="reportActionCard" style="background:var(--bg-card);border-left:4px solid var(--accent-yellow);border-radius:8px;padding:16px 20px;margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-        <span style="font-size:18px;">🎯</span>
-        <span style="font-size:11px;color:var(--accent-cyan);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Ação Recomendada</span>
+    <div id="reportActionCard" style="background:linear-gradient(135deg, rgba(34,197,94,0.06) 0%, rgba(6,182,212,0.04) 100%);border:1px solid rgba(34,197,94,0.28);border-left:5px solid var(--accent-green);border-radius:10px;padding:20px 24px;margin-bottom:16px;box-shadow:0 2px 12px rgba(34,197,94,0.06);">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+        <span style="font-size:20px;">🎯</span>
+        <span style="font-size:12px;color:var(--accent-green);font-weight:700;text-transform:uppercase;letter-spacing:1.2px;">Ação Recomendada</span>
       </div>
-      <div id="reportAction" style="font-size:13px;line-height:1.6;color:var(--text-primary);">
+      <div id="reportAction" style="font-size:14px;line-height:1.65;color:var(--text-primary);font-weight:500;">
         Carregando...
       </div>
     </div>
@@ -2531,24 +2606,60 @@
 
 
   <!-- ========== GLOBAL FOOTER ========== -->
-  <footer class="footer" style="max-width:1400px;margin:0 auto;padding:12px 24px 24px;">
-    <div style="display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:10px;color:var(--text-muted);">
-      <span style="color:var(--accent-orange);font-weight:700;">@ONCHAINBR</span>
-      <span>· Z-Score Model · Rolling 365d · 9 Metrics ·</span>
-      <a href="#signals" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Sinais</a>
-      <a href="#rolling" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Rolling</a>
-      <a href="#smartmoney" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Smart Money</a>
-      <a href="#pricelayers" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Preço</a>
-      <a href="#cohort" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Coortes</a>
-      <a href="#flow" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Fluxo</a>
-      <a href="#sentiment" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Sentimento</a>
-      <a href="#leverage" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Alavancagem</a>
-      <a href="#miners" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Mineradores</a>
-      <a href="#trading" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Trading</a>
-      <a href="#report" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Relatório</a>
-      <a href="#backstage" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Bastidores</a>
+  <footer class="footer" style="max-width:1400px;margin:0 auto;padding:20px 24px 28px;border-top:1px solid var(--border);margin-top:24px;">
+    <div style="display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:20px;font-size:10px;color:var(--text-muted);align-items:start;">
+      <!-- Coluna 1: Versão + Metodologia -->
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="color:var(--accent-orange);font-weight:700;letter-spacing:0.12em;font-size:11px;">@ONCHAINBR</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;background:rgba(255,255,255,0.04);border-radius:3px;letter-spacing:0.3px;">v4.1</span>
+        </div>
+        <div style="letter-spacing:0.3px;line-height:1.6;">Composite Z-Score Model<br/>Rolling 365d · 9 Metrics</div>
+        <a href="#backstage" style="color:var(--accent-blue);text-decoration:none;font-size:9.5px;border-bottom:1px dotted rgba(59,130,246,0.3);width:max-content;">Metodologia e pesos →</a>
+      </div>
+
+      <!-- Coluna 2: Links de navegação + APIs -->
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div style="font-size:8.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:6px;font-weight:700;opacity:0.7;">Navegação</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px 10px;line-height:1.7;">
+            <a href="#signals" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Sinais</a>
+            <a href="#rolling" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Rolling</a>
+            <a href="#smartmoney" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Smart Money</a>
+            <a href="#pricelayers" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Preço</a>
+            <a href="#cohort" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Coortes</a>
+            <a href="#flow" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Fluxo</a>
+            <a href="#sentiment" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Sentimento</a>
+            <a href="#leverage" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Alavancagem</a>
+            <a href="#miners" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Mineradores</a>
+            <a href="#trading" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Trading</a>
+            <a href="#report" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Relatório</a>
+            <a href="#backstage" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Bastidores</a>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:8.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:4px;font-weight:700;opacity:0.7;">Data Sources</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px 8px;line-height:1.6;">
+            <a href="https://bitcoin-data.com" target="_blank" rel="noopener" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">BGeometrics</a>
+            <span style="opacity:0.4;">·</span>
+            <a href="https://bitview.space" target="_blank" rel="noopener" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Bitview</a>
+            <span style="opacity:0.4;">·</span>
+            <a href="https://alternative.me" target="_blank" rel="noopener" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Alternative.me</a>
+            <span style="opacity:0.4;">·</span>
+            <a href="https://binance.com" target="_blank" rel="noopener" style="color:var(--text-muted);text-decoration:none;border-bottom:1px dotted rgba(255,255,255,0.15);">Binance</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna 3: Disclaimer -->
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="font-size:8.5px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent-yellow);margin-bottom:2px;font-weight:700;opacity:0.85;">Disclaimer</div>
+        <div style="font-size:9.5px;line-height:1.55;color:var(--text-muted);opacity:0.85;">
+          Todo o conteúdo é para <strong style="color:var(--text-secondary);">fins educacionais</strong>. Não constitui aconselhamento financeiro, de investimento ou tributário. Sempre faça sua própria análise antes de operar.
+        </div>
+        <div style="font-size:8.5px;color:var(--text-muted);opacity:0.6;margin-top:4px;letter-spacing:0.3px;">Built with Cloudflare + GitHub Pages</div>
+      </div>
     </div>
-    <div>APIs: <a href="https://bitview.space" target="_blank">Bitview</a> + <a href="https://bitcoin-data.com" target="_blank">BGeometrics</a> + <a href="https://alternative.me" target="_blank">Alternative.me</a> + <a href="https://binance.com" target="_blank">Binance</a></div>
   </footer>
     </main><!-- end .main-content -->
   </div><!-- end .app-layout -->
@@ -2727,6 +2838,50 @@
       return Number(num).toFixed(digits);
     }
     
+    // Miner formatting helpers (batch 2 — v4.1 11.2/11.3)
+    // Normalize BTC network hashrate to EH/s regardless of input unit (EH/PH/TH/GH/MH).
+    // Current network is ~700-1000 EH/s, so we detect scale by magnitude.
+    function fmtHashrateEH(val) {
+      if (val == null || isNaN(val)) return '--';
+      const v = Number(val);
+      if (v <= 0) return '--';
+      let eh;
+      if (v < 1e4) eh = v;              // already EH/s (e.g. 810)
+      else if (v < 1e7) eh = v / 1e3;   // PH/s (e.g. 810000)
+      else if (v < 1e10) eh = v / 1e6;  // TH/s (e.g. 810000000)
+      else if (v < 1e13) eh = v / 1e9;  // GH/s
+      else if (v < 1e16) eh = v / 1e12; // MH/s
+      else if (v < 1e19) eh = v / 1e15; // KH/s
+      else eh = v / 1e18;               // H/s raw
+      return eh.toFixed(1) + ' EH/s';
+    }
+    // Normalize hashrate to EH/s as a number (for downstream math like difficulty estimation)
+    function hashrateToEH(val) {
+      if (val == null || isNaN(val)) return null;
+      const v = Number(val);
+      if (v <= 0) return null;
+      if (v < 1e4) return v;
+      if (v < 1e7) return v / 1e3;
+      if (v < 1e10) return v / 1e6;
+      if (v < 1e13) return v / 1e9;
+      if (v < 1e16) return v / 1e12;
+      if (v < 1e19) return v / 1e15;
+      return v / 1e18;
+    }
+    // Compact difficulty: T (tera), P (peta), E (exa) — BTC network difficulty ~150-250T in 2026
+    function fmtDifficultyCompact(val) {
+      if (val == null || isNaN(val)) return '--';
+      const v = Number(val);
+      if (v <= 0) return '--';
+      if (v >= 1e21) return (v / 1e21).toFixed(1) + 'Z';
+      if (v >= 1e18) return (v / 1e18).toFixed(1) + 'E';
+      if (v >= 1e15) return (v / 1e15).toFixed(1) + 'P';
+      if (v >= 1e12) return (v / 1e12).toFixed(1) + 'T';
+      if (v >= 1e9)  return (v / 1e9).toFixed(1) + 'B';
+      if (v >= 1e6)  return (v / 1e6).toFixed(1) + 'M';
+      return v.toFixed(0);
+    }
+
     function formatDate(d) { 
       try { return new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase(); } 
       catch { return '--'; } 
@@ -6135,7 +6290,7 @@
           const isNull = fac.pass === null;
           const isPass = fac.pass === true;
           const tone = fac.signal > 0 ? '#ef4444' : fac.signal < 0 ? '#22c55e' : '#9a9aa6';
-          row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(255,255,255,' + (isPass ? '0.03' : '0.012') + ');border-radius:4px;font-size:10.5px;' + (isNull ? 'opacity:0.55;' : '');
+          row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,' + (isPass ? '0.03' : '0.012') + ');border-radius:4px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:10.5px;' + (isNull ? 'opacity:0.55;' : '');
           const left = document.createElement('span');
           left.style.cssText = 'display:flex;gap:8px;align-items:center;';
           const check = document.createElement('span');
@@ -6371,14 +6526,14 @@
           console.log('✓ Difficulty from API:', minerData.difficulty);
         }
       } catch(e) { console.warn('Difficulty API error:', e); }
-      // Fallback: estimate difficulty from hashrate (difficulty ≈ hashrate_EH × 600 / 2^32 × 1e18)
+      // Fallback: estimate difficulty from hashrate (difficulty ≈ hashrate_EH × 1.157e12)
       if (minerData.difficulty === null && minerData.hashrate !== null) {
-        // Approximate: difficulty ≈ hashrate(EH/s) × 1.157e12 (empirical BTC relationship)
-        const hr = toNum(minerData.hashrate);
-        if (hr && hr > 0) {
-          minerData.difficulty = (hr * 1.157e12).toFixed(0);
+        // v4.1 fix: normalize hashrate to EH/s first so estimate doesn't inherit API scale drift
+        const hrEH = hashrateToEH(minerData.hashrate);
+        if (hrEH && hrEH > 0) {
+          minerData.difficulty = (hrEH * 1.157e12).toFixed(0);
           minerData.difficultyEstimated = true;
-          console.log('✓ Difficulty estimated from hashrate:', minerData.difficulty);
+          console.log('✓ Difficulty estimated from hashrate (EH=' + hrEH.toFixed(1) + '):', minerData.difficulty);
         }
       }
       
@@ -6445,44 +6600,26 @@
         puellStatusEl.style.color = color;
       }
       
-      // Hashrate - data shows values around 800-1000 which is in EH/s
+      // Hashrate (v4.1 11.2) — smart scale normalization → EH/s with 1 decimal
       const hashEl = document.getElementById('minerHashrate');
       const hashStatusEl = document.getElementById('minerHashrateStatus');
       const hashVal = num(minerData.hashrate);
       if (hashVal !== null) {
-        let formatted;
-        // API returns hashrate in EH/s (current BTC hashrate ~800-1000 EH/s)
-        // But looking at screenshot showing 997226, it might be in TH/s
-        // 997226 TH/s = 997.2 EH/s (divide by 1000)
-        // Or it could be the raw value needs /1000
-        if (hashVal > 100000) {
-          // Likely in PH/s, convert to EH/s
-          formatted = (hashVal / 1000).toFixed(0) + ' EH/s';
-        } else if (hashVal > 1000) {
-          // Already reasonable for EH/s
-          formatted = hashVal.toFixed(0) + ' EH/s';
-        } else if (hashVal > 100) {
-          // Already in EH/s
-          formatted = hashVal.toFixed(0) + ' EH/s';
-        } else {
-          // Small value, show as is
-          formatted = hashVal.toFixed(1) + ' EH/s';
-        }
-        hashEl.textContent = formatted;
-        // Check if healthy (current network is ~800-1000 EH/s)
-        const healthyThreshold = hashVal > 100000 ? 500000 : 500; // adjust based on scale
-        hashEl.style.color = hashVal > healthyThreshold ? 'var(--accent-green)' : 'var(--accent-yellow)';
-        hashStatusEl.textContent = hashVal > healthyThreshold ? 'HEALTHY' : 'LOW';
+        hashEl.textContent = fmtHashrateEH(hashVal);
+        // Healthy if normalized EH/s > 500 (current network is ~700-1000 EH/s)
+        const eh = hashrateToEH(hashVal);
+        const healthy = eh !== null && eh > 500;
+        hashEl.style.color = healthy ? 'var(--accent-green)' : 'var(--accent-yellow)';
+        hashStatusEl.textContent = healthy ? 'HEALTHY' : 'LOW';
         hashStatusEl.style.color = hashEl.style.color;
       }
       
-      // Difficulty
+      // Difficulty (v4.1 11.3) — compact prefix (T/P/E) regardless of raw scale
       const diffEl = document.getElementById('minerDifficulty');
       const diffStatusEl = document.getElementById('minerDifficultyStatus');
       const diffVal = num(minerData.difficulty);
       if (diffVal !== null) {
-        const formatted = (diffVal / 1e12).toFixed(2) + 'T';
-        diffEl.textContent = formatted;
+        diffEl.textContent = fmtDifficultyCompact(diffVal);
         diffEl.style.color = 'var(--text-primary)';
         if (minerData.difficultyEstimated) {
           diffStatusEl.textContent = '≈ FROM HASHRATE';
@@ -6634,6 +6771,12 @@
             const col = _fgColor(val);
             document.getElementById('fgValue').textContent = val;
             document.getElementById('fgValue').style.color = col;
+            // v4.1 9.1: rotate needle (0 → -90deg, 50 → 0deg, 100 → +90deg)
+            const _fgNeedle = document.getElementById('fgNeedleGroup');
+            if (_fgNeedle) {
+              const _deg = -90 + (val / 100) * 180;
+              _fgNeedle.style.transform = 'rotate(' + _deg.toFixed(1) + 'deg)';
+            }
             document.getElementById('fgLabel').textContent = _fgLabel(val);
             document.getElementById('fgLabel').style.color = col;
             document.getElementById('fgDate').textContent = new Date(parseInt(latest.timestamp)*1000).toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'}).toUpperCase();
@@ -9362,10 +9505,12 @@
       // Update UI
       const scoreEl = document.getElementById('confluenceScoreValue');
       const labelEl = document.getElementById('confluenceScoreLabel');
+      const ringEl = document.getElementById('confluenceRingFill');
       if (scoreEl) {
         if (finalScore === null) {
           scoreEl.textContent = 'N/A';
           scoreEl.style.color = 'var(--text-muted)';
+          if (ringEl) { ringEl.setAttribute('stroke-dashoffset', 490); ringEl.setAttribute('stroke', '#5a5a66'); }
           if (labelEl) { labelEl.textContent = `DADOS INSUFICIENTES (${Math.round(coverage*100)}%)`; labelEl.style.color = 'var(--text-muted)'; }
         } else {
           scoreEl.textContent = finalScore;
@@ -9376,6 +9521,17 @@
           else if (finalScore <= 45) color = 'var(--accent-orange)';
           else color = 'var(--accent-yellow)';
           scoreEl.style.color = color;
+          // v4.1 13.1: update ring fill (circumference = 2*PI*78 ≈ 490)
+          if (ringEl) {
+            const _circ = 490;
+            const _off = _circ * (1 - finalScore / 100);
+            ringEl.setAttribute('stroke-dashoffset', _off);
+            ringEl.setAttribute('stroke', color.replace('var(--accent-green)', '#1D9E75')
+                                              .replace('var(--accent-cyan)', '#06b6d4')
+                                              .replace('var(--accent-yellow)', '#eab308')
+                                              .replace('var(--accent-orange)', '#f97316')
+                                              .replace('var(--accent-red)', '#ef4444'));
+          }
 
           let label;
           if (finalScore >= 75) label = 'STRONG BULLISH CONFLUENCE';
