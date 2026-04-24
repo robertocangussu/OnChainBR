@@ -1521,7 +1521,7 @@
           </div>
           <div id="fsFactorsList" style="display:flex;flex-direction:column;gap:6px;"></div>
           <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);font-size:9px;color:var(--text-muted);line-height:1.4;">
-            Entra LONG/SHORT com score &ge; 5/7. Target &plusmn;5% / Stop &#8723;3% / Max 48h / Cooldown 6h.
+            Entra LONG/SHORT com score &ge; 5/7 <b>E</b> RSI 4h TURN (cruzou 40/60). Target &plusmn;5% / Stop &#8723;3% / Max 48h / Cooldown 6h.
           </div>
         </div>
         <!-- Backtest -->
@@ -5242,18 +5242,13 @@
             value: (a!=null&&b!=null) ? fsFmtDelta(a-b, 0) : '--',
             desc: pass ? (recent ? 'cross recente' : 'alinhada bullish') : 'alinhada bearish' });
         }
-        // 2. RSI 1h saindo de oversold
+        // 2. RSI 4h TURN UP (crossing acima de 40 vindo de zona oversold)
         {
-          const r = rsi1h[idx];
-          let recentOS = false;
-          for (let i = Math.max(0, idx-5); i < idx; i++) {
-            if (rsi1h[i] != null && rsi1h[i] < 35) { recentOS = true; break; }
-          }
-          const inRange = r != null && r >= 35 && r <= 55;
-          const pass = inRange && recentOS;
-          out.push({ id:'rsi1h', name:'RSI 1h saindo OS', pass:pass,
-            value: r!=null ? r.toFixed(0) : '--',
-            desc: pass ? 'saiu de <35' : (inRange ? 'sem OS recente' : 'fora de 35-55') });
+          const pass = !!(ctx.turnUp && ctx.turnUp[idx]);
+          const r4 = rsi4h[idx];
+          out.push({ id:'turn', name:'RSI 4h TURN UP', pass:pass,
+            value: r4!=null ? r4.toFixed(0) : '--',
+            desc: pass ? 'RSI 4h cruzou 40 de baixo - virada de fundo' : 'sem virada 4h recente' });
         }
         // 3. RSI 4h > 45
         {
@@ -5311,18 +5306,13 @@
             value: (a!=null&&b!=null) ? fsFmtDelta(a-b, 0) : '--',
             desc: pass ? (recent ? 'cross recente' : 'alinhada bearish') : 'alinhada bullish' });
         }
-        // 2. RSI 1h saindo OB
+        // 2. RSI 4h TURN DOWN (crossing abaixo de 60 vindo de zona overbought)
         {
-          const r = rsi1h[idx];
-          let recentOB = false;
-          for (let i = Math.max(0, idx-5); i < idx; i++) {
-            if (rsi1h[i] != null && rsi1h[i] > 65) { recentOB = true; break; }
-          }
-          const inRange = r != null && r >= 45 && r <= 65;
-          const pass = inRange && recentOB;
-          out.push({ id:'rsi1h', name:'RSI 1h saindo OB', pass:pass,
-            value: r!=null ? r.toFixed(0) : '--',
-            desc: pass ? 'saiu de >65' : (inRange ? 'sem OB recente' : 'fora de 45-65') });
+          const pass = !!(ctx.turnDown && ctx.turnDown[idx]);
+          const r4 = rsi4h[idx];
+          out.push({ id:'turn', name:'RSI 4h TURN DOWN', pass:pass,
+            value: r4!=null ? r4.toFixed(0) : '--',
+            desc: pass ? 'RSI 4h cruzou 60 de cima - virada de topo' : 'sem virada 4h recente' });
         }
         // 3. RSI 4h < 55
         {
@@ -5402,6 +5392,38 @@
         }
         return latest;
       });
+
+      // ========== RSI 4h TURN DETECTION (Estagio I) ==========
+      // Detecta o RSI 4h cruzando 40 de baixo pra cima (TURN UP) ou 60 de cima pra baixo (TURN DOWN).
+      // Essas viradas sao as "entradas classicas" do trading 4h.
+      const TURN_LOW = 40, TURN_HIGH = 60;
+      const rsi4hTurnUpRaw = new Array(klines4h.length).fill(false);
+      const rsi4hTurnDownRaw = new Array(klines4h.length).fill(false);
+      for (let j = 1; j < rsi4hRaw.length; j++) {
+        const r = rsi4hRaw[j], rp = rsi4hRaw[j-1];
+        if (r == null || rp == null) continue;
+        if (rp <= TURN_LOW && r > TURN_LOW) rsi4hTurnUpRaw[j] = true;
+        if (rp >= TURN_HIGH && r < TURN_HIGH) rsi4hTurnDownRaw[j] = true;
+      }
+      // Mapeia turn raw -> 1h index: fire no primeiro kline 1h cujo [openTime, closeTime] contem o closeTime do 4h
+      const turnUp = new Array(klines1h.length).fill(false);
+      const turnDown = new Array(klines1h.length).fill(false);
+      for (let j = 0; j < klines4h.length; j++) {
+        if (!rsi4hTurnUpRaw[j] && !rsi4hTurnDownRaw[j]) continue;
+        const ct = klines4h[j].closeTime;
+        for (let i = 0; i < klines1h.length; i++) {
+          if (klines1h[i].openTime <= ct && klines1h[i].closeTime >= ct) {
+            if (rsi4hTurnUpRaw[j]) turnUp[i] = true;
+            if (rsi4hTurnDownRaw[j]) turnDown[i] = true;
+            break;
+          }
+          if (klines1h[i].openTime > ct) {
+            if (rsi4hTurnUpRaw[j]) turnUp[i] = true;
+            if (rsi4hTurnDownRaw[j]) turnDown[i] = true;
+            break;
+          }
+        }
+      }
 
       // Map OI por timestamp + oiAt por kline
       const oiByTime = (oiHistory || []).map(function(p){
@@ -5496,7 +5518,8 @@
       for (let i = MIN_IDX; i < klines1h.length - 1; i++) {
         const ctx = {
           ema9: ema9, ema21: ema21, macd: macd, rsi1h: rsi1h, rsi4hAligned: rsi4hAligned,
-          funding: currentFunding, netLongs: netLongs, netShorts: netShorts, cvd: cvd
+          funding: currentFunding, netLongs: netLongs, netShorts: netShorts, cvd: cvd,
+          turnUp: turnUp, turnDown: turnDown
         };
         const sc = fsComputeScore(i, ctx);
 
@@ -5509,6 +5532,9 @@
         if (!armedS && sc.side === 'LONG' && sc.opposite < 4) armedS = true;
 
         if (sc.score < 5) continue;
+        // HARD GATE: RSI 4h TURN factor precisa estar ativo pra disparar entrada
+        const turnFactor = sc.factors.find(function(f){ return f.id === 'turn'; });
+        if (!turnFactor || !turnFactor.pass) continue;
         if (sc.side === 'LONG') {
           if (!armedL) continue;
           if (i - lastL < COOLDOWN_BARS) continue;
@@ -5554,7 +5580,8 @@
       const lastIdx = klines1h.length - 1;
       const currentCtx = {
         ema9: ema9, ema21: ema21, macd: macd, rsi1h: rsi1h, rsi4hAligned: rsi4hAligned,
-        funding: currentFunding, netLongs: netLongs, netShorts: netShorts, cvd: cvd
+        funding: currentFunding, netLongs: netLongs, netShorts: netShorts, cvd: cvd,
+        turnUp: turnUp, turnDown: turnDown
       };
       const currentScore = fsComputeScore(lastIdx, currentCtx);
       const curNetLongsSlope = fsSlope(netLongs, lastIdx, 12);
