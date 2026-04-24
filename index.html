@@ -3499,13 +3499,19 @@
       const ctx = document.getElementById('oscillatorChart')?.getContext('2d');
       if (!ctx || state.compositeHistory.length === 0) return;
 
-      // Use ALL composite history, not just last 365 days
-      const data = state.compositeHistory;
-      
-      // Sample if too many points for performance
-      const maxPoints = 500;
-      const step = data.length > maxPoints ? Math.ceil(data.length / maxPoints) : 1;
-      const sampledData = step > 1 ? data.filter((_, i) => i % step === 0 || i === data.length - 1) : data;
+      // ALIGN X-AXIS WITH priceChart: use state.prices as the authoritative date range
+      // and map compositeHistory onto those dates (null where Z is not computed yet).
+      // This keeps the two stacked charts column-aligned (QuantumResearch style).
+      const priceData = state.prices;
+      if (!priceData.length) return;
+
+      // Mirror priceChart sampling (maxPoints = 1500) so tick density matches
+      const maxPoints = 1500;
+      const step = priceData.length > maxPoints ? Math.ceil(priceData.length / maxPoints) : 1;
+      const sampledDates = step > 1 ? priceData.filter((_, i) => i % step === 0 || i === priceData.length - 1) : priceData;
+
+      const zMap = new Map(state.compositeHistory.map(d => [d.date, d.value]));
+      const sampledData = sampledDates.map(p => ({ date: p.date, value: zMap.get(p.date) ?? null }));
 
       if (oscillatorChart) oscillatorChart.destroy();
 
