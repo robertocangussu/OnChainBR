@@ -783,11 +783,11 @@
         <div class="nav-group" data-cat="flow">
           <div class="nav-group-label">Capital & Fluxo</div>
           <a href="#flow" class="nav-link" data-sec="flow"><span class="nav-num">08</span><span class="nav-text"><span class="nav-main">Fluxo</span><span class="nav-sub">ETFs · exchange flows</span></span><span class="nav-dot"></span></a>
+          <a href="#leverage" class="nav-link" data-sec="leverage"><span class="nav-num">09</span><span class="nav-text"><span class="nav-main">Alavancagem</span><span class="nav-sub">Squeeze Radar · OI · Liq</span></span><span class="nav-dot"></span></a>
         </div>
         <div class="nav-group" data-cat="risk">
-          <div class="nav-group-label">Derivativos & Sentimento</div>
-          <a href="#sentiment" class="nav-link" data-sec="sentiment"><span class="nav-num">09</span><span class="nav-text"><span class="nav-main">Sentimento</span><span class="nav-sub">Fear & Greed · funding</span></span><span class="nav-dot"></span></a>
-          <a href="#leverage" class="nav-link" data-sec="leverage"><span class="nav-num">10</span><span class="nav-text"><span class="nav-main">Alavancagem</span><span class="nav-sub">Squeeze Radar · OI · Liq</span></span><span class="nav-dot"></span></a>
+          <div class="nav-group-label">Sentimento</div>
+          <a href="#sentiment" class="nav-link" data-sec="sentiment"><span class="nav-num">10</span><span class="nav-text"><span class="nav-main">Sentimento</span><span class="nav-sub">Fear & Greed · funding</span></span><span class="nav-dot"></span></a>
         </div>
         <div class="nav-group" data-cat="infra">
           <div class="nav-group-label">Produção & Operação</div>
@@ -1611,7 +1611,7 @@
     <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
       <span style="font-size:14px;">③</span>
       <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Capital & Fluxo</span>
-      <span style="font-size:9px;color:var(--text-muted);letter-spacing:0.5px;">ETF · Exchange · Netflow</span>
+      <span style="font-size:9px;color:var(--text-muted);letter-spacing:0.5px;">ETF · Netflow · Leverage</span>
     </div>
   </div>
   <div class="section-wrap" id="flow" style="max-width:1400px;margin:0 auto;padding:0 24px;">
@@ -1694,97 +1694,10 @@
 
   </div>
 
-  <!-- ========== SECTION 4: SMART MONEY TRACKER ========== -->
-
-  <!-- ═══════ CATEGORY DIVIDER: DERIVATIVOS & SENTIMENTO ═══════ -->
-  <div style="max-width:1400px;margin:56px auto 0;padding:0 24px;">
-    <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
-      <span style="font-size:14px;">④</span>
-      <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Derivativos & Sentimento</span>
-      <span style="font-size:9px;color:var(--text-muted);letter-spacing:0.5px;">F&G · Funding · Leverage</span>
-    </div>
-  </div>
-  <div class="section-wrap" id="sentiment" style="max-width:1400px;margin:0 auto;padding:0 24px;">
-    <div class="section-header">
-      <span class="section-num">09</span>
-      <span class="section-title">Índice de Sentimento</span>
-      <span class="section-sub">MEDO E GANÂNCIA · FUNDING · HUMOR COMPOSTO</span>
-    </div>
-    <div class="sentiment-grid">
-      <div class="fg-dial-card">
-        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Fear &amp; Greed</div>
-        <div class="fg-gauge-wrap" style="position:relative;width:200px;height:120px;margin:0 auto 8px;">
-          <svg viewBox="0 0 200 120" style="width:100%;height:100%;overflow:visible;">
-            <!-- 5 zone arcs (each 36°) -->
-            <g fill="none" stroke-width="14" stroke-linecap="butt">
-              <path d="M 10 100 A 90 90 0 0 1 37.3 36.6" stroke="#c73030"/>
-              <path d="M 37.3 36.6 A 90 90 0 0 1 100 10" stroke="#e87c3a"/>
-              <path d="M 100 10 A 90 90 0 0 1 162.7 36.6" stroke="#d4b82c"/>
-              <path d="M 162.7 36.6 A 90 90 0 0 1 189 85" stroke="#67c84a"/>
-              <path d="M 189 85 A 90 90 0 0 1 190 100" stroke="#1a9e55"/>
-            </g>
-            <!-- Needle (rotated via JS) -->
-            <g id="fgNeedleGroup" style="transform-origin:100px 100px;transform:rotate(-90deg);transition:transform 0.6s cubic-bezier(.4,.0,.2,1);">
-              <line x1="100" y1="100" x2="100" y2="20" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
-              <circle cx="100" cy="100" r="6" fill="#fff"/>
-              <circle cx="100" cy="100" r="3" fill="#1a1a1f"/>
-            </g>
-            <!-- Scale labels -->
-            <g fill="#6a6a72" font-size="7" font-family="JetBrains Mono" text-anchor="middle">
-              <text x="15" y="118">0</text>
-              <text x="100" y="4">50</text>
-              <text x="185" y="118">100</text>
-            </g>
-          </svg>
-          <div class="fg-value" id="fgValue" style="position:absolute;left:0;right:0;bottom:-4px;text-align:center;">--</div>
-        </div>
-        <div class="fg-label" id="fgLabel">--</div>
-        <div class="fg-sub" id="fgDate">--</div>
-      </div>
-      <div class="sentiment-card">
-        <div class="sentiment-card-title">Fear &amp; Greed — 90 Day History</div>
-        <div class="chart-container-sentiment"><canvas id="sentimentFgChart"></canvas></div>
-      </div>
-      <div class="sentiment-card">
-        <div class="sentiment-card-title">Z-Composite vs Fear &amp; Greed (normalized)</div>
-        <div class="chart-container-sentiment"><canvas id="sentimentOverlayChart"></canvas></div>
-      </div>
-    </div>
-    <div class="sentiment-stats-row">
-      <div class="sentiment-stat"><div class="stat-label">7d Avg F&amp;G</div><div class="stat-value" id="sentFg7d">--</div><div class="stat-sub" id="sentFg7dLabel">--</div></div>
-      <div class="sentiment-stat"><div class="stat-label">30d Avg F&amp;G</div><div class="stat-value" id="sentFg30d">--</div><div class="stat-sub" id="sentFg30dLabel">--</div></div>
-      <div class="sentiment-stat"><div class="stat-label">BTC Funding Rate</div><div class="stat-value" id="sentFundingBtc">--</div><div class="stat-sub">Binance BTCUSDT Perp</div></div>
-
-    </div>
-    <div class="sentiment-funding-row">
-      <div class="funding-card">
-        <div class="funding-label">BTC Funding Rate</div>
-        <div class="funding-value" id="fundingBtcBig">--</div>
-        <div class="funding-bar-row">
-          <span style="font-size:8px;color:var(--text-muted)">Short bias</span>
-          <div class="funding-bar"><div class="funding-bar-fill" id="fundingBtcBar" style="width:50%;background:var(--accent-yellow)"></div></div>
-          <span style="font-size:8px;color:var(--text-muted)">Long bias</span>
-        </div>
-        <div style="font-size:8px;color:var(--text-muted);margin-top:6px;" id="fundingBtcDesc">--</div>
-      </div>
-
-      <div class="funding-card">
-        <div class="funding-label">Overall Sentiment Score</div>
-        <div class="funding-value" id="overallSentScore">--</div>
-        <div class="funding-bar-row">
-          <span style="font-size:8px;color:var(--text-muted)">Fear</span>
-          <div class="funding-bar"><div class="funding-bar-fill" id="overallSentBar" style="width:50%;background:var(--accent-yellow)"></div></div>
-          <span style="font-size:8px;color:var(--text-muted)">Greed</span>
-        </div>
-        <div style="font-size:8px;color:var(--text-muted);margin-top:6px;" id="overallSentDesc">Composite F&amp;G + Z-Composite</div>
-      </div>
-    </div>
-  </div>
-
   <!-- ========== SECTION 6: LEVERAGE RISK METER ========== -->
   <div class="section-wrap" id="leverage" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">10</span>
+      <span class="section-num">09</span>
       <span class="section-title">Medidor de Risco de Alavancagem</span>
       <span class="section-sub">OPEN INTEREST · LIQUIDAÇÕES · FUNDING RATE · RATIO L/S</span>
     </div>
@@ -2098,6 +2011,93 @@
       <div class="futures-verdict" id="futuresVerdict">
         <div class="futures-verdict-icon">⏳</div>
         <div>Carregando dados de futuros...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SECTION 4: SMART MONEY TRACKER ========== -->
+
+  <!-- ═══════ CATEGORY DIVIDER: SENTIMENTO ═══════ -->
+  <div style="max-width:1400px;margin:56px auto 0;padding:0 24px;">
+    <div style="display:flex;align-items:center;gap:12px;padding:16px 0 8px;border-top:2px solid rgba(249,115,22,0.15);">
+      <span style="font-size:14px;">④</span>
+      <span style="font-size:11px;font-weight:700;color:var(--accent-orange);letter-spacing:2px;text-transform:uppercase;">Sentimento</span>
+      <span style="font-size:9px;color:var(--text-muted);letter-spacing:0.5px;">Fear & Greed · Funding</span>
+    </div>
+  </div>
+  <div class="section-wrap" id="sentiment" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <span class="section-title">Índice de Sentimento</span>
+      <span class="section-sub">MEDO E GANÂNCIA · FUNDING · HUMOR COMPOSTO</span>
+    </div>
+    <div class="sentiment-grid">
+      <div class="fg-dial-card">
+        <div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Fear &amp; Greed</div>
+        <div class="fg-gauge-wrap" style="position:relative;width:200px;height:120px;margin:0 auto 8px;">
+          <svg viewBox="0 0 200 120" style="width:100%;height:100%;overflow:visible;">
+            <!-- 5 zone arcs (each 36°) -->
+            <g fill="none" stroke-width="14" stroke-linecap="butt">
+              <path d="M 10 100 A 90 90 0 0 1 37.3 36.6" stroke="#c73030"/>
+              <path d="M 37.3 36.6 A 90 90 0 0 1 100 10" stroke="#e87c3a"/>
+              <path d="M 100 10 A 90 90 0 0 1 162.7 36.6" stroke="#d4b82c"/>
+              <path d="M 162.7 36.6 A 90 90 0 0 1 189 85" stroke="#67c84a"/>
+              <path d="M 189 85 A 90 90 0 0 1 190 100" stroke="#1a9e55"/>
+            </g>
+            <!-- Needle (rotated via JS) -->
+            <g id="fgNeedleGroup" style="transform-origin:100px 100px;transform:rotate(-90deg);transition:transform 0.6s cubic-bezier(.4,.0,.2,1);">
+              <line x1="100" y1="100" x2="100" y2="20" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="100" cy="100" r="6" fill="#fff"/>
+              <circle cx="100" cy="100" r="3" fill="#1a1a1f"/>
+            </g>
+            <!-- Scale labels -->
+            <g fill="#6a6a72" font-size="7" font-family="JetBrains Mono" text-anchor="middle">
+              <text x="15" y="118">0</text>
+              <text x="100" y="4">50</text>
+              <text x="185" y="118">100</text>
+            </g>
+          </svg>
+          <div class="fg-value" id="fgValue" style="position:absolute;left:0;right:0;bottom:-4px;text-align:center;">--</div>
+        </div>
+        <div class="fg-label" id="fgLabel">--</div>
+        <div class="fg-sub" id="fgDate">--</div>
+      </div>
+      <div class="sentiment-card">
+        <div class="sentiment-card-title">Fear &amp; Greed — 90 Day History</div>
+        <div class="chart-container-sentiment"><canvas id="sentimentFgChart"></canvas></div>
+      </div>
+      <div class="sentiment-card">
+        <div class="sentiment-card-title">Z-Composite vs Fear &amp; Greed (normalized)</div>
+        <div class="chart-container-sentiment"><canvas id="sentimentOverlayChart"></canvas></div>
+      </div>
+    </div>
+    <div class="sentiment-stats-row">
+      <div class="sentiment-stat"><div class="stat-label">7d Avg F&amp;G</div><div class="stat-value" id="sentFg7d">--</div><div class="stat-sub" id="sentFg7dLabel">--</div></div>
+      <div class="sentiment-stat"><div class="stat-label">30d Avg F&amp;G</div><div class="stat-value" id="sentFg30d">--</div><div class="stat-sub" id="sentFg30dLabel">--</div></div>
+      <div class="sentiment-stat"><div class="stat-label">BTC Funding Rate</div><div class="stat-value" id="sentFundingBtc">--</div><div class="stat-sub">Binance BTCUSDT Perp</div></div>
+
+    </div>
+    <div class="sentiment-funding-row">
+      <div class="funding-card">
+        <div class="funding-label">BTC Funding Rate</div>
+        <div class="funding-value" id="fundingBtcBig">--</div>
+        <div class="funding-bar-row">
+          <span style="font-size:8px;color:var(--text-muted)">Short bias</span>
+          <div class="funding-bar"><div class="funding-bar-fill" id="fundingBtcBar" style="width:50%;background:var(--accent-yellow)"></div></div>
+          <span style="font-size:8px;color:var(--text-muted)">Long bias</span>
+        </div>
+        <div style="font-size:8px;color:var(--text-muted);margin-top:6px;" id="fundingBtcDesc">--</div>
+      </div>
+
+      <div class="funding-card">
+        <div class="funding-label">Overall Sentiment Score</div>
+        <div class="funding-value" id="overallSentScore">--</div>
+        <div class="funding-bar-row">
+          <span style="font-size:8px;color:var(--text-muted)">Fear</span>
+          <div class="funding-bar"><div class="funding-bar-fill" id="overallSentBar" style="width:50%;background:var(--accent-yellow)"></div></div>
+          <span style="font-size:8px;color:var(--text-muted)">Greed</span>
+        </div>
+        <div style="font-size:8px;color:var(--text-muted);margin-top:6px;" id="overallSentDesc">Composite F&amp;G + Z-Composite</div>
       </div>
     </div>
   </div>
