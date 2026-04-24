@@ -3580,12 +3580,29 @@
             },
             y: {
               display: true,
+              position: 'left',
               min: -3.5, max: 3.5,
               grid: { color: 'rgba(255,255,255,0.04)' },
               ticks: {
                 color: '#9a9aa6', font: { size: 9 },
                 stepSize: 1,
                 callback: v => v === 0 ? '0' : (v > 0 ? '+'+v : v)
+              }
+            },
+            // Ghost axis on the right: mirrors priceChart y1 range so the two
+            // stacked charts (priceChart + oscillatorChart) line up column-by-column.
+            y1: {
+              display: true,
+              position: 'right',
+              min: -3, max: 3,
+              grid: { display: false },
+              border: { display: false },
+              ticks: {
+                color: 'rgba(154,154,166,0.0)',
+                font: { size: 9 },
+                stepSize: 1,
+                padding: 6,
+                callback: () => ''
               }
             }
           }
