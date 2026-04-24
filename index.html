@@ -512,9 +512,9 @@
     .sentiment-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
     .sentiment-card-title { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
     .chart-container-sentiment { height: 160px; }
-    .sentiment-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; align-items: stretch; }
+    .sentiment-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; align-items: stretch; }
     .sentiment-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
-    .sentiment-funding-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .sentiment-funding-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .funding-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
     .funding-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
     .funding-value { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; }
@@ -4434,9 +4434,14 @@
     /* === Sidebar brand Z-Score mini indicator === */
     function updateSidebarBrandZ() {
       try {
-        const z = state?.compositeHistory?.length
-          ? state.compositeHistory[state.compositeHistory.length - 1].value
-          : null;
+        // v4.1 batch 7: ler state.composite (mesma fonte do card principal #mainZScore)
+        // para garantir que o valor no sidebar bate exatamente com o card do dashboard.
+        // Fallback: compositeHistory[last] se state.composite ainda não foi calculado.
+        const z = (typeof state?.composite === 'number' && isFinite(state.composite))
+          ? state.composite
+          : (state?.compositeHistory?.length
+              ? state.compositeHistory[state.compositeHistory.length - 1].value
+              : null);
         const vEl = document.getElementById('sbBrandZValue');
         const zEl = document.getElementById('sbBrandZZone');
         if (!vEl || !zEl) return;
