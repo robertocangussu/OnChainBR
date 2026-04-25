@@ -844,6 +844,67 @@
     .cat-divider-name { font-size: 11px; font-weight: 700; color: var(--accent-orange); letter-spacing: 2px; text-transform: uppercase; }
     .cat-divider-sub { font-size: 9px; color: var(--text-muted); letter-spacing: 0.5px; }
 
+
+    /* ========== AI Report (Batch 19) - estilos ricos ========== */
+    #aiReportContent .air-headline {
+      font-size: 15px; font-weight: 700; color: var(--text-primary);
+      padding: 6px 0 14px; margin-bottom: 14px;
+      border-bottom: 1px solid rgba(249,115,22,0.22);
+      letter-spacing: 0.2px; line-height: 1.5;
+    }
+    #aiReportContent .air-headline strong { color: var(--accent-orange); }
+    #aiReportContent .air-section {
+      margin-bottom: 14px; padding: 4px 0;
+    }
+    #aiReportContent .air-section-title {
+      font-size: 10px; font-weight: 700; color: var(--accent-cyan);
+      text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    #aiReportContent .air-section p,
+    #aiReportContent .air-section > div:not(.air-section-title) {
+      font-size: 12.5px; line-height: 1.75; color: var(--text-secondary); margin: 0 0 6px;
+    }
+    #aiReportContent .air-metric {
+      font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text-primary);
+    }
+    #aiReportContent .air-metric-strong {
+      font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--text-primary);
+      padding: 1px 4px; background: rgba(255,255,255,0.04); border-radius: 3px;
+    }
+    #aiReportContent .air-positive { color: var(--accent-green); font-weight: 600; }
+    #aiReportContent .air-negative { color: var(--accent-red); font-weight: 600; }
+    #aiReportContent .air-neutral  { color: var(--accent-yellow); font-weight: 600; }
+    #aiReportContent .air-warning  { color: var(--accent-orange); font-weight: 600; }
+    #aiReportContent .air-divider {
+      border: 0; border-top: 1px dashed rgba(255,255,255,0.08); margin: 14px 0;
+    }
+    #aiReportContent .air-highlight {
+      padding: 10px 12px; margin: 10px 0;
+      background: rgba(6,182,212,0.05); border-left: 3px solid var(--accent-cyan);
+      border-radius: 4px; font-size: 12px; line-height: 1.65;
+    }
+    #aiReportContent .air-action {
+      margin: 18px 0 4px; padding: 14px 16px;
+      background: linear-gradient(135deg, rgba(249,115,22,0.10) 0%, rgba(34,197,94,0.05) 100%);
+      border-left: 3px solid var(--accent-orange); border-radius: 6px;
+    }
+    #aiReportContent .air-action-title {
+      font-size: 10px; font-weight: 700; color: var(--accent-orange);
+      text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;
+    }
+    #aiReportContent .air-action p, #aiReportContent .air-action > div {
+      font-size: 12.5px; line-height: 1.7; color: var(--text-primary); margin: 0 0 4px;
+    }
+    #aiReportContent strong { color: var(--text-primary); font-weight: 700; }
+    #aiReportContent em { color: var(--text-primary); font-style: italic; }
+    /* Mobile - AI report */
+    @media (max-width: 600px) {
+      #aiReportContent .air-headline { font-size: 13px !important; }
+      #aiReportContent .air-section p { font-size: 11.5px !important; }
+      #aiReportContent .air-action p { font-size: 11.5px !important; }
+    }
+
   </style>
 </head>
 <body>
@@ -8265,7 +8326,15 @@
       if (loading) loading.style.display = 'none';
       if (errorEl) errorEl.style.display = 'none';
 
-      content.innerHTML = data.report;
+      // Batch 18: remove code fences markdown que Claude as vezes adiciona
+      let reportHtml = data.report || '';
+      reportHtml = reportHtml.trim();
+      // Remove ```html no inicio (com ou sem linguagem)
+      reportHtml = reportHtml.replace(/^```(?:html|HTML)?\s*\n?/, '');
+      // Remove ``` no final
+      reportHtml = reportHtml.replace(/\n?```\s*$/, '');
+      reportHtml = reportHtml.trim();
+      content.innerHTML = reportHtml;
       content.style.display = 'block';
       block.style.display = 'block';
 
@@ -8605,9 +8674,12 @@
         document.getElementById('reportMainText').innerHTML = mainText;
       }
 
-      // Batch 17: dispara analise IA assincrona (fire-and-forget)
-      try { if (typeof fetchDailyAIReport === 'function') fetchDailyAIReport(false); }
-      catch (e) { console.warn('[AI Report] Call failed:', e); }
+      // Batch 17+19: dispara analise IA com delay 5s (deixa todas secoes carregarem)
+      try {
+        if (typeof fetchDailyAIReport === 'function' && !_aiReportFetchedToday && !_aiReportInFlight) {
+          setTimeout(function(){ fetchDailyAIReport(false); }, 5000);
+        }
+      } catch (e) { console.warn('[AI Report] Call failed:', e); }
       
       // ========== ACTION RECOMMENDATION (INTEGRATED) ==========
       let actionText = '';
