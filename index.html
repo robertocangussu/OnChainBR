@@ -6006,7 +6006,6 @@
       // permite backtest do ciclo todo). Cai pro -1h (horario, ~75d) se nao existir.
       try {
         let result = await fetchBGeometrics('/v1/open-interest-1d', 'Open Interest 1d');
-        if (result && result.success && result.data) { leverageState.oiHist = result.data; }
         let sourceIsDaily = result && result.success && Array.isArray(result.data) && result.data.length > 0;
         if (!sourceIsDaily) {
           result = await fetchBGeometrics('/v1/open-interest-1h', 'Open Interest 1h');
@@ -6025,6 +6024,8 @@
             value: toNum(d.sumOpenInterestValue || d.sumOpenInterest || d.openInterest || d.value) || 0
           }));
           levData.oiHistorySource = sourceIsDaily ? 'daily' : 'hourly';
+          // Batch 32: preservar pro Regime Detector (formato {date,value})
+          leverageState.oiHist = levData.oiHistory;
           levData.openInterest = getLatest(data, 'sumOpenInterestValue', 'sumOpenInterest', 'openInterest', 'value');
           console.log('✓ Open Interest:', levData.openInterest, 'history:', levData.oiHistory.length, 'points (' + levData.oiHistorySource + ')');
         }
@@ -6061,6 +6062,8 @@
             date: d.d || d.day || d.date || d.t,
             value: toNum(d.fundingRate || d.rate || d.value || 0)
           }));
+          // Batch 32: preservar pro Regime Detector
+          leverageState.fundingHist = levData.fundingHistory;
           console.log('✓ Funding Rate:', levData.fundingRate, 'history:', levData.fundingHistory.length, 'pts');
         }
       } catch(e) { console.warn('Funding Rate fetch error:', e); }
