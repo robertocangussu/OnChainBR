@@ -371,6 +371,7 @@
     .nav-group[data-cat="flow"]      .nav-group-label { --nav-cat-color: #a78bfa; color: #a78bfa; }
     .nav-group[data-cat="risk"]      .nav-group-label { --nav-cat-color: #ef4444; color: #ef4444; }
     .nav-group[data-cat="infra"]     .nav-group-label { --nav-cat-color: #00d97e; color: #00d97e; }
+    .nav-group[data-cat="radar"]     .nav-group-label { --nav-cat-color: #a855f7; color: #a855f7; }
     .nav-group[data-cat="synth"]     .nav-group-label { --nav-cat-color: #3b82f6; color: #3b82f6; }
     /* Pill-style nav button with subtle gradient accent on hover/active */
     .nav-link {
@@ -1236,17 +1237,20 @@
           <a href="#flow" class="nav-link" data-sec="flow"><span class="nav-num">08</span><span class="nav-text"><span class="nav-main">Fluxo</span><span class="nav-sub">ETFs · exchange flows</span></span><span class="nav-dot"></span></a>
           <a href="#leverage" class="nav-link" data-sec="leverage"><span class="nav-num">09</span><span class="nav-text"><span class="nav-main">Alavancagem</span><span class="nav-sub">Squeeze Radar · OI · Liq</span></span><span class="nav-dot"></span></a>
         </div>
+        <div class="nav-group" data-cat="radar">
+          <div class="nav-group-label">Radar</div>
+          <a href="#regime" class="nav-link" data-sec="regime"><span class="nav-num">10</span><span class="nav-text"><span class="nav-main">Regime</span><span class="nav-sub">Detector de reversão</span></span><span class="nav-dot"></span></a>
+        </div>
         <div class="nav-group" data-cat="risk">
           <div class="nav-group-label">Sentimento</div>
-          <a href="#sentiment" class="nav-link" data-sec="sentiment"><span class="nav-num">10</span><span class="nav-text"><span class="nav-main">Sentimento</span><span class="nav-sub">Fear & Greed · funding</span></span><span class="nav-dot"></span></a>
+          <a href="#sentiment" class="nav-link" data-sec="sentiment"><span class="nav-num">11</span><span class="nav-text"><span class="nav-main">Sentimento</span><span class="nav-sub">Fear & Greed · funding</span></span><span class="nav-dot"></span></a>
         </div>
         <div class="nav-group" data-cat="infra">
           <div class="nav-group-label">Produção & Operação</div>
-          <a href="#miners" class="nav-link" data-sec="miners"><span class="nav-num">11</span><span class="nav-text"><span class="nav-main">Mineradores</span><span class="nav-sub">Puell · reserve · MPI</span></span><span class="nav-dot"></span></a>
+          <a href="#miners" class="nav-link" data-sec="miners"><span class="nav-num">12</span><span class="nav-text"><span class="nav-main">Mineradores</span><span class="nav-sub">Puell · reserve · MPI</span></span><span class="nav-dot"></span></a>
         </div>
         <div class="nav-group" data-cat="synth">
           <div class="nav-group-label">Síntese</div>
-          <a href="#regime" class="nav-link" data-sec="regime"><span class="nav-num">12</span><span class="nav-text"><span class="nav-main">Regime</span><span class="nav-sub">Detector de reversão</span></span><span class="nav-dot"></span></a>
           <a href="#report" class="nav-link" data-sec="report"><span class="nav-num">13</span><span class="nav-text"><span class="nav-main">Relatório</span><span class="nav-sub">Leitura do mercado</span></span><span class="nav-dot"></span></a>
           <a href="#backstage" class="nav-link" data-sec="backstage"><span class="nav-num">14</span><span class="nav-text"><span class="nav-main">Bastidores</span><span class="nav-sub">Backtest · analytics</span></span><span class="nav-dot"></span></a>
         </div>
@@ -2513,6 +2517,99 @@
 
   <!-- ========== SECTION 4: SMART MONEY TRACKER ========== -->
 
+  <!-- ═══════ CATEGORY DIVIDER: RADAR ═══════ -->
+  <div class="cat-divider">
+    <div class="cat-divider-inner">
+      <span class="cat-divider-num">⑤</span>
+      <span class="cat-divider-name">Radar</span>
+      <span class="cat-divider-sub">Detector de Reversão · Cruzamentos Temporais</span>
+    </div>
+  </div>
+  <div class="section-wrap" id="regime" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
+      <span class="section-num">10</span>
+      <span class="section-title">Regime Reversal Detector</span>
+      <span class="section-sub">CRUZAMENTOS TEMPORAIS · MUDANÇA DE REGIME</span>
+    </div>
+    <!-- ========== REGIME REVERSAL DETECTOR (compact - Batch 34) ========== -->
+    <div id="regimeDetectorBlock" style="display:none;">
+      <div class="rdet-head">
+        <span class="rdet-head-icon">🎯</span>
+        <span class="rdet-head-label">Regime Reversal Detector</span>
+        <span id="rdetDirectionBadge" class="rdet-direction rdet-dir-neutral">--</span>
+        <span class="rdet-head-update" id="rdetUpdate">--</span>
+      </div>
+
+      <div class="rdet-cycle-wrap" id="rdetCycleWrap" style="display:none;">
+        <div class="rdet-cycle-head">
+          <span class="rdet-cycle-title">Posição no Ciclo de Mercado</span>
+          <span class="rdet-cycle-info"><strong id="rdetCycleCurrent">--</strong> · <span id="rdetCycleConfidence" class="rdet-cycle-confidence">--</span></span>
+        </div>
+        <div class="rdet-cycle-bar">
+          <div class="rdet-cycle-seg rdet-cycle-seg-1" title="Capitulação · fundo profundo de bear"></div>
+          <div class="rdet-cycle-seg rdet-cycle-seg-2" title="Acumulação · LTHs absorvendo, valor on-chain"></div>
+          <div class="rdet-cycle-seg rdet-cycle-seg-3" title="Markup · bull ativo, momentum positivo"></div>
+          <div class="rdet-cycle-seg rdet-cycle-seg-4" title="Euforia · topo próximo, métricas overheated"></div>
+          <div class="rdet-cycle-seg rdet-cycle-seg-5" title="Distribuição · LTHs vendendo na força"></div>
+          <div class="rdet-cycle-seg rdet-cycle-seg-6" title="Bear · markdown ativo, valuation comprimida"></div>
+          <div class="rdet-cycle-marker" id="rdetCycleMarker" style="left:50%;">▼</div>
+          <div class="rdet-cycle-labels">
+            <div class="rdet-cycle-label-cell">Capit</div>
+            <div class="rdet-cycle-label-cell">Acum</div>
+            <div class="rdet-cycle-label-cell">Markup</div>
+            <div class="rdet-cycle-label-cell">Eufor</div>
+            <div class="rdet-cycle-label-cell">Distr</div>
+            <div class="rdet-cycle-label-cell">Bear</div>
+          </div>
+        </div>
+        <div class="rdet-cycle-meta">
+          <span id="rdetCycleHalving" style="color:var(--text-muted);">--</span>
+          <span style="color:var(--text-muted);font-size:9px;letter-spacing:0.5px;">fitness multi-indicador</span>
+        </div>
+      </div>
+
+      <div class="rdet-boxes">
+        <div class="rdet-box">
+          <div class="rdet-box-title">Score</div>
+          <div class="rdet-score-value-big" id="rdetScore">--</div>
+          <div class="rdet-score-label" id="rdetScoreLabel">aguardando</div>
+        </div>
+        <div class="rdet-box">
+          <div class="rdet-box-title">Triggers</div>
+          <div class="rdet-box-counter" id="rdetTriggerCount">0/9</div>
+          <div class="rdet-box-dots" id="rdetTriggerDots"></div>
+          <div class="rdet-box-sub" id="rdetTriggerSub">eventos pontuais (peso até 157)</div>
+        </div>
+        <div class="rdet-box">
+          <div class="rdet-box-title">Confirmações</div>
+          <div class="rdet-box-counter" id="rdetConfirmCount">0/5</div>
+          <div class="rdet-box-dots" id="rdetConfirmDots"></div>
+          <div class="rdet-box-sub" id="rdetConfirmSub">só contam alinhadas (boost +30)</div>
+        </div>
+      </div>
+
+      <div class="rdet-active">
+        <div>
+          <div class="rdet-col-title">Triggers ativos</div>
+          <div id="rdetActiveTriggers"><div class="rdet-col-empty">Nenhum trigger ativo</div></div>
+        </div>
+        <div>
+          <div class="rdet-col-title">Confirmações alinhadas</div>
+          <div id="rdetActiveConfirms"><div class="rdet-col-empty">Nenhuma confirmação ativa</div></div>
+        </div>
+      </div>
+
+      <details class="rdet-idle-details">
+        <summary class="rdet-idle-summary"><span id="rdetIdleSummary">Sinais idle</span></summary>
+        <div class="rdet-idle-list" id="rdetIdleList"></div>
+      </details>
+
+      <div class="rdet-footer">
+        Detector de mudança de regime baseado em cruzamentos temporais. Score &gt; 50 indica probabilidade alta de virada de tendência. Triggers detectados nos últimos 14-30 dias.
+      </div>
+    </div>
+  </div>
+
   <!-- ═══════ CATEGORY DIVIDER: SENTIMENTO ═══════ -->
   <div class="cat-divider">
     <div class="cat-divider-inner">
@@ -2523,7 +2620,7 @@
   </div>
   <div class="section-wrap" id="sentiment" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">10</span>
+      <span class="section-num">11</span>
       <span class="section-title">Índice de Sentimento</span>
       <span class="section-sub">MEDO E GANÂNCIA · FUNDING · HUMOR COMPOSTO</span>
     </div>
@@ -2610,7 +2707,7 @@
   </div>
   <div class="section-wrap" id="miners" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">11</span>
+      <span class="section-num">12</span>
       <span class="section-title">Contexto de Mineradores</span>
       <span class="section-sub">HASH RIBBONS · RESERVAS MINERS · PUELL MULTIPLE · DIFICULDADE</span>
     </div>
@@ -2721,89 +2818,6 @@
       <span class="cat-divider-sub">Relatório · Bastidores</span>
     </div>
   </div>
-  <div class="section-wrap" id="regime" style="max-width:1400px;margin:0 auto;padding:0 24px;">
-    <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
-      <span class="section-num">12</span>
-      <span class="section-title">Regime Reversal Detector</span>
-      <span class="section-sub">CRUZAMENTOS TEMPORAIS · MUDANÇA DE REGIME</span>
-    </div>
-    <!-- ========== REGIME REVERSAL DETECTOR (compact - Batch 34) ========== -->
-    <div id="regimeDetectorBlock" style="display:none;">
-      <div class="rdet-head">
-        <span class="rdet-head-icon">🎯</span>
-        <span class="rdet-head-label">Regime Reversal Detector</span>
-        <span id="rdetDirectionBadge" class="rdet-direction rdet-dir-neutral">--</span>
-        <span class="rdet-head-update" id="rdetUpdate">--</span>
-      </div>
-
-      <div class="rdet-cycle-wrap" id="rdetCycleWrap" style="display:none;">
-        <div class="rdet-cycle-head">
-          <span class="rdet-cycle-title">Posição no Ciclo de Mercado</span>
-          <span class="rdet-cycle-info"><strong id="rdetCycleCurrent">--</strong> · <span id="rdetCycleConfidence" class="rdet-cycle-confidence">--</span></span>
-        </div>
-        <div class="rdet-cycle-bar">
-          <div class="rdet-cycle-seg rdet-cycle-seg-1" title="Capitulação · fundo profundo de bear"></div>
-          <div class="rdet-cycle-seg rdet-cycle-seg-2" title="Acumulação · LTHs absorvendo, valor on-chain"></div>
-          <div class="rdet-cycle-seg rdet-cycle-seg-3" title="Markup · bull ativo, momentum positivo"></div>
-          <div class="rdet-cycle-seg rdet-cycle-seg-4" title="Euforia · topo próximo, métricas overheated"></div>
-          <div class="rdet-cycle-seg rdet-cycle-seg-5" title="Distribuição · LTHs vendendo na força"></div>
-          <div class="rdet-cycle-seg rdet-cycle-seg-6" title="Bear · markdown ativo, valuation comprimida"></div>
-          <div class="rdet-cycle-marker" id="rdetCycleMarker" style="left:50%;">▼</div>
-          <div class="rdet-cycle-labels">
-            <div class="rdet-cycle-label-cell">Capit</div>
-            <div class="rdet-cycle-label-cell">Acum</div>
-            <div class="rdet-cycle-label-cell">Markup</div>
-            <div class="rdet-cycle-label-cell">Eufor</div>
-            <div class="rdet-cycle-label-cell">Distr</div>
-            <div class="rdet-cycle-label-cell">Bear</div>
-          </div>
-        </div>
-        <div class="rdet-cycle-meta">
-          <span id="rdetCycleHalving" style="color:var(--text-muted);">--</span>
-          <span style="color:var(--text-muted);font-size:9px;letter-spacing:0.5px;">fitness multi-indicador</span>
-        </div>
-      </div>
-
-      <div class="rdet-boxes">
-        <div class="rdet-box">
-          <div class="rdet-box-title">Score</div>
-          <div class="rdet-score-value-big" id="rdetScore">--</div>
-          <div class="rdet-score-label" id="rdetScoreLabel">aguardando</div>
-        </div>
-        <div class="rdet-box">
-          <div class="rdet-box-title">Triggers</div>
-          <div class="rdet-box-counter" id="rdetTriggerCount">0/9</div>
-          <div class="rdet-box-dots" id="rdetTriggerDots"></div>
-          <div class="rdet-box-sub" id="rdetTriggerSub">eventos pontuais (peso até 157)</div>
-        </div>
-        <div class="rdet-box">
-          <div class="rdet-box-title">Confirmações</div>
-          <div class="rdet-box-counter" id="rdetConfirmCount">0/5</div>
-          <div class="rdet-box-dots" id="rdetConfirmDots"></div>
-          <div class="rdet-box-sub" id="rdetConfirmSub">só contam alinhadas (boost +30)</div>
-        </div>
-      </div>
-
-      <div class="rdet-active">
-        <div>
-          <div class="rdet-col-title">Triggers ativos</div>
-          <div id="rdetActiveTriggers"><div class="rdet-col-empty">Nenhum trigger ativo</div></div>
-        </div>
-        <div>
-          <div class="rdet-col-title">Confirmações alinhadas</div>
-          <div id="rdetActiveConfirms"><div class="rdet-col-empty">Nenhuma confirmação ativa</div></div>
-        </div>
-      </div>
-
-      <details class="rdet-idle-details">
-        <summary class="rdet-idle-summary"><span id="rdetIdleSummary">Sinais idle</span></summary>
-        <div class="rdet-idle-list" id="rdetIdleList"></div>
-      </details>
-
-      <div class="rdet-footer">
-        Detector de mudança de regime baseado em cruzamentos temporais. Score &gt; 50 indica probabilidade alta de virada de tendência. Triggers detectados nos últimos 14-30 dias.
-      </div>
-    </div>
 
   <div class="section-wrap" id="report" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
