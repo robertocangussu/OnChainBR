@@ -995,58 +995,90 @@
     }
 
 
-    /* ========== Regime Reversal Detector (Batch 28) ========== */
+    /* ========== Regime Reversal Detector - compact (Batch 34) ========== */
     #regimeDetectorBlock {
-      margin: 16px 0; padding: 18px 22px; border-radius: 12px;
+      margin: 16px 0; padding: 14px 18px; border-radius: 12px;
       background: linear-gradient(135deg, rgba(168,85,247,0.06) 0%, rgba(6,182,212,0.04) 100%);
       border: 1px solid rgba(168,85,247,0.20);
     }
-    .rdet-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .rdet-head { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; }
     .rdet-head-icon { font-size: 14px; }
     .rdet-head-label { font-size: 10px; color: var(--accent-purple); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
     .rdet-head-update { font-size: 9px; color: var(--text-muted); margin-left: auto; }
-
-    .rdet-summary { display: grid; grid-template-columns: 130px 1fr; gap: 16px; align-items: center; margin-bottom: 14px; }
-    .rdet-score-wrap { text-align: center; }
-    .rdet-score-value { font-family: 'Space Grotesk', sans-serif; font-size: 42px; font-weight: 800; line-height: 1; }
-    .rdet-score-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
-    .rdet-summary-text { font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); }
-    .rdet-summary-text strong { color: var(--text-primary); }
-
-    .rdet-direction { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; margin-right: 6px; }
+    .rdet-direction { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 12px; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; }
     .rdet-dir-bullish { background: rgba(34,197,94,0.14); color: var(--accent-green); border: 1px solid rgba(34,197,94,0.3); }
     .rdet-dir-bearish { background: rgba(226,75,74,0.14); color: var(--accent-red); border: 1px solid rgba(226,75,74,0.3); }
     .rdet-dir-mixed   { background: rgba(234,179,8,0.14); color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
     .rdet-dir-neutral { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); }
 
-    .rdet-triggers { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 8px; }
-    .rdet-trigger-list { display: flex; flex-direction: column; gap: 6px; }
-    .rdet-trigger-item {
-      display: grid; grid-template-columns: 24px 1fr 90px 70px;
-      align-items: center; gap: 10px;
-      padding: 8px 10px; border-radius: 6px;
-      background: rgba(255,255,255,0.02); border-left: 3px solid transparent;
-      font-size: 12px;
+    /* 3 boxes lado a lado */
+    .rdet-boxes { display: grid; grid-template-columns: 1fr 1.5fr 1.5fr; gap: 10px; margin-bottom: 14px; }
+    .rdet-box {
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px; padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 4px;
     }
-    .rdet-trigger-item.fired { border-left-color: var(--accent-purple); background: rgba(168,85,247,0.05); }
-    .rdet-trigger-item.fired.bullish { border-left-color: var(--accent-green); background: rgba(34,197,94,0.05); }
-    .rdet-trigger-item.fired.bearish { border-left-color: var(--accent-red); background: rgba(226,75,74,0.05); }
-    .rdet-trigger-icon { font-size: 14px; text-align: center; }
-    .rdet-trigger-desc { color: var(--text-secondary); }
-    .rdet-trigger-item.fired .rdet-trigger-desc { color: var(--text-primary); }
-    .rdet-trigger-time { font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-align: right; }
-    .rdet-trigger-weight { font-size: 10px; font-family: 'JetBrains Mono', monospace; text-align: right; color: var(--text-muted); }
-    .rdet-trigger-item.fired.bullish .rdet-trigger-weight { color: var(--accent-green); }
-    .rdet-trigger-item.fired.bearish .rdet-trigger-weight { color: var(--accent-red); }
+    .rdet-box-title { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 600; }
+    .rdet-score-value-big { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 800; line-height: 1; color: var(--text-muted); }
+    .rdet-score-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+    .rdet-box-counter { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--text-primary); }
+    .rdet-box-dots { display: flex; gap: 3px; }
+    .rdet-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.08); flex-shrink: 0; }
+    .rdet-dot.fired-bullish { background: var(--accent-green); box-shadow: 0 0 4px rgba(34,197,94,0.5); }
+    .rdet-dot.fired-bearish { background: var(--accent-red); box-shadow: 0 0 4px rgba(226,75,74,0.5); }
+    .rdet-dot.fired-mixed { background: var(--accent-yellow); }
+    .rdet-box-sub { font-size: 9px; color: var(--text-muted); letter-spacing: 0.4px; }
 
-    .rdet-footer { font-size: 9px; color: var(--text-muted); margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.04); letter-spacing: 0.4px; line-height: 1.5; }
-
-    @media (max-width: 600px) {
-      .rdet-summary { grid-template-columns: 1fr; gap: 8px; }
-      .rdet-score-wrap { text-align: left; }
-      .rdet-trigger-item { grid-template-columns: 24px 1fr; row-gap: 4px; }
-      .rdet-trigger-time, .rdet-trigger-weight { grid-column: 2; text-align: left; }
+    /* Sinais ativos (2 colunas) */
+    .rdet-active { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
+    .rdet-col-title { font-size: 9px; color: var(--accent-purple); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 6px; }
+    .rdet-col-empty { font-size: 10px; color: var(--text-muted); font-style: italic; padding: 6px 0; }
+    .rdet-active-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border-radius: 5px;
+      background: rgba(255,255,255,0.02);
+      border-left: 3px solid;
+      font-size: 11px; line-height: 1.4;
+      margin-bottom: 4px;
     }
+    .rdet-active-item.bullish { border-left-color: var(--accent-green); background: rgba(34,197,94,0.05); }
+    .rdet-active-item.bearish { border-left-color: var(--accent-red); background: rgba(226,75,74,0.05); }
+    .rdet-active-icon { font-size: 12px; flex-shrink: 0; width: 14px; }
+    .rdet-active-icon.bullish { color: var(--accent-green); }
+    .rdet-active-icon.bearish { color: var(--accent-red); }
+    .rdet-active-content { flex: 1; min-width: 0; }
+    .rdet-active-name { font-weight: 600; color: var(--text-primary); font-size: 10.5px; }
+    .rdet-active-desc { color: var(--text-secondary); font-size: 10px; opacity: 0.85; }
+    .rdet-active-meta { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--text-muted); flex-shrink: 0; text-align: right; }
+    .rdet-active-meta strong { color: inherit; }
+    .rdet-active-item.bullish .rdet-active-meta strong { color: var(--accent-green); }
+    .rdet-active-item.bearish .rdet-active-meta strong { color: var(--accent-red); }
+
+    /* Idle details */
+    .rdet-idle-details { margin: 8px 0 4px; padding: 8px 10px; border-radius: 6px; background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.04); }
+    .rdet-idle-summary { cursor: pointer; user-select: none; font-size: 10px; color: var(--text-muted); list-style: none; display: flex; align-items: center; gap: 6px; letter-spacing: 0.3px; }
+    .rdet-idle-summary::-webkit-details-marker { display: none; }
+    .rdet-idle-summary::before { content: '▶'; font-size: 8px; transition: transform 0.15s; }
+    details[open] > .rdet-idle-summary::before { transform: rotate(90deg); }
+    .rdet-idle-list { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .rdet-idle-item {
+      display: flex; align-items: center; gap: 6px;
+      padding: 4px 8px; border-radius: 4px;
+      background: rgba(255,255,255,0.015);
+      font-size: 10px; color: var(--text-muted);
+    }
+    .rdet-idle-icon { color: var(--text-muted); flex-shrink: 0; }
+    .rdet-idle-name { flex: 1; min-width: 0; }
+    .rdet-idle-weight { font-family: 'JetBrains Mono', monospace; font-size: 9px; opacity: 0.6; }
+
+    .rdet-footer { font-size: 9px; color: var(--text-muted); margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.04); letter-spacing: 0.3px; line-height: 1.4; }
+
+    @media (max-width: 700px) {
+      .rdet-boxes { grid-template-columns: 1fr; }
+      .rdet-active { grid-template-columns: 1fr; }
+      .rdet-idle-list { grid-template-columns: 1fr; }
+    }
+
 
   </style>
 </head>
@@ -2567,39 +2599,55 @@
       <span class="section-title">Regime Reversal Detector</span>
       <span class="section-sub">CRUZAMENTOS TEMPORAIS · MUDANÇA DE REGIME</span>
     </div>
-    <!-- ========== REGIME REVERSAL DETECTOR (Batch 28) ========== -->
+    <!-- ========== REGIME REVERSAL DETECTOR (compact - Batch 34) ========== -->
     <div id="regimeDetectorBlock" style="display:none;">
       <div class="rdet-head">
         <span class="rdet-head-icon">🎯</span>
         <span class="rdet-head-label">Regime Reversal Detector</span>
+        <span id="rdetDirectionBadge" class="rdet-direction rdet-dir-neutral">--</span>
         <span class="rdet-head-update" id="rdetUpdate">--</span>
       </div>
 
-      <div class="rdet-summary">
-        <div class="rdet-score-wrap">
-          <div class="rdet-score-value" id="rdetScore" style="color:var(--text-muted);">--</div>
+      <div class="rdet-boxes">
+        <div class="rdet-box">
+          <div class="rdet-box-title">Score</div>
+          <div class="rdet-score-value-big" id="rdetScore">--</div>
           <div class="rdet-score-label" id="rdetScoreLabel">aguardando</div>
         </div>
-        <div class="rdet-summary-text">
-          <span id="rdetDirectionBadge" class="rdet-direction rdet-dir-neutral">--</span><span id="rdetSummaryText">Aguardando dados de Z-Composite, STH/LTH RP e LTH supply para calcular triggers de mudança de regime.</span>
+        <div class="rdet-box">
+          <div class="rdet-box-title">Triggers</div>
+          <div class="rdet-box-counter" id="rdetTriggerCount">0/8</div>
+          <div class="rdet-box-dots" id="rdetTriggerDots"></div>
+          <div class="rdet-box-sub" id="rdetTriggerSub">eventos pontuais (peso até 145)</div>
+        </div>
+        <div class="rdet-box">
+          <div class="rdet-box-title">Confirmações</div>
+          <div class="rdet-box-counter" id="rdetConfirmCount">0/5</div>
+          <div class="rdet-box-dots" id="rdetConfirmDots"></div>
+          <div class="rdet-box-sub" id="rdetConfirmSub">só contam alinhadas (boost +30)</div>
         </div>
       </div>
 
-      <div class="rdet-triggers">Triggers (<span id="rdetTriggerCount">0/8</span>)</div>
-      <div class="rdet-trigger-list" id="rdetTriggerList">
-        <!-- populated by renderRegimeDetector -->
+      <div class="rdet-active">
+        <div>
+          <div class="rdet-col-title">Triggers ativos</div>
+          <div id="rdetActiveTriggers"><div class="rdet-col-empty">Nenhum trigger ativo</div></div>
+        </div>
+        <div>
+          <div class="rdet-col-title">Confirmações alinhadas</div>
+          <div id="rdetActiveConfirms"><div class="rdet-col-empty">Nenhuma confirmação ativa</div></div>
+        </div>
       </div>
 
-      <div class="rdet-triggers" style="margin-top:14px;">Confirmações (<span id="rdetConfirmCount">0/5</span>) <span style="font-size:9px;color:var(--text-muted);font-weight:400;letter-spacing:0.5px;text-transform:none;">só contam quando alinhadas com direção majoritária dos triggers</span></div>
-      <div class="rdet-trigger-list" id="rdetConfirmList">
-        <!-- populated by renderRegimeDetector -->
-      </div>
+      <details class="rdet-idle-details">
+        <summary class="rdet-idle-summary"><span id="rdetIdleSummary">Sinais idle</span></summary>
+        <div class="rdet-idle-list" id="rdetIdleList"></div>
+      </details>
 
       <div class="rdet-footer">
-        Detector de mudança de regime baseado em cruzamentos temporais. Score &gt; 50 indica probabilidade alta de virada de tendência. Triggers ativos foram detectados nos últimos 14 dias.
+        Detector de mudança de regime baseado em cruzamentos temporais. Score &gt; 50 indica probabilidade alta de virada de tendência. Triggers detectados nos últimos 14-30 dias.
       </div>
     </div>
-  </div>
 
   <div class="section-wrap" id="report" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
@@ -9294,9 +9342,12 @@
           }
         }
         const maxConfirmScore = confirmations.reduce((s, c) => s + c.weight, 0);
+        // Batch 34: formula refinada - triggers ate 100% + confirmacoes ate +30 boost
+        const triggerPct = maxTriggerScore > 0 ? (triggerRaw / maxTriggerScore) * 100 : 0;
+        const confirmPct = maxConfirmScore > 0 ? (confirmRaw / maxConfirmScore) : 0;
         const raw = triggerRaw + confirmRaw;
         const maxScore = maxTriggerScore + maxConfirmScore;
-        const score = maxScore > 0 ? Math.round((raw / maxScore) * 100) : 0;
+        const score = Math.min(100, Math.round(triggerPct + (confirmPct * 30)));
         let label;
         if (raw === 0) {
           label = 'STABLE';
@@ -9341,7 +9392,7 @@
       const st = regimeDetectorState;
       block.style.display = 'block';
 
-      // Score
+      // Score big
       const scoreEl = document.getElementById('rdetScore');
       const scoreLabel = document.getElementById('rdetScoreLabel');
       if (scoreEl) {
@@ -9364,78 +9415,119 @@
         dirEl.className = 'rdet-direction ' + cls;
       }
 
-      // Summary text
-      const sumEl = document.getElementById('rdetSummaryText');
-      if (sumEl) {
-        const fired = st.triggers.filter(t => t.fired);
-        if (fired.length === 0) {
-          sumEl.innerHTML = 'Nenhum trigger ativo. Regime atual estável, sem sinais recentes de mudança estrutural.';
+      // Trigger count + dots
+      const tCntEl = document.getElementById('rdetTriggerCount');
+      const tDotsEl = document.getElementById('rdetTriggerDots');
+      const triggers = st.triggers || [];
+      const firedTriggers = triggers.filter(t => t.fired);
+      if (tCntEl) tCntEl.textContent = firedTriggers.length + '/' + triggers.length;
+      if (tDotsEl) {
+        tDotsEl.innerHTML = '';
+        for (const t of triggers) {
+          const dot = document.createElement('div');
+          let cls = 'rdet-dot';
+          if (t.fired) cls += ' fired-' + (t.direction || 'mixed');
+          dot.className = cls;
+          dot.title = t.label;
+          tDotsEl.appendChild(dot);
+        }
+      }
+
+      // Confirm count + dots
+      const confirmations = st.confirmations || [];
+      const counted = confirmations.filter(c => c.fired && (st.direction === 'bullish' || st.direction === 'bearish') && c.direction === st.direction);
+      const cCntEl = document.getElementById('rdetConfirmCount');
+      const cDotsEl = document.getElementById('rdetConfirmDots');
+      if (cCntEl) cCntEl.textContent = counted.length + '/' + confirmations.length;
+      if (cDotsEl) {
+        cDotsEl.innerHTML = '';
+        for (const c of confirmations) {
+          const dot = document.createElement('div');
+          let cls = 'rdet-dot';
+          const isCounted = c.fired && (st.direction === 'bullish' || st.direction === 'bearish') && c.direction === st.direction;
+          if (isCounted) cls += ' fired-' + c.direction;
+          dot.className = cls;
+          dot.title = c.label;
+          cDotsEl.appendChild(dot);
+        }
+      }
+
+      // Active triggers list
+      const activeTr = document.getElementById('rdetActiveTriggers');
+      if (activeTr) {
+        if (firedTriggers.length === 0) {
+          activeTr.innerHTML = '<div class="rdet-col-empty">Nenhum trigger ativo</div>';
         } else {
-          const direction_pt = st.direction === 'bullish' ? 'bullish' : (st.direction === 'bearish' ? 'bearish' : 'misto');
-          let s = '<strong>' + fired.length + ' de ' + st.triggers.length + ' triggers</strong> ativos com viés <strong>' + direction_pt + '</strong>. ';
-          if (st.label === 'HIGH CONVICTION') s += 'Confluência completa de sinais aponta mudança de regime em curso.';
-          else if (st.label === 'PROBABLE REVERSAL') s += 'Confluência parcial sustenta tese de reversão. Aguardar mais confirmações.';
-          else s += 'Sinais isolados detectados. Monitorar para potencial confluência.';
-          sumEl.innerHTML = s;
+          activeTr.innerHTML = '';
+          for (const t of firedTriggers) {
+            const item = document.createElement('div');
+            item.className = 'rdet-active-item ' + (t.direction || '');
+            const icon = t.direction === 'bullish' ? '↑' : (t.direction === 'bearish' ? '↓' : '✓');
+            item.innerHTML =
+              '<div class="rdet-active-icon ' + (t.direction || '') + '">' + icon + '</div>' +
+              '<div class="rdet-active-content">' +
+                '<div class="rdet-active-name">' + t.label + '</div>' +
+                '<div class="rdet-active-desc">' + (t.description || '') + '</div>' +
+              '</div>' +
+              '<div class="rdet-active-meta"><strong>+' + t.weight + '</strong><br>há ' + t.daysAgo + 'd</div>';
+            activeTr.appendChild(item);
+          }
         }
       }
 
-      // Trigger count
-      const cntEl = document.getElementById('rdetTriggerCount');
-      if (cntEl) {
-        const fired = st.triggers.filter(t => t.fired).length;
-        cntEl.textContent = fired + '/' + st.triggers.length;
+      // Active confirmations
+      const activeCnf = document.getElementById('rdetActiveConfirms');
+      if (activeCnf) {
+        if (counted.length === 0) {
+          activeCnf.innerHTML = '<div class="rdet-col-empty">Nenhuma confirmação alinhada</div>';
+        } else {
+          activeCnf.innerHTML = '';
+          for (const c of counted) {
+            const item = document.createElement('div');
+            item.className = 'rdet-active-item ' + (c.direction || '');
+            item.innerHTML =
+              '<div class="rdet-active-icon ' + (c.direction || '') + '">✓✓</div>' +
+              '<div class="rdet-active-content">' +
+                '<div class="rdet-active-name">' + c.label + '</div>' +
+                '<div class="rdet-active-desc">' + (c.description || '') + '</div>' +
+              '</div>' +
+              '<div class="rdet-active-meta"><strong>+' + c.weight + '</strong><br>boost</div>';
+            activeCnf.appendChild(item);
+          }
+        }
       }
 
-      // Trigger list
-      const list = document.getElementById('rdetTriggerList');
-      if (list) {
-        list.innerHTML = '';
-        for (const t of st.triggers) {
+      // Idle list (combina triggers idle + confirmações divergentes/idle)
+      const idleEl = document.getElementById('rdetIdleList');
+      const idleSumEl = document.getElementById('rdetIdleSummary');
+      const idleTriggers = triggers.filter(t => !t.fired);
+      const idleConfirms = confirmations.filter(c => !counted.includes(c));
+      const totalIdle = idleTriggers.length + idleConfirms.length;
+      if (idleSumEl) {
+        if (totalIdle === 0) idleSumEl.textContent = 'Todos sinais ativos';
+        else idleSumEl.textContent = idleTriggers.length + ' triggers idle e ' + idleConfirms.length + ' confirmações inativas (clique para detalhes)';
+      }
+      if (idleEl) {
+        idleEl.innerHTML = '';
+        for (const t of idleTriggers) {
           const item = document.createElement('div');
-          let cls = 'rdet-trigger-item';
-          if (t.fired) cls += ' fired ' + (t.direction || '');
-          item.className = cls;
-          const icon = !t.fired ? '○' : (t.direction === 'bullish' ? '↑' : (t.direction === 'bearish' ? '↓' : '✓'));
-          const time = t.fired ? ('há ' + t.daysAgo + 'd') : '—';
-          const wgt = t.fired ? ('+' + t.weight) : ('±' + t.weight);
+          item.className = 'rdet-idle-item';
           item.innerHTML =
-            '<div class="rdet-trigger-icon">' + icon + '</div>' +
-            '<div class="rdet-trigger-desc"><strong>' + t.label + '</strong><br><span style="font-size:11px;opacity:0.8;">' + (t.description || '') + '</span></div>' +
-            '<div class="rdet-trigger-time">' + time + '</div>' +
-            '<div class="rdet-trigger-weight">' + wgt + '</div>';
-          list.appendChild(item);
+            '<span class="rdet-idle-icon">○</span>' +
+            '<span class="rdet-idle-name"><strong>' + t.label + '</strong> · ' + (t.description || '') + '</span>' +
+            '<span class="rdet-idle-weight">±' + t.weight + '</span>';
+          idleEl.appendChild(item);
         }
-      }
-
-      // Batch 33: render confirmations
-      const confList = document.getElementById('rdetConfirmList');
-      if (confList) {
-        confList.innerHTML = '';
-        const confs = st.confirmations || [];
-        for (const c of confs) {
+        for (const c of idleConfirms) {
           const item = document.createElement('div');
-          // Confirmation only "counts" if aligned with majority direction
-          const counts = c.fired && (st.direction === 'bullish' || st.direction === 'bearish') && c.direction === st.direction;
-          let cls = 'rdet-trigger-item';
-          if (counts) cls += ' fired ' + (c.direction || '');
-          item.className = cls;
-          const icon = !c.fired ? '○' : (counts ? '✓✓' : (c.direction === 'bullish' ? '⊕' : '⊖'));
-          const wgt = counts ? ('+' + c.weight) : ('±' + c.weight);
-          const status = c.fired ? (counts ? 'sustenta' : 'diverge') : '—';
+          item.className = 'rdet-idle-item';
+          const status = c.fired ? '⊘ diverge' : '○ idle';
           item.innerHTML =
-            '<div class="rdet-trigger-icon">' + icon + '</div>' +
-            '<div class="rdet-trigger-desc"><strong>' + c.label + '</strong><br><span style="font-size:11px;opacity:0.8;">' + (c.description || '') + '</span></div>' +
-            '<div class="rdet-trigger-time">' + status + '</div>' +
-            '<div class="rdet-trigger-weight">' + wgt + '</div>';
-          confList.appendChild(item);
+            '<span class="rdet-idle-icon">' + status + '</span>' +
+            '<span class="rdet-idle-name"><strong>' + c.label + '</strong> · ' + (c.description || '') + '</span>' +
+            '<span class="rdet-idle-weight">±' + c.weight + '</span>';
+          idleEl.appendChild(item);
         }
-      }
-      const confCntEl = document.getElementById('rdetConfirmCount');
-      if (confCntEl) {
-        const confs = st.confirmations || [];
-        const counted = confs.filter(c => c.fired && (st.direction === 'bullish' || st.direction === 'bearish') && c.direction === st.direction).length;
-        confCntEl.textContent = counted + '/' + confs.length;
       }
 
       // Update timestamp
