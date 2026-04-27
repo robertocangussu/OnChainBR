@@ -1112,6 +1112,38 @@
     .rdet-cycle-current { color: var(--text-primary); font-weight: 700; }
     .rdet-cycle-confidence { font-family: 'JetBrains Mono', monospace; }
 
+
+    /* ========== URPD - Cost Basis Distribution (Batch 37) ========== */
+    .urpd-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px 22px; margin-top: 18px;
+    }
+    .urpd-head { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; }
+    .urpd-head-icon { font-size: 14px; }
+    .urpd-head-title { font-size: 11px; color: var(--accent-orange); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+    .urpd-head-sub { font-size: 9px; color: var(--text-muted); letter-spacing: 0.5px; margin-left: auto; }
+    .urpd-controls { display: flex; gap: 8px; }
+    .urpd-btn {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: var(--text-muted);
+      padding: 4px 10px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;
+      font-size: 9px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px;
+      transition: all 0.15s;
+    }
+    .urpd-btn:hover { background: rgba(249,115,22,0.10); color: var(--accent-orange); border-color: rgba(249,115,22,0.3); }
+    .urpd-btn.active { background: rgba(249,115,22,0.18); color: var(--accent-orange); border-color: var(--accent-orange); }
+    .urpd-content { position: relative; }
+    .urpd-chart { width: 100%; max-height: 360px; }
+    .urpd-loading { font-size: 11px; color: var(--text-muted); font-style: italic; text-align: center; padding: 40px 0; }
+    .urpd-error { font-size: 10px; color: var(--accent-orange); text-align: center; padding: 30px 0; }
+    .urpd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.04); }
+    .urpd-stat { font-size: 10px; }
+    .urpd-stat-label { color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; font-size: 8.5px; margin-bottom: 2px; }
+    .urpd-stat-value { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--text-primary); }
+
+    @media (max-width: 700px) {
+      .urpd-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
   </style>
 </head>
 <body>
@@ -1923,6 +1955,44 @@
         Carregando narrativa...
       </div>
     </div>
+
+    <!-- ========== URPD - Cost Basis Distribution (Batch 37) ========== -->
+    <div class="urpd-card" id="urpdCard">
+      <div class="urpd-head">
+        <span class="urpd-head-icon">📊</span>
+        <span class="urpd-head-title">UTXO Realized Price Distribution &middot; Cost Basis</span>
+        <div class="urpd-controls">
+          <button class="urpd-btn active" data-urpd-cohort="all">ALL</button>
+          <button class="urpd-btn" data-urpd-cohort="sth">STH</button>
+          <button class="urpd-btn" data-urpd-cohort="lth">LTH</button>
+        </div>
+        <span class="urpd-head-sub" id="urpdSub">Aguardando BRK...</span>
+      </div>
+      <div class="urpd-content">
+        <div class="urpd-loading" id="urpdLoading">Carregando distribuição de cost basis...</div>
+        <svg class="urpd-chart" id="urpdChart" viewBox="0 0 800 360" preserveAspectRatio="none" style="display:none;"></svg>
+        <div class="urpd-error" id="urpdError" style="display:none;"></div>
+      </div>
+      <div class="urpd-stats" id="urpdStats" style="display:none;">
+        <div class="urpd-stat">
+          <div class="urpd-stat-label">Cluster Mais Denso</div>
+          <div class="urpd-stat-value" id="urpdDensestPrice">--</div>
+        </div>
+        <div class="urpd-stat">
+          <div class="urpd-stat-label">Supply nesse Bin</div>
+          <div class="urpd-stat-value" id="urpdDensestSupply">--</div>
+        </div>
+        <div class="urpd-stat">
+          <div class="urpd-stat-label">Supply Acima do Spot</div>
+          <div class="urpd-stat-value" id="urpdAboveSpot">--</div>
+        </div>
+        <div class="urpd-stat">
+          <div class="urpd-stat-label">Supply Abaixo do Spot</div>
+          <div class="urpd-stat-value" id="urpdBelowSpot">--</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ========== SECTION 12: COHORT PROFITABILITY ========== -->
@@ -8583,6 +8653,15 @@
         halving: halving,
         phase: phase,
         // Batch 28: regime detector estado
+        urpd: (typeof urpdState !== 'undefined' && urpdState && urpdState.loaded) ? {
+          cohort: urpdState.cohort,
+          totalSupply: urpdState.totalSupply,
+          densestPrice: urpdState.densestBin ? urpdState.densestBin.priceMid : null,
+          densestSupply: urpdState.densestBin ? urpdState.densestBin.btcAmount : null,
+          supplyAboveSpot: urpdState.supplyAboveSpot,
+          supplyBelowSpot: urpdState.supplyBelowSpot,
+          binCount: urpdState.bins.length
+        } : null,
         cdd: (typeof cddState !== 'undefined' && cddState && cddState.loaded) ? {
           latest: cddState.latest,
           percentile: cddState.percentileNow,
@@ -9937,6 +10016,263 @@
         } catch(e) {}
       }
     }
+
+
+    // ========== URPD - Cost Basis Distribution (Batch 37) ==========
+    const urpdState = {
+      loaded: false, error: null, cohort: 'all', bucket: 'log100', value: 'supply',
+      bins: [], totalSupply: 0, densestBin: null, supplyAboveSpot: 0, supplyBelowSpot: 0,
+      lastUpdate: null
+    };
+
+    async function fetchURPD(cohort) {
+      cohort = cohort || urpdState.cohort || 'all';
+      urpdState.cohort = cohort;
+      urpdState.error = null;
+      const baseUrl = 'https://bitview.space/api/series';
+      const showLoading = () => {
+        const l = document.getElementById('urpdLoading');
+        const c = document.getElementById('urpdChart');
+        const e = document.getElementById('urpdError');
+        const s = document.getElementById('urpdStats');
+        if (l) { l.style.display = 'block'; l.textContent = 'Carregando ' + cohort.toUpperCase() + '...'; }
+        if (c) c.style.display = 'none';
+        if (e) e.style.display = 'none';
+        if (s) s.style.display = 'none';
+      };
+      const showError = (msg) => {
+        const l = document.getElementById('urpdLoading');
+        const e = document.getElementById('urpdError');
+        if (l) l.style.display = 'none';
+        if (e) { e.style.display = 'block'; e.textContent = msg; }
+      };
+      showLoading();
+
+      try {
+        // 1. Pegar a data mais recente disponivel
+        let dateStr = null;
+        try {
+          const datesRes = await fetch(baseUrl + '/cost-basis/' + cohort + '/dates');
+          if (datesRes.ok) {
+            const dates = await datesRes.json();
+            if (Array.isArray(dates) && dates.length > 0) {
+              dateStr = dates[dates.length - 1]; // ultima data
+              console.log('[URPD] dates count=' + dates.length + ' latest=' + dateStr);
+            }
+          } else {
+            console.log('[URPD] /dates status ' + datesRes.status);
+          }
+        } catch(e) { console.warn('[URPD] dates fetch:', e.message); }
+
+        // 2. Tentar fetchar com data ou sem data
+        const tryDates = dateStr ? [dateStr, 'latest'] : ['latest', 'last'];
+        let parsed = null;
+        for (const d of tryDates) {
+          const url = baseUrl + '/cost-basis/' + cohort + '/' + d + '?bucket=log100&value=supply';
+          try {
+            const res = await fetch(url);
+            console.log('[URPD] tentou ' + url + ' -> status ' + res.status);
+            if (!res.ok) continue;
+            const data = await res.json();
+            console.log('[URPD] data sample:', Array.isArray(data) ? data.slice(0, 3) : data);
+            parsed = parseURPDData(data);
+            if (parsed && parsed.bins.length > 5) break;
+          } catch(e) { console.warn('[URPD] fetch ' + url + ' erro:', e.message); }
+        }
+
+        if (!parsed || parsed.bins.length === 0) {
+          // Fallback: tentar via search
+          console.log('[URPD] cost-basis nao retornou dados, tentando search...');
+          try {
+            const searchRes = await fetch(baseUrl + '/search?q=cost-basis&limit=15');
+            if (searchRes.ok) {
+              const data = await searchRes.json();
+              console.log('[URPD] search results:', Array.isArray(data) ? data.slice(0, 15) : data);
+            }
+          } catch(e) {}
+          throw new Error('Sem dados URPD do BRK (cost-basis endpoint pode requerer auth ou nao existir)');
+        }
+
+        // 3. Calcular stats com spot atual
+        const spot = (typeof tradingState !== 'undefined' && tradingState && tradingState.currentPrice) || 0;
+        let totalSupply = 0, supplyAbove = 0, supplyBelow = 0, densestBin = null, maxBtc = 0;
+        for (const b of parsed.bins) {
+          totalSupply += b.btcAmount;
+          if (spot > 0) {
+            if (b.priceMid > spot) supplyAbove += b.btcAmount;
+            else supplyBelow += b.btcAmount;
+          }
+          if (b.btcAmount > maxBtc) { maxBtc = b.btcAmount; densestBin = b; }
+        }
+
+        urpdState.bins = parsed.bins;
+        urpdState.totalSupply = totalSupply;
+        urpdState.densestBin = densestBin;
+        urpdState.supplyAboveSpot = supplyAbove;
+        urpdState.supplyBelowSpot = supplyBelow;
+        urpdState.loaded = true;
+        urpdState.lastUpdate = new Date().toISOString();
+
+        renderURPDChart();
+      } catch(e) {
+        console.warn('[URPD] error:', e.message);
+        urpdState.error = e.message;
+        showError('URPD indisponivel: ' + e.message);
+      }
+    }
+
+    function parseURPDData(data) {
+      // BRK pode retornar varios formatos:
+      // 1. Array de [priceLow, priceHigh, btcAmount]
+      // 2. Array de objetos {price, supply} ou {bin, value}
+      // 3. {bins: [...], values: [...]}
+      // 4. {price_low: [], price_high: [], supply: []}
+      let bins = [];
+      try {
+        if (Array.isArray(data)) {
+          for (const item of data) {
+            if (Array.isArray(item) && item.length >= 2) {
+              // Formato [price, supply] ou [priceLow, priceHigh, supply]
+              if (item.length === 2) {
+                bins.push({ priceLow: parseFloat(item[0]), priceHigh: parseFloat(item[0]), priceMid: parseFloat(item[0]), btcAmount: parseFloat(item[1]) });
+              } else {
+                const lo = parseFloat(item[0]); const hi = parseFloat(item[1]); const sup = parseFloat(item[2]);
+                bins.push({ priceLow: lo, priceHigh: hi, priceMid: (lo + hi) / 2, btcAmount: sup });
+              }
+            } else if (typeof item === 'object' && item !== null) {
+              const lo = parseFloat(item.price_low || item.priceLow || item.lo || item.low || item.price || 0);
+              const hi = parseFloat(item.price_high || item.priceHigh || item.hi || item.high || item.price || lo);
+              const sup = parseFloat(item.supply || item.btc || item.value || item.amount || item.v || 0);
+              if (!isNaN(lo) && !isNaN(sup)) {
+                bins.push({ priceLow: lo, priceHigh: hi, priceMid: (lo + hi) / 2, btcAmount: sup });
+              }
+            }
+          }
+        } else if (data && data.bins && data.values) {
+          for (let i = 0; i < Math.min(data.bins.length, data.values.length); i++) {
+            const lo = parseFloat(data.bins[i]);
+            const sup = parseFloat(data.values[i]);
+            if (!isNaN(lo) && !isNaN(sup)) bins.push({ priceLow: lo, priceHigh: lo, priceMid: lo, btcAmount: sup });
+          }
+        } else if (data && data.price_low && data.supply) {
+          for (let i = 0; i < data.price_low.length; i++) {
+            const lo = parseFloat(data.price_low[i]);
+            const hi = parseFloat((data.price_high || data.price_low)[i]);
+            const sup = parseFloat(data.supply[i]);
+            if (!isNaN(lo) && !isNaN(sup)) bins.push({ priceLow: lo, priceHigh: hi, priceMid: (lo + hi) / 2, btcAmount: sup });
+          }
+        }
+      } catch(e) { console.warn('[URPD] parser error:', e); }
+      // Filtrar bins com 0 supply
+      bins = bins.filter(b => b.btcAmount > 0 && b.priceMid > 0);
+      return { bins };
+    }
+
+    function renderURPDChart() {
+      const chart = document.getElementById('urpdChart');
+      const loading = document.getElementById('urpdLoading');
+      const stats = document.getElementById('urpdStats');
+      if (!chart) return;
+      const st = urpdState;
+      if (!st.loaded || st.bins.length === 0) return;
+
+      const spot = (typeof tradingState !== 'undefined' && tradingState && tradingState.currentPrice) || 0;
+      const W = 800, H = 360;
+      const PAD_LEFT = 70, PAD_RIGHT = 16, PAD_TOP = 12, PAD_BOTTOM = 32;
+      const innerW = W - PAD_LEFT - PAD_RIGHT;
+      const innerH = H - PAD_TOP - PAD_BOTTOM;
+
+      // Find min/max price + max supply
+      const prices = st.bins.map(b => b.priceMid);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      const maxSupply = Math.max(...st.bins.map(b => b.btcAmount));
+
+      // Use log scale para preco (mais fiel ao "log100" bucket)
+      const logMin = Math.log10(Math.max(1, minPrice));
+      const logMax = Math.log10(Math.max(2, maxPrice));
+      const priceToY = p => {
+        const lp = Math.log10(Math.max(1, p));
+        return PAD_TOP + (1 - (lp - logMin) / (logMax - logMin)) * innerH;
+      };
+      const supplyToWidth = s => (s / maxSupply) * innerW;
+
+      let svg = '';
+      // Background
+      svg += '<rect x="0" y="0" width="' + W + '" height="' + H + '" fill="rgba(255,255,255,0.015)" rx="6"/>';
+      // Y axis price labels (5 levels)
+      const labels = [];
+      const steps = 6;
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const lp = logMin + (1 - t) * (logMax - logMin);
+        const p = Math.pow(10, lp);
+        const y = PAD_TOP + t * innerH;
+        labels.push({ y, p });
+        svg += '<line x1="' + PAD_LEFT + '" y1="' + y + '" x2="' + (W - PAD_RIGHT) + '" y2="' + y + '" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>';
+        const fmt = p >= 1000 ? '$' + (p/1000).toFixed(0) + 'k' : '$' + p.toFixed(0);
+        svg += '<text x="' + (PAD_LEFT - 6) + '" y="' + (y + 3) + '" text-anchor="end" font-size="9" fill="#8a8a96" font-family="JetBrains Mono">' + fmt + '</text>';
+      }
+
+      // Bars
+      const barH = Math.max(1.5, innerH / st.bins.length * 0.85);
+      for (const b of st.bins) {
+        const y = priceToY(b.priceMid) - barH / 2;
+        const w = supplyToWidth(b.btcAmount);
+        // Color: clusters densos = laranja, finos = cinza, current spot = cyan
+        const intensity = b.btcAmount / maxSupply; // 0-1
+        let color;
+        if (spot > 0 && Math.abs(b.priceMid - spot) / spot < 0.03) {
+          color = 'rgba(6,182,212,' + (0.4 + 0.6 * intensity) + ')'; // cyan no spot
+        } else if (b.priceMid > spot) {
+          color = 'rgba(239,68,68,' + (0.25 + 0.55 * intensity) + ')'; // vermelho acima
+        } else {
+          color = 'rgba(34,197,94,' + (0.25 + 0.55 * intensity) + ')'; // verde abaixo
+        }
+        svg += '<rect x="' + PAD_LEFT + '" y="' + y + '" width="' + w + '" height="' + barH + '" fill="' + color + '"/>';
+      }
+
+      // Spot line
+      if (spot > 0) {
+        const sy = priceToY(spot);
+        svg += '<line x1="' + PAD_LEFT + '" y1="' + sy + '" x2="' + (W - PAD_RIGHT) + '" y2="' + sy + '" stroke="#fff" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.85"/>';
+        svg += '<text x="' + (W - PAD_RIGHT - 6) + '" y="' + (sy - 4) + '" text-anchor="end" font-size="10" font-weight="700" fill="#fff" font-family="JetBrains Mono">SPOT $' + (spot/1000).toFixed(1) + 'k</text>';
+      }
+
+      // X axis label
+      svg += '<text x="' + (PAD_LEFT + innerW / 2) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="9" fill="#8a8a96" letter-spacing="0.5px">Supply (BTC) →   bins log100 · cohort ' + st.cohort.toUpperCase() + '</text>';
+
+      chart.innerHTML = svg;
+      chart.style.display = 'block';
+      if (loading) loading.style.display = 'none';
+      if (stats) stats.style.display = 'grid';
+
+      // Update stats
+      const pcEl = document.getElementById('urpdDensestPrice');
+      const psEl = document.getElementById('urpdDensestSupply');
+      const aEl = document.getElementById('urpdAboveSpot');
+      const bEl = document.getElementById('urpdBelowSpot');
+      if (pcEl && st.densestBin) pcEl.textContent = '$' + (st.densestBin.priceMid / 1000).toFixed(1) + 'k';
+      if (psEl && st.densestBin) psEl.textContent = (st.densestBin.btcAmount / 1e6).toFixed(2) + 'M BTC';
+      if (aEl) aEl.textContent = (st.supplyAboveSpot / 1e6).toFixed(2) + 'M BTC';
+      if (bEl) bEl.textContent = (st.supplyBelowSpot / 1e6).toFixed(2) + 'M BTC';
+
+      // Update sub
+      const subEl = document.getElementById('urpdSub');
+      if (subEl) subEl.textContent = st.bins.length + ' bins · ' + (st.totalSupply / 1e6).toFixed(2) + 'M BTC total';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Wire up cohort buttons
+      document.addEventListener('click', function(ev) {
+        const btn = ev.target.closest('.urpd-btn[data-urpd-cohort]');
+        if (!btn) return;
+        const cohort = btn.dataset.urpdCohort;
+        document.querySelectorAll('.urpd-btn[data-urpd-cohort]').forEach(b => b.classList.toggle('active', b === btn));
+        if (typeof fetchURPD === 'function') fetchURPD(cohort);
+      });
+    });
+
 
     function generateReport() {
       console.log('[Report] Generating daily analysis...');
@@ -12779,6 +13115,7 @@
     setTimeout(() => { if (typeof computeRegimeDetector === 'function') computeRegimeDetector(); }, 50000);
     setTimeout(() => { if (typeof fetchMempoolPressure === 'function') fetchMempoolPressure(); }, 3000);
     setTimeout(() => { if (typeof fetchCDD === 'function') fetchCDD(); }, 4000);
+    setTimeout(() => { if (typeof fetchURPD === 'function') fetchURPD('all'); }, 5000);
 
 
     // ========== ABA 11: REALIZED PRICE LAYERS ==========
