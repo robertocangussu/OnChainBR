@@ -10121,9 +10121,32 @@
       const fearGreed = state.rawValues?.fearGreed || 50;
       const funding = tradingState.funding || sentimentState.funding || 0;
     
-      // Phase 1: ACCUMULATION (deep vs light aligned with posture logic)
+      // Calcular momentum do Z-Score (delta 7d e 30d)
+      let zDelta7d = 0, zDelta30d = 0;
+      try {
+        const hist = state.compositeHistory || [];
+        const lastIdx = hist.length - 1;
+        if (lastIdx >= 7) zDelta7d = hist[lastIdx].value - hist[lastIdx - 7].value;
+        if (lastIdx >= 30) zDelta30d = hist[lastIdx].value - hist[lastIdx - 30].value;
+      } catch(e) {}
+
+      // Phase 1: ACUMULAÇÃO (3 sub-estados: FORTE / REVERSÃO CONFIRMADA / LEVE)
       if (z !== null && z < -0.5 && mvrv < 1.5 && lth30d > 0 && priceBelowSma200) {
         const isDeep = z <= -1.5;
+        // Reversao confirmada: z saiu de zona profunda e momentum positivo claro
+        // Criterio: z atual entre -1.5 e -0.5 (zona UND) + delta30d >= +0.4 + delta7d >= 0
+        const isReversal = !isDeep && zDelta30d >= 0.4 && zDelta7d >= 0;
+        if (isReversal) {
+          return {
+            phase: 1, name: 'ACUMULAÇÃO · REVERSÃO',
+            nameEn: 'ACCUMULATION · REVERSAL CONFIRMED',
+            color: '#00d97e',
+            icon: '🟢',
+            descPt: `Reversão confirmada vindo de zona profunda. Z subiu ${zDelta30d.toFixed(2)} em 30d e ${zDelta7d.toFixed(2)} em 7d com LTHs em acumulação forte. Risco assimétrico: estamos saindo do fundo mas ainda em zona UND — historicamente o melhor risk/reward do ciclo.`,
+            action: 'DCA agressivo (30-50% do capital disponível) — momento de aumentar exposição materialmente',
+            transition: 'Transição para Markup Inicial quando: Z cruza -0.5 de baixo para cima OU preço recupera SMA200'
+          };
+        }
         return {
           phase: 1, name: isDeep ? 'ACUMULAÇÃO FORTE' : 'ACUMULAÇÃO LEVE',
           nameEn: isDeep ? 'DEEP ACCUMULATION' : 'LIGHT ACCUMULATION',
@@ -10131,11 +10154,11 @@
           icon: isDeep ? '🟢' : '🟡',
           descPt: isDeep
             ? 'Zona profunda de acumulação. LTHs absorvendo oferta com preço abaixo da SMA200. Historicamente a zona de maior retorno assimétrico.'
-            : 'Acumulação inicial. Z-Score negativo com LTHs comprando. Preço abaixo da SMA200 mas on-chain sugere valor.',
-          action: isDeep ? 'DCA agressivo (15-25% do capital disponível)' : 'DCA moderado (5-10% do capital disponível)',
+            : 'Acumulação inicial sem reversão clara ainda. Z-Score negativo com LTHs comprando, mas momentum lateral. Preço abaixo da SMA200 — on-chain sugere valor mas confirmação de reversão pendente.',
+          action: isDeep ? 'DCA agressivo (25-40% do capital disponível)' : 'DCA moderado (8-15% do capital disponível) — escalar quando momentum confirmar',
           transition: isDeep
             ? 'Transição para Acumulação Leve quando: Z cruza -1.5 de baixo para cima'
-            : 'Transição para Markup quando: Z cruza -0.5 de baixo para cima OU preço recupera SMA200'
+            : 'Transição para REVERSÃO quando: delta 30d >= +0.4 com delta 7d positivo. Para Markup quando Z cruza -0.5'
         };
       }
     
@@ -10183,7 +10206,7 @@
           descPt: isEarly
             ? 'Markup inicial. Mercado se recuperando de subvalorização. Tendência se estabelecendo. Bom risco/retorno para entradas.'
             : 'Fase ativa de markup. Tendência positiva com espaço para crescer. Manter posição mas vigiar sinais de euforia.',
-          action: isEarly ? 'DCA moderado (5-10%), aproveitar pullbacks' : 'Hold, trailing stops, sem novos aportes agressivos',
+          action: isEarly ? 'DCA moderado (15-25% do capital), aproveitar pullbacks na SMA50/SMA100' : 'Hold com trailing stops, adições só em pullbacks de 8-12%',
           transition: isEarly
             ? 'Transição para Markup quando: Z cruza +0.5 com momentum positivo'
             : 'Transição para Euforia quando: Z > +1.5 + MVRV > 3 + F&G > 75'
