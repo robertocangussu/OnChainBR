@@ -2585,8 +2585,13 @@
         </div>
       </div>
 
-      <div class="rdet-triggers">Triggers (<span id="rdetTriggerCount">0/3</span>)</div>
+      <div class="rdet-triggers">Triggers (<span id="rdetTriggerCount">0/8</span>)</div>
       <div class="rdet-trigger-list" id="rdetTriggerList">
+        <!-- populated by renderRegimeDetector -->
+      </div>
+
+      <div class="rdet-triggers" style="margin-top:14px;">Confirmações (<span id="rdetConfirmCount">0/5</span>) <span style="font-size:9px;color:var(--text-muted);font-weight:400;letter-spacing:0.5px;text-transform:none;">só contam quando alinhadas com direção majoritária dos triggers</span></div>
+      <div class="rdet-trigger-list" id="rdetConfirmList">
         <!-- populated by renderRegimeDetector -->
       </div>
 
@@ -8476,6 +8481,11 @@
           direction: regimeDetectorState.direction,
           firedTriggers: (regimeDetectorState.triggers || []).filter(function(t){return t.fired;}).map(function(t){
             return { key: t.key, label: t.label, direction: t.direction, daysAgo: t.daysAgo, description: t.description };
+          }),
+          firedConfirmations: (regimeDetectorState.confirmations || []).filter(function(c){
+            return c.fired && (regimeDetectorState.direction === 'bullish' || regimeDetectorState.direction === 'bearish') && c.direction === regimeDetectorState.direction;
+          }).map(function(c){
+            return { key: c.key, label: c.label, direction: c.direction, description: c.description };
           })
         } : null
       };
@@ -9108,6 +9118,138 @@
     }
 
 
+
+    // ========== CAMADA B - CONFIRMATION LAYER (Batch 33) ==========
+    function computeRdConfirmWhales() {
+      const conf = { key: 'whale-aligned', label: 'Whale Cohorts Aligned (3 tiers)', weight: 8, fired: false, direction: null, description: 'Whale cohorts ainda divergentes' };
+      try {
+        if (typeof whaleState === 'undefined' || !whaleState) return conf;
+        const tiers = [
+          { name: '>10k', val: whaleState.whale10k30d },
+          { name: '1k-10k', val: whaleState.whale1k10k30d },
+          { name: '100-1k', val: whaleState.whale100_1k30d || whaleState.whale100_1k_30d }
+        ];
+        let bullCount = 0, bearCount = 0, validCount = 0;
+        for (const t of tiers) {
+          if (typeof t.val !== 'number' || isNaN(t.val)) continue;
+          validCount++;
+          if (t.val > 0) bullCount++;
+          else if (t.val < 0) bearCount++;
+        }
+        if (validCount < 2) {
+          conf.description = 'Dados de whale cohorts insuficientes (' + validCount + '/3)';
+          return conf;
+        }
+        if (bullCount >= 2) {
+          conf.fired = true; conf.direction = 'bullish';
+          conf.description = bullCount + '/3 cohorts whale acumulando (sustentado 30d)';
+        } else if (bearCount >= 2) {
+          conf.fired = true; conf.direction = 'bearish';
+          conf.description = bearCount + '/3 cohorts whale distribuindo (sustentado 30d)';
+        }
+      } catch(e) { conf.description = 'Erro: ' + e.message; }
+      return conf;
+    }
+
+    function computeRdConfirmTransfer() {
+      const conf = { key: 'lth-sth-transfer', label: 'LTH/STH Transfer of Hands Pattern', weight: 6, fired: false, direction: null, description: 'Sem padrão de transfer claro' };
+      try {
+        if (typeof smartMoneyState === 'undefined' || !smartMoneyState) return conf;
+        const lth = smartMoneyState.lth30d;
+        const sth = smartMoneyState.sth30d;
+        if (typeof lth !== 'number' || typeof sth !== 'number') {
+          conf.description = 'Dados LTH/STH 30d indisponíveis';
+          return conf;
+        }
+        // Transfer bullish: LTH acumulando + STH distribuindo (mãos fortes absorvendo de fracas)
+        // Transfer bearish: LTH distribuindo + STH acumulando (mãos fortes saindo, varejo entrando = topo)
+        if (lth > 0 && sth < 0) {
+          conf.fired = true; conf.direction = 'bullish';
+          const lthFmt = (lth/1000).toFixed(0) + 'k';
+          const sthFmt = (sth/1000).toFixed(0) + 'k';
+          conf.description = 'LTH +' + lthFmt + ' BTC / STH ' + sthFmt + ' BTC (transfer of hands bullish)';
+        } else if (lth < 0 && sth > 0) {
+          conf.fired = true; conf.direction = 'bearish';
+          const lthFmt = (lth/1000).toFixed(0) + 'k';
+          const sthFmt = '+' + (sth/1000).toFixed(0) + 'k';
+          conf.description = 'LTH ' + lthFmt + ' BTC / STH ' + sthFmt + ' BTC (LTHs distribuindo)';
+        }
+      } catch(e) { conf.description = 'Erro: ' + e.message; }
+      return conf;
+    }
+
+    function computeRdConfirmExchangeReserve() {
+      const conf = { key: 'exchange-reserve-trend', label: 'Exchange Reserve Trending', weight: 5, fired: false, direction: null, description: 'Exchange Reserve trend indisponível' };
+      try {
+        if (typeof flowState === 'undefined' || !flowState) {
+          conf.description = 'Dados de fluxo indisponíveis';
+          return conf;
+        }
+        // ExchangeReserveChg30d: positivo = inflow = bearish; negativo = outflow = bullish
+        const chg = flowState.exchangeReserveChg30d;
+        if (typeof chg !== 'number' || isNaN(chg)) {
+          conf.description = 'Exchange reserve change indisponível';
+          return conf;
+        }
+        // Threshold: pelo menos 1% de mudança em 30d pra valer
+        if (chg <= -1) {
+          conf.fired = true; conf.direction = 'bullish';
+          conf.description = 'Reserva exchanges caindo (' + chg.toFixed(2) + '% em 30d) — outflow = acumulação';
+        } else if (chg >= 1) {
+          conf.fired = true; conf.direction = 'bearish';
+          conf.description = 'Reserva exchanges subindo (+' + chg.toFixed(2) + '% em 30d) — inflow = pressão venda';
+        } else {
+          conf.description = 'Reserva exchanges estável (' + chg.toFixed(2) + '% em 30d)';
+        }
+      } catch(e) { conf.description = 'Erro: ' + e.message; }
+      return conf;
+    }
+
+    function computeRdConfirmConfluence() {
+      const conf = { key: 'confluence-aligned', label: 'Confluence Score Alignment', weight: 5, fired: false, direction: null, description: 'Confluence ainda neutro/incerto' };
+      try {
+        if (typeof confluenceState === 'undefined' || !confluenceState) return conf;
+        const score = confluenceState.score;
+        if (typeof score !== 'number' || isNaN(score)) {
+          conf.description = 'Confluence Score não calculado';
+          return conf;
+        }
+        if (score >= 60) {
+          conf.fired = true; conf.direction = 'bullish';
+          conf.description = 'Confluence Score em ' + score + '/100 (bullish bias)';
+        } else if (score <= 40) {
+          conf.fired = true; conf.direction = 'bearish';
+          conf.description = 'Confluence Score em ' + score + '/100 (bearish bias)';
+        } else {
+          conf.description = 'Confluence Score em ' + score + '/100 (neutro)';
+        }
+      } catch(e) { conf.description = 'Erro: ' + e.message; }
+      return conf;
+    }
+
+    function computeRdConfirmPhase() {
+      const conf = { key: 'phase-aligned', label: 'Phase Detector Aligned', weight: 3, fired: false, direction: null, description: 'Phase indisponível' };
+      try {
+        if (typeof detectMarketPhase !== 'function') return conf;
+        const phase = detectMarketPhase();
+        if (!phase || !phase.name) return conf;
+        const name = phase.name.toUpperCase();
+        // Bullish phases: ACUMULAÇÃO FORTE/LEVE/REVERSÃO, MARKUP INICIAL
+        // Bearish phases: EUFORIA, DISTRIBUIÇÃO
+        if (name.includes('ACUMULAÇÃO') || name.includes('ACUMULACAO') || name.includes('MARKUP INICIAL')) {
+          conf.fired = true; conf.direction = 'bullish';
+          conf.description = 'Phase: ' + phase.name + ' (bullish bias)';
+        } else if (name.includes('EUFORIA') || name.includes('DISTRIBUIÇÃO') || name.includes('DISTRIBUICAO')) {
+          conf.fired = true; conf.direction = 'bearish';
+          conf.description = 'Phase: ' + phase.name + ' (bearish bias)';
+        } else {
+          conf.description = 'Phase: ' + phase.name + ' (neutro)';
+        }
+      } catch(e) { conf.description = 'Erro: ' + e.message; }
+      return conf;
+    }
+
+
     function computeRegimeDetector() {
       try {
         const triggers = [
@@ -9120,35 +9262,61 @@
           computeRdTriggerHashRibbons(),
           computeRdTriggerMempool()
         ];
-        let raw = 0, bullCount = 0, bearCount = 0;
+        // Batch 33: Camada B - Confirmations
+        const confirmations = [
+          computeRdConfirmWhales(),
+          computeRdConfirmTransfer(),
+          computeRdConfirmExchangeReserve(),
+          computeRdConfirmConfluence(),
+          computeRdConfirmPhase()
+        ];
+        let triggerRaw = 0, bullCount = 0, bearCount = 0;
         for (const t of triggers) {
           if (t.fired) {
-            raw += t.weight;
+            triggerRaw += t.weight;
             if (t.direction === 'bullish') bullCount++;
             else if (t.direction === 'bearish') bearCount++;
           }
         }
-        const maxScore = triggers.reduce((s, t) => s + t.weight, 0);
+        const maxTriggerScore = triggers.reduce((s, t) => s + t.weight, 0);
+        // Determinar direcao majoritaria PRIMEIRO (so dos triggers)
+        let direction;
+        if (triggerRaw === 0) direction = 'neutral';
+        else if (bullCount > bearCount) direction = 'bullish';
+        else if (bearCount > bullCount) direction = 'bearish';
+        else direction = 'mixed';
+        // Confirmations so contam se alinhadas com direcao majoritaria dos triggers
+        let confirmRaw = 0, confirmFiredCount = 0;
+        for (const c of confirmations) {
+          if (c.fired && (direction === 'bullish' || direction === 'bearish') && c.direction === direction) {
+            confirmRaw += c.weight;
+            confirmFiredCount++;
+          }
+        }
+        const maxConfirmScore = confirmations.reduce((s, c) => s + c.weight, 0);
+        const raw = triggerRaw + confirmRaw;
+        const maxScore = maxTriggerScore + maxConfirmScore;
         const score = maxScore > 0 ? Math.round((raw / maxScore) * 100) : 0;
-        let label, direction;
+        let label;
         if (raw === 0) {
           label = 'STABLE';
-          direction = 'neutral';
         } else {
           if (score < 30) label = 'WATCH';
           else if (score < 50) label = 'WATCH';
           else if (score < 70) label = 'PROBABLE REVERSAL';
           else label = 'HIGH CONVICTION';
-          if (bullCount > bearCount) direction = 'bullish';
-          else if (bearCount > bullCount) direction = 'bearish';
-          else direction = 'mixed';
         }
         regimeDetectorState.score = score;
         regimeDetectorState.rawScore = raw;
         regimeDetectorState.maxScore = maxScore;
+        regimeDetectorState.triggerRawScore = triggerRaw;
+        regimeDetectorState.maxTriggerScore = maxTriggerScore;
+        regimeDetectorState.confirmRawScore = confirmRaw;
+        regimeDetectorState.maxConfirmScore = maxConfirmScore;
         regimeDetectorState.label = label;
         regimeDetectorState.direction = direction;
         regimeDetectorState.triggers = triggers;
+        regimeDetectorState.confirmations = confirmations;
         regimeDetectorState.lastUpdate = new Date().toISOString();
         regimeDetectorState.loaded = true;
         // Batch 29: debug log
@@ -9238,6 +9406,36 @@
             '<div class="rdet-trigger-weight">' + wgt + '</div>';
           list.appendChild(item);
         }
+      }
+
+      // Batch 33: render confirmations
+      const confList = document.getElementById('rdetConfirmList');
+      if (confList) {
+        confList.innerHTML = '';
+        const confs = st.confirmations || [];
+        for (const c of confs) {
+          const item = document.createElement('div');
+          // Confirmation only "counts" if aligned with majority direction
+          const counts = c.fired && (st.direction === 'bullish' || st.direction === 'bearish') && c.direction === st.direction;
+          let cls = 'rdet-trigger-item';
+          if (counts) cls += ' fired ' + (c.direction || '');
+          item.className = cls;
+          const icon = !c.fired ? '○' : (counts ? '✓✓' : (c.direction === 'bullish' ? '⊕' : '⊖'));
+          const wgt = counts ? ('+' + c.weight) : ('±' + c.weight);
+          const status = c.fired ? (counts ? 'sustenta' : 'diverge') : '—';
+          item.innerHTML =
+            '<div class="rdet-trigger-icon">' + icon + '</div>' +
+            '<div class="rdet-trigger-desc"><strong>' + c.label + '</strong><br><span style="font-size:11px;opacity:0.8;">' + (c.description || '') + '</span></div>' +
+            '<div class="rdet-trigger-time">' + status + '</div>' +
+            '<div class="rdet-trigger-weight">' + wgt + '</div>';
+          confList.appendChild(item);
+        }
+      }
+      const confCntEl = document.getElementById('rdetConfirmCount');
+      if (confCntEl) {
+        const confs = st.confirmations || [];
+        const counted = confs.filter(c => c.fired && (st.direction === 'bullish' || st.direction === 'bearish') && c.direction === st.direction).length;
+        confCntEl.textContent = counted + '/' + confs.length;
       }
 
       // Update timestamp
