@@ -2926,7 +2926,7 @@
       CACHE_ENABLED: true,
       FETCH_THROTTLE_MS: 80,                       // delay entre requests p/ evitar 429 burst
       // Cobertura mínima de pesos para o Confluence Score ser publicado
-      MIN_CONFLUENCE_COVERAGE: 0.80
+      MIN_CONFLUENCE_COVERAGE: 0.65
     };
 
     // ========== FAMILY WEIGHTS (para composite ponderado) ==========
@@ -5580,6 +5580,7 @@
       smartMoneyState.reserveRisk = num(smData.reserveRisk);
       smartMoneyState.confidence = confidence;
       smartMoneyState.loaded = true;
+      if (typeof updateConfluenceScore === 'function') { try { updateConfluenceScore(); } catch(e) {} }
       checkReportReady();
 
       // Re-render Price Layers section now that HODL 1Y+ is available
@@ -6068,6 +6069,7 @@
       leverageState.shortPct = shortPctVal;
       leverageState.riskScore = riskScore;
       leverageState.loaded = true;
+      if (typeof updateConfluenceScore === 'function') { try { updateConfluenceScore(); } catch(e) {} }
       checkReportReady();
       
       // Chart Open Interest 30 dias (restaurado apos cleanup Flow Scalper/Divergence).
@@ -6939,6 +6941,7 @@
       minerState.difficulty = num(minerData.difficulty);
       minerState.healthScore = healthScore;
       minerState.loaded = true;
+      if (typeof updateConfluenceScore === 'function') { try { updateConfluenceScore(); } catch(e) {} }
       checkReportReady();
       
       // Chart
@@ -11183,6 +11186,9 @@
     setTimeout(() => { updateConfluenceScore(); }, 10000);
     setTimeout(() => { updateConfluenceScore(); }, 15000);
     setTimeout(() => { updateConfluenceScore(); }, 20000);
+    setTimeout(() => { updateConfluenceScore(); }, 30000);
+    setTimeout(() => { updateConfluenceScore(); }, 45000);
+    setTimeout(() => { updateConfluenceScore(); }, 60000);
 
 
     // ========== ABA 11: REALIZED PRICE LAYERS ==========
@@ -11261,6 +11267,7 @@
         };
         priceLayersState.history = { spot: spotHistory, sthRP: results.sthRP || [], lthRP: results.lthRP || [], realized: results.realized || [], delta, tmm: [] };
         priceLayersState.loaded = true;
+        if (typeof updateConfluenceScore === 'function') { try { updateConfluenceScore(); } catch(e) {} }
         
         console.log('[PriceLayers] All data loaded:', priceLayersState.layers);
         renderPriceLayers();
@@ -11629,6 +11636,7 @@
         }
         
         cohortState.loaded = true;
+        if (typeof updateConfluenceScore === 'function') { try { updateConfluenceScore(); } catch(e) {} }
         console.log('[Cohort] All data loaded. MVRV STH:', cohortState.sthMVRV, 'SOPR STH:', cohortState.sthSOPR, 'Supply Profit:', cohortState.supplyProfit);
         renderCohort();
 
