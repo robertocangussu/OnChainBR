@@ -1130,8 +1130,9 @@
         </div>
         <div class="nav-group" data-cat="synth">
           <div class="nav-group-label">Síntese</div>
-          <a href="#report" class="nav-link" data-sec="report"><span class="nav-num">12</span><span class="nav-text"><span class="nav-main">Relatório</span><span class="nav-sub">Leitura do mercado</span></span><span class="nav-dot"></span></a>
-          <a href="#backstage" class="nav-link" data-sec="backstage"><span class="nav-num">13</span><span class="nav-text"><span class="nav-main">Bastidores</span><span class="nav-sub">Backtest · analytics</span></span><span class="nav-dot"></span></a>
+          <a href="#regime" class="nav-link" data-sec="regime"><span class="nav-num">12</span><span class="nav-text"><span class="nav-main">Regime</span><span class="nav-sub">Detector de reversão</span></span><span class="nav-dot"></span></a>
+          <a href="#report" class="nav-link" data-sec="report"><span class="nav-num">13</span><span class="nav-text"><span class="nav-main">Relatório</span><span class="nav-sub">Leitura do mercado</span></span><span class="nav-dot"></span></a>
+          <a href="#backstage" class="nav-link" data-sec="backstage"><span class="nav-num">14</span><span class="nav-text"><span class="nav-main">Bastidores</span><span class="nav-sub">Backtest · analytics</span></span><span class="nav-dot"></span></a>
         </div>
       </nav>
       <div class="sidebar-footer">
@@ -2560,30 +2561,12 @@
       <span class="cat-divider-sub">Relatório · Bastidores</span>
     </div>
   </div>
-  <div class="section-wrap" id="report" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+  <div class="section-wrap" id="regime" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
       <span class="section-num">12</span>
-      <span class="section-title">Leitura do Mercado</span>
-      <span id="reportDate" style="font-size:10px;color:var(--text-muted);"></span>
+      <span class="section-title">Regime Reversal Detector</span>
+      <span class="section-sub">CRUZAMENTOS TEMPORAIS · MUDANÇA DE REGIME</span>
     </div>
-
-    <!-- ========== AI DAILY REPORT BLOCK (Batch 17) ========== -->
-    <div id="aiReportBlock" style="display:none;margin:16px 0 24px;padding:18px 22px;border-radius:12px;background:linear-gradient(135deg,rgba(249,115,22,0.08) 0%,rgba(6,182,212,0.04) 100%);border:1px solid rgba(249,115,22,0.22);box-shadow:0 4px 16px rgba(249,115,22,0.06);">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06);">
-        <span style="font-size:14px;">AI</span>
-        <span style="font-size:10px;color:var(--accent-orange);font-weight:700;letter-spacing:2px;text-transform:uppercase;">Analise do Dia &middot; IA</span>
-        <span id="aiReportDate" style="font-size:9px;color:var(--text-muted);margin-left:auto;"></span>
-        <span id="aiReportModel" style="font-size:9px;color:var(--text-muted);padding:2px 6px;background:rgba(255,255,255,0.04);border-radius:3px;"></span>
-      </div>
-      <div id="aiReportLoading" style="font-size:11px;color:var(--text-muted);font-style:italic;padding:8px 0;">Gerando analise do dia...</div>
-      <div id="aiReportContent" style="display:none;font-size:12.5px;line-height:1.75;color:var(--text-primary);"></div>
-      <div id="aiReportError" style="display:none;font-size:10px;color:var(--text-muted);padding:6px 0;"></div>
-      <div id="aiReportFooter" style="display:none;font-size:9px;color:var(--text-muted);margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04);letter-spacing:0.5px;">
-        Gerado por Claude Haiku 4.5 &middot; <span id="aiReportCachedBadge"></span> &middot; <span id="aiReportNextUpdate"></span> &middot; <span id="aiReportRegenLink" style="cursor:pointer;color:var(--accent-cyan);text-decoration:underline;text-underline-offset:2px;">forcar atualizacao</span>
-      </div>
-    </div>
-
-
     <!-- ========== REGIME REVERSAL DETECTOR (Batch 28) ========== -->
     <div id="regimeDetectorBlock" style="display:none;">
       <div class="rdet-head">
@@ -2609,6 +2592,30 @@
 
       <div class="rdet-footer">
         Detector de mudança de regime baseado em cruzamentos temporais. Score &gt; 50 indica probabilidade alta de virada de tendência. Triggers ativos foram detectados nos últimos 14 dias.
+      </div>
+    </div>
+  </div>
+
+  <div class="section-wrap" id="report" style="max-width:1400px;margin:0 auto;padding:0 24px;">
+    <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 16px;">
+      <span class="section-num">13</span>
+      <span class="section-title">Leitura do Mercado</span>
+      <span id="reportDate" style="font-size:10px;color:var(--text-muted);"></span>
+    </div>
+
+    <!-- ========== AI DAILY REPORT BLOCK (Batch 17) ========== -->
+    <div id="aiReportBlock" style="display:none;margin:16px 0 24px;padding:18px 22px;border-radius:12px;background:linear-gradient(135deg,rgba(249,115,22,0.08) 0%,rgba(6,182,212,0.04) 100%);border:1px solid rgba(249,115,22,0.22);box-shadow:0 4px 16px rgba(249,115,22,0.06);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span style="font-size:14px;">AI</span>
+        <span style="font-size:10px;color:var(--accent-orange);font-weight:700;letter-spacing:2px;text-transform:uppercase;">Analise do Dia &middot; IA</span>
+        <span id="aiReportDate" style="font-size:9px;color:var(--text-muted);margin-left:auto;"></span>
+        <span id="aiReportModel" style="font-size:9px;color:var(--text-muted);padding:2px 6px;background:rgba(255,255,255,0.04);border-radius:3px;"></span>
+      </div>
+      <div id="aiReportLoading" style="font-size:11px;color:var(--text-muted);font-style:italic;padding:8px 0;">Gerando analise do dia...</div>
+      <div id="aiReportContent" style="display:none;font-size:12.5px;line-height:1.75;color:var(--text-primary);"></div>
+      <div id="aiReportError" style="display:none;font-size:10px;color:var(--text-muted);padding:6px 0;"></div>
+      <div id="aiReportFooter" style="display:none;font-size:9px;color:var(--text-muted);margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04);letter-spacing:0.5px;">
+        Gerado por Claude Haiku 4.5 &middot; <span id="aiReportCachedBadge"></span> &middot; <span id="aiReportNextUpdate"></span> &middot; <span id="aiReportRegenLink" style="cursor:pointer;color:var(--accent-cyan);text-decoration:underline;text-underline-offset:2px;">forcar atualizacao</span>
       </div>
     </div>
 
@@ -2939,7 +2946,7 @@
   </div>  <!-- ========== SECTION 10: BACKSTAGE (Advanced Analytics) ========== -->
   <div class="section-wrap" id="backstage" style="max-width:1400px;margin:0 auto;padding:0 24px;">
     <div class="section-header">
-      <span class="section-num">13</span>
+      <span class="section-num">14</span>
       <span class="section-title">Bastidores</span>
       <span class="section-sub">COMPARATIVO DE ESTRATÉGIAS · BACKTEST</span>
     </div>
@@ -5999,6 +6006,7 @@
       // permite backtest do ciclo todo). Cai pro -1h (horario, ~75d) se nao existir.
       try {
         let result = await fetchBGeometrics('/v1/open-interest-1d', 'Open Interest 1d');
+        if (result && result.success && result.data) { leverageState.oiHist = result.data; }
         let sourceIsDaily = result && result.success && Array.isArray(result.data) && result.data.length > 0;
         if (!sourceIsDaily) {
           result = await fetchBGeometrics('/v1/open-interest-1h', 'Open Interest 1h');
@@ -6955,6 +6963,7 @@
       try {
         const result = await fetchBGeometrics('/v1/puell-multiple', 'Puell Multiple');
         if (result.success && result.data && result.data.length) {
+          minerState.puellHist = result.data;
           console.log('[Miner] Puell sample:', JSON.stringify(result.data[result.data.length-1]));
           minerData.puellMultiple = getLatest(result.data, 'puellMultiple', 'puell', 'value');
           console.log('✓ Puell Multiple:', minerData.puellMultiple);
@@ -6965,6 +6974,7 @@
       try {
         const result = await fetchBGeometrics('/v1/hashrate', 'Hashrate');
         if (result.success && result.data && result.data.length) {
+          minerState.hashHist = result.data;
           console.log('[Miner] Hashrate sample:', JSON.stringify(result.data[result.data.length-1]));
           minerData.hashrate = getLatest(result.data, 'hashrate', 'hash', 'value');
           console.log('✓ Hashrate:', minerData.hashrate);
@@ -8906,12 +8916,206 @@
       return trigger;
     }
 
+
+    function _rdGetMayerZone(m) {
+      if (m === null || m === undefined || isNaN(m)) return null;
+      if (m < 0.6) return 'DEEP_OVERSOLD';
+      if (m < 0.8) return 'OVERSOLD';
+      if (m < 1.0) return 'ACCUMULATION';
+      if (m < 1.5) return 'NEUTRAL';
+      if (m < 2.4) return 'OVERHEATED';
+      return 'EUPHORIA';
+    }
+    const _RD_MAYER_ORDER = ['DEEP_OVERSOLD','OVERSOLD','ACCUMULATION','NEUTRAL','OVERHEATED','EUPHORIA'];
+
+    function computeRdTriggerMayer() {
+      const trigger = { key: 'mayer-zone-cross', label: 'Mayer Multiple zone crossover', weight: 20, fired: false, direction: null, daysAgo: null, description: 'Mayer Multiple ainda na mesma zona' };
+      try {
+        const hist = (typeof state !== 'undefined' && state && state.metricHistory) ? (state.metricHistory.mayer || []) : [];
+        if (hist.length < 8) { trigger.description = 'Histórico Mayer insuficiente (' + hist.length + ' pts)'; return trigger; }
+        const last = hist[hist.length - 1];
+        const lastZone = _rdGetMayerZone(last.value);
+        if (!lastZone) return trigger;
+        const lookback = Math.min(31, hist.length);
+        for (let i = hist.length - 2; i >= hist.length - lookback; i--) {
+          const z = _rdGetMayerZone(hist[i].value);
+          if (z && z !== lastZone) {
+            const daysAgo = (hist.length - 1) - i;
+            const lastIdx = _RD_MAYER_ORDER.indexOf(lastZone);
+            const refIdx = _RD_MAYER_ORDER.indexOf(z);
+            let direction;
+            if (lastIdx > refIdx) direction = (refIdx <= 1) ? 'bullish' : 'bearish';
+            else direction = (refIdx >= 4) ? 'bearish' : (lastIdx <= 1 ? 'bullish' : 'bearish');
+            trigger.fired = true; trigger.direction = direction; trigger.daysAgo = daysAgo;
+            trigger.description = 'Mayer cruzou de ' + z + ' para ' + lastZone + ' (' + last.value.toFixed(2) + ')';
+            return trigger;
+          }
+        }
+      } catch(e) { trigger.description = 'Erro: ' + e.message; }
+      return trigger;
+    }
+
+    function computeRdTriggerPuell() {
+      const trigger = { key: 'puell-zone-cross', label: 'Puell Multiple zone change', weight: 15, fired: false, direction: null, daysAgo: null, description: 'Puell Multiple sem mudança de zona recente' };
+      try {
+        const hist = (typeof minerState !== 'undefined' && minerState) ? (minerState.puellHist || []) : [];
+        if (hist.length < 8) { trigger.description = 'Histórico Puell insuficiente (' + hist.length + ' pts)'; return trigger; }
+        const pickV = (d) => { if (typeof d === 'number') return d; for (const k of ['puellMultiple','puell','value','v']) { if (d[k] !== undefined) { const n = parseFloat(d[k]); if (!isNaN(n)) return n; } } return null; };
+        const getZone = (p) => { if (p === null || isNaN(p)) return null; if (p < 0.5) return 'CAPITULATION'; if (p < 1.5) return 'NORMAL'; if (p < 4.0) return 'ELEVATED'; return 'EUPHORIA'; };
+        const last = pickV(hist[hist.length - 1]);
+        const lastZone = getZone(last);
+        if (!lastZone) return trigger;
+        const lookback = Math.min(31, hist.length);
+        for (let i = hist.length - 2; i >= hist.length - lookback; i--) {
+          const v = pickV(hist[i]);
+          const z = getZone(v);
+          if (z && z !== lastZone) {
+            const daysAgo = (hist.length - 1) - i;
+            let direction;
+            if (lastZone === 'CAPITULATION' || z === 'CAPITULATION') direction = 'bullish';
+            else if (lastZone === 'EUPHORIA' || z === 'EUPHORIA') direction = 'bearish';
+            else direction = 'bullish';
+            trigger.fired = true; trigger.direction = direction; trigger.daysAgo = daysAgo;
+            trigger.description = 'Puell cruzou de ' + z + ' para ' + lastZone + ' (' + last.toFixed(2) + ')';
+            return trigger;
+          }
+        }
+      } catch(e) { trigger.description = 'Erro: ' + e.message; }
+      return trigger;
+    }
+
+    function computeRdTriggerFundingOI() {
+      const trigger = { key: 'funding-flip-oi', label: 'Funding flip + OI rising', weight: 15, fired: false, direction: null, daysAgo: null, description: 'Sem flip recente de funding com OI subindo' };
+      try {
+        const fHist = (typeof leverageState !== 'undefined' && leverageState) ? (leverageState.fundingHist || []) : [];
+        const oiHist = (typeof leverageState !== 'undefined' && leverageState) ? (leverageState.oiHist || []) : [];
+        if (fHist.length < 14 || oiHist.length < 14) { trigger.description = 'Histórico funding/OI insuficiente (f=' + fHist.length + ' oi=' + oiHist.length + ')'; return trigger; }
+        const pickV = (d) => { if (typeof d === 'number') return d; for (const k of ['value','v','fundingRate','funding','openInterest','oi']) { if (d[k] !== undefined) { const n = parseFloat(d[k]); if (!isNaN(n)) return n; } } return null; };
+        const lastF = pickV(fHist[fHist.length - 1]);
+        if (lastF === null) return trigger;
+        const lastFSign = lastF > 0 ? '+' : (lastF < 0 ? '-' : '0');
+        if (lastFSign === '0') return trigger;
+        let flipIdx = -1;
+        const lookback = Math.min(15, fHist.length);
+        for (let i = fHist.length - 2; i >= fHist.length - lookback; i--) {
+          const v = pickV(fHist[i]);
+          const sign = v > 0 ? '+' : (v < 0 ? '-' : '0');
+          if (sign !== lastFSign && sign !== '0') { flipIdx = i; break; }
+        }
+        if (flipIdx < 0) return trigger;
+        const oiLast = pickV(oiHist[oiHist.length - 1]);
+        const oi14 = pickV(oiHist[Math.max(0, oiHist.length - 15)]);
+        if (oiLast === null || oi14 === null || oi14 === 0) return trigger;
+        const oiChgPct = ((oiLast - oi14) / oi14) * 100;
+        if (oiChgPct < 5) { trigger.description = 'Funding flipou mas OI não subiu (Δ' + oiChgPct.toFixed(1) + '%)'; return trigger; }
+        const daysAgo = (fHist.length - 1) - flipIdx;
+        const direction = lastFSign === '-' ? 'bullish' : 'bearish';
+        trigger.fired = true; trigger.direction = direction; trigger.daysAgo = daysAgo;
+        trigger.description = 'Funding flipou ' + (lastFSign === '+' ? 'pra positivo' : 'pra negativo') + ' + OI subiu ' + oiChgPct.toFixed(1) + '%';
+        return trigger;
+      } catch(e) { trigger.description = 'Erro: ' + e.message; }
+      return trigger;
+    }
+
+    function computeRdTriggerHashRibbons() {
+      const trigger = { key: 'hash-ribbons', label: 'Hash Ribbons crossover (30d/60d)', weight: 15, fired: false, direction: null, daysAgo: null, description: 'Hash MA 30d/60d sem crossover recente' };
+      try {
+        const hist = (typeof minerState !== 'undefined' && minerState) ? (minerState.hashHist || []) : [];
+        if (hist.length < 70) { trigger.description = 'Histórico hashrate insuficiente (' + hist.length + ' pts, precisa 70+)'; return trigger; }
+        const pickV = (d) => { if (typeof d === 'number') return d; for (const k of ['hashrate','hash','value','v']) { if (d[k] !== undefined) { const n = parseFloat(d[k]); if (!isNaN(n)) return n; } } return null; };
+        const sma = (arr, n, idx) => { if (idx - n + 1 < 0) return null; let sum = 0, cnt = 0; for (let i = idx - n + 1; i <= idx; i++) { const v = pickV(arr[i]); if (v !== null) { sum += v; cnt++; } } return cnt > 0 ? sum / cnt : null; };
+        const lookback = Math.min(21, hist.length - 60);
+        const ma30 = [], ma60 = [];
+        for (let i = hist.length - lookback; i < hist.length; i++) {
+          const m30 = sma(hist, 30, i);
+          const m60 = sma(hist, 60, i);
+          if (m30 !== null && m60 !== null) { ma30.push(m30); ma60.push(m60); }
+        }
+        if (ma30.length < 5) return trigger;
+        const lastSign = ma30[ma30.length - 1] > ma60[ma60.length - 1] ? '+' : '-';
+        for (let i = ma30.length - 2; i >= 0; i--) {
+          const sign = ma30[i] > ma60[i] ? '+' : '-';
+          if (sign !== lastSign) {
+            const daysAgo = (ma30.length - 1) - i;
+            trigger.fired = true; trigger.direction = 'bullish'; trigger.daysAgo = daysAgo;
+            if (lastSign === '+') trigger.description = 'Hash MA 30d cruzou ACIMA de 60d (recovery)';
+            else trigger.description = 'Hash MA 30d cruzou ABAIXO de 60d (capitulation = oportunidade asimetric)';
+            return trigger;
+          }
+        }
+      } catch(e) { trigger.description = 'Erro: ' + e.message; }
+      return trigger;
+    }
+
+    const mempoolState = { loaded: false, score: null, fees: null, mempoolBytes: null, lastUpdate: null };
+
+    async function fetchMempoolPressure() {
+      try {
+        const [feesRes, mpRes] = await Promise.all([
+          fetch('https://mempool.space/api/v1/fees/recommended').then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch('https://mempool.space/api/mempool').then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        if (!feesRes || !mpRes) { console.warn('[Mempool] fetch failed'); return; }
+        const halfHour = feesRes.halfHourFee || feesRes.hourFee || feesRes.fastestFee || 0;
+        const mpSize = mpRes.vsize || mpRes.size || mpRes.count || 0;
+        let feeScore = 0;
+        if (halfHour < 5) feeScore = 10;
+        else if (halfHour < 20) feeScore = 30;
+        else if (halfHour < 50) feeScore = 60;
+        else if (halfHour < 100) feeScore = 80;
+        else feeScore = 95;
+        let mpScore = 0;
+        const mpMB = mpSize / 1e6;
+        if (mpMB < 50) mpScore = 10;
+        else if (mpMB < 150) mpScore = 40;
+        else if (mpMB < 300) mpScore = 70;
+        else mpScore = 90;
+        const score = Math.round(feeScore * 0.6 + mpScore * 0.4);
+        mempoolState.score = score;
+        mempoolState.fees = halfHour;
+        mempoolState.mempoolBytes = mpSize;
+        mempoolState.loaded = true;
+        mempoolState.lastUpdate = new Date().toISOString();
+        console.log('[Mempool] score=' + score + ' fees=' + halfHour + 'sat/vB mempool=' + mpMB.toFixed(1) + 'MB');
+        if (typeof computeRegimeDetector === 'function') computeRegimeDetector();
+      } catch(e) { console.warn('[Mempool] error:', e); }
+    }
+
+    function computeRdTriggerMempool() {
+      const trigger = { key: 'mempool-pressure', label: 'Mempool Pressure (capitulation buying)', weight: 10, fired: false, direction: null, daysAgo: null, description: 'Aguardando dados do mempool.space' };
+      try {
+        if (!mempoolState.loaded || mempoolState.score === null) { trigger.description = 'Mempool data não disponível ainda'; return trigger; }
+        const score = mempoolState.score;
+        const z = (typeof state !== 'undefined' && state) ? state.composite : null;
+        if (score >= 70) {
+          if (z !== null && z < -0.3) {
+            trigger.fired = true; trigger.direction = 'bullish'; trigger.daysAgo = 0;
+            trigger.description = 'Pressão mempool alta (' + score + '/100, fees=' + (mempoolState.fees||'--') + ' sat/vB) com Z negativo - capitulation buying';
+          } else if (z !== null && z > 0.5) {
+            trigger.fired = true; trigger.direction = 'bearish'; trigger.daysAgo = 0;
+            trigger.description = 'Pressão mempool alta com Z elevado - euphoria buying signal';
+          } else {
+            trigger.description = 'Pressão mempool alta (' + score + '/100) mas Z neutro';
+          }
+        } else {
+          trigger.description = 'Pressão mempool normal (' + score + '/100, ' + (mempoolState.fees||'--') + ' sat/vB)';
+        }
+      } catch(e) { trigger.description = 'Erro: ' + e.message; }
+      return trigger;
+    }
+
+
     function computeRegimeDetector() {
       try {
         const triggers = [
           computeRdTriggerZ(),
           computeRdTriggerSthLth(),
-          computeRdTriggerLthRegime()
+          computeRdTriggerLthRegime(),
+          computeRdTriggerMayer(),
+          computeRdTriggerPuell(),
+          computeRdTriggerFundingOI(),
+          computeRdTriggerHashRibbons(),
+          computeRdTriggerMempool()
         ];
         let raw = 0, bullCount = 0, bearCount = 0;
         for (const t of triggers) {
@@ -11882,6 +12086,7 @@
     // Batch 28: fallback regime detector (caso confluence nao acione)
     setTimeout(() => { if (typeof computeRegimeDetector === 'function') computeRegimeDetector(); }, 25000);
     setTimeout(() => { if (typeof computeRegimeDetector === 'function') computeRegimeDetector(); }, 50000);
+    setTimeout(() => { if (typeof fetchMempoolPressure === 'function') fetchMempoolPressure(); }, 3000);
 
 
     // ========== ABA 11: REALIZED PRICE LAYERS ==========
