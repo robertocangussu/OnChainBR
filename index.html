@@ -994,6 +994,60 @@
       #socialPostsBlock > div:nth-child(2) { grid-template-columns: 1fr !important; }
     }
 
+
+    /* ========== Regime Reversal Detector (Batch 28) ========== */
+    #regimeDetectorBlock {
+      margin: 16px 0; padding: 18px 22px; border-radius: 12px;
+      background: linear-gradient(135deg, rgba(168,85,247,0.06) 0%, rgba(6,182,212,0.04) 100%);
+      border: 1px solid rgba(168,85,247,0.20);
+    }
+    .rdet-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .rdet-head-icon { font-size: 14px; }
+    .rdet-head-label { font-size: 10px; color: var(--accent-purple); font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+    .rdet-head-update { font-size: 9px; color: var(--text-muted); margin-left: auto; }
+
+    .rdet-summary { display: grid; grid-template-columns: 130px 1fr; gap: 16px; align-items: center; margin-bottom: 14px; }
+    .rdet-score-wrap { text-align: center; }
+    .rdet-score-value { font-family: 'Space Grotesk', sans-serif; font-size: 42px; font-weight: 800; line-height: 1; }
+    .rdet-score-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+    .rdet-summary-text { font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); }
+    .rdet-summary-text strong { color: var(--text-primary); }
+
+    .rdet-direction { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; margin-right: 6px; }
+    .rdet-dir-bullish { background: rgba(34,197,94,0.14); color: var(--accent-green); border: 1px solid rgba(34,197,94,0.3); }
+    .rdet-dir-bearish { background: rgba(226,75,74,0.14); color: var(--accent-red); border: 1px solid rgba(226,75,74,0.3); }
+    .rdet-dir-mixed   { background: rgba(234,179,8,0.14); color: var(--accent-yellow); border: 1px solid rgba(234,179,8,0.3); }
+    .rdet-dir-neutral { background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); }
+
+    .rdet-triggers { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 8px; }
+    .rdet-trigger-list { display: flex; flex-direction: column; gap: 6px; }
+    .rdet-trigger-item {
+      display: grid; grid-template-columns: 24px 1fr 90px 70px;
+      align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 6px;
+      background: rgba(255,255,255,0.02); border-left: 3px solid transparent;
+      font-size: 12px;
+    }
+    .rdet-trigger-item.fired { border-left-color: var(--accent-purple); background: rgba(168,85,247,0.05); }
+    .rdet-trigger-item.fired.bullish { border-left-color: var(--accent-green); background: rgba(34,197,94,0.05); }
+    .rdet-trigger-item.fired.bearish { border-left-color: var(--accent-red); background: rgba(226,75,74,0.05); }
+    .rdet-trigger-icon { font-size: 14px; text-align: center; }
+    .rdet-trigger-desc { color: var(--text-secondary); }
+    .rdet-trigger-item.fired .rdet-trigger-desc { color: var(--text-primary); }
+    .rdet-trigger-time { font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; text-align: right; }
+    .rdet-trigger-weight { font-size: 10px; font-family: 'JetBrains Mono', monospace; text-align: right; color: var(--text-muted); }
+    .rdet-trigger-item.fired.bullish .rdet-trigger-weight { color: var(--accent-green); }
+    .rdet-trigger-item.fired.bearish .rdet-trigger-weight { color: var(--accent-red); }
+
+    .rdet-footer { font-size: 9px; color: var(--text-muted); margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.04); letter-spacing: 0.4px; line-height: 1.5; }
+
+    @media (max-width: 600px) {
+      .rdet-summary { grid-template-columns: 1fr; gap: 8px; }
+      .rdet-score-wrap { text-align: left; }
+      .rdet-trigger-item { grid-template-columns: 24px 1fr; row-gap: 4px; }
+      .rdet-trigger-time, .rdet-trigger-weight { grid-column: 2; text-align: left; }
+    }
+
   </style>
 </head>
 <body>
@@ -2526,6 +2580,35 @@
       <div id="aiReportError" style="display:none;font-size:10px;color:var(--text-muted);padding:6px 0;"></div>
       <div id="aiReportFooter" style="display:none;font-size:9px;color:var(--text-muted);margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04);letter-spacing:0.5px;">
         Gerado por Claude Haiku 4.5 &middot; <span id="aiReportCachedBadge"></span> &middot; <span id="aiReportNextUpdate"></span> &middot; <span id="aiReportRegenLink" style="cursor:pointer;color:var(--accent-cyan);text-decoration:underline;text-underline-offset:2px;">forcar atualizacao</span>
+      </div>
+    </div>
+
+
+    <!-- ========== REGIME REVERSAL DETECTOR (Batch 28) ========== -->
+    <div id="regimeDetectorBlock" style="display:none;">
+      <div class="rdet-head">
+        <span class="rdet-head-icon">🎯</span>
+        <span class="rdet-head-label">Regime Reversal Detector</span>
+        <span class="rdet-head-update" id="rdetUpdate">--</span>
+      </div>
+
+      <div class="rdet-summary">
+        <div class="rdet-score-wrap">
+          <div class="rdet-score-value" id="rdetScore" style="color:var(--text-muted);">--</div>
+          <div class="rdet-score-label" id="rdetScoreLabel">aguardando</div>
+        </div>
+        <div class="rdet-summary-text">
+          <span id="rdetDirectionBadge" class="rdet-direction rdet-dir-neutral">--</span><span id="rdetSummaryText">Aguardando dados de Z-Composite, STH/LTH RP e LTH supply para calcular triggers de mudança de regime.</span>
+        </div>
+      </div>
+
+      <div class="rdet-triggers">Triggers (<span id="rdetTriggerCount">0/3</span>)</div>
+      <div class="rdet-trigger-list" id="rdetTriggerList">
+        <!-- populated by renderRegimeDetector -->
+      </div>
+
+      <div class="rdet-footer">
+        Detector de mudança de regime baseado em cruzamentos temporais. Score &gt; 50 indica probabilidade alta de virada de tendência. Triggers ativos foram detectados nos últimos 14 dias.
       </div>
     </div>
 
@@ -5469,6 +5552,8 @@
       try {
         const result = await fetchBGeometrics('/v1/long-term-hodler-supply-btc', 'LTH Supply');
         if (result.success && result.data && result.data.length) {
+          // Batch 28: preservar history raw pra Regime Detector
+          smartMoneyState.lthSupplyHist = result.data;
           const latest = pickNum(result.data[result.data.length - 1], 'longTermHodlerSupplyBtc', 'value', 'v');
           if (result.data.length >= 30) {
             const prev = pickNum(result.data[result.data.length - 30], 'longTermHodlerSupplyBtc', 'value', 'v');
@@ -8370,7 +8455,16 @@
         flow: flow,
         priceLayers: priceLayers,
         halving: halving,
-        phase: phase
+        phase: phase,
+        // Batch 28: regime detector estado
+        regimeDetector: (typeof regimeDetectorState !== 'undefined' && regimeDetectorState && regimeDetectorState.loaded) ? {
+          score: regimeDetectorState.score,
+          label: regimeDetectorState.label,
+          direction: regimeDetectorState.direction,
+          firedTriggers: (regimeDetectorState.triggers || []).filter(function(t){return t.fired;}).map(function(t){
+            return { key: t.key, label: t.label, direction: t.direction, daysAgo: t.daysAgo, description: t.description };
+          })
+        } : null
       };
     }
 
@@ -8621,6 +8715,320 @@
         }
       });
     });
+
+
+    // ========== REGIME REVERSAL DETECTOR (Batch 28 - Fase 1) ==========
+    const regimeDetectorState = {
+      loaded: false,
+      score: 0,           // 0-100 normalized
+      rawScore: 0,        // sum of fired weights
+      maxScore: 70,       // current max possible (Phase 1 = 70)
+      label: 'STABLE',
+      direction: 'neutral', // bullish / bearish / mixed / neutral
+      triggers: [],
+      lastUpdate: null
+    };
+
+    function _rdGetZZone(z) {
+      if (z === null || z === undefined || isNaN(z)) return null;
+      if (z <= -1.5) return 'ACCUMULATE';
+      if (z <= -0.5) return 'UND';
+      if (z < 0.5) return 'FAIR';
+      if (z < 1.5) return 'ELEVATED';
+      return 'OVERHEATED';
+    }
+    const _RD_ZONE_ORDER = ['ACCUMULATE','UND','FAIR','ELEVATED','OVERHEATED'];
+
+    function computeRdTriggerZ() {
+      const trigger = {
+        key: 'z-zone-cross',
+        label: 'Z-Score zone crossover',
+        weight: 25,
+        fired: false,
+        direction: null,
+        daysAgo: null,
+        description: 'Z-Score ainda dentro da mesma zona'
+      };
+      try {
+        const hist = (typeof state !== 'undefined' && state) ? (state.compositeHistory || []) : [];
+        if (hist.length < 8) {
+          trigger.description = 'Histórico insuficiente';
+          return trigger;
+        }
+        const last = hist[hist.length - 1];
+        const lastZone = _rdGetZZone(last.value);
+        if (!lastZone) {
+          trigger.description = 'Z-Score atual indisponível';
+          return trigger;
+        }
+        const lookback = Math.min(15, hist.length);
+        for (let i = hist.length - 2; i >= hist.length - lookback; i--) {
+          const z = _rdGetZZone(hist[i].value);
+          if (z && z !== lastZone) {
+            const daysAgo = (hist.length - 1) - i;
+            const lastIdx = _RD_ZONE_ORDER.indexOf(lastZone);
+            const refIdx = _RD_ZONE_ORDER.indexOf(z);
+            trigger.fired = true;
+            trigger.direction = lastIdx > refIdx ? 'bullish' : 'bearish';
+            trigger.daysAgo = daysAgo;
+            trigger.fromZone = z;
+            trigger.toZone = lastZone;
+            trigger.description = 'Z saiu de ' + z + ' para ' + lastZone;
+            return trigger;
+          }
+        }
+      } catch(e) { trigger.description = 'Erro: ' + e.message; }
+      return trigger;
+    }
+
+    function computeRdTriggerSthLth() {
+      const trigger = {
+        key: 'sth-lth-cross',
+        label: 'STH RP × LTH RP crossover',
+        weight: 25,
+        fired: false,
+        direction: null,
+        daysAgo: null,
+        description: 'STH RP e LTH RP sem cruzamento recente'
+      };
+      try {
+        const sthHist = (typeof cohortState !== 'undefined' && cohortState) ? (cohortState.sthRP || []) : [];
+        const lthHist = (typeof cohortState !== 'undefined' && cohortState) ? (cohortState.lthRP || []) : [];
+        if (sthHist.length < 15 || lthHist.length < 15) {
+          trigger.description = 'Histórico STH/LTH RP insuficiente';
+          return trigger;
+        }
+        // Build aligned series by date
+        const lthByDate = new Map(lthHist.map(d => [d.date, d.value]));
+        const aligned = [];
+        for (const s of sthHist) {
+          const l = lthByDate.get(s.date);
+          if (l !== undefined && s.value !== null && l !== null) {
+            aligned.push({ date: s.date, sth: s.value, lth: l });
+          }
+        }
+        if (aligned.length < 15) {
+          trigger.description = 'Pares STH/LTH alinhados insuficientes';
+          return trigger;
+        }
+        const last = aligned[aligned.length - 1];
+        const currSign = last.sth > last.lth ? '+' : (last.sth < last.lth ? '-' : '0');
+        const lookback = Math.min(30, aligned.length);
+        for (let i = aligned.length - 2; i >= aligned.length - lookback; i--) {
+          const a = aligned[i];
+          const sign = a.sth > a.lth ? '+' : (a.sth < a.lth ? '-' : '0');
+          if (sign !== currSign && sign !== '0') {
+            const daysAgo = (aligned.length - 1) - i;
+            // Both crossover types historically signal regime change (bullish leaning)
+            // STH crossing ABOVE LTH: bull markup begins
+            // STH crossing BELOW LTH: deep capitulation, cycle bottom
+            // Consider both bullish reversals from a longer-term perspective
+            trigger.fired = true;
+            trigger.direction = 'bullish';
+            trigger.daysAgo = daysAgo;
+            const lastSthFmt = '$' + (last.sth/1000).toFixed(1) + 'k';
+            const lastLthFmt = '$' + (last.lth/1000).toFixed(1) + 'k';
+            if (currSign === '+') {
+              trigger.description = 'STH RP cruzou acima de LTH RP (' + lastSthFmt + ' vs ' + lastLthFmt + ')';
+            } else {
+              trigger.description = 'STH RP cruzou abaixo de LTH RP (' + lastSthFmt + ' vs ' + lastLthFmt + ')';
+            }
+            return trigger;
+          }
+        }
+      } catch(e) { trigger.description = 'Erro: ' + e.message; }
+      return trigger;
+    }
+
+    function computeRdTriggerLthRegime() {
+      const trigger = {
+        key: 'lth-regime',
+        label: 'LTH 30d net position regime change',
+        weight: 20,
+        fired: false,
+        direction: null,
+        daysAgo: null,
+        description: 'LTH 30d delta sem mudança de sinal recente'
+      };
+      try {
+        const hist = (typeof smartMoneyState !== 'undefined' && smartMoneyState) ? (smartMoneyState.lthSupplyHist || []) : [];
+        if (!Array.isArray(hist) || hist.length < 45) {
+          trigger.description = 'Histórico LTH supply insuficiente (precisa 45+ pontos)';
+          return trigger;
+        }
+        // Extract value from each point
+        const pickV = (d) => {
+          if (d == null) return null;
+          if (typeof d === 'number') return d;
+          const cands = ['longTermHodlerSupplyBtc','value','v','y'];
+          for (const k of cands) {
+            const x = d[k];
+            if (x !== undefined && x !== null) {
+              const n = parseFloat(x);
+              if (!isNaN(n)) return n;
+            }
+          }
+          return null;
+        };
+        // Compute 30d delta for last 14 days
+        const deltas = [];
+        for (let i = hist.length - 14; i < hist.length; i++) {
+          if (i - 30 < 0) continue;
+          const curr = pickV(hist[i]);
+          const prev30 = pickV(hist[i - 30]);
+          if (curr !== null && prev30 !== null) {
+            deltas.push({ idx: i, value: curr - prev30 });
+          }
+        }
+        if (deltas.length < 5) {
+          trigger.description = 'Deltas 30d insuficientes';
+          return trigger;
+        }
+        const last = deltas[deltas.length - 1];
+        const lastSign = last.value > 0 ? '+' : (last.value < 0 ? '-' : '0');
+        if (lastSign === '0') return trigger;
+        for (let i = deltas.length - 2; i >= 0; i--) {
+          const sign = deltas[i].value > 0 ? '+' : (deltas[i].value < 0 ? '-' : '0');
+          if (sign !== lastSign && sign !== '0') {
+            const daysAgo = (deltas.length - 1) - i;
+            trigger.fired = true;
+            trigger.direction = lastSign === '+' ? 'bullish' : 'bearish';
+            trigger.daysAgo = daysAgo;
+            const valFmt = (last.value >= 0 ? '+' : '') + (last.value/1000).toFixed(0) + 'k BTC/30d';
+            trigger.description = 'LTH delta flipou ' + (lastSign === '+' ? 'pra positivo' : 'pra negativo') + ' (' + valFmt + ')';
+            return trigger;
+          }
+        }
+      } catch(e) { trigger.description = 'Erro: ' + e.message; }
+      return trigger;
+    }
+
+    function computeRegimeDetector() {
+      try {
+        const triggers = [
+          computeRdTriggerZ(),
+          computeRdTriggerSthLth(),
+          computeRdTriggerLthRegime()
+        ];
+        let raw = 0, bullCount = 0, bearCount = 0;
+        for (const t of triggers) {
+          if (t.fired) {
+            raw += t.weight;
+            if (t.direction === 'bullish') bullCount++;
+            else if (t.direction === 'bearish') bearCount++;
+          }
+        }
+        const maxScore = triggers.reduce((s, t) => s + t.weight, 0);
+        const score = maxScore > 0 ? Math.round((raw / maxScore) * 100) : 0;
+        let label, direction;
+        if (raw === 0) {
+          label = 'STABLE';
+          direction = 'neutral';
+        } else {
+          if (score < 30) label = 'WATCH';
+          else if (score < 50) label = 'WATCH';
+          else if (score < 70) label = 'PROBABLE REVERSAL';
+          else label = 'HIGH CONVICTION';
+          if (bullCount > bearCount) direction = 'bullish';
+          else if (bearCount > bullCount) direction = 'bearish';
+          else direction = 'mixed';
+        }
+        regimeDetectorState.score = score;
+        regimeDetectorState.rawScore = raw;
+        regimeDetectorState.maxScore = maxScore;
+        regimeDetectorState.label = label;
+        regimeDetectorState.direction = direction;
+        regimeDetectorState.triggers = triggers;
+        regimeDetectorState.lastUpdate = new Date().toISOString();
+        regimeDetectorState.loaded = true;
+        renderRegimeDetector();
+      } catch(e) {
+        console.warn('[RegimeDetector] compute error:', e);
+      }
+    }
+
+    function renderRegimeDetector() {
+      const block = document.getElementById('regimeDetectorBlock');
+      if (!block) return;
+      const st = regimeDetectorState;
+      block.style.display = 'block';
+
+      // Score
+      const scoreEl = document.getElementById('rdetScore');
+      const scoreLabel = document.getElementById('rdetScoreLabel');
+      if (scoreEl) {
+        scoreEl.textContent = st.rawScore === 0 ? '--' : st.score;
+        let color;
+        if (st.rawScore === 0) color = 'var(--text-muted)';
+        else if (st.direction === 'bullish') color = 'var(--accent-green)';
+        else if (st.direction === 'bearish') color = 'var(--accent-red)';
+        else color = 'var(--accent-yellow)';
+        scoreEl.style.color = color;
+      }
+      if (scoreLabel) scoreLabel.textContent = st.label;
+
+      // Direction badge
+      const dirEl = document.getElementById('rdetDirectionBadge');
+      if (dirEl) {
+        const map = { bullish: ['↑ BULLISH','rdet-dir-bullish'], bearish: ['↓ BEARISH','rdet-dir-bearish'], mixed: ['~ MISTO','rdet-dir-mixed'], neutral: ['• ESTÁVEL','rdet-dir-neutral'] };
+        const [text, cls] = map[st.direction] || map.neutral;
+        dirEl.textContent = text;
+        dirEl.className = 'rdet-direction ' + cls;
+      }
+
+      // Summary text
+      const sumEl = document.getElementById('rdetSummaryText');
+      if (sumEl) {
+        const fired = st.triggers.filter(t => t.fired);
+        if (fired.length === 0) {
+          sumEl.innerHTML = 'Nenhum trigger ativo. Regime atual estável, sem sinais recentes de mudança estrutural.';
+        } else {
+          const direction_pt = st.direction === 'bullish' ? 'bullish' : (st.direction === 'bearish' ? 'bearish' : 'misto');
+          let s = '<strong>' + fired.length + ' de ' + st.triggers.length + ' triggers</strong> ativos com viés <strong>' + direction_pt + '</strong>. ';
+          if (st.label === 'HIGH CONVICTION') s += 'Confluência completa de sinais aponta mudança de regime em curso.';
+          else if (st.label === 'PROBABLE REVERSAL') s += 'Confluência parcial sustenta tese de reversão. Aguardar mais confirmações.';
+          else s += 'Sinais isolados detectados. Monitorar para potencial confluência.';
+          sumEl.innerHTML = s;
+        }
+      }
+
+      // Trigger count
+      const cntEl = document.getElementById('rdetTriggerCount');
+      if (cntEl) {
+        const fired = st.triggers.filter(t => t.fired).length;
+        cntEl.textContent = fired + '/' + st.triggers.length;
+      }
+
+      // Trigger list
+      const list = document.getElementById('rdetTriggerList');
+      if (list) {
+        list.innerHTML = '';
+        for (const t of st.triggers) {
+          const item = document.createElement('div');
+          let cls = 'rdet-trigger-item';
+          if (t.fired) cls += ' fired ' + (t.direction || '');
+          item.className = cls;
+          const icon = !t.fired ? '○' : (t.direction === 'bullish' ? '↑' : (t.direction === 'bearish' ? '↓' : '✓'));
+          const time = t.fired ? ('há ' + t.daysAgo + 'd') : '—';
+          const wgt = t.fired ? ('+' + t.weight) : ('±' + t.weight);
+          item.innerHTML =
+            '<div class="rdet-trigger-icon">' + icon + '</div>' +
+            '<div class="rdet-trigger-desc"><strong>' + t.label + '</strong><br><span style="font-size:11px;opacity:0.8;">' + (t.description || '') + '</span></div>' +
+            '<div class="rdet-trigger-time">' + time + '</div>' +
+            '<div class="rdet-trigger-weight">' + wgt + '</div>';
+          list.appendChild(item);
+        }
+      }
+
+      // Update timestamp
+      const upEl = document.getElementById('rdetUpdate');
+      if (upEl && st.lastUpdate) {
+        try {
+          const d = new Date(st.lastUpdate);
+          upEl.textContent = 'atualizado ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+        } catch(e) {}
+      }
+    }
 
     function generateReport() {
       console.log('[Report] Generating daily analysis...');
@@ -10272,6 +10680,8 @@
       confluenceState.score = finalScore;
       confluenceState.coverage = coverage;
       confluenceState.loaded = true;
+      // Batch 28: tambem recompute regime detector quando confluence atualiza
+      if (typeof computeRegimeDetector === 'function') { try { computeRegimeDetector(); } catch(e) {} }
       if (!hasEnough) {
         dwarn(`Confluence cobertura ${(coverage*100).toFixed(0)}% abaixo de ${CONFIG.MIN_CONFLUENCE_COVERAGE*100}% — publicando N/A`);
       }
@@ -11456,6 +11866,9 @@
     setTimeout(() => { updateConfluenceScore(); }, 30000);
     setTimeout(() => { updateConfluenceScore(); }, 45000);
     setTimeout(() => { updateConfluenceScore(); }, 60000);
+    // Batch 28: fallback regime detector (caso confluence nao acione)
+    setTimeout(() => { if (typeof computeRegimeDetector === 'function') computeRegimeDetector(); }, 25000);
+    setTimeout(() => { if (typeof computeRegimeDetector === 'function') computeRegimeDetector(); }, 50000);
 
 
     // ========== ABA 11: REALIZED PRICE LAYERS ==========
