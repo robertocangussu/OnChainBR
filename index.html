@@ -905,6 +905,95 @@
       #aiReportContent .air-action p { font-size: 11.5px !important; }
     }
 
+
+    /* ========== Social Posts UI (Batch 23) ========== */
+    .sp-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sp-card-head { display: flex; align-items: center; gap: 10px; }
+    .sp-card-icon { font-size: 20px; }
+    .sp-card-title { font-size: 12px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.3px; }
+    .sp-card-sub { font-size: 9px; color: var(--text-muted); margin-top: 2px; letter-spacing: 0.3px; }
+    .sp-output {
+      flex: 1;
+      min-height: 70px;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.18);
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+      border: 1px dashed rgba(255,255,255,0.05);
+      transition: border-color 0.2s;
+    }
+    .sp-output.has-content {
+      color: var(--text-primary);
+      border-color: rgba(59,130,246,0.3);
+      border-style: solid;
+    }
+    .sp-output.loading {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    .sp-output.error {
+      color: var(--accent-red);
+      border-color: rgba(239,68,68,0.3);
+      border-style: solid;
+    }
+    .sp-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .sp-btn {
+      flex: 1;
+      min-width: 70px;
+      padding: 6px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border-radius: 5px;
+      cursor: pointer;
+      border: 1px solid;
+      transition: all 0.15s;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .sp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .sp-btn-primary {
+      background: rgba(59,130,246,0.12);
+      color: var(--accent-blue);
+      border-color: rgba(59,130,246,0.35);
+    }
+    .sp-btn-primary:hover:not(:disabled) {
+      background: rgba(59,130,246,0.22);
+      border-color: rgba(59,130,246,0.5);
+    }
+    .sp-btn-secondary {
+      background: rgba(255,255,255,0.04);
+      color: var(--text-secondary);
+      border-color: rgba(255,255,255,0.12);
+    }
+    .sp-btn-secondary:hover:not(:disabled) {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-primary);
+    }
+    .sp-btn.copied { background: rgba(34,197,94,0.18); color: var(--accent-green); border-color: rgba(34,197,94,0.4); }
+    .sp-meta {
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 0.3px;
+      min-height: 12px;
+    }
+    @media (max-width: 900px) {
+      #socialPostsBlock > div:nth-child(2) { grid-template-columns: 1fr !important; }
+    }
+
   </style>
 </head>
 <body>
@@ -2437,6 +2526,71 @@
       <div id="aiReportError" style="display:none;font-size:10px;color:var(--text-muted);padding:6px 0;"></div>
       <div id="aiReportFooter" style="display:none;font-size:9px;color:var(--text-muted);margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04);letter-spacing:0.5px;">
         Gerado por Claude Haiku 4.5 &middot; <span id="aiReportCachedBadge"></span> &middot; <span id="aiReportNextUpdate"></span> &middot; <span id="aiReportRegenLink" style="cursor:pointer;color:var(--accent-cyan);text-decoration:underline;text-underline-offset:2px;">forcar atualizacao</span>
+      </div>
+    </div>
+
+    <!-- ========== CONTEUDO SOCIAL (Batch 23) ========== -->
+    <div id="socialPostsBlock" style="margin:24px 0 16px;padding:18px 22px;border-radius:12px;background:linear-gradient(135deg,rgba(59,130,246,0.06) 0%,rgba(168,85,247,0.04) 100%);border:1px solid rgba(59,130,246,0.18);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span style="font-size:14px;">𝕏</span>
+        <span style="font-size:10px;color:var(--accent-blue);font-weight:700;letter-spacing:2px;text-transform:uppercase;">Conteudo Social - posts diarios</span>
+        <span style="font-size:9px;color:var(--text-muted);margin-left:auto;">Gerados sob demanda - copia e cola no X</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <!-- MORNING -->
+        <div class="sp-card" data-sp-type="morning">
+          <div class="sp-card-head">
+            <span class="sp-card-icon">☀️</span>
+            <div>
+              <div class="sp-card-title">Manha - Resumo</div>
+              <div class="sp-card-sub">Recap da analise diaria</div>
+            </div>
+          </div>
+          <div class="sp-output" data-sp-output="morning">Clique em "Gerar" para criar.</div>
+          <div class="sp-actions">
+            <button class="sp-btn sp-btn-primary" data-sp-action="generate" data-sp-type="morning">Gerar</button>
+            <button class="sp-btn sp-btn-secondary" data-sp-action="copy" data-sp-type="morning" disabled>Copiar</button>
+            <button class="sp-btn sp-btn-secondary" data-sp-action="regen" data-sp-type="morning" disabled>Outra versao</button>
+          </div>
+          <div class="sp-meta" data-sp-meta="morning"></div>
+        </div>
+
+        <!-- EVENING SYSTEM -->
+        <div class="sp-card" data-sp-type="evening-system">
+          <div class="sp-card-head">
+            <span class="sp-card-icon">🌙</span>
+            <div>
+              <div class="sp-card-title">Noite - Sistema</div>
+              <div class="sp-card-sub">Indicador OnChainBR</div>
+            </div>
+          </div>
+          <div class="sp-output" data-sp-output="evening-system">Clique em "Gerar" para criar.</div>
+          <div class="sp-actions">
+            <button class="sp-btn sp-btn-primary" data-sp-action="generate" data-sp-type="evening-system">Gerar</button>
+            <button class="sp-btn sp-btn-secondary" data-sp-action="copy" data-sp-type="evening-system" disabled>Copiar</button>
+            <button class="sp-btn sp-btn-secondary" data-sp-action="regen" data-sp-type="evening-system" disabled>Outra versao</button>
+          </div>
+          <div class="sp-meta" data-sp-meta="evening-system"></div>
+        </div>
+
+        <!-- EVENING CRYPTOQUANT -->
+        <div class="sp-card" data-sp-type="evening-cryptoquant">
+          <div class="sp-card-head">
+            <span class="sp-card-icon">📊</span>
+            <div>
+              <div class="sp-card-title">Noite - CryptoQuant</div>
+              <div class="sp-card-sub">Marca @cryptoquant_com</div>
+            </div>
+          </div>
+          <div class="sp-output" data-sp-output="evening-cryptoquant">Clique em "Gerar" para criar.</div>
+          <div class="sp-actions">
+            <button class="sp-btn sp-btn-primary" data-sp-action="generate" data-sp-type="evening-cryptoquant">Gerar</button>
+            <button class="sp-btn sp-btn-secondary" data-sp-action="copy" data-sp-type="evening-cryptoquant" disabled>Copiar</button>
+            <button class="sp-btn sp-btn-secondary" data-sp-action="regen" data-sp-type="evening-cryptoquant" disabled>Outra versao</button>
+          </div>
+          <div class="sp-meta" data-sp-meta="evening-cryptoquant"></div>
+        </div>
       </div>
     </div>
     
@@ -8376,6 +8530,114 @@
           fetchDailyAIReport(true);
         });
       }
+    });
+
+
+    // ========== SOCIAL POSTS (Batch 23) ==========
+    const SOCIAL_POST_URL = 'https://onchainbr-ai-report.roberty-rockeiro.workers.dev/api/social-post';
+    const _spState = {};  // por type: { post, generatedAt, chars }
+
+    async function generateSocialPost(type) {
+      const out = document.querySelector('[data-sp-output="' + type + '"]');
+      const meta = document.querySelector('[data-sp-meta="' + type + '"]');
+      const btnGen = document.querySelector('[data-sp-action="generate"][data-sp-type="' + type + '"]');
+      const btnCopy = document.querySelector('[data-sp-action="copy"][data-sp-type="' + type + '"]');
+      const btnRegen = document.querySelector('[data-sp-action="regen"][data-sp-type="' + type + '"]');
+      if (!out) return;
+
+      const snapshot = (typeof buildReportSnapshot === 'function') ? buildReportSnapshot() : null;
+      if (!snapshot) {
+        out.textContent = 'Erro: snapshot indisponivel.';
+        out.classList.add('error');
+        return;
+      }
+
+      out.textContent = 'Gerando...';
+      out.classList.remove('has-content', 'error');
+      out.classList.add('loading');
+      if (btnGen) btnGen.disabled = true;
+      if (btnCopy) btnCopy.disabled = true;
+      if (btnRegen) btnRegen.disabled = true;
+      if (meta) meta.textContent = '';
+
+      const ctrl = new AbortController();
+      const timeoutId = setTimeout(function(){ ctrl.abort(); }, 25000);
+
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const resp = await fetch(SOCIAL_POST_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: type, date: today, snapshot: snapshot }),
+          signal: ctrl.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!resp.ok) {
+          const errText = await resp.text().catch(function(){ return ''; });
+          throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+        }
+
+        const data = await resp.json();
+        if (!data.post) throw new Error('Empty post');
+
+        out.textContent = data.post;
+        out.classList.remove('loading', 'error');
+        out.classList.add('has-content');
+        _spState[type] = data;
+
+        if (btnCopy) btnCopy.disabled = false;
+        if (btnRegen) btnRegen.disabled = false;
+        if (meta) {
+          const time = new Date(data.generatedAt).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+          meta.textContent = data.chars + ' chars - ' + time;
+        }
+      } catch(err) {
+        console.warn('[Social Post] Failed:', err.message);
+        out.textContent = 'Falha ao gerar. Tenta de novo.';
+        out.classList.remove('loading', 'has-content');
+        out.classList.add('error');
+        if (meta) meta.textContent = err.message.slice(0, 80);
+      } finally {
+        if (btnGen) btnGen.disabled = false;
+      }
+    }
+
+    async function copySocialPost(type) {
+      const data = _spState[type];
+      if (!data || !data.post) return;
+      const btn = document.querySelector('[data-sp-action="copy"][data-sp-type="' + type + '"]');
+      try {
+        await navigator.clipboard.writeText(data.post);
+        if (btn) {
+          const orig = btn.textContent;
+          btn.textContent = 'Copiado!';
+          btn.classList.add('copied');
+          setTimeout(function(){
+            btn.textContent = orig;
+            btn.classList.remove('copied');
+          }, 1500);
+        }
+      } catch(e) {
+        console.warn('[Social Post] Copy failed:', e);
+        if (btn) btn.textContent = 'Erro';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Wire all generate / copy / regen buttons via event delegation
+      document.addEventListener('click', function(ev) {
+        const btn = ev.target.closest('.sp-btn');
+        if (!btn) return;
+        const action = btn.dataset.spAction;
+        const type = btn.dataset.spType;
+        if (!action || !type) return;
+        if (action === 'generate' || action === 'regen') {
+          generateSocialPost(type);
+        } else if (action === 'copy') {
+          copySocialPost(type);
+        }
+      });
     });
 
     function generateReport() {
