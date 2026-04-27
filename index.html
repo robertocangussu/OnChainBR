@@ -2436,7 +2436,7 @@
       <div id="aiReportContent" style="display:none;font-size:12.5px;line-height:1.75;color:var(--text-primary);"></div>
       <div id="aiReportError" style="display:none;font-size:10px;color:var(--text-muted);padding:6px 0;"></div>
       <div id="aiReportFooter" style="display:none;font-size:9px;color:var(--text-muted);margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.04);letter-spacing:0.5px;">
-        Gerado por Claude Haiku 4.5 &middot; <span id="aiReportCachedBadge"></span> &middot; <span id="aiReportRegenLink" style="cursor:pointer;color:var(--accent-cyan);text-decoration:underline;text-underline-offset:2px;">forcar atualizacao</span>
+        Gerado por Claude Haiku 4.5 &middot; <span id="aiReportCachedBadge"></span> &middot; <span id="aiReportNextUpdate"></span> &middot; <span id="aiReportRegenLink" style="cursor:pointer;color:var(--accent-cyan);text-decoration:underline;text-underline-offset:2px;">forcar atualizacao</span>
       </div>
     </div>
     
@@ -2538,7 +2538,7 @@
     </div>
 
     <!-- Executive Summary Card -->
-    <div id="reportSummaryCard" style="background:linear-gradient(135deg, var(--bg-card) 0%, rgba(168,85,247,0.05) 100%);border:1px solid var(--accent-purple);border-radius:12px;padding:20px;margin-bottom:20px;">
+    <div id="reportSummaryCard" style="display:none;background:linear-gradient(135deg, var(--bg-card) 0%, rgba(168,85,247,0.05) 100%);border:1px solid var(--accent-purple);border-radius:12px;padding:20px;margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <div id="reportPostureBadge" style="background:var(--accent-yellow);color:#000;font-size:14px;font-weight:800;padding:8px 20px;border-radius:20px;text-transform:uppercase;letter-spacing:1px;">
           AGUARDAR
@@ -2605,7 +2605,7 @@
     </div>
     
     <!-- Action Card -->
-    <div id="reportActionCard" style="background:linear-gradient(135deg, rgba(34,197,94,0.06) 0%, rgba(6,182,212,0.04) 100%);border:1px solid rgba(34,197,94,0.28);border-left:5px solid var(--accent-green);border-radius:10px;padding:20px 24px;margin-bottom:16px;box-shadow:0 2px 12px rgba(34,197,94,0.06);">
+    <div id="reportActionCard" style="display:none;background:linear-gradient(135deg, rgba(34,197,94,0.06) 0%, rgba(6,182,212,0.04) 100%);border:1px solid rgba(34,197,94,0.28);border-left:5px solid var(--accent-green);border-radius:10px;padding:20px 24px;margin-bottom:16px;box-shadow:0 2px 12px rgba(34,197,94,0.06);">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
         <span style="font-size:20px;">🎯</span>
         <span style="font-size:12px;color:var(--accent-green);font-weight:700;text-transform:uppercase;letter-spacing:1.2px;">Ação Recomendada</span>
@@ -2615,18 +2615,14 @@
       </div>
     </div>
     
-    <!-- Main Grid: Analysis + Data -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-      <!-- Left: Key Insights -->
-      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;">
-        <div style="font-size:10px;color:var(--accent-orange);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">📊 Análise por Setor</div>
-        <div id="reportMainText" style="font-size:11px;line-height:1.7;color:var(--text-secondary);">
-          Carregando análise...
-        </div>
-      </div>
-      
-      <!-- Right: Data Cards -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+    <!-- Main Grid: Data Cards (Batch 20: removed redundant analysis card) -->
+    <!-- Hidden: card "Analise por Setor" (duplicava AI report) -->
+    <div id="reportMainText" style="display:none;">
+      Carregando análise...
+    </div>
+    <div style="display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:16px;">
+      <!-- Data Cards (largura total) -->
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
         <!-- On-Chain -->
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px;">
           <div style="font-size:9px;color:var(--accent-cyan);text-transform:uppercase;margin-bottom:8px;font-weight:600;">⛓️ On-Chain</div>
@@ -8347,6 +8343,25 @@
         modelEl.textContent = data.model.replace('claude-', '').replace(/-[0-9]{8}$/, '').toUpperCase();
       }
       if (cachedEl) cachedEl.textContent = data.cached ? 'servido do cache' : 'recem-gerado';
+
+      // Batch 20: proximo update (cache TTL 23h a partir de generatedAt)
+      try {
+        const nextEl = document.getElementById('aiReportNextUpdate');
+        if (nextEl && data.generatedAt) {
+          const gen = new Date(data.generatedAt);
+          const next = new Date(gen.getTime() + 23 * 60 * 60 * 1000);
+          const now = new Date();
+          const diffMs = next - now;
+          if (diffMs <= 0) {
+            nextEl.textContent = 'cache expirado';
+          } else {
+            const hours = Math.floor(diffMs / (60 * 60 * 1000));
+            const mins = Math.floor((diffMs % (60 * 60 * 1000)) / (60 * 1000));
+            nextEl.textContent = 'proximo update em ' + (hours > 0 ? hours + 'h' : '') + (hours > 0 && mins > 0 ? ' ' : '') + (mins > 0 || hours === 0 ? mins + 'm' : '');
+          }
+        }
+      } catch(e) {}
+
       if (footer) footer.style.display = 'block';
     }
 
