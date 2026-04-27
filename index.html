@@ -10122,17 +10122,12 @@
     }
 
     function parseURPDData(data) {
-      // BRK pode retornar varios formatos:
-      // 1. Array de [priceLow, priceHigh, btcAmount]
-      // 2. Array de objetos {price, supply} ou {bin, value}
-      // 3. {bins: [...], values: [...]}
-      // 4. {price_low: [], price_high: [], supply: []}
+      // BRK pode retornar varios formatos. Vou logar keys pra debug e tentar todos
       let bins = [];
       try {
         if (Array.isArray(data)) {
           for (const item of data) {
             if (Array.isArray(item) && item.length >= 2) {
-              // Formato [price, supply] ou [priceLow, priceHigh, supply]
               if (item.length === 2) {
                 bins.push({ priceLow: parseFloat(item[0]), priceHigh: parseFloat(item[0]), priceMid: parseFloat(item[0]), btcAmount: parseFloat(item[1]) });
               } else {
@@ -10148,23 +10143,102 @@
               }
             }
           }
-        } else if (data && data.bins && data.values) {
-          for (let i = 0; i < Math.min(data.bins.length, data.values.length); i++) {
-            const lo = parseFloat(data.bins[i]);
-            const sup = parseFloat(data.values[i]);
-            if (!isNaN(lo) && !isNaN(sup)) bins.push({ priceLow: lo, priceHigh: lo, priceMid: lo, btcAmount: sup });
+        } else if (data && typeof data === 'object') {
+          // Object response - log keys pra debug
+          const keys = Object.keys(data);
+          console.log('[URPD parser] Object keys:', keys.slice(0, 30));
+
+          // Format 1: {"100": 12.5, "200": 30.1, ...} - keys sao precos numericos
+          const numKeys = keys.filter(k => !isNaN(parseFloat(k)));
+          if (numKeys.length > 5 && numKeys.length === keys.length) {
+            console.log('[URPD parser] formato dict price->supply detectado (' + numKeys.length + ' keys)');
+            for (const k of numKeys) {
+              const lo = parseFloat(k);
+              const sup = parseFloat(data[k]);
+              if (!isNaN(lo) && !isNaN(sup) && sup > 0) {
+                bins.push({ priceLow: lo, priceHigh: lo, priceMid: lo, btcAmount: sup });
+              }
+            }
           }
-        } else if (data && data.price_low && data.supply) {
-          for (let i = 0; i < data.price_low.length; i++) {
-            const lo = parseFloat(data.price_low[i]);
-            const hi = parseFloat((data.price_high || data.price_low)[i]);
-            const sup = parseFloat(data.supply[i]);
-            if (!isNaN(lo) && !isNaN(sup)) bins.push({ priceLow: lo, priceHigh: hi, priceMid: (lo + hi) / 2, btcAmount: sup });
+          // Format 2: {bins: [...], values: [...]} ou {prices: [...], supplies: [...]}
+          else if (data.bins && data.values) {
+            console.log('[URPD parser] formato bins/values (' + data.bins.length + ' bins)');
+            for (let i = 0; i < Math.min(data.bins.length, data.values.length); i++) {
+              const lo = parseFloat(data.bins[i]);
+              const sup = parseFloat(data.values[i]);
+              if (!isNaN(lo) && !isNaN(sup)) bins.push({ priceLow: lo, priceHigh: lo, priceMid: lo, btcAmount: sup });
+            }
+          }
+          else if (data.prices && data.supplies) {
+            console.log('[URPD parser] formato prices/supplies');
+            for (let i = 0; i < Math.min(data.prices.length, data.supplies.length); i++) {
+              const lo = parseFloat(data.prices[i]);
+              const sup = parseFloat(data.supplies[i]);
+              if (!isNaN(lo) && !isNaN(sup)) bins.push({ priceLow: lo, priceHigh: lo, priceMid: lo, btcAmount: sup });
+            }
+          }
+          else if (data.price_low && data.supply) {
+            console.log('[URPD parser] formato price_low/supply');
+            for (let i = 0; i < data.price_low.length; i++) {
+              const lo = parseFloat(data.price_low[i]);
+              const hi = parseFloat((data.price_high || data.price_low)[i]);
+              const sup = parseFloat(data.supply[i]);
+              if (!isNaN(lo) && !isNaN(sup)) bins.push({ priceLow: lo, priceHigh: hi, priceMid: (lo + hi) / 2, btcAmount: sup });
+            }
+          }
+          // Format 3: {start, step, values: [...]} - bins regulares
+          else if (data.values && Array.isArray(data.values) && (data.start !== undefined || data.first !== undefined)) {
+            console.log('[URPD parser] formato start/step/values');
+            const start = parseFloat(data.start || data.first || 0);
+            const step = parseFloat(data.step || data.bucket_size || 1);
+            for (let i = 0; i < data.values.length; i++) {
+              const v = parseFloat(data.values[i]);
+              if (!isNaN(v)) bins.push({ priceLow: start + i * step, priceHigh: start + (i+1) * step, priceMid: start + (i+0.5) * step, btcAmount: v });
+            }
+          }
+          // Format 4: {data: [...]} - array dentro
+          else if (Array.isArray(data.data)) {
+            console.log('[URPD parser] formato data array (' + data.data.length + ' items)');
+            const inner = data.data;
+            for (let i = 0; i < inner.length; i++) {
+              const item = inner[i];
+              if (Array.isArray(item) && item.length >= 2) {
+                bins.push({ priceLow: parseFloat(item[0]), priceHigh: parseFloat(item[0]), priceMid: parseFloat(item[0]), btcAmount: parseFloat(item[1]) });
+              } else if (typeof item === 'number') {
+                const price = (data.indexes && data.indexes[i]) || (data.dates && data.dates[i]) || i;
+                bins.push({ priceLow: price, priceHigh: price, priceMid: price, btcAmount: item });
+              } else if (typeof item === 'object' && item !== null) {
+                const lo = parseFloat(item.price || item.bin || item.lo || 0);
+                const sup = parseFloat(item.supply || item.value || item.v || 0);
+                if (!isNaN(lo) && !isNaN(sup)) bins.push({ priceLow: lo, priceHigh: lo, priceMid: lo, btcAmount: sup });
+              }
+            }
+          }
+          // Format 5: try first array property as values + try sibling keys for bins/prices
+          else {
+            console.log('[URPD parser] formato desconhecido, tentando inferir...');
+            let valuesKey = null, binsKey = null;
+            for (const k of keys) {
+              if (Array.isArray(data[k])) {
+                if (!valuesKey) valuesKey = k;
+                else if (!binsKey) binsKey = k;
+              }
+            }
+            if (valuesKey && binsKey) {
+              console.log('[URPD parser] inferido: bins=' + binsKey + ' values=' + valuesKey);
+              const arrV = data[valuesKey];
+              const arrB = data[binsKey];
+              for (let i = 0; i < Math.min(arrV.length, arrB.length); i++) {
+                const lo = parseFloat(arrB[i]);
+                const sup = parseFloat(arrV[i]);
+                if (!isNaN(lo) && !isNaN(sup)) bins.push({ priceLow: lo, priceHigh: lo, priceMid: lo, btcAmount: sup });
+              }
+            }
           }
         }
       } catch(e) { console.warn('[URPD] parser error:', e); }
-      // Filtrar bins com 0 supply
-      bins = bins.filter(b => b.btcAmount > 0 && b.priceMid > 0);
+      // Filtrar bins com 0 supply ou preco invalido
+      bins = bins.filter(b => b.btcAmount > 0 && b.priceMid > 0 && isFinite(b.priceMid));
       return { bins };
     }
 
