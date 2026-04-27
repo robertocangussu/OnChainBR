@@ -8761,7 +8761,8 @@
           trigger.description = 'Z-Score atual indisponível';
           return trigger;
         }
-        const lookback = Math.min(15, hist.length);
+        // Batch 29: lookback 14 -> 30 dias para capturar reversoes lentas
+        const lookback = Math.min(31, hist.length);
         for (let i = hist.length - 2; i >= hist.length - lookback; i--) {
           const z = _rdGetZZone(hist[i].value);
           if (z && z !== lastZone) {
@@ -8852,8 +8853,9 @@
       };
       try {
         const hist = (typeof smartMoneyState !== 'undefined' && smartMoneyState) ? (smartMoneyState.lthSupplyHist || []) : [];
-        if (!Array.isArray(hist) || hist.length < 45) {
-          trigger.description = 'Histórico LTH supply insuficiente (precisa 45+ pontos)';
+        // Batch 29: threshold flexivel - tenta 30+ dias se temos, ou nada
+        if (!Array.isArray(hist) || hist.length < 35) {
+          trigger.description = 'Histórico LTH supply insuficiente (' + (Array.isArray(hist) ? hist.length : 0) + ' pontos, precisa 35+)';
           return trigger;
         }
         // Extract value from each point
@@ -8870,9 +8872,10 @@
           }
           return null;
         };
-        // Compute 30d delta for last 14 days
+        // Compute 30d delta for last N days (Batch 29: adaptive based on history length)
         const deltas = [];
-        for (let i = hist.length - 14; i < hist.length; i++) {
+        const lookbackDays = Math.min(14, hist.length - 30);
+        for (let i = hist.length - lookbackDays; i < hist.length; i++) {
           if (i - 30 < 0) continue;
           const curr = pickV(hist[i]);
           const prev30 = pickV(hist[i - 30]);
@@ -8941,6 +8944,16 @@
         regimeDetectorState.triggers = triggers;
         regimeDetectorState.lastUpdate = new Date().toISOString();
         regimeDetectorState.loaded = true;
+        // Batch 29: debug log
+        console.log('[RegimeDetector] score=' + score + ' (' + raw + '/' + maxScore + ') label=' + label + ' direction=' + direction + ' triggers:', triggers.map(function(t){return t.key+'='+(t.fired?(t.direction||'fired'):'idle');}).join(', '));
+        // Debug data availability
+        try {
+          const compH = (typeof state !== 'undefined' && state) ? (state.compositeHistory||[]).length : 0;
+          const sthH = (typeof cohortState !== 'undefined' && cohortState) ? (cohortState.sthRP||[]).length : 0;
+          const lthH = (typeof cohortState !== 'undefined' && cohortState) ? (cohortState.lthRP||[]).length : 0;
+          const lthSup = (typeof smartMoneyState !== 'undefined' && smartMoneyState) ? (smartMoneyState.lthSupplyHist||[]).length : 0;
+          console.log('[RegimeDetector data]', { compositeHist: compH, sthRP: sthH, lthRP: lthH, lthSupplyHist: lthSup });
+        } catch(e) {}
         renderRegimeDetector();
       } catch(e) {
         console.warn('[RegimeDetector] compute error:', e);
