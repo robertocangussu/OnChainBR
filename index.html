@@ -2676,9 +2676,9 @@
         </div>
         <div class="rdet-box">
           <div class="rdet-box-title">Triggers</div>
-          <div class="rdet-box-counter" id="rdetTriggerCount">0/8</div>
+          <div class="rdet-box-counter" id="rdetTriggerCount">0/9</div>
           <div class="rdet-box-dots" id="rdetTriggerDots"></div>
-          <div class="rdet-box-sub" id="rdetTriggerSub">eventos pontuais (peso até 145)</div>
+          <div class="rdet-box-sub" id="rdetTriggerSub">eventos pontuais (peso até 157)</div>
         </div>
         <div class="rdet-box">
           <div class="rdet-box-title">Confirmações</div>
@@ -8583,6 +8583,14 @@
         halving: halving,
         phase: phase,
         // Batch 28: regime detector estado
+        cdd: (typeof cddState !== 'undefined' && cddState && cddState.loaded) ? {
+          latest: cddState.latest,
+          percentile: cddState.percentileNow,
+          p10: cddState.p10,
+          p50: cddState.p50,
+          p90: cddState.p90,
+          series: cddState.seriesUsed
+        } : null,
         cyclePosition: (typeof cyclePositionState !== 'undefined' && cyclePositionState && cyclePositionState.loaded) ? {
           currentPhase: cyclePositionState.currentPhase,
           confidence: cyclePositionState.confidence,
@@ -9518,6 +9526,121 @@
       }
     }
 
+
+    // ========== CDD (Coin Days Destroyed) via BRK (Batch 36) ==========
+    const cddState = { loaded: false, latest: null, history: [], p90: null, p10: null, p50: null, percentileNow: null, lastUpdate: null, seriesUsed: null };
+
+    async function fetchCDD() {
+      // BRK API - tenta lista de nomes possiveis pra serie CDD
+      const candidates = [
+        'cdd',
+        'coin-days-destroyed',
+        'coindays-destroyed',
+        'cdd-30d-ma',
+        'cdd-90d-ma',
+        'destroyed',
+        'dormancy'
+      ];
+      const baseUrl = 'https://bitview.space/api/series';
+      for (const name of candidates) {
+        try {
+          const url = baseUrl + '/' + name + '/day1?limit=365';
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const data = await res.json();
+          // BRK retorna objeto com {dates: [...], values: [...]} ou array de objetos
+          let history = [];
+          if (Array.isArray(data)) {
+            history = data.map(d => {
+              const date = d.date || d.d || d.t;
+              let val = null;
+              for (const k of ['value', 'v', 'cdd', 'coinDaysDestroyed', 'dormancy']) {
+                if (d[k] !== undefined && d[k] !== null) { const n = parseFloat(d[k]); if (!isNaN(n)) { val = n; break; } }
+              }
+              return { date, value: val };
+            }).filter(d => d.date && d.value !== null);
+          } else if (data && data.dates && data.values) {
+            // Formato BRK alternativo
+            for (let i = 0; i < Math.min(data.dates.length, data.values.length); i++) {
+              const v = parseFloat(data.values[i]);
+              if (!isNaN(v)) history.push({ date: data.dates[i], value: v });
+            }
+          } else if (data && Array.isArray(data.data)) {
+            history = data.data.map((v, i) => ({
+              date: (data.dates && data.dates[i]) || i,
+              value: typeof v === 'number' ? v : parseFloat(v)
+            })).filter(d => !isNaN(d.value));
+          }
+          if (history.length < 30) continue;
+          // Sort ascending por data
+          history.sort((a, b) => new Date(a.date) - new Date(b.date));
+          // Calcular percentiles dos ultimos 90 dias
+          const recent = history.slice(-90);
+          const sorted = recent.map(d => d.value).sort((a, b) => a - b);
+          const p10 = sorted[Math.floor(sorted.length * 0.10)];
+          const p50 = sorted[Math.floor(sorted.length * 0.50)];
+          const p90 = sorted[Math.floor(sorted.length * 0.90)];
+          const latest = history[history.length - 1].value;
+          // Percentile do valor atual em relacao ao historico
+          const rank = sorted.filter(v => v <= latest).length;
+          const percentileNow = (rank / sorted.length) * 100;
+          cddState.history = history;
+          cddState.latest = latest;
+          cddState.p10 = p10;
+          cddState.p50 = p50;
+          cddState.p90 = p90;
+          cddState.percentileNow = percentileNow;
+          cddState.seriesUsed = name;
+          cddState.loaded = true;
+          cddState.lastUpdate = new Date().toISOString();
+          console.log('[CDD] series=' + name + ' latest=' + latest.toFixed(0) + ' percentile=' + percentileNow.toFixed(0) + '% (p10=' + p10.toFixed(0) + ' p50=' + p50.toFixed(0) + ' p90=' + p90.toFixed(0) + ')');
+          if (typeof computeRegimeDetector === 'function') computeRegimeDetector();
+          return;
+        } catch(e) {
+          // tentar proximo candidato
+        }
+      }
+      console.warn('[CDD] Nenhum endpoint BRK disponivel (tentou: ' + candidates.join(', ') + ')');
+    }
+
+    function computeRdTriggerCDD() {
+      const trigger = { key: 'cdd-spike', label: 'Coin Days Destroyed (CDD) signal', weight: 12, fired: false, direction: null, daysAgo: null, description: 'Aguardando dados do BRK' };
+      try {
+        if (!cddState.loaded || !cddState.latest) {
+          trigger.description = 'CDD data não disponível ainda';
+          return trigger;
+        }
+        const pct = cddState.percentileNow;
+        const z = (typeof state !== 'undefined' && state) ? state.composite : null;
+        // CDD spike (>P90) = LTHs movendo coins (geralmente vendendo/distribuindo)
+        // CDD calm (<P30) = LTHs nao mexem (acumulação ou conviccao)
+        if (pct >= 85) {
+          // SPIKE
+          if (z !== null && z > 0.3) {
+            trigger.fired = true; trigger.direction = 'bearish'; trigger.daysAgo = 0;
+            trigger.description = 'CDD spike (P' + pct.toFixed(0) + ') em zona elevada (Z=' + z.toFixed(2) + ') - LTHs distribuindo no rally';
+          } else if (z !== null && z < -0.3) {
+            trigger.fired = true; trigger.direction = 'bullish'; trigger.daysAgo = 0;
+            trigger.description = 'CDD spike (P' + pct.toFixed(0) + ') com Z negativo - capitulation, LTHs realizando perda';
+          } else {
+            trigger.description = 'CDD spike (P' + pct.toFixed(0) + ') mas Z neutro - aguardando';
+          }
+        } else if (pct <= 25) {
+          // CALM
+          if (z !== null && z < -0.3) {
+            trigger.fired = true; trigger.direction = 'bullish'; trigger.daysAgo = 0;
+            trigger.description = 'CDD calmo (P' + pct.toFixed(0) + ') com Z negativo - LTHs não vendem no fundo';
+          } else {
+            trigger.description = 'CDD calmo (P' + pct.toFixed(0) + ') - LTHs hodlando';
+          }
+        } else {
+          trigger.description = 'CDD em zona normal (P' + pct.toFixed(0) + ') - sem sinal extremo';
+        }
+      } catch(e) { trigger.description = 'Erro: ' + e.message; }
+      return trigger;
+    }
+
+
     function computeRegimeDetector() {
       try {
         const triggers = [
@@ -9528,7 +9651,8 @@
           computeRdTriggerPuell(),
           computeRdTriggerFundingOI(),
           computeRdTriggerHashRibbons(),
-          computeRdTriggerMempool()
+          computeRdTriggerMempool(),
+          computeRdTriggerCDD()
         ];
         // Batch 33: Camada B - Confirmations
         const confirmations = [
@@ -12602,6 +12726,7 @@
     setTimeout(() => { if (typeof computeRegimeDetector === 'function') computeRegimeDetector(); }, 25000);
     setTimeout(() => { if (typeof computeRegimeDetector === 'function') computeRegimeDetector(); }, 50000);
     setTimeout(() => { if (typeof fetchMempoolPressure === 'function') fetchMempoolPressure(); }, 3000);
+    setTimeout(() => { if (typeof fetchCDD === 'function') fetchCDD(); }, 4000);
 
 
     // ========== ABA 11: REALIZED PRICE LAYERS ==========
