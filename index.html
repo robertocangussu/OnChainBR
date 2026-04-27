@@ -9531,76 +9531,128 @@
     const cddState = { loaded: false, latest: null, history: [], p90: null, p10: null, p50: null, percentileNow: null, lastUpdate: null, seriesUsed: null };
 
     async function fetchCDD() {
-      // BRK API - tenta lista de nomes possiveis pra serie CDD
-      const candidates = [
-        'cdd',
-        'coin-days-destroyed',
-        'coindays-destroyed',
-        'cdd-30d-ma',
-        'cdd-90d-ma',
-        'destroyed',
-        'dormancy'
-      ];
+      // BRK API - discovery dinamico via /api/series/search
       const baseUrl = 'https://bitview.space/api/series';
-      for (const name of candidates) {
+      const searchQueries = ['destroyed', 'dormancy', 'cdd', 'coindays'];
+
+      // Step 1: descobrir nomes via search
+      const candidates = new Set();
+      for (const q of searchQueries) {
         try {
-          const url = baseUrl + '/' + name + '/day1?limit=365';
-          const res = await fetch(url);
-          if (!res.ok) continue;
+          const res = await fetch(baseUrl + '/search?q=' + q + '&limit=20');
+          if (!res.ok) {
+            console.log('[CDD discovery] search ' + q + ' status=' + res.status);
+            continue;
+          }
           const data = await res.json();
-          // BRK retorna objeto com {dates: [...], values: [...]} ou array de objetos
+          // Estrutura esperada: array de strings ou array de objetos com .name/.id
+          if (Array.isArray(data)) {
+            for (const item of data) {
+              const name = (typeof item === 'string') ? item : (item.name || item.id || item.series);
+              if (name && typeof name === 'string') candidates.add(name);
+            }
+          } else if (data && data.results) {
+            for (const item of data.results) {
+              const name = (typeof item === 'string') ? item : (item.name || item.id);
+              if (name) candidates.add(name);
+            }
+          } else if (data && data.series) {
+            for (const item of data.series) {
+              const name = (typeof item === 'string') ? item : (item.name || item.id);
+              if (name) candidates.add(name);
+            }
+          }
+        } catch(e) {
+          console.warn('[CDD discovery] search ' + q + ' erro:', e.message);
+        }
+      }
+
+      console.log('[CDD discovery] candidates encontrados:', Array.from(candidates).slice(0, 30));
+
+      // Filtrar candidates relevantes (priorizar nomes mais simples)
+      const filtered = Array.from(candidates).filter(n => {
+        const low = n.toLowerCase();
+        return (low.includes('cdd') || low.includes('destroyed') || low.includes('dormancy') || low.includes('coin-days') || low.includes('coindays'))
+          && !low.includes('chart') && !low.includes('plot');
+      }).sort((a, b) => a.length - b.length); // mais curtos primeiro
+
+      if (filtered.length === 0) {
+        // Fallback pros candidates antigos hardcoded
+        filtered.push('cdd', 'coin-days-destroyed', 'coindays-destroyed', 'destroyed', 'dormancy');
+      }
+      console.log('[CDD discovery] tentando series filtradas:', filtered.slice(0, 10));
+
+      // Step 2: tentar fetchar dados de cada candidate ate funcionar
+      for (const name of filtered) {
+        try {
+          const url = baseUrl + '/' + encodeURIComponent(name) + '/day1?limit=365';
+          const res = await fetch(url);
+          if (!res.ok) {
+            console.log('[CDD] tentou ' + name + ' -> status ' + res.status);
+            continue;
+          }
+          const data = await res.json();
+          // Parse multiple formats
           let history = [];
           if (Array.isArray(data)) {
             history = data.map(d => {
-              const date = d.date || d.d || d.t;
+              if (typeof d === 'number') return null;
+              const date = (d && (d.date || d.d || d.t || d.day)) || null;
               let val = null;
-              for (const k of ['value', 'v', 'cdd', 'coinDaysDestroyed', 'dormancy']) {
-                if (d[k] !== undefined && d[k] !== null) { const n = parseFloat(d[k]); if (!isNaN(n)) { val = n; break; } }
+              for (const k of ['value', 'v', 'cdd', 'coinDaysDestroyed', 'dormancy', 'y']) {
+                if (d && d[k] !== undefined && d[k] !== null) {
+                  const n = parseFloat(d[k]);
+                  if (!isNaN(n)) { val = n; break; }
+                }
               }
-              return { date, value: val };
-            }).filter(d => d.date && d.value !== null);
+              if (val === null && d && typeof d === 'object') {
+                // Tenta primeiro valor numerico do objeto que nao seja date
+                for (const [k, v] of Object.entries(d)) {
+                  if (k === 'date' || k === 'd' || k === 't' || k === 'day') continue;
+                  const n = parseFloat(v);
+                  if (!isNaN(n)) { val = n; break; }
+                }
+              }
+              return date ? { date, value: val } : null;
+            }).filter(d => d && d.value !== null);
           } else if (data && data.dates && data.values) {
-            // Formato BRK alternativo
             for (let i = 0; i < Math.min(data.dates.length, data.values.length); i++) {
               const v = parseFloat(data.values[i]);
               if (!isNaN(v)) history.push({ date: data.dates[i], value: v });
             }
           } else if (data && Array.isArray(data.data)) {
             history = data.data.map((v, i) => ({
-              date: (data.dates && data.dates[i]) || i,
+              date: (data.dates && data.dates[i]) || (data.indexes && data.indexes[i]) || i,
               value: typeof v === 'number' ? v : parseFloat(v)
             })).filter(d => !isNaN(d.value));
           }
+          console.log('[CDD] ' + name + ' parsed ' + history.length + ' pts (sample:', history.slice(-3), ')');
           if (history.length < 30) continue;
-          // Sort ascending por data
+
           history.sort((a, b) => new Date(a.date) - new Date(b.date));
-          // Calcular percentiles dos ultimos 90 dias
           const recent = history.slice(-90);
           const sorted = recent.map(d => d.value).sort((a, b) => a - b);
           const p10 = sorted[Math.floor(sorted.length * 0.10)];
           const p50 = sorted[Math.floor(sorted.length * 0.50)];
           const p90 = sorted[Math.floor(sorted.length * 0.90)];
           const latest = history[history.length - 1].value;
-          // Percentile do valor atual em relacao ao historico
           const rank = sorted.filter(v => v <= latest).length;
           const percentileNow = (rank / sorted.length) * 100;
           cddState.history = history;
           cddState.latest = latest;
-          cddState.p10 = p10;
-          cddState.p50 = p50;
-          cddState.p90 = p90;
+          cddState.p10 = p10; cddState.p50 = p50; cddState.p90 = p90;
           cddState.percentileNow = percentileNow;
           cddState.seriesUsed = name;
           cddState.loaded = true;
           cddState.lastUpdate = new Date().toISOString();
-          console.log('[CDD] series=' + name + ' latest=' + latest.toFixed(0) + ' percentile=' + percentileNow.toFixed(0) + '% (p10=' + p10.toFixed(0) + ' p50=' + p50.toFixed(0) + ' p90=' + p90.toFixed(0) + ')');
+          console.log('[CDD] OK series=' + name + ' latest=' + latest.toFixed(0) + ' percentile=' + percentileNow.toFixed(0) + '%');
           if (typeof computeRegimeDetector === 'function') computeRegimeDetector();
           return;
         } catch(e) {
-          // tentar proximo candidato
+          console.log('[CDD] tentou ' + name + ' -> erro: ' + e.message);
         }
       }
-      console.warn('[CDD] Nenhum endpoint BRK disponivel (tentou: ' + candidates.join(', ') + ')');
+      console.warn('[CDD] Nenhuma serie funcionou apos discovery');
     }
 
     function computeRdTriggerCDD() {
