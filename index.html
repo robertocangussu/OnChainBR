@@ -1080,6 +1080,38 @@
     }
 
 
+
+    /* ========== Cycle Position Indicator (Batch 35) ========== */
+    .rdet-cycle-wrap { margin-bottom: 14px; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; }
+    .rdet-cycle-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+    .rdet-cycle-title { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
+    .rdet-cycle-info { font-size: 10px; color: var(--text-secondary); }
+    .rdet-cycle-info strong { color: var(--text-primary); }
+    .rdet-cycle-bar { position: relative; display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; height: 22px; margin-bottom: 22px; }
+    .rdet-cycle-seg { border-radius: 2px; position: relative; cursor: help; transition: transform 0.15s; }
+    .rdet-cycle-seg:hover { transform: scaleY(1.15); }
+    .rdet-cycle-seg.active { box-shadow: 0 0 0 2px rgba(255,255,255,0.4), 0 0 12px currentColor; }
+    .rdet-cycle-seg-1 { background: rgba(127,29,29,0.65); color: #7f1d1d; } /* CAPITULATION - dark red */
+    .rdet-cycle-seg-2 { background: rgba(34,197,94,0.55); color: #22c55e; }   /* ACCUMULATION - green */
+    .rdet-cycle-seg-3 { background: rgba(59,130,246,0.55); color: #3b82f6; }  /* MARKUP - blue */
+    .rdet-cycle-seg-4 { background: rgba(234,179,8,0.55); color: #eab308; }   /* EUPHORIA - yellow */
+    .rdet-cycle-seg-5 { background: rgba(249,115,22,0.55); color: #f97316; }  /* DISTRIBUTION - orange */
+    .rdet-cycle-seg-6 { background: rgba(127,29,29,0.45); color: #7f1d1d; }   /* BEAR - dark red */
+    .rdet-cycle-marker {
+      position: absolute; top: -8px;
+      transform: translateX(-50%);
+      font-size: 14px; line-height: 1;
+      filter: drop-shadow(0 0 3px rgba(255,255,255,0.6));
+      pointer-events: none;
+      transition: left 0.5s ease;
+    }
+    .rdet-cycle-labels { position: absolute; top: 26px; left: 0; right: 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; }
+    .rdet-cycle-label-cell { font-size: 8.5px; color: var(--text-muted); text-align: center; letter-spacing: 0.5px; font-weight: 600; }
+    .rdet-cycle-label-cell.active { color: var(--text-primary); }
+    .rdet-cycle-meta { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; font-size: 10px; }
+    .rdet-cycle-current { color: var(--text-primary); font-weight: 700; }
+    .rdet-cycle-confidence { font-family: 'JetBrains Mono', monospace; }
+
   </style>
 </head>
 <body>
@@ -2606,6 +2638,34 @@
         <span class="rdet-head-label">Regime Reversal Detector</span>
         <span id="rdetDirectionBadge" class="rdet-direction rdet-dir-neutral">--</span>
         <span class="rdet-head-update" id="rdetUpdate">--</span>
+      </div>
+
+      <div class="rdet-cycle-wrap" id="rdetCycleWrap" style="display:none;">
+        <div class="rdet-cycle-head">
+          <span class="rdet-cycle-title">Posição no Ciclo de Mercado</span>
+          <span class="rdet-cycle-info"><strong id="rdetCycleCurrent">--</strong> · <span id="rdetCycleConfidence" class="rdet-cycle-confidence">--</span></span>
+        </div>
+        <div class="rdet-cycle-bar">
+          <div class="rdet-cycle-seg rdet-cycle-seg-1" title="Capitulação · fundo profundo de bear"></div>
+          <div class="rdet-cycle-seg rdet-cycle-seg-2" title="Acumulação · LTHs absorvendo, valor on-chain"></div>
+          <div class="rdet-cycle-seg rdet-cycle-seg-3" title="Markup · bull ativo, momentum positivo"></div>
+          <div class="rdet-cycle-seg rdet-cycle-seg-4" title="Euforia · topo próximo, métricas overheated"></div>
+          <div class="rdet-cycle-seg rdet-cycle-seg-5" title="Distribuição · LTHs vendendo na força"></div>
+          <div class="rdet-cycle-seg rdet-cycle-seg-6" title="Bear · markdown ativo, valuation comprimida"></div>
+          <div class="rdet-cycle-marker" id="rdetCycleMarker" style="left:50%;">▼</div>
+          <div class="rdet-cycle-labels">
+            <div class="rdet-cycle-label-cell">Capit</div>
+            <div class="rdet-cycle-label-cell">Acum</div>
+            <div class="rdet-cycle-label-cell">Markup</div>
+            <div class="rdet-cycle-label-cell">Eufor</div>
+            <div class="rdet-cycle-label-cell">Distr</div>
+            <div class="rdet-cycle-label-cell">Bear</div>
+          </div>
+        </div>
+        <div class="rdet-cycle-meta">
+          <span id="rdetCycleHalving" style="color:var(--text-muted);">--</span>
+          <span style="color:var(--text-muted);font-size:9px;letter-spacing:0.5px;">fitness multi-indicador</span>
+        </div>
       </div>
 
       <div class="rdet-boxes">
@@ -8523,6 +8583,11 @@
         halving: halving,
         phase: phase,
         // Batch 28: regime detector estado
+        cyclePosition: (typeof cyclePositionState !== 'undefined' && cyclePositionState && cyclePositionState.loaded) ? {
+          currentPhase: cyclePositionState.currentPhase,
+          confidence: cyclePositionState.confidence,
+          fitness: cyclePositionState.fitness
+        } : null,
         regimeDetector: (typeof regimeDetectorState !== 'undefined' && regimeDetectorState && regimeDetectorState.loaded) ? {
           score: regimeDetectorState.score,
           label: regimeDetectorState.label,
@@ -9298,6 +9363,161 @@
     }
 
 
+
+    // ========== CYCLE POSITION INDICATOR (Batch 35) ==========
+    const cyclePositionState = { loaded: false, currentPhase: null, confidence: 0, fitness: null, lastUpdate: null };
+
+    const _RD_CYCLE_PHASES = [
+      { key: 'CAPITULATION', name: 'Capitulação', short: 'Capit', segIdx: 1 },
+      { key: 'ACCUMULATION', name: 'Acumulação', short: 'Acum', segIdx: 2 },
+      { key: 'MARKUP', name: 'Markup', short: 'Markup', segIdx: 3 },
+      { key: 'EUPHORIA', name: 'Euforia', short: 'Eufor', segIdx: 4 },
+      { key: 'DISTRIBUTION', name: 'Distribuição', short: 'Distr', segIdx: 5 },
+      { key: 'BEAR', name: 'Bear', short: 'Bear', segIdx: 6 }
+    ];
+
+    function computeCyclePosition() {
+      try {
+        const z = (typeof state !== 'undefined' && state) ? state.composite : null;
+        const rv = (typeof state !== 'undefined' && state && state.rawValues) ? state.rawValues : {};
+        const mayer = rv.mayerMultiple || null;
+        const fg = rv.fearGreed || null;
+        const puell = (typeof minerState !== 'undefined' && minerState) ? minerState.puell : null;
+        const lth30d = (typeof smartMoneyState !== 'undefined' && smartMoneyState) ? smartMoneyState.lth30d : null;
+        const sth30d = (typeof smartMoneyState !== 'undefined' && smartMoneyState) ? smartMoneyState.sth30d : null;
+        const funding = (typeof leverageState !== 'undefined' && leverageState) ? leverageState.fundingRate : null;
+
+        const fitness = { CAPITULATION: 0, ACCUMULATION: 0, MARKUP: 0, EUPHORIA: 0, DISTRIBUTION: 0, BEAR: 0 };
+
+        // CAPITULATION (deep bear bottom)
+        if (z !== null) {
+          if (z < -2.0) fitness.CAPITULATION += 28;
+          else if (z < -1.5) fitness.CAPITULATION += 18;
+        }
+        if (mayer !== null && mayer < 0.6) fitness.CAPITULATION += 22;
+        else if (mayer !== null && mayer < 0.8) fitness.CAPITULATION += 10;
+        if (puell !== null && puell < 0.5) fitness.CAPITULATION += 22;
+        if (lth30d !== null && lth30d < 0) fitness.CAPITULATION += 14;
+        if (fg !== null && fg < 25) fitness.CAPITULATION += 14;
+
+        // ACCUMULATION
+        if (z !== null) {
+          if (z >= -2.0 && z <= -0.5) fitness.ACCUMULATION += 28;
+          else if (z >= -2.3 && z <= -0.3) fitness.ACCUMULATION += 14;
+        }
+        if (mayer !== null && mayer >= 0.6 && mayer < 1.0) fitness.ACCUMULATION += 22;
+        else if (mayer !== null && mayer >= 0.8 && mayer < 1.1) fitness.ACCUMULATION += 12;
+        if (lth30d !== null && lth30d > 0) fitness.ACCUMULATION += 22;
+        if (sth30d !== null && sth30d < 0) fitness.ACCUMULATION += 12;
+        if (puell !== null && puell >= 0.5 && puell < 1.2) fitness.ACCUMULATION += 10;
+        if (fg !== null && fg < 50) fitness.ACCUMULATION += 6;
+
+        // MARKUP (bull active)
+        if (z !== null) {
+          if (z >= -0.5 && z < 0.5) fitness.MARKUP += 26;
+          else if (z >= 0.5 && z < 1.0) fitness.MARKUP += 18;
+        }
+        if (mayer !== null && mayer >= 1.0 && mayer < 1.8) fitness.MARKUP += 22;
+        if (fg !== null && fg >= 50 && fg < 75) fitness.MARKUP += 18;
+        if (puell !== null && puell >= 1.0 && puell < 2.0) fitness.MARKUP += 12;
+        if (lth30d !== null && Math.abs(lth30d) < 250000) fitness.MARKUP += 10;
+
+        // EUPHORIA (top próximo)
+        if (z !== null && z >= 1.5) fitness.EUPHORIA += 28;
+        else if (z !== null && z >= 1.0) fitness.EUPHORIA += 14;
+        if (mayer !== null && mayer >= 2.0) fitness.EUPHORIA += 22;
+        else if (mayer !== null && mayer >= 1.7) fitness.EUPHORIA += 10;
+        if (fg !== null && fg >= 75) fitness.EUPHORIA += 22;
+        if (puell !== null && puell >= 3.0) fitness.EUPHORIA += 16;
+        if (funding !== null && funding > 0.05) fitness.EUPHORIA += 12;
+
+        // DISTRIBUTION (post-top, descendo)
+        if (z !== null && z >= 0.5 && z < 1.5) fitness.DISTRIBUTION += 18;
+        if (mayer !== null && mayer >= 1.5 && mayer < 2.4) fitness.DISTRIBUTION += 18;
+        if (lth30d !== null && lth30d < -300000) fitness.DISTRIBUTION += 28;
+        else if (lth30d !== null && lth30d < -100000) fitness.DISTRIBUTION += 14;
+        if (fg !== null && fg >= 65) fitness.DISTRIBUTION += 12;
+
+        // BEAR
+        if (z !== null && z >= -1.5 && z < 0 && lth30d !== null && lth30d <= 0) fitness.BEAR += 18;
+        if (mayer !== null && mayer < 1.0 && z !== null && z > -1.5) fitness.BEAR += 14;
+
+        // Normalize
+        Object.keys(fitness).forEach(k => fitness[k] = Math.min(100, fitness[k]));
+
+        // Find phase with max fitness
+        let currentPhase = null;
+        let maxFit = 0;
+        for (const [k, v] of Object.entries(fitness)) {
+          if (v > maxFit) { currentPhase = k; maxFit = v; }
+        }
+        // Confidence = (max fitness) / sum of all fitness * 100, normalized
+        const sumFit = Object.values(fitness).reduce((s, v) => s + v, 0);
+        const confidence = sumFit > 0 ? Math.round((maxFit / sumFit) * 100) : 0;
+
+        cyclePositionState.currentPhase = currentPhase;
+        cyclePositionState.confidence = confidence;
+        cyclePositionState.maxFit = maxFit;
+        cyclePositionState.fitness = fitness;
+        cyclePositionState.loaded = true;
+        cyclePositionState.lastUpdate = new Date().toISOString();
+
+        renderCyclePosition();
+        console.log('[CyclePosition] phase=' + currentPhase + ' confidence=' + confidence + '% fitness:', fitness);
+      } catch(e) {
+        console.warn('[CyclePosition] error:', e);
+      }
+    }
+
+    function renderCyclePosition() {
+      const wrap = document.getElementById('rdetCycleWrap');
+      if (!wrap) return;
+      const st = cyclePositionState;
+      if (!st.loaded || !st.currentPhase) {
+        wrap.style.display = 'none';
+        return;
+      }
+      wrap.style.display = 'block';
+
+      // Phase info
+      const phase = _RD_CYCLE_PHASES.find(p => p.key === st.currentPhase);
+      const phaseName = phase ? phase.name : st.currentPhase;
+      const phaseIdx = phase ? phase.segIdx : 1;
+
+      // Update marker position (each segment is 1/6 of width, marker at center)
+      const markerEl = document.getElementById('rdetCycleMarker');
+      if (markerEl) {
+        const pct = ((phaseIdx - 0.5) / 6) * 100;
+        markerEl.style.left = pct + '%';
+        markerEl.textContent = '▼';
+      }
+
+      // Highlight active segment
+      const segs = document.querySelectorAll('.rdet-cycle-seg');
+      segs.forEach((s, i) => {
+        s.classList.toggle('active', (i + 1) === phaseIdx);
+      });
+      const labels = document.querySelectorAll('.rdet-cycle-label-cell');
+      labels.forEach((l, i) => {
+        l.classList.toggle('active', (i + 1) === phaseIdx);
+      });
+
+      // Update text
+      const currEl = document.getElementById('rdetCycleCurrent');
+      const confEl = document.getElementById('rdetCycleConfidence');
+      if (currEl) currEl.textContent = phaseName;
+      if (confEl) confEl.textContent = st.confidence + '% confidence';
+
+      // Halving info
+      const haloEl = document.getElementById('rdetCycleHalving');
+      if (haloEl && typeof getHalvingInfo === 'function') {
+        try {
+          const h = getHalvingInfo();
+          haloEl.textContent = 'Pós-halving: ' + h.daysSinceHalving + ' dias · ciclo ' + h.cycleProgress + '%';
+        } catch(e) {}
+      }
+    }
+
     function computeRegimeDetector() {
       try {
         const triggers = [
@@ -9381,6 +9601,8 @@
           console.log('[RegimeDetector data]', { compositeHist: compH, sthRP: sthH, lthRP: lthH, lthSupplyHist: lthSup });
         } catch(e) {}
         renderRegimeDetector();
+        // Batch 35: tambem computa cycle position
+        if (typeof computeCyclePosition === 'function') { try { computeCyclePosition(); } catch(e) { console.warn('[CyclePosition] err:', e); } }
       } catch(e) {
         console.warn('[RegimeDetector] compute error:', e);
       }
